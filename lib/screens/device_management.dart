@@ -2698,15 +2698,18 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Unit connection updated successfully'),
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(
+                  'Unit connection updated successfully',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                ),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Constants.ctaColorLight,
             behavior: SnackBarBehavior.floating,
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -2715,16 +2718,20 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error, color: Colors.white),
-              SizedBox(width: 8),
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
               Expanded(
-                  child: Text(
-                      'Failed to update unit connection: ${e.toString()}')),
+                child: Text(
+                  'Failed to update unit connection: ${e.toString()}',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                ),
+              ),
             ],
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     } finally {
@@ -2738,52 +2745,45 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.all(16),
+      insetPadding: const EdgeInsets.all(16),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
         height: MediaQuery.of(context).size.height * 0.85,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 20,
-              offset: Offset(0, 10),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
         child: Column(
           children: [
-            // Enhanced Header
+            // Modern Header
             Container(
-              padding: EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Constants.ctaColorLight,
-                    Constants.ctaColorLight.withOpacity(0.8)
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                color: Constants.ctaColorLight,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child:
-                        Icon(Icons.swap_horiz, color: Colors.white, size: 24),
+                    child: const Icon(Icons.swap_horiz,
+                        color: Colors.white, size: 20),
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2791,37 +2791,28 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                         Text(
                           'Change Connected Unit',
                           style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
-                        SizedBox(height: 4),
                         Text(
                           '${widget.device.name} (${widget.device.deviceId})',
                           style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.8),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Material(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(25),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(25),
-                      onTap:
-                          _isLoading ? null : () => Navigator.of(context).pop(),
-                      child: Container(
-                        padding: EdgeInsets.all(8),
-                        child: Icon(Icons.close, color: Colors.white, size: 20),
-                      ),
+                  IconButton(
+                    onPressed:
+                        _isLoading ? null : () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: Colors.white.withOpacity(0.9),
+                      size: 20,
                     ),
                   ),
                 ],
@@ -2831,37 +2822,33 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
             // Current Unit Information
             if (widget.device.connectedUnit != null) ...[
               Container(
-                margin: EdgeInsets.all(20),
-                padding: EdgeInsets.all(16),
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue[50]!, Colors.blue[100]!],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: Constants.ctaColorLight.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue[200]!),
+                  border: Border.all(
+                      color: Constants.ctaColorLight.withOpacity(0.2)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.link, color: Colors.blue[600], size: 20),
-                        SizedBox(width: 8),
+                        Icon(Icons.link,
+                            color: Constants.ctaColorLight, size: 20),
+                        const SizedBox(width: 8),
                         Text(
                           'Currently Connected Unit',
                           style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[800],
-                            ),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1F2937),
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     _buildCurrentUnitCard(widget.device.connectedUnit!),
                   ],
                 ),
@@ -2870,30 +2857,26 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
 
             // Unit Selection Header
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   Icon(Icons.list_alt,
                       color: Constants.ctaColorLight, size: 20),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     'Select New Unit:',
                     style: GoogleFonts.inter(
-                      textStyle: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1F2937),
                     ),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   Text(
                     '${widget.availableUnits.length} units available',
                     style: GoogleFonts.inter(
-                      textStyle: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      fontSize: 12,
+                      color: const Color(0xFF6B7280),
                     ),
                   ),
                 ],
@@ -2903,11 +2886,11 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
             // Units List
             Expanded(
               child: Container(
-                margin: EdgeInsets.all(20),
+                margin: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: const Color(0xFFFAFAFA),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
                 ),
                 child: Column(
                   children: [
@@ -2917,17 +2900,17 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                     // Divider
                     Container(
                       height: 1,
-                      color: Colors.grey[300],
-                      margin: EdgeInsets.symmetric(horizontal: 16),
+                      color: const Color(0xFFE5E7EB),
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
                     ),
 
                     // Units List
                     Expanded(
                       child: ListView.separated(
-                        padding: EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(16),
                         itemCount: widget.availableUnits.length,
                         separatorBuilder: (context, index) =>
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final unit = widget.availableUnits[index];
                           final isCurrentUnit =
@@ -2946,33 +2929,104 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
 
             // Action Buttons
             Container(
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFAFAFA),
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
                 ),
                 border: Border(
-                  top: BorderSide(color: Colors.grey[200]!, width: 1),
+                  top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  _buildActionButton(
-                    'Cancel',
-                    Icons.close,
-                    Colors.grey[600]!,
-                    _isLoading ? null : () => Navigator.of(context).pop(),
-                    isSecondary: true,
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFFE5E7EB),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: TextButton(
+                      onPressed:
+                          _isLoading ? null : () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ),
                   ),
-                  SizedBox(width: 16),
-                  _buildActionButton(
-                    _isLoading ? 'Updating...' : 'Update Connection',
-                    _isLoading ? Icons.hourglass_empty : Icons.check,
-                    Constants.ctaColorLight,
-                    _isLoading ? null : _changeUnit,
+                  const SizedBox(width: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Constants.ctaColorLight,
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _changeUnit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Updating...',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Update Connection',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
                   ),
                 ],
               ),
@@ -2985,11 +3039,11 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
 
   Widget _buildCurrentUnitCard(ConnectedUnit unit) {
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue[300]!),
+        border: Border.all(color: Constants.ctaColorLight.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3000,45 +3054,39 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                 child: Text(
                   unit.name,
                   style: GoogleFonts.inter(
-                    textStyle: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue[900],
-                    ),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1F2937),
                   ),
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: unit.status.toLowerCase() == 'operational'
-                      ? Colors.green[100]
-                      : Colors.orange[100],
+                      ? Constants.ctaColorLight.withOpacity(0.1)
+                      : const Color(0xFFF59E0B).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   unit.status,
                   style: GoogleFonts.inter(
-                    textStyle: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: unit.status.toLowerCase() == 'operational'
-                          ? Colors.green[700]
-                          : Colors.orange[700],
-                    ),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: unit.status.toLowerCase() == 'operational'
+                        ? Constants.ctaColorLight
+                        : const Color(0xFFF59E0B),
                   ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Model: ${unit.modelNumber} • S/N: ${unit.serialNumber}',
             style: GoogleFonts.inter(
-              textStyle: TextStyle(
-                fontSize: 14,
-                color: Colors.blue[700],
-              ),
+              fontSize: 14,
+              color: const Color(0xFF6B7280),
             ),
           ),
         ],
@@ -3050,9 +3098,11 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
     final isSelected = _selectedUnitId == null;
 
     return Container(
-      margin: EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
       child: Material(
-        color: isSelected ? Colors.red[50] : Colors.white,
+        color: isSelected
+            ? const Color(0xFFEF4444).withOpacity(0.1)
+            : Colors.white,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
@@ -3063,11 +3113,13 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
             });
           },
           child: Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected ? Colors.red[300]! : Colors.grey[300]!,
+                color: isSelected
+                    ? const Color(0xFFEF4444)
+                    : const Color(0xFFE5E7EB),
                 width: isSelected ? 2 : 1,
               ),
             ),
@@ -3082,11 +3134,11 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                       _selectedIndex = -1;
                     });
                   },
-                  activeColor: Colors.red[600],
+                  activeColor: const Color(0xFFEF4444),
                 ),
-                SizedBox(width: 12),
-                Icon(Icons.link_off, color: Colors.red[600], size: 24),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
+                const Icon(Icons.link_off, color: Color(0xFFEF4444), size: 24),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -3094,22 +3146,18 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                       Text(
                         'Disconnect from Unit',
                         style: GoogleFonts.inter(
-                          textStyle: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.red[800],
-                          ),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFEF4444),
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         'Remove unit connection from this device',
                         style: GoogleFonts.inter(
-                          textStyle: TextStyle(
-                            fontSize: 13,
-                            color: Colors.red[600],
-                            fontStyle: FontStyle.italic,
-                          ),
+                          fontSize: 13,
+                          color: const Color(0xFFEF4444).withOpacity(0.8),
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
                     ],
@@ -3129,7 +3177,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
       color: isSelected
           ? Constants.ctaColorLight.withOpacity(0.1)
           : isCurrentUnit
-              ? Colors.blue[50]
+              ? Constants.ctaColorLight.withOpacity(0.05)
               : Colors.white,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
@@ -3141,15 +3189,15 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
           });
         },
         child: Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
                   ? Constants.ctaColorLight
                   : isCurrentUnit
-                      ? Colors.blue[300]!
-                      : Colors.grey[300]!,
+                      ? Constants.ctaColorLight.withOpacity(0.3)
+                      : const Color(0xFFE5E7EB),
               width: isSelected || isCurrentUnit ? 2 : 1,
             ),
           ),
@@ -3169,9 +3217,9 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                     },
                     activeColor: Constants.ctaColorLight,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Container(
-                    padding: EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Constants.ctaColorLight.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -3182,7 +3230,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                       size: 20,
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3193,45 +3241,38 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                               child: Text(
                                 unit.name,
                                 style: GoogleFonts.inter(
-                                  textStyle: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: isCurrentUnit
-                                        ? Colors.blue[800]
-                                        : Colors.black87,
-                                  ),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1F2937),
                                 ),
                               ),
                             ),
                             if (isCurrentUnit)
                               Container(
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue[100],
+                                  color:
+                                      Constants.ctaColorLight.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
                                   'Current',
                                   style: GoogleFonts.inter(
-                                    textStyle: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.blue[700],
-                                    ),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Constants.ctaColorLight,
                                   ),
                                 ),
                               ),
                           ],
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           'Model: ${unit.modelNumber} • S/N: ${unit.serialNumber}',
                           style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
+                            fontSize: 13,
+                            color: const Color(0xFF6B7280),
                           ),
                         ),
                       ],
@@ -3239,13 +3280,14 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                   ),
                   // Status Badge
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: unit.isOperational
-                          ? Colors.green[100]
+                          ? Constants.ctaColorLight.withOpacity(0.1)
                           : unit.isUnderMaintenance
-                              ? Colors.orange[100]
-                              : Colors.red[100],
+                              ? const Color(0xFFF59E0B).withOpacity(0.1)
+                              : const Color(0xFFEF4444).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -3259,24 +3301,22 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                                   : Icons.error,
                           size: 14,
                           color: unit.isOperational
-                              ? Colors.green[700]
+                              ? Constants.ctaColorLight
                               : unit.isUnderMaintenance
-                                  ? Colors.orange[700]
-                                  : Colors.red[700],
+                                  ? const Color(0xFFF59E0B)
+                                  : const Color(0xFFEF4444),
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text(
                           unit.status,
                           style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: unit.isOperational
-                                  ? Colors.green[700]
-                                  : unit.isUnderMaintenance
-                                      ? Colors.orange[700]
-                                      : Colors.red[700],
-                            ),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: unit.isOperational
+                                ? Constants.ctaColorLight
+                                : unit.isUnderMaintenance
+                                    ? const Color(0xFFF59E0B)
+                                    : const Color(0xFFEF4444),
                           ),
                         ),
                       ],
@@ -3285,13 +3325,13 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                 ],
               ),
 
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Unit Details Grid
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: const Color(0xFFFAFAFA),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -3304,30 +3344,30 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                             'Year',
                             unit.formattedYear,
                             Icons.calendar_today,
-                            Colors.blue[600]!,
+                            Constants.ctaColorLight,
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: _buildDetailItem(
                             'Refrigerant',
                             unit.refrigerantType,
                             Icons.opacity,
-                            Colors.cyan[600]!,
+                            Constants.ctaColorLight,
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: _buildDetailItem(
                             'Compressor',
                             unit.compressorType,
                             Icons.settings,
-                            Colors.orange[600]!,
+                            Constants.ctaColorLight,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
                     // Second Row - Power & Location
                     Row(
@@ -3339,19 +3379,19 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                                 ? '${unit.compressorHp}HP'
                                 : 'N/A',
                             Icons.power,
-                            Colors.red[600]!,
+                            Constants.ctaColorLight,
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: _buildDetailItem(
                             'Fans',
                             '${unit.totalFanCount} Total',
                             Icons.air,
-                            Colors.purple[600]!,
+                            Constants.ctaColorLight,
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: _buildDetailItem(
                             'Location',
@@ -3359,7 +3399,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                                 ? unit.location!
                                 : 'Not set',
                             Icons.location_on,
-                            Colors.green[600]!,
+                            Constants.ctaColorLight,
                           ),
                         ),
                       ],
@@ -3370,27 +3410,26 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
 
               // Warnings
               if (unit.isMaintenanceDue) ...[
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Container(
-                  padding: EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.amber[50],
+                    color: const Color(0xFFF59E0B).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.amber[300]!),
+                    border: Border.all(
+                        color: const Color(0xFFF59E0B).withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.warning_amber,
-                          color: Colors.amber[700], size: 16),
-                      SizedBox(width: 8),
+                      const Icon(Icons.warning_amber,
+                          color: Color(0xFFF59E0B), size: 16),
+                      const SizedBox(width: 8),
                       Text(
                         'Maintenance Due',
                         style: GoogleFonts.inter(
-                          textStyle: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.amber[800],
-                          ),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFF59E0B),
                         ),
                       ),
                     ],
@@ -3409,88 +3448,28 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
     return Column(
       children: [
         Icon(icon, size: 16, color: color),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           label,
           style: GoogleFonts.inter(
-            textStyle: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: color,
-            ),
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: color,
           ),
         ),
-        SizedBox(height: 2),
+        const SizedBox(height: 2),
         Text(
           value,
           style: GoogleFonts.inter(
-            textStyle: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF1F2937),
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
       ],
-    );
-  }
-
-  Widget _buildActionButton(
-    String text,
-    IconData icon,
-    Color color,
-    VoidCallback? onTap, {
-    bool isSecondary = false,
-  }) {
-    return Material(
-      color: isSecondary ? Colors.transparent : color,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: isSecondary ? Border.all(color: color) : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_isLoading && !isSecondary) ...[
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-              ] else ...[
-                Icon(
-                  icon,
-                  size: 18,
-                  color: isSecondary ? color : Colors.white,
-                ),
-              ],
-              SizedBox(width: 8),
-              Text(
-                text,
-                style: GoogleFonts.inter(
-                  textStyle: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isSecondary ? color : Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

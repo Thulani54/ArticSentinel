@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../models/device.dart' hide Device;
 import '../models/maintanance.dart';
+import '../services/shared_preferences.dart';
 import '../widgets/compact_header.dart';
 
 // Main Maintenance Dashboard
@@ -2943,6 +2944,49 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   }
 }
 
+class MaintenanceType {
+  final String id;
+  final String name;
+  final String category;
+  final String categoryDisplay;
+
+  MaintenanceType({
+    required this.id,
+    required this.name,
+    required this.category,
+    required this.categoryDisplay,
+  });
+
+  factory MaintenanceType.fromJson(Map<String, dynamic> json) {
+    return MaintenanceType(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      category: json['category'] ?? '',
+      categoryDisplay: json['category_display'] ?? '',
+    );
+  }
+}
+
+// Checklist item model for maintenance
+class ChecklistItem {
+  String description;
+  bool isCritical;
+  bool isCompleted;
+
+  ChecklistItem({
+    required this.description,
+    this.isCritical = false,
+    this.isCompleted = false,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'description': description,
+      'is_critical': isCritical,
+    };
+  }
+}
+
 class CreateMaintenanceDialog extends StatefulWidget {
   const CreateMaintenanceDialog({Key? key}) : super(key: key);
 
@@ -2953,15 +2997,29 @@ class CreateMaintenanceDialog extends StatefulWidget {
 
 class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _descriptionController = TextEditingController();
-
-  String? _selectedDeviceId;
+  // Required fields
+  final _workDescriptionController = TextEditingController();
+  int? _selectedDeviceId;
   String? _selectedMaintenanceTypeId;
-  String _selectedPriority = 'NORMAL'; // Using values that match the backend
   DateTime _scheduledDate = DateTime.now();
-
+  TimeOfDay _scheduledTime = TimeOfDay.now();
+  // Optional fields
+  String _selectedStatus = 'scheduled';
+  String _selectedPriority = 'normal';
+  String? _selectedAssignedToId;
+  final _estimatedCostController = TextEditingController();
+  final _estimatedDurationController = TextEditingController();
+  final _partsUsedController = TextEditingController();
+  final _materialsUsedController = TextEditingController();
+  final _externalContractorController = TextEditingController();
+  final _safetyPrecautionsController = TextEditingController();
+  // Checklist items
+  List<ChecklistItem> _checklistItems = [];
+  final _newChecklistController = TextEditingController();
+  // Data lists
   List<Device> _devices = [];
   List<MaintenanceType> _maintenanceTypes = [];
+  List<Map<String, dynamic>> _assignableUsers = [];
   bool _isLoading = true;
   bool _isSubmitting = false;
   String? _error;
@@ -2974,7 +3032,14 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
 
   @override
   void dispose() {
-    _descriptionController.dispose();
+    _workDescriptionController.dispose();
+    _estimatedCostController.dispose();
+    _estimatedDurationController.dispose();
+    _partsUsedController.dispose();
+    _materialsUsedController.dispose();
+    _externalContractorController.dispose();
+    _safetyPrecautionsController.dispose();
+    _newChecklistController.dispose();
     super.dispose();
   }
 
@@ -2983,24 +3048,16 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
       _isLoading = true;
       _error = null;
     });
+
     try {
-      // Simulate API calls
-      await Future.delayed(const Duration(milliseconds: 800));
-      _devices = [
-        Device(deviceId: 'dev-01', name: 'Main Production Server', id: 0),
-        Device(deviceId: 'dev-02', name: 'Backup NAS Storage', id: 1),
-        Device(deviceId: 'dev-03', name: 'Office HVAC Unit', id: 2),
-      ];
-      _maintenanceTypes = [
-        MaintenanceType(
-            id: 'mt-01',
-            name: 'Quarterly Checkup',
-            category: 'reerer',
-            categoryDisplay: 'weew'),
-      ];
+      await Future.wait([
+        _loadDevices(),
+        _loadMaintenanceTypes(),
+        _loadAssignableUsers(),
+      ]);
     } catch (e) {
       setState(() {
-        _error = "Failed to load required data.";
+        _error = 'Failed to load required data: ${e.toString()}';
       });
     } finally {
       setState(() {
@@ -3009,36 +3066,221 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
     }
   }
 
-  Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isSubmitting = true);
+  Future<void> _loadDevices() async {
+    try {
+      int? businessId = await Sharedprefs.getBusinessUidSharedPreference();
+      if (businessId == null) throw Exception('Business ID not found');
 
-      // TODO: Replace with your actual API call
-      // Example payload
-      final payload = {
-        'device_id': _selectedDeviceId,
-        'maintenance_type_id': _selectedMaintenanceTypeId,
-        'priority': _selectedPriority,
-        'scheduled_date': _scheduledDate.toIso8601String(),
-        'work_description': _descriptionController.text,
+      var headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${await Sharedprefs.getAuthTokenPreference()}',
       };
 
-      print("Submitting data: ${json.encode(payload)}");
+      var request = http.Request(
+          'POST', Uri.parse('${Constants.articBaseUrl2}api/devices/list/'));
+      request.body = json.encode({
+        'business_id': businessId,
+        'include_unit_details': true,
+      });
+      request.headers.addAll(headers);
 
-      // Simulate network request
-      await Future.delayed(const Duration(seconds: 2));
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        final data = json.decode(responseBody);
+        if (data['devices'] != null) {
+          _devices = (data['devices'] as List)
+              .map((deviceData) => Device.fromJson(deviceData))
+              .toList();
+        }
+      } else {
+        throw Exception('Failed to load devices: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      _devices = [
+        Device(id: 1, name: 'Main Production Server', deviceId: 'dev-01'),
+        Device(id: 2, name: 'Backup NAS Storage', deviceId: 'dev-02'),
+        Device(id: 3, name: 'Office HVAC Unit', deviceId: 'dev-03'),
+      ];
+    }
+  }
 
-      setState(() => _isSubmitting = false);
+  Future<void> _loadMaintenanceTypes() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${Constants.articBaseUrl2}api/maintenance/types/'),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization':
+              'Bearer ${await Sharedprefs.getAuthTokenPreference()}',
+        },
+      );
 
-      // Show success message and close dialog
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _maintenanceTypes = (data['maintenance_types'] as List)
+            .map((item) => MaintenanceType.fromJson(item))
+            .toList();
+      } else {
+        throw Exception('Failed to load maintenance types');
+      }
+    } catch (e) {
+      _maintenanceTypes = [
+        MaintenanceType(
+            id: 'mt-01',
+            name: 'Quarterly Checkup',
+            category: 'preventive',
+            categoryDisplay: 'Preventive'),
+        MaintenanceType(
+            id: 'mt-02',
+            name: 'Emergency Repair',
+            category: 'corrective',
+            categoryDisplay: 'Corrective'),
+        MaintenanceType(
+            id: 'mt-03',
+            name: 'Annual Service',
+            category: 'preventive',
+            categoryDisplay: 'Preventive'),
+      ];
+    }
+  }
+
+  Future<void> _loadAssignableUsers() async {
+    _assignableUsers = [
+      {'id': '1', 'name': 'John Doe'},
+      {'id': '2', 'name': 'Jane Smith'},
+      {'id': '3', 'name': 'Mike Johnson'},
+    ];
+  }
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final scheduledDateTime = DateTime(
+        _scheduledDate.year,
+        _scheduledDate.month,
+        _scheduledDate.day,
+        _scheduledTime.hour,
+        _scheduledTime.minute,
+      );
+
+      final payload = {
+        'device_id': _selectedDeviceId!,
+        'maintenance_type_id': _selectedMaintenanceTypeId!,
+        'scheduled_date': scheduledDateTime.toIso8601String(),
+        'work_description': _workDescriptionController.text,
+        'status': _selectedStatus,
+        'priority': _selectedPriority,
+        if (_selectedAssignedToId != null)
+          'assigned_to_id': int.parse(_selectedAssignedToId!),
+        if (_estimatedCostController.text.isNotEmpty)
+          'estimated_cost': double.parse(_estimatedCostController.text),
+        if (_estimatedDurationController.text.isNotEmpty)
+          'estimated_duration_hours':
+              double.parse(_estimatedDurationController.text),
+        if (_partsUsedController.text.isNotEmpty)
+          'parts_used': _partsUsedController.text
+              .split(',')
+              .map((e) => e.trim())
+              .toList(),
+        if (_materialsUsedController.text.isNotEmpty)
+          'materials_used': _materialsUsedController.text
+              .split(',')
+              .map((e) => e.trim())
+              .toList(),
+        if (_externalContractorController.text.isNotEmpty)
+          'external_contractor': _externalContractorController.text,
+        if (_safetyPrecautionsController.text.isNotEmpty)
+          'safety_precautions': _safetyPrecautionsController.text,
+        if (_checklistItems.isNotEmpty)
+          'checklist_items':
+              _checklistItems.map((item) => item.toJson()).toList(),
+      };
+
+      final response = await http.post(
+        Uri.parse('${Constants.articBaseUrl2}api/maintenance/create/'),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization':
+              'Bearer ${await Sharedprefs.getAuthTokenPreference()}',
+        },
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Text(
+                  responseData['message'] ??
+                      'Maintenance scheduled successfully!',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        Navigator.of(context).pop(true);
+      } else {
+        throw Exception('Failed to create maintenance: ${response.body}');
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Maintenance scheduled successfully!'),
-          backgroundColor: Constants.ctaColorLight,
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Error: ${e.toString()}',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
-      Navigator.of(context).pop(true); // Return true to indicate success
+    } finally {
+      setState(() => _isSubmitting = false);
     }
+  }
+
+  void _resetForm() {
+    _formKey.currentState?.reset();
+    _workDescriptionController.clear();
+    _estimatedCostController.clear();
+    _estimatedDurationController.clear();
+    _partsUsedController.clear();
+    _materialsUsedController.clear();
+    _externalContractorController.clear();
+    _safetyPrecautionsController.clear();
+    _newChecklistController.clear();
+    setState(() {
+      _selectedDeviceId = null;
+      _selectedMaintenanceTypeId = null;
+      _scheduledDate = DateTime.now();
+      _scheduledTime = TimeOfDay.now();
+      _selectedStatus = 'scheduled';
+      _selectedPriority = 'normal';
+      _selectedAssignedToId = null;
+      _checklistItems.clear();
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -3047,12 +3289,137 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
       initialDate: _scheduledDate,
       firstDate: DateTime.now(),
       lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Constants.ctaColorLight,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _scheduledDate) {
       setState(() {
         _scheduledDate = picked;
       });
     }
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _scheduledTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Constants.ctaColorLight,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _scheduledTime) {
+      setState(() {
+        _scheduledTime = picked;
+      });
+    }
+  }
+
+  void _addChecklistItem() {
+    if (_newChecklistController.text.isNotEmpty) {
+      setState(() {
+        _checklistItems
+            .add(ChecklistItem(description: _newChecklistController.text));
+        _newChecklistController.clear();
+      });
+    }
+  }
+
+  void _removeChecklistItem(int index) {
+    setState(() {
+      _checklistItems.removeAt(index);
+    });
+  }
+
+  Widget _buildSectionHeader(String title, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF1F2937),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String label,
+      {String? hint, IconData? icon, Color? iconColor}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: icon != null
+          ? Icon(icon, color: iconColor ?? const Color(0xFF6B7280), size: 20)
+          : null,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+      ),
+      filled: true,
+      fillColor: const Color(0xFFFAFAFA),
+      labelStyle: GoogleFonts.inter(
+        fontSize: 14,
+        color: const Color(0xFF6B7280),
+        fontWeight: FontWeight.w500,
+      ),
+      hintStyle:
+          GoogleFonts.inter(fontSize: 14, color: const Color(0xFF9CA3AF)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
   }
 
   @override
@@ -3062,30 +3429,44 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
       insetPadding: const EdgeInsets.all(16),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
-        constraints: const BoxConstraints(maxWidth: 500),
+        height: MediaQuery.of(context).size.height * 0.9,
+        constraints: const BoxConstraints(maxWidth: 600),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 30,
+                offset: const Offset(0, 10)),
+          ],
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Constants.ctaColorLight,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
+        child: Column(
+          children: [
+            // Modern Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Constants.ctaColorLight,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.add_circle, color: Colors.white),
-                    const SizedBox(width: 12),
-                    Text(
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.build_circle,
+                        color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
                       'Schedule Maintenance',
                       style: GoogleFonts.inter(
                         fontSize: 18,
@@ -3093,144 +3474,754 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                         color: Colors.white,
                       ),
                     ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close_rounded,
+                        color: Colors.white.withOpacity(0.9), size: 20),
+                  ),
+                ],
+              ),
+            ),
+
+            // Form Content
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.error_outline,
+                                    size: 64, color: const Color(0xFFEF4444)),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _error!,
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Constants.ctaColorLight,
+                                        Constants.ctaColorLight.withOpacity(0.8)
+                                      ],
+                                    ),
+                                  ),
+                                  child: ElevatedButton(
+                                    onPressed: _loadData,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      foregroundColor: Colors.white,
+                                      shadowColor: Colors.transparent,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24, vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                    ),
+                                    child: Text(
+                                      'Retry',
+                                      style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.all(24),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Required Fields Section
+                                _buildSectionHeader('Required Information',
+                                    const Color(0xFFEF4444), Icons.star),
+                                const SizedBox(height: 20),
+                                DropdownButtonFormField<int>(
+                                  value: _selectedDeviceId,
+                                  decoration: _buildInputDecoration('Device *',
+                                      icon: Icons.devices,
+                                      iconColor: const Color(0xFFEF4444)),
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                  items: _devices.map((device) {
+                                    return DropdownMenuItem(
+                                      value: device.id,
+                                      child: Text(device.name,
+                                          style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500)),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) =>
+                                      setState(() => _selectedDeviceId = value),
+                                  validator: (value) => value == null
+                                      ? 'Please select a device'
+                                      : null,
+                                ),
+                                const SizedBox(height: 20),
+                                DropdownButtonFormField<String>(
+                                  value: _selectedMaintenanceTypeId,
+                                  decoration: _buildInputDecoration(
+                                      'Maintenance Type *',
+                                      icon: Icons.build,
+                                      iconColor: const Color(0xFFEF4444)),
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                  items: _maintenanceTypes.map((type) {
+                                    return DropdownMenuItem(
+                                      value: type.id,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(type.name,
+                                              style: GoogleFonts.inter(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600)),
+                                          Text(type.categoryDisplay,
+                                              style: GoogleFonts.inter(
+                                                  fontSize: 12,
+                                                  color:
+                                                      Constants.ctaColorLight)),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (value) => setState(
+                                      () => _selectedMaintenanceTypeId = value),
+                                  validator: (value) => value == null
+                                      ? 'Please select a maintenance type'
+                                      : null,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _workDescriptionController,
+                                  decoration: _buildInputDecoration(
+                                    'Work Description *',
+                                    hint:
+                                        'e.g., Monthly compressor inspection and cleaning',
+                                    icon: Icons.description,
+                                    iconColor: const Color(0xFFEF4444),
+                                  ),
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                  maxLines: 3,
+                                  validator: (value) =>
+                                      value == null || value.isEmpty
+                                          ? 'Please enter work description'
+                                          : null,
+                                ),
+                                const SizedBox(height: 20),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFAFAFA),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: Border.all(
+                                              color: const Color(0xFFE5E7EB),
+                                              width: 1.5),
+                                        ),
+                                        child: InkWell(
+                                          onTap: () => _selectDate(context),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.calendar_today,
+                                                  color:
+                                                      const Color(0xFFEF4444),
+                                                  size: 20),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text('Date *',
+                                                        style: GoogleFonts.inter(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: const Color(
+                                                                0xFF6B7280))),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      DateFormat.yMMMd().format(
+                                                          _scheduledDate),
+                                                      style: GoogleFonts.inter(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: const Color(
+                                                              0xFF1F2937)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFAFAFA),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: Border.all(
+                                              color: const Color(0xFFE5E7EB),
+                                              width: 1.5),
+                                        ),
+                                        child: InkWell(
+                                          onTap: () => _selectTime(context),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.access_time,
+                                                  color:
+                                                      const Color(0xFFEF4444),
+                                                  size: 20),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text('Time *',
+                                                        style: GoogleFonts.inter(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color: const Color(
+                                                                0xFF6B7280))),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      _scheduledTime
+                                                          .format(context),
+                                                      style: GoogleFonts.inter(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: const Color(
+                                                              0xFF1F2937)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 40),
+                                // Optional Fields Section
+                                _buildSectionHeader('Optional Information',
+                                    const Color(0xFF3B82F6), Icons.tune),
+                                const SizedBox(height: 20),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: DropdownButtonFormField<String>(
+                                        value: _selectedStatus,
+                                        decoration: _buildInputDecoration(
+                                            'Status',
+                                            icon: Icons.flag,
+                                            iconColor: const Color(0xFF3B82F6)),
+                                        style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500),
+                                        items: const [
+                                          DropdownMenuItem(
+                                              value: 'scheduled',
+                                              child: Text('Scheduled')),
+                                          DropdownMenuItem(
+                                              value: 'in_progress',
+                                              child: Text('In Progress')),
+                                          DropdownMenuItem(
+                                              value: 'completed',
+                                              child: Text('Completed')),
+                                          DropdownMenuItem(
+                                              value: 'cancelled',
+                                              child: Text('Cancelled')),
+                                          DropdownMenuItem(
+                                              value: 'overdue',
+                                              child: Text('Overdue')),
+                                        ],
+                                        onChanged: (value) => setState(
+                                            () => _selectedStatus = value!),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      child: DropdownButtonFormField<String>(
+                                        value: _selectedPriority,
+                                        decoration: _buildInputDecoration(
+                                            'Priority',
+                                            icon: Icons.priority_high,
+                                            iconColor: const Color(0xFF3B82F6)),
+                                        style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500),
+                                        items: const [
+                                          DropdownMenuItem(
+                                              value: 'low', child: Text('Low')),
+                                          DropdownMenuItem(
+                                              value: 'normal',
+                                              child: Text('Normal')),
+                                          DropdownMenuItem(
+                                              value: 'high',
+                                              child: Text('High')),
+                                          DropdownMenuItem(
+                                              value: 'critical',
+                                              child: Text('Critical')),
+                                        ],
+                                        onChanged: (value) => setState(
+                                            () => _selectedPriority = value!),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                DropdownButtonFormField<String>(
+                                  value: _selectedAssignedToId,
+                                  decoration: _buildInputDecoration(
+                                      'Assigned To',
+                                      icon: Icons.person,
+                                      iconColor: const Color(0xFF3B82F6)),
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                  items: [
+                                    const DropdownMenuItem(
+                                        value: null, child: Text('Unassigned')),
+                                    ..._assignableUsers.map((user) {
+                                      return DropdownMenuItem(
+                                        value: user['id'].toString(),
+                                        child: Text(user['name'],
+                                            style: GoogleFonts.inter(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500)),
+                                      );
+                                    }),
+                                  ],
+                                  onChanged: (value) => setState(
+                                      () => _selectedAssignedToId = value),
+                                ),
+                                const SizedBox(height: 20),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _estimatedCostController,
+                                        decoration: _buildInputDecoration(
+                                            'Estimated Cost',
+                                            hint: '150.00',
+                                            icon: Icons.attach_money,
+                                            iconColor: const Color(0xFF3B82F6)),
+                                        style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500),
+                                        keyboardType: const TextInputType
+                                            .numberWithOptions(decimal: true),
+                                        validator: (value) {
+                                          if (value != null &&
+                                              value.isNotEmpty) {
+                                            if (double.tryParse(value) ==
+                                                    null ||
+                                                double.parse(value) < 0) {
+                                              return 'Enter a valid positive number';
+                                            }
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller:
+                                            _estimatedDurationController,
+                                        decoration: _buildInputDecoration(
+                                            'Duration (Hours)',
+                                            hint: '3.5',
+                                            icon: Icons.timer,
+                                            iconColor: const Color(0xFF3B82F6)),
+                                        style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500),
+                                        keyboardType: const TextInputType
+                                            .numberWithOptions(decimal: true),
+                                        validator: (value) {
+                                          if (value != null &&
+                                              value.isNotEmpty) {
+                                            if (double.tryParse(value) ==
+                                                    null ||
+                                                double.parse(value) <= 0) {
+                                              return 'Enter a valid positive number';
+                                            }
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _partsUsedController,
+                                  decoration: _buildInputDecoration(
+                                    'Parts Used',
+                                    hint:
+                                        'Air Filter, Lubricant Oil (comma separated)',
+                                    icon: Icons.build_circle,
+                                    iconColor: const Color(0xFF3B82F6),
+                                  ),
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                  validator: (value) {
+                                    if (value != null && value.isNotEmpty) {
+                                      if (!RegExp(r'^[\w\s,.-]+$')
+                                          .hasMatch(value)) {
+                                        return 'Enter valid parts (comma separated)';
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _materialsUsedController,
+                                  decoration: _buildInputDecoration(
+                                    'Materials Used',
+                                    hint:
+                                        'Cleaning Solution, Replacement Gaskets (comma separated)',
+                                    icon: Icons.handyman,
+                                    iconColor: const Color(0xFF3B82F6),
+                                  ),
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                  validator: (value) {
+                                    if (value != null && value.isNotEmpty) {
+                                      if (!RegExp(r'^[\w\s,.-]+$')
+                                          .hasMatch(value)) {
+                                        return 'Enter valid materials (comma separated)';
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _externalContractorController,
+                                  decoration: _buildInputDecoration(
+                                      'External Contractor',
+                                      hint: 'Contractor information',
+                                      icon: Icons.business,
+                                      iconColor: const Color(0xFF3B82F6)),
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _safetyPrecautionsController,
+                                  decoration: _buildInputDecoration(
+                                    'Safety Precautions',
+                                    hint:
+                                        'Turn off main power, wear safety goggles',
+                                    icon: Icons.security,
+                                    iconColor: const Color(0xFF3B82F6),
+                                  ),
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                  maxLines: 2,
+                                ),
+                                const SizedBox(height: 40),
+                                // Checklist Section
+                                _buildSectionHeader('Maintenance Checklist',
+                                    const Color(0xFFF59E0B), Icons.checklist),
+                                const SizedBox(height: 20),
+                                if (_checklistItems.isNotEmpty) ...[
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: const Color(0xFFE5E7EB)),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      children: _checklistItems
+                                          .asMap()
+                                          .entries
+                                          .map((entry) {
+                                        int index = entry.key;
+                                        ChecklistItem item = entry.value;
+                                        return Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            border: index <
+                                                    _checklistItems.length - 1
+                                                ? const Border(
+                                                    bottom: BorderSide(
+                                                        color:
+                                                            Color(0xFFE5E7EB)))
+                                                : null,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Checkbox(
+                                                value: item.isCritical,
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    item.isCritical =
+                                                        value ?? false;
+                                                  });
+                                                },
+                                                activeColor:
+                                                    Constants.ctaColorLight,
+                                              ),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      item.description,
+                                                      style: GoogleFonts.inter(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          color: const Color(
+                                                              0xFF1F2937)),
+                                                    ),
+                                                    if (item.isCritical)
+                                                      Text(
+                                                        'Critical',
+                                                        style: GoogleFonts.inter(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color: const Color(
+                                                                0xFFEF4444)),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(
+                                                    Icons.delete_outline,
+                                                    color: Color(0xFFEF4444)),
+                                                onPressed: () =>
+                                                    _removeChecklistItem(index),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                ],
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _newChecklistController,
+                                        decoration: _buildInputDecoration(
+                                          'Add Checklist Item',
+                                          hint: 'Check compressor oil levels',
+                                          icon: Icons.add_task,
+                                          iconColor: const Color(0xFFF59E0B),
+                                        ),
+                                        style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500),
+                                        // onSubmitted: (_) => _addChecklistItem(),
+                                        validator: (value) {
+                                          if (value != null &&
+                                              value.isNotEmpty) {
+                                            if (!RegExp(r'^[\w\s.-]+$')
+                                                .hasMatch(value)) {
+                                              return 'Enter a valid checklist item';
+                                            }
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          color: Constants.ctaColorLight),
+                                      child: IconButton(
+                                        onPressed: _addChecklistItem,
+                                        icon: const Icon(Icons.add_rounded,
+                                            color: Colors.white),
+                                        tooltip: 'Add Item',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+            ),
+
+            // Footer Actions
+            if (!_isLoading && _error == null)
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFAFAFA),
+                  borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24)),
+                  border: Border(
+                      top: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: const Color(0xFFE5E7EB), width: 1.5),
+                      ),
+                      child: TextButton(
+                        onPressed: _isSubmitting ? null : _resetForm,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text(
+                          'Reset',
+                          style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF6B7280)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: const Color(0xFFE5E7EB), width: 1.5),
+                      ),
+                      child: TextButton(
+                        onPressed:
+                            _isSubmitting ? null : () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF6B7280)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(colors: [
+                          Constants.ctaColorLight,
+                          Constants.ctaColorLight.withOpacity(0.8)
+                        ]),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Constants.ctaColorLight.withOpacity(0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4))
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting ? null : _submitForm,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 32, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: _isSubmitting
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white)),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text('Scheduling...',
+                                      style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600)),
+                                ],
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.build_circle, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text('Schedule Maintenance',
+                                      style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                      ),
                     ),
                   ],
                 ),
               ),
-
-              // Form Content
-              if (_isLoading)
-                const Padding(
-                  padding: EdgeInsets.all(40.0),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child:
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        DropdownButtonFormField<String>(
-                          value: _selectedDeviceId,
-                          hint: const Text('Select a Device'),
-                          onChanged: (value) =>
-                              setState(() => _selectedDeviceId = value),
-                          items: _devices.map((device) {
-                            return DropdownMenuItem(
-                              value: device.deviceId,
-                              child: Text(device.name),
-                            );
-                          }).toList(),
-                          validator: (value) =>
-                              value == null ? 'Please select a device' : null,
-                          decoration:
-                              const InputDecoration(labelText: 'Device'),
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: _selectedMaintenanceTypeId,
-                          hint: const Text('Select Maintenance Type'),
-                          onChanged: (value) => setState(
-                              () => _selectedMaintenanceTypeId = value),
-                          items: _maintenanceTypes.map((type) {
-                            return DropdownMenuItem(
-                              value: type.id,
-                              child: Text(type.name),
-                            );
-                          }).toList(),
-                          validator: (value) => value == null
-                              ? 'Please select a maintenance type'
-                              : null,
-                          decoration: const InputDecoration(
-                              labelText: 'Maintenance Type'),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _descriptionController,
-                          decoration: const InputDecoration(
-                            labelText: 'Work Description',
-                            hintText: 'e.g., Check filters, run diagnostics...',
-                          ),
-                          maxLines: 3,
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Please enter a description'
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: _selectedPriority,
-                          onChanged: (value) =>
-                              setState(() => _selectedPriority = value!),
-                          items: const [
-                            DropdownMenuItem(value: 'LOW', child: Text('Low')),
-                            DropdownMenuItem(
-                                value: 'NORMAL', child: Text('Normal')),
-                            DropdownMenuItem(
-                                value: 'HIGH', child: Text('High')),
-                            DropdownMenuItem(
-                                value: 'CRITICAL', child: Text('Critical')),
-                          ],
-                          decoration:
-                              const InputDecoration(labelText: 'Priority'),
-                        ),
-                        const SizedBox(height: 16),
-                        ListTile(
-                          leading: const Icon(Icons.calendar_today),
-                          title: const Text('Scheduled Date'),
-                          subtitle:
-                              Text(DateFormat.yMMMd().format(_scheduledDate)),
-                          onTap: () => _selectDate(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              // Footer Actions
-              if (!_isLoading && _error == null)
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isSubmitting ? null : _submitForm,
-                      icon: _isSubmitting
-                          ? Container(
-                              width: 24,
-                              height: 24,
-                              padding: const EdgeInsets.all(2.0),
-                              child: const CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
-                              ),
-                            )
-                          : const Icon(Icons.check_circle),
-                      label: Text(_isSubmitting
-                          ? 'Submitting...'
-                          : 'Schedule Maintenance'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Constants.ctaColorLight,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        textStyle: GoogleFonts.inter(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
