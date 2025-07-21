@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import '../constants/Constants.dart';
 import '../constants/models/device.dart';
 import '../custom_widgets/customCard.dart';
@@ -1435,8 +1436,8 @@ class DeviceDetailsDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Constants.ctaColorGreen,
-                    Constants.ctaColorGreen.withOpacity(0.8)
+                    Constants.ctaColorLight,
+                    Constants.ctaColorLight.withOpacity(0.8)
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -1579,7 +1580,7 @@ class DeviceDetailsDialog extends StatelessWidget {
                                     ? 'Change Unit'
                                     : 'Connect Unit',
                                 Icons.swap_horiz,
-                                Constants.ctaColorGreen,
+                                Constants.ctaColorLight,
                                 onChangeUnit!,
                               )
                             : null,
@@ -1769,7 +1770,7 @@ class DeviceDetailsDialog extends StatelessWidget {
                     _buildActionButton(
                       'Edit Device',
                       Icons.edit,
-                      Constants.ctaColorGreen,
+                      Constants.ctaColorLight,
                       onEditPressed!,
                     ),
                 ],
@@ -2760,8 +2761,8 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Constants.ctaColorGreen,
-                    Constants.ctaColorGreen.withOpacity(0.8)
+                    Constants.ctaColorLight,
+                    Constants.ctaColorLight.withOpacity(0.8)
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -2873,7 +2874,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
               child: Row(
                 children: [
                   Icon(Icons.list_alt,
-                      color: Constants.ctaColorGreen, size: 20),
+                      color: Constants.ctaColorLight, size: 20),
                   SizedBox(width: 8),
                   Text(
                     'Select New Unit:',
@@ -2970,7 +2971,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                   _buildActionButton(
                     _isLoading ? 'Updating...' : 'Update Connection',
                     _isLoading ? Icons.hourglass_empty : Icons.check,
-                    Constants.ctaColorGreen,
+                    Constants.ctaColorLight,
                     _isLoading ? null : _changeUnit,
                   ),
                 ],
@@ -3126,7 +3127,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
       Unit unit, bool isCurrentUnit, bool isSelected, int index) {
     return Material(
       color: isSelected
-          ? Constants.ctaColorGreen.withOpacity(0.1)
+          ? Constants.ctaColorLight.withOpacity(0.1)
           : isCurrentUnit
               ? Colors.blue[50]
               : Colors.white,
@@ -3145,7 +3146,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
-                  ? Constants.ctaColorGreen
+                  ? Constants.ctaColorLight
                   : isCurrentUnit
                       ? Colors.blue[300]!
                       : Colors.grey[300]!,
@@ -3166,18 +3167,18 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                         _selectedIndex = index;
                       });
                     },
-                    activeColor: Constants.ctaColorGreen,
+                    activeColor: Constants.ctaColorLight,
                   ),
                   SizedBox(width: 8),
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Constants.ctaColorGreen.withOpacity(0.1),
+                      color: Constants.ctaColorLight.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       Icons.precision_manufacturing,
-                      color: Constants.ctaColorGreen,
+                      color: Constants.ctaColorLight,
                       size: 20,
                     ),
                   ),
@@ -3494,228 +3495,6 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
   }
 }
 
-// Placeholder dialogs (Enhanced)
-class AddDeviceDialog extends StatefulWidget {
-  final List<Unit> availableUnits;
-
-  const AddDeviceDialog({Key? key, required this.availableUnits})
-      : super(key: key);
-
-  @override
-  State<AddDeviceDialog> createState() => _AddDeviceDialogState();
-}
-
-class _AddDeviceDialogState extends State<AddDeviceDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _deviceIdController = TextEditingController();
-  final _locationController = TextEditingController();
-
-  String? _selectedUnitId;
-  String _selectedDeviceType = 'chiller';
-  bool _isLoading = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.6,
-        padding: EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Add New Device',
-                style: GoogleFonts.inter(
-                  textStyle: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              SizedBox(height: 24),
-
-              // Device Name
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Device Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter device name';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Device ID
-              TextFormField(
-                controller: _deviceIdController,
-                decoration: InputDecoration(
-                  labelText: 'Device ID',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter device ID';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Device Type
-              DropdownButtonFormField<String>(
-                value: _selectedDeviceType,
-                decoration: InputDecoration(
-                  labelText: 'Device Type',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem(value: 'chiller', child: Text('Chiller')),
-                  DropdownMenuItem(value: 'freezer', child: Text('Freezer')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedDeviceType = value!;
-                  });
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Location
-              TextFormField(
-                controller: _locationController,
-                decoration: InputDecoration(
-                  labelText: 'Location (Optional)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // Connected Unit
-              DropdownButtonFormField<String?>(
-                value: _selectedUnitId,
-                decoration: InputDecoration(
-                  labelText: 'Connected Unit (Optional)',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('No Unit'),
-                  ),
-                  ...widget.availableUnits.map((unit) {
-                    return DropdownMenuItem<String>(
-                      value: unit.id,
-                      child: Text(unit.displayName),
-                    );
-                  }).toList(),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedUnitId = value;
-                  });
-                },
-              ),
-              SizedBox(height: 24),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed:
-                        _isLoading ? null : () => Navigator.of(context).pop(),
-                    child: Text('Cancel'),
-                  ),
-                  SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _addDevice,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Constants.ctaColorGreen,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: _isLoading
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text('Add Device'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _addDevice() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      int? businessId = await Sharedprefs.getBusinessUidSharedPreference();
-      if (businessId != null) {
-        Device newDevice = Device(
-          name: _nameController.text,
-          deviceId: _deviceIdController.text,
-          deviceType: _selectedDeviceType,
-          location: _locationController.text.isNotEmpty
-              ? _locationController.text
-              : null,
-        );
-
-        await ApiService.addDevice(businessId, newDevice, _selectedUnitId);
-
-        Navigator.of(context).pop();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Device added successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to add device: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _deviceIdController.dispose();
-    _locationController.dispose();
-    super.dispose();
-  }
-}
-
 class EditDeviceDialog extends StatefulWidget {
   final Device device;
   final List<Unit> availableUnits;
@@ -3732,159 +3511,339 @@ class EditDeviceDialog extends StatefulWidget {
 
 class _EditDeviceDialogState extends State<EditDeviceDialog> {
   final _formKey = GlobalKey<FormState>();
+
+  // Required fields
   late TextEditingController _nameController;
   late TextEditingController _deviceIdController;
+
+  // Optional fields - Basic Info
+  late TextEditingController _productIdController;
   late TextEditingController _locationController;
+  late TextEditingController _buildingController;
+  late TextEditingController _floorController;
+  late TextEditingController _roomController;
+
+  // Optional fields - Technical Info
+  late TextEditingController _manufacturerController;
+  late TextEditingController _modelController;
+  late TextEditingController _serialNumberController;
+  late TextEditingController _capacityController;
+  late TextEditingController _targetTempMinController;
+  late TextEditingController _targetTempMaxController;
+
+  // Optional fields - Service Info
+  late TextEditingController _installationDateController;
+  late TextEditingController _warrantyExpiryController;
+  late TextEditingController _lastServiceDateController;
+  late TextEditingController _nextServiceDateController;
 
   String? _selectedUnitId;
   late String _selectedDeviceType;
+  late String _selectedPhaseType;
+  late bool _isActive;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize controllers with existing device data
     _nameController = TextEditingController(text: widget.device.name);
     _deviceIdController = TextEditingController(text: widget.device.deviceId);
+
+    // Basic info
+    _productIdController =
+        TextEditingController(text: widget.device.productId ?? '');
     _locationController =
         TextEditingController(text: widget.device.location ?? '');
+    _buildingController =
+        TextEditingController(text: widget.device.building ?? '');
+    _floorController = TextEditingController(text: widget.device.floor ?? '');
+    _roomController = TextEditingController(text: widget.device.room ?? '');
+
+    // Technical info
+    _manufacturerController =
+        TextEditingController(text: widget.device.manufacturer ?? '');
+    _modelController = TextEditingController(text: widget.device.model ?? '');
+    _serialNumberController =
+        TextEditingController(text: widget.device.serialNumber ?? '');
+    _capacityController =
+        TextEditingController(text: widget.device.capacity ?? '');
+    _targetTempMinController = TextEditingController(
+        text: widget.device.targetTempMin?.toString() ?? '');
+    _targetTempMaxController = TextEditingController(
+        text: widget.device.targetTempMax?.toString() ?? '');
+
+    // Service info
+    _installationDateController =
+        TextEditingController(text: widget.device.installationDate ?? '');
+    _warrantyExpiryController =
+        TextEditingController(text: widget.device.warrantyExpiry ?? '');
+    _lastServiceDateController =
+        TextEditingController(text: widget.device.lastServiceDate ?? '');
+    _nextServiceDateController =
+        TextEditingController(text: widget.device.nextServiceDate ?? '');
+
+    // Dropdowns and checkboxes
     _selectedUnitId = widget.device.connectedUnit?.id;
     _selectedDeviceType = widget.device.deviceType ?? 'chiller';
+    _selectedPhaseType = widget.device.phaseType ?? 'single';
+    _isActive = widget.device.isActive ?? true;
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 20,
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.6,
-        padding: EdgeInsets.all(24),
+        width: MediaQuery.of(context).size.width * 0.85,
+        height: MediaQuery.of(context).size.height * 0.9,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
         child: Form(
           key: _formKey,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Edit Device',
-                style: GoogleFonts.inter(
-                  textStyle: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              // Modern Header
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Constants.ctaColorLight,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
                   ),
                 ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Device ID: ${widget.device.deviceId}',
-                style: GoogleFonts.inter(
-                  textStyle: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ),
-              SizedBox(height: 24),
-
-              // Device Name
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Device Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter device name';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Device Type
-              DropdownButtonFormField<String>(
-                value: _selectedDeviceType,
-                decoration: InputDecoration(
-                  labelText: 'Device Type',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem(value: 'chiller', child: Text('Chiller')),
-                  DropdownMenuItem(value: 'freezer', child: Text('Freezer')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedDeviceType = value!;
-                  });
-                },
-              ),
-              SizedBox(height: 16),
-
-              // Location
-              TextFormField(
-                controller: _locationController,
-                decoration: InputDecoration(
-                  labelText: 'Location',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // Connected Unit
-              DropdownButtonFormField<String?>(
-                value: _selectedUnitId,
-                decoration: InputDecoration(
-                  labelText: 'Connected Unit',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('No Unit'),
-                  ),
-                  ...widget.availableUnits.map((unit) {
-                    return DropdownMenuItem<String>(
-                      value: unit.id,
-                      child: Text(unit.displayName),
-                    );
-                  }).toList(),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedUnitId = value;
-                  });
-                },
-              ),
-              SizedBox(height: 24),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed:
-                        _isLoading ? null : () => Navigator.of(context).pop(),
-                    child: Text('Cancel'),
-                  ),
-                  SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _updateDevice,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Constants.ctaColorGreen,
-                      foregroundColor: Colors.white,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.edit_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
-                    child: _isLoading
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Edit Device',
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                          )
-                        : Text('Update Device'),
+                          ),
+                          Text(
+                            'Device ID: ${widget.device.deviceId}',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: Colors.white.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: widget.device.isActive == true
+                            ? Colors.white.withOpacity(0.2)
+                            : Colors.red.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        widget.device.isActive == true ? 'Active' : 'Inactive',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: Colors.white.withOpacity(0.9),
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Scrollable form content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Required Fields Section
+                      _buildSectionHeader('Device Information', Icons.star),
+                      const SizedBox(height: 20),
+                      _buildRequiredFields(),
+
+                      const SizedBox(height: 40),
+
+                      // Optional Basic Info Section
+                      _buildSectionHeader(
+                          'Basic Information', Icons.info_outline),
+                      const SizedBox(height: 20),
+                      _buildBasicInfoFields(),
+
+                      const SizedBox(height: 40),
+
+                      // Technical Details Section
+                      _buildSectionHeader(
+                          'Technical Details', Icons.engineering),
+                      const SizedBox(height: 20),
+                      _buildTechnicalFields(),
+
+                      const SizedBox(height: 40),
+
+                      // Service Information Section
+                      _buildSectionHeader(
+                          'Service Information', Icons.build_circle_outlined),
+                      const SizedBox(height: 20),
+                      _buildServiceFields(),
+
+                      const SizedBox(height: 40),
+
+                      // Unit Connection Section
+                      _buildSectionHeader(
+                          'Unit Connection & Status', Icons.link),
+                      const SizedBox(height: 20),
+                      _buildUnitConnectionFields(),
+                    ],
                   ),
-                ],
+                ),
+              ),
+
+              // Modern Action buttons
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFAFAFA),
+                  border: Border(
+                    top: BorderSide(
+                      color: Color(0xFFE5E7EB),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFE5E7EB),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: TextButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: Constants.ctaColorLight,
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _updateDevice,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 32, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Updating...',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.update_rounded, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Update Device',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -3908,26 +3867,53 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           name: _nameController.text,
           deviceId: widget.device.deviceId, // Keep original device ID
           deviceType: _selectedDeviceType,
+
+          // Updated fields from form
+          productId: _productIdController.text.isNotEmpty
+              ? _productIdController.text
+              : null,
           location: _locationController.text.isNotEmpty
               ? _locationController.text
               : null,
-          // Preserve other existing fields
-          productId: widget.device.productId,
-          building: widget.device.building,
-          floor: widget.device.floor,
-          room: widget.device.room,
-          phaseType: widget.device.phaseType,
-          manufacturer: widget.device.manufacturer,
-          model: widget.device.model,
-          serialNumber: widget.device.serialNumber,
-          capacity: widget.device.capacity,
-          targetTempMin: widget.device.targetTempMin,
-          targetTempMax: widget.device.targetTempMax,
-          installationDate: widget.device.installationDate,
-          warrantyExpiry: widget.device.warrantyExpiry,
-          lastServiceDate: widget.device.lastServiceDate,
-          nextServiceDate: widget.device.nextServiceDate,
-          isActive: widget.device.isActive,
+          building: _buildingController.text.isNotEmpty
+              ? _buildingController.text
+              : null,
+          floor:
+              _floorController.text.isNotEmpty ? _floorController.text : null,
+          room: _roomController.text.isNotEmpty ? _roomController.text : null,
+          phaseType: _selectedPhaseType,
+          manufacturer: _manufacturerController.text.isNotEmpty
+              ? _manufacturerController.text
+              : null,
+          model:
+              _modelController.text.isNotEmpty ? _modelController.text : null,
+          serialNumber: _serialNumberController.text.isNotEmpty
+              ? _serialNumberController.text
+              : null,
+          capacity: _capacityController.text.isNotEmpty
+              ? _capacityController.text
+              : null,
+          targetTempMin: _targetTempMinController.text.isNotEmpty
+              ? double.tryParse(_targetTempMinController.text)
+              : null,
+          targetTempMax: _targetTempMaxController.text.isNotEmpty
+              ? double.tryParse(_targetTempMaxController.text)
+              : null,
+          installationDate: _installationDateController.text.isNotEmpty
+              ? _installationDateController.text
+              : null,
+          warrantyExpiry: _warrantyExpiryController.text.isNotEmpty
+              ? _warrantyExpiryController.text
+              : null,
+          lastServiceDate: _lastServiceDateController.text.isNotEmpty
+              ? _lastServiceDateController.text
+              : null,
+          nextServiceDate: _nextServiceDateController.text.isNotEmpty
+              ? _nextServiceDateController.text
+              : null,
+          isActive: _isActive,
+
+          // Preserve system fields that shouldn't change
           isOnline: widget.device.isOnline,
           lastPing: widget.device.lastPing,
           isInRepairMode: widget.device.isInRepairMode,
@@ -3945,16 +3931,42 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Device updated successfully'),
-            backgroundColor: Colors.green,
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Text(
+                  'Device updated successfully',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            backgroundColor: Constants.ctaColorLight,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to update device: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Failed to update device: ${e.toString()}',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     } finally {
@@ -3964,16 +3976,531 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
     }
   }
 
+  // Helper method to build modern section headers
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Constants.ctaColorLight.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Constants.ctaColorLight.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Constants.ctaColorLight,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF1F2937),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Modern text form field styling
+  InputDecoration _buildInputDecoration(String label, IconData icon,
+      {bool enabled = true}) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon,
+          color: enabled ? Constants.ctaColorLight : const Color(0xFF9CA3AF),
+          size: 20),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(36),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(36),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(36),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(36),
+        borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(36),
+        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+      ),
+      filled: true,
+      fillColor: enabled ? const Color(0xFFFAFAFA) : const Color(0xFFF3F4F6),
+      labelStyle: GoogleFonts.inter(
+        fontSize: 14,
+        color: enabled ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+        fontWeight: FontWeight.w500,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+
+  // Required fields section
+  Widget _buildRequiredFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _nameController,
+                decoration:
+                    _buildInputDecoration('Device Name *', Icons.devices),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter device name';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _deviceIdController,
+                decoration: _buildInputDecoration(
+                    'Device ID (Read Only)', Icons.qr_code,
+                    enabled: false),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                enabled: false, // Device ID cannot be changed
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedDeviceType,
+                decoration:
+                    _buildInputDecoration('Device Type *', Icons.category),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                items: const [
+                  DropdownMenuItem(value: 'chiller', child: Text('Chiller')),
+                  DropdownMenuItem(value: 'freezer', child: Text('Freezer')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedDeviceType = value!;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedPhaseType,
+                decoration: _buildInputDecoration(
+                    'Phase Type', Icons.electrical_services),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                items: const [
+                  DropdownMenuItem(
+                      value: 'single', child: Text('Single Phase')),
+                  DropdownMenuItem(value: 'three', child: Text('Three Phase')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPhaseType = value!;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Basic info fields section
+  Widget _buildBasicInfoFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _productIdController,
+                decoration:
+                    _buildInputDecoration('Product ID', Icons.inventory),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _locationController,
+                decoration:
+                    _buildInputDecoration('Location', Icons.location_on),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _buildingController,
+                decoration: _buildInputDecoration('Building', Icons.business),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _floorController,
+                decoration: _buildInputDecoration('Floor', Icons.layers),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _roomController,
+                decoration: _buildInputDecoration('Room', Icons.room),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Technical fields section
+  Widget _buildTechnicalFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _manufacturerController,
+                decoration:
+                    _buildInputDecoration('Manufacturer', Icons.factory),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _modelController,
+                decoration:
+                    _buildInputDecoration('Model', Icons.model_training),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _serialNumberController,
+                decoration:
+                    _buildInputDecoration('Serial Number', Icons.numbers),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _capacityController,
+                decoration:
+                    _buildInputDecoration('Capacity (e.g., 500L)', Icons.scale),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _targetTempMinController,
+                decoration: _buildInputDecoration(
+                    'Min Temperature (°C)', Icons.thermostat),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (double.tryParse(value) == null) {
+                      return 'Enter a valid number';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _targetTempMaxController,
+                decoration: _buildInputDecoration(
+                    'Max Temperature (°C)', Icons.thermostat),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (double.tryParse(value) == null) {
+                      return 'Enter a valid number';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Service fields section
+  Widget _buildServiceFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _installationDateController,
+                decoration: _buildInputDecoration(
+                    'Installation Date (YYYY-MM-DD)', Icons.build),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    try {
+                      DateTime.parse(value);
+                    } catch (e) {
+                      return 'Enter valid date (YYYY-MM-DD)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _warrantyExpiryController,
+                decoration: _buildInputDecoration(
+                    'Warranty Expiry (YYYY-MM-DD)', Icons.verified_user),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    try {
+                      DateTime.parse(value);
+                    } catch (e) {
+                      return 'Enter valid date (YYYY-MM-DD)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _lastServiceDateController,
+                decoration: _buildInputDecoration(
+                    'Last Service Date (YYYY-MM-DD)', Icons.handyman),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    try {
+                      DateTime.parse(value);
+                    } catch (e) {
+                      return 'Enter valid date (YYYY-MM-DD)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _nextServiceDateController,
+                decoration: _buildInputDecoration(
+                    'Next Service Date (YYYY-MM-DD)', Icons.schedule),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    try {
+                      DateTime.parse(value);
+                    } catch (e) {
+                      return 'Enter valid date (YYYY-MM-DD)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Unit connection fields section
+  Widget _buildUnitConnectionFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String?>(
+                value: _selectedUnitId,
+                decoration: _buildInputDecoration(
+                    'Connected Unit (Optional)', Icons.link),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('No Unit'),
+                  ),
+                  ...widget.availableUnits.map((unit) {
+                    return DropdownMenuItem<String>(
+                      value: unit.id,
+                      child: Text(unit.displayName),
+                    );
+                  }),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedUnitId = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAFAFA),
+                  borderRadius: BorderRadius.circular(36),
+                  border:
+                      Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.power_settings_new,
+                      color: _isActive
+                          ? Constants.ctaColorLight
+                          : const Color(0xFF6B7280),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Device Active',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                    ),
+                    Switch(
+                      value: _isActive,
+                      onChanged: (value) {
+                        setState(() {
+                          _isActive = value ?? true;
+                        });
+                      },
+                      activeColor: Constants.ctaColorLight,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   void dispose() {
+    // Required fields
     _nameController.dispose();
     _deviceIdController.dispose();
+
+    // Optional fields - Basic Info
+    _productIdController.dispose();
     _locationController.dispose();
+    _buildingController.dispose();
+    _floorController.dispose();
+    _roomController.dispose();
+
+    // Optional fields - Technical Info
+    _manufacturerController.dispose();
+    _modelController.dispose();
+    _serialNumberController.dispose();
+    _capacityController.dispose();
+    _targetTempMinController.dispose();
+    _targetTempMaxController.dispose();
+
+    // Optional fields - Service Info
+    _installationDateController.dispose();
+    _warrantyExpiryController.dispose();
+    _lastServiceDateController.dispose();
+    _nextServiceDateController.dispose();
+
     super.dispose();
   }
 }
 
-// Enhanced ApiService with unit operations
 class ApiService {
   static final String _baseUrl = Constants.articBaseUrl2;
 
@@ -4084,15 +4611,16 @@ class ApiService {
   static Future<bool> changeDeviceUnit(
       int businessId, int deviceId, String? unitId) async {
     final response = await http.post(
-      Uri.parse('${_baseUrl}api/devices/change-unit/'),
+      Uri.parse('${_baseUrl}api/devices/update/'),
       headers: await _getHeaders(),
       body: jsonEncode({
         "business_id": businessId,
         "device_id": deviceId,
-        "unit_id": unitId, // Can be null to disconnect
+        "connected_unit_id": unitId, // Can be null to disconnect
       }),
     );
-    print("dffdfgfg ${businessId} ${deviceId} ${unitId}}");
+    print(
+        "changeDeviceUnit: businessId=$businessId deviceId=$deviceId unitId=$unitId");
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -4142,5 +4670,1086 @@ class ApiService {
     } else {
       throw Exception('Failed to get devices by unit: ${response.body}');
     }
+  }
+}
+
+class AddDeviceDialog extends StatefulWidget {
+  final List<Unit> availableUnits;
+
+  const AddDeviceDialog({Key? key, required this.availableUnits})
+      : super(key: key);
+
+  @override
+  State<AddDeviceDialog> createState() => _AddDeviceDialogState();
+}
+
+class _AddDeviceDialogState extends State<AddDeviceDialog> {
+  final _formKey = GlobalKey<FormState>();
+  // Required fields
+  final _nameController = TextEditingController();
+  final _deviceIdController = TextEditingController();
+
+  // Optional fields - Basic Info
+  final _productIdController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _buildingController = TextEditingController();
+  final _floorController = TextEditingController();
+  final _roomController = TextEditingController();
+
+  // Optional fields - Technical Info
+  final _manufacturerController = TextEditingController();
+  final _modelController = TextEditingController();
+  final _serialNumberController = TextEditingController();
+  final _capacityController = TextEditingController();
+  final _targetTempMinController = TextEditingController();
+  final _targetTempMaxController = TextEditingController();
+
+  // Optional fields - Service Info
+  final _installationDateController = TextEditingController();
+  final _warrantyExpiryController = TextEditingController();
+  final _lastServiceDateController = TextEditingController();
+  final _nextServiceDateController = TextEditingController();
+
+  String? _selectedUnitId;
+  String _selectedDeviceType = 'chiller';
+  String _selectedPhaseType = 'single';
+  bool _isActive = true;
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 20,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.85,
+        height: MediaQuery.of(context).size.height * 0.9,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              // Modern Header with gradient
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Constants.ctaColorLight,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.add_circle_outline,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Add New Device',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: Colors.white.withOpacity(0.9),
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Scrollable form content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Required Fields Section
+                      _buildSectionHeader('Required Information',
+                          const Color(0xFFEF4444), Icons.star),
+                      const SizedBox(height: 20),
+                      _buildRequiredFields(),
+
+                      const SizedBox(height: 40),
+
+                      // Optional Basic Info Section
+                      _buildSectionHeader('Basic Information',
+                          const Color(0xFF3B82F6), Icons.info_outline),
+                      const SizedBox(height: 20),
+                      _buildBasicInfoFields(),
+
+                      const SizedBox(height: 40),
+
+                      // Technical Details Section
+                      _buildSectionHeader('Technical Details',
+                          const Color(0xFF10B981), Icons.engineering),
+                      const SizedBox(height: 20),
+                      _buildTechnicalFields(),
+
+                      const SizedBox(height: 40),
+
+                      // Service Information Section
+                      _buildSectionHeader('Service Information',
+                          const Color(0xFFF59E0B), Icons.build_circle_outlined),
+                      const SizedBox(height: 20),
+                      _buildServiceFields(),
+
+                      const SizedBox(height: 40),
+
+                      // Unit Connection Section
+                      _buildSectionHeader('Unit Connection',
+                          const Color(0xFF8B5CF6), Icons.link),
+                      const SizedBox(height: 20),
+                      _buildUnitConnectionFields(),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Modern Action buttons
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAFAFA),
+                  border: Border(
+                    top: BorderSide(
+                      color: const Color(0xFFE5E7EB),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFE5E7EB),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: TextButton(
+                        onPressed: _isLoading ? null : _resetForm,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Reset',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFE5E7EB),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: TextButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          colors: [
+                            Constants.ctaColorLight,
+                            Constants.ctaColorLight.withOpacity(0.8),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Constants.ctaColorLight.withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _addDevice,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          foregroundColor: Colors.white,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 32, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Adding...',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.add_rounded, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Add Device',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addDevice() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      int? businessId = await Sharedprefs.getBusinessUidSharedPreference();
+      if (businessId != null) {
+        Device newDevice = Device(
+          name: _nameController.text,
+          deviceId: _deviceIdController.text,
+          deviceType: _selectedDeviceType,
+          productId: _productIdController.text.isNotEmpty
+              ? _productIdController.text
+              : null,
+          location: _locationController.text.isNotEmpty
+              ? _locationController.text
+              : null,
+          building: _buildingController.text.isNotEmpty
+              ? _buildingController.text
+              : null,
+          floor:
+              _floorController.text.isNotEmpty ? _floorController.text : null,
+          room: _roomController.text.isNotEmpty ? _roomController.text : null,
+          manufacturer: _manufacturerController.text.isNotEmpty
+              ? _manufacturerController.text
+              : null,
+          model:
+              _modelController.text.isNotEmpty ? _modelController.text : null,
+          serialNumber: _serialNumberController.text.isNotEmpty
+              ? _serialNumberController.text
+              : null,
+          capacity: _capacityController.text.isNotEmpty
+              ? _capacityController.text
+              : null,
+          targetTempMin: _targetTempMinController.text.isNotEmpty
+              ? double.tryParse(_targetTempMinController.text)
+              : null,
+          targetTempMax: _targetTempMaxController.text.isNotEmpty
+              ? double.tryParse(_targetTempMaxController.text)
+              : null,
+          phaseType: _selectedPhaseType,
+          installationDate: _installationDateController.text.isNotEmpty
+              ? _installationDateController.text
+              : null,
+          warrantyExpiry: _warrantyExpiryController.text.isNotEmpty
+              ? _warrantyExpiryController.text
+              : null,
+          lastServiceDate: _lastServiceDateController.text.isNotEmpty
+              ? _lastServiceDateController.text
+              : null,
+          nextServiceDate: _nextServiceDateController.text.isNotEmpty
+              ? _nextServiceDateController.text
+              : null,
+          isActive: _isActive,
+        );
+
+        await ApiService.addDevice(businessId, newDevice, _selectedUnitId);
+
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Text(
+                  'Device added successfully',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Failed to add device: ${e.toString()}',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _resetForm() {
+    _formKey.currentState?.reset();
+    _nameController.clear();
+    _deviceIdController.clear();
+    _productIdController.clear();
+    _locationController.clear();
+    _buildingController.clear();
+    _floorController.clear();
+    _roomController.clear();
+    _manufacturerController.clear();
+    _modelController.clear();
+    _serialNumberController.clear();
+    _capacityController.clear();
+    _targetTempMinController.clear();
+    _targetTempMaxController.clear();
+    _installationDateController.clear();
+    _warrantyExpiryController.clear();
+    _lastServiceDateController.clear();
+    _nextServiceDateController.clear();
+    setState(() {
+      _selectedUnitId = null;
+      _selectedDeviceType = 'chiller';
+      _selectedPhaseType = 'single';
+      _isActive = true;
+    });
+  }
+
+  // Helper method to build modern section headers
+  Widget _buildSectionHeader(String title, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF1F2937),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Modern text form field styling
+  InputDecoration _buildInputDecoration(
+      String label, IconData icon, Color iconColor) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: iconColor, size: 20),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+      ),
+      filled: true,
+      fillColor: const Color(0xFFFAFAFA),
+      labelStyle: GoogleFonts.inter(
+        fontSize: 14,
+        color: const Color(0xFF6B7280),
+        fontWeight: FontWeight.w500,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+
+  // Required fields section
+  Widget _buildRequiredFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _nameController,
+                decoration: _buildInputDecoration(
+                    'Device Name *', Icons.devices, const Color(0xFFEF4444)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter device name';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _deviceIdController,
+                decoration: _buildInputDecoration(
+                    'Device ID *', Icons.qr_code, const Color(0xFFEF4444)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter device ID';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedDeviceType,
+                decoration: _buildInputDecoration(
+                    'Device Type *', Icons.category, const Color(0xFFEF4444)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                items: const [
+                  DropdownMenuItem(value: 'chiller', child: Text('Chiller')),
+                  DropdownMenuItem(value: 'freezer', child: Text('Freezer')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedDeviceType = value!;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a device type';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedPhaseType,
+                decoration: _buildInputDecoration('Phase Type',
+                    Icons.electrical_services, const Color(0xFF3B82F6)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                items: const [
+                  DropdownMenuItem(
+                      value: 'single', child: Text('Single Phase')),
+                  DropdownMenuItem(value: 'three', child: Text('Three Phase')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPhaseType = value!;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Basic info fields section
+  Widget _buildBasicInfoFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _productIdController,
+                decoration: _buildInputDecoration(
+                    'Product ID', Icons.inventory, const Color(0xFF3B82F6)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (!RegExp(r'^[A-Za-z0-9-]+$').hasMatch(value)) {
+                      return 'Enter a valid product ID (alphanumeric or hyphens)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _locationController,
+                decoration: _buildInputDecoration(
+                    'Location', Icons.location_on, const Color(0xFF3B82F6)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _buildingController,
+                decoration: _buildInputDecoration(
+                    'Building', Icons.business, const Color(0xFF3B82F6)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _floorController,
+                decoration: _buildInputDecoration(
+                    'Floor', Icons.layers, const Color(0xFF3B82F6)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (!RegExp(r'^-?\d+$').hasMatch(value)) {
+                      return 'Enter a valid floor number';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _roomController,
+                decoration: _buildInputDecoration(
+                    'Room', Icons.room, const Color(0xFF3B82F6)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Technical fields section
+  Widget _buildTechnicalFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _manufacturerController,
+                decoration: _buildInputDecoration(
+                    'Manufacturer', Icons.factory, const Color(0xFF10B981)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _modelController,
+                decoration: _buildInputDecoration(
+                    'Model', Icons.model_training, const Color(0xFF10B981)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _serialNumberController,
+                decoration: _buildInputDecoration(
+                    'Serial Number', Icons.numbers, const Color(0xFF10B981)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (!RegExp(r'^[A-Za-z0-9-]+$').hasMatch(value)) {
+                      return 'Enter a valid serial number (alphanumeric or hyphens)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _capacityController,
+                decoration: _buildInputDecoration('Capacity (e.g., 500L)',
+                    Icons.scale, const Color(0xFF10B981)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (!RegExp(r'^\d+(\.\d+)?[A-Za-z]+$').hasMatch(value)) {
+                      return 'Enter a valid capacity (e.g., 500L)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _targetTempMinController,
+                decoration: _buildInputDecoration('Min Temperature (°C)',
+                    Icons.thermostat, const Color(0xFF10B981)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (double.tryParse(value) == null) {
+                      return 'Enter a valid number';
+                    }
+                    if (_targetTempMaxController.text.isNotEmpty) {
+                      final minTemp = double.tryParse(value);
+                      final maxTemp =
+                          double.tryParse(_targetTempMaxController.text);
+                      if (minTemp != null &&
+                          maxTemp != null &&
+                          minTemp > maxTemp) {
+                        return 'Min temperature cannot exceed max';
+                      }
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _targetTempMaxController,
+                decoration: _buildInputDecoration('Max Temperature (°C)',
+                    Icons.thermostat, const Color(0xFF10B981)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    if (double.tryParse(value) == null) {
+                      return 'Enter a valid number';
+                    }
+                    if (_targetTempMinController.text.isNotEmpty) {
+                      final minTemp =
+                          double.tryParse(_targetTempMinController.text);
+                      final maxTemp = double.tryParse(value);
+                      if (minTemp != null &&
+                          maxTemp != null &&
+                          maxTemp < minTemp) {
+                        return 'Max temperature cannot be less than min';
+                      }
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Service fields section
+  Widget _buildServiceFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _installationDateController,
+                decoration: _buildInputDecoration(
+                    'Installation Date', Icons.build, const Color(0xFFF59E0B)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                readOnly: true,
+                onTap: () => _selectDate(context, _installationDateController),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    try {
+                      DateTime.parse(value);
+                    } catch (e) {
+                      return 'Enter valid date (YYYY-MM-DD)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _warrantyExpiryController,
+                decoration: _buildInputDecoration('Warranty Expiry',
+                    Icons.verified_user, const Color(0xFFF59E0B)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                readOnly: true,
+                onTap: () => _selectDate(context, _warrantyExpiryController),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    try {
+                      DateTime.parse(value);
+                      if (_installationDateController.text.isNotEmpty) {
+                        final installDate =
+                            DateTime.parse(_installationDateController.text);
+                        final expiryDate = DateTime.parse(value);
+                        if (expiryDate.isBefore(installDate)) {
+                          return 'Warranty expiry cannot be before installation';
+                        }
+                      }
+                    } catch (e) {
+                      return 'Enter valid date (YYYY-MM-DD)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _lastServiceDateController,
+                decoration: _buildInputDecoration('Last Service Date',
+                    Icons.handyman, const Color(0xFFF59E0B)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                readOnly: true,
+                onTap: () => _selectDate(context, _lastServiceDateController),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    try {
+                      DateTime.parse(value);
+                    } catch (e) {
+                      return 'Enter valid date (YYYY-MM-DD)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: TextFormField(
+                controller: _nextServiceDateController,
+                decoration: _buildInputDecoration('Next Service Date',
+                    Icons.schedule, const Color(0xFFF59E0B)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                readOnly: true,
+                onTap: () => _selectDate(context, _nextServiceDateController),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    try {
+                      DateTime.parse(value);
+                      if (_lastServiceDateController.text.isNotEmpty) {
+                        final lastService =
+                            DateTime.parse(_lastServiceDateController.text);
+                        final nextService = DateTime.parse(value);
+                        if (nextService.isBefore(lastService)) {
+                          return 'Next service cannot be before last service';
+                        }
+                      }
+                    } catch (e) {
+                      return 'Enter valid date (YYYY-MM-DD)';
+                    }
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Unit connection fields section
+  Widget _buildUnitConnectionFields() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String?>(
+                value: _selectedUnitId,
+                decoration: _buildInputDecoration('Connected Unit (Optional)',
+                    Icons.link, const Color(0xFF8B5CF6)),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('No Unit'),
+                  ),
+                  ...widget.availableUnits.map((unit) {
+                    return DropdownMenuItem<String>(
+                      value: unit.id,
+                      child: Text(unit.displayName),
+                    );
+                  }),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedUnitId = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAFAFA),
+                  borderRadius: BorderRadius.circular(12),
+                  border:
+                      Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.power_settings_new,
+                      color: _isActive
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFF6B7280),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Device Active',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                    ),
+                    Switch(
+                      value: _isActive,
+                      onChanged: (value) {
+                        setState(() {
+                          _isActive = value;
+                        });
+                      },
+                      activeColor: Constants.ctaColorLight,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Date picker helper method
+  Future<void> _selectDate(
+      BuildContext context, TextEditingController controller) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Constants.ctaColorLight,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        controller.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _deviceIdController.dispose();
+    _productIdController.dispose();
+    _locationController.dispose();
+    _buildingController.dispose();
+    _floorController.dispose();
+    _roomController.dispose();
+    _manufacturerController.dispose();
+    _modelController.dispose();
+    _serialNumberController.dispose();
+    _capacityController.dispose();
+    _targetTempMinController.dispose();
+    _targetTempMaxController.dispose();
+    _installationDateController.dispose();
+    _warrantyExpiryController.dispose();
+    _lastServiceDateController.dispose();
+    _nextServiceDateController.dispose();
+    super.dispose();
   }
 }
