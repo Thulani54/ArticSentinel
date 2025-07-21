@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArticSentinel - Activity Tracking Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .select-container {
+            position: relative;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            padding: 8px 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .select-container select {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .date-container {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            padding: 8px 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .date-container:hover {
+            border-color: #4CAF50;
+        }
+
+        .date-label {
+            font-size: 10px;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .date-value {
+            font-size: 12px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .dashboard {
+            display: grid;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid;
+        }
+
+        .stat-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .stat-subtitle {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 16px;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: #666;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #ffcdd2;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            color: white;
+            margin-left: auto;
+        }
+
+        .status-running {
+            background: #4CAF50;
+        }
+
+        .status-stopped {
+            background: #9E9E9E;
+        }
+
+        .health-excellent { background: #4CAF50; }
+        .health-good { background: #8BC34A; }
+        .health-fair { background: #FF9800; }
+        .health-poor { background: #F44336; }
+
+        .urgency-low { background: #4CAF50; }
+        .urgency-medium { background: #FF9800; }
+        .urgency-high { background: #FF5722; }
+        .urgency-critical { background: #F44336; }
+
+        .temp-blue { background: #2196F3; }
+        .temp-orange { background: #FF9800; }
+        .temp-green { background: #4CAF50; }
+        .temp-purple { background: #9C27B0; }
+        .temp-cyan { background: #00BCD4; }
+        .temp-teal { background: #009688; }
+        .temp-amber { background: #FFC107; }
+        .temp-red { background: #F44336; }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid #e0e0e0;
+        }
+
+        .legend-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .control-row {
+                flex-direction: column;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .legend {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="control-row">
+                <div class="control-item">
+                    <div class="select-container">
+                        <select id="deviceSelect">
+                            <option value="">Select Device</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="control-item">
+                    <div class="date-container" onclick="selectDate('start')">
+                        <div class="date-label">Start Date</div>
+                        <div class="date-value" id="startDate">2024-01-01</div>
+                    </div>
+                </div>
+                
+                <div class="control-item">
+                    <div class="date-container" onclick="selectDate('end')">
+                        <div class="date-label">End Date</div>
+                        <div class="date-value" id="endDate">2024-01-07</div>
+                    </div>
+                </div>
+                
+                <button class="refresh-btn" onclick="loadAnalytics()">
+                    <span>🔄</span> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard" class="dashboard">
+            <div class="loading">Loading analytics...</div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let devices = [];
+        let selectedDevice = null;
+        let analyticsData = null;
+        let startDate = new Date();
+        startDate.setDate(startDate.getDate() - 7);
+        let endDate = new Date();
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateDisplay();
+            loadDevices();
+        });
+
+        // Update date display
+        function updateDateDisplay() {
+            document.getElementById('startDate').textContent = formatDate(startDate);
+            document.getElementById('endDate').textContent = formatDate(endDate);
+        }
+
+        // Format date for display
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        // Select date
+        function selectDate(type) {
+            const input = document.createElement('input');
+            input.type = 'date';
+            input.value = type === 'start' ? formatDate(startDate) : formatDate(endDate);
+            
+            input.onchange = function() {
+                const newDate = new Date(this.value);
+                if (type === 'start') {
+                    startDate = newDate;
+                } else {
+                    endDate = newDate;
+                }
+                updateDateDisplay();
+                if (selectedDevice) {
+                    loadAnalytics();
+                }
+            };
+            
+            input.click();
+        }
+
+        // Load devices
+        async function loadDevices() {
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                devices = [
+                    { id: 1, deviceId: 'device001', name: 'Freezer Unit 1' },
+                    { id: 2, deviceId: 'device002', name: 'Freezer Unit 2' },
+                    { id: 3, deviceId: 'device003', name: 'Refrigerator Unit 1' }
+                ];
+                
+                populateDeviceSelect();
+                
+                if (devices.length > 0) {
+                    selectedDevice = devices[0];
+                    loadAnalytics();
+                }
+            } catch (error) {
+                showError('Failed to load devices: ' + error.message);
+            }
+        }
+
+        // Populate device select
+        function populateDeviceSelect() {
+            const select = document.getElementById('deviceSelect');
+            select.innerHTML = '<option value="">Select Device</option>';
+            
+            devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.textContent = device.name;
+                select.appendChild(option);
+            });
+            
+            select.onchange = function() {
+                selectedDevice = devices.find(d => d.deviceId === this.value);
+                if (selectedDevice) {
+                    loadAnalytics();
+                }
+            };
+        }
+
+        // Load analytics
+        async function loadAnalytics() {
+            if (!selectedDevice) return;
+            
+            showLoading();
+            
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                analyticsData = generateMockAnalytics();
+                renderDashboard();
+            } catch (error) {
+                showError('Failed to load analytics: ' + error.message);
+            }
+        }
+
+        // Show loading state
+        function showLoading() {
+            document.getElementById('dashboard').innerHTML = '<div class="loading">Loading analytics...</div>';
+        }
+
+        // Show error
+        function showError(message) {
+            document.getElementById('dashboard').innerHTML = `<div class="error">Error: ${message}</div>`;
+        }
+
+        // Generate mock analytics data
+        function generateMockAnalytics() {
+            return {
+                realTimeInsights: {
+                    deviceHealthScore: {
+                        overallScore: 85,
+                        healthGrade: 'B',
+                        contributingFactors: ['Temperature stability', 'Power efficiency'],
+                        recommendation: 'Monitor temperature fluctuations'
+                    },
+                    efficiencyRating: {
+                        efficiencyScore: 78,
+                        efficiencyGrade: 'Good',
+                        avgDutyCycle: 65.2,
+                        avgPowerPerDegree: 2.1,
+                        annualCostEstimate: 1250
+                    },
+                    maintenanceUrgency: {
+                        urgencyLevel: 'Low',
+                        urgencyScore: 15,
+                        totalAlerts: 2,
+                        alertBreakdown: { temperature: 1, pressure: 1 },
+                        recommendedAction: 'Routine maintenance scheduled'
+                    },
+                    energyCostEstimate: {
+                        currentPowerKw: 3.2,
+                        avgPowerKw: 2.8,
+                        hourlyCostUsd: 0.32,
+                        dailyCostUsd: 7.68,
+                        monthlyCostUsd: 230.4,
+                        annualCostUsd: 2764.8,
+                        costPerKwh: 0.12
+                    }
+                },
+                enhancedTemperatureAnalytics: {
+                    minTemperature: -18.5,
+                    maxTemperature: -12.3,
+                    avgTemperature: -15.2,
+                    temperatureVariance: 2.1,
+                    totalReadings: 1440,
+                    minTempTimestamp: '2024-01-05T02:30:00Z',
+                    maxTempTimestamp: '2024-01-06T14:15:00Z',
+                    minAirTemperature: -19.2,
+                    maxAirTemperature: -11.8,
+                    avgAirTemperature: -15.1,
+                    minDrainTemperature: -20.1,
+                    maxDrainTemperature: -10.5,
+                    avgDrainTemperature: -16.3
+                },
+                enhancedPressureAnalytics: {
+                    minPressureLow: 25.4,
+                    maxPressureLow: 35.2,
+                    minPressureHigh: 180.5,
+                    maxPressureHigh: 220.8,
+                    avgPressureLow: 30.1,
+                    avgPressureHigh: 200.2,
+                    avgPressureDifferential: 170.1,
+                    totalReadings: 1440
+                },
+                enhancedCompressorAnalytics: {
+                    currentStatus: {
+                        isRunning: true,
+                        currentTotalAmps: 12.5
+                    },
+                    analytics: {
+                        minTotalAmps: 0.2,
+                        maxTotalAmps: 15.8,
+                        avgTotalAmps: 8.3,
+                        avgAmpsWhenRunning: 12.1,
+                        currentStateDurationMinutes: 45.2
+                    },
+                    statistics: {
+                        dutyCyclePercentage: 65.2,
+                        totalStartCycles: 28
+                    }
+                },
+                peakPerformanceAnalytics: {
+                    peakPowerConsumption: 15.8,
+                    lowestTemperatureReached: -19.2,
+                    highestTemperatureReached: -11.8
+                }
+            };
+        }
+
+        // Render dashboard
+        function renderDashboard() {
+            const dashboard = document.getElementById('dashboard');
+            
+            dashboard.innerHTML = `
+                ${renderRealTimeInsights()}
+                ${renderPeakPerformance()}
+                ${renderTemperatureDetails()}
+                ${renderPressureDetails()}
+                ${renderCompressorDetails()}
+                ${renderCharts()}
+            `;
+            
+            // Initialize charts
+            initializeCharts();
+        }
+
+        // Render real-time insights
+        function renderRealTimeInsights() {
+            const insights = analyticsData.realTimeInsights;
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon temp-blue">📊</div>
+                        <div class="card-title">Real-Time Device Insights</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card" style="border-color: #4CAF50; background: rgba(76, 175, 80, 0.1);">
+                            <div class="stat-title" style="color: #4CAF50;">Health Score</div>
+                            <div class="stat-value">${insights.deviceHealthScore.overallScore}/100</div>
+                            <div class="stat-subtitle">${insights.deviceHealthScore.healthGrade}</div>
+                        </div>
+                        <div class="stat-card" style="border-color: #2196F3; background: rgba(33, 150, 243, 0.1);">
+                            <div class="stat-title" style="color: #2196F3;">Efficiency</div>
+                            <div class="stat-value">${insights.efficiencyRating.efficiencyScore}/100</div>
+                            <div class="stat-subtitle">${insights.efficiencyRating.efficiencyGrade}</div>
+                        </div>
+                        <div class="stat-card" style="border-color: #FF9800; background: rgba(255, 152, 0, 0.1);">
+                            <div class="stat-title" style="color: #FF9800;">Maintenance</div>
+                            <div class="stat-value">${insights.maintenanceUrgency.totalAlerts} alerts</div>
+                            <div class="stat-subtitle">${insights.maintenanceUrgency.urgencyLevel}</div>
+                        </div>
+                        <div class="stat-card" style="border-color: #4CAF50; background: rgba(76, 175, 80, 0.1);">
+                            <div class="stat-title" style="color: #4CAF50;">Annual Cost</div>
+                            <div class="stat-value">$${insights.energyCostEstimate.annualCostUsd.toFixed(0)}</div>
+                            <div class="stat-subtitle">Estimated</div>
+                        </div>
+                    </div>
+                    ${insights.maintenanceUrgency.recommendedAction ? `
+                        <div style="background: rgba(255, 152, 0, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 152, 0, 0.3); margin-top: 12px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="color: #FF9800;">ℹ️</span>
+                                <span style="font-size: 12px; font-weight: 500;">${insights.maintenanceUrgency.recommendedAction}</span>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Render peak performance
+        function renderPeakPerformance() {
+            const peak = analyticsData.peakPerformanceAnalytics;
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon temp-purple">🏆</div>
+                        <div class="card-title">Peak Performance Summary</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card" style="border-color: #9E9E9E; background: rgba(158, 158, 158, 0.1);">
+                            <div class="stat-title" style="color: #9E9E9E;">Peak Power</div>
+                            <div class="stat-value">${peak.peakPowerConsumption.toFixed(1)} A</div>
+                        </div>
+                        <div class="stat-card" style="border-color: #9E9E9E; background: rgba(158, 158, 158, 0.1);">
+                            <div class="stat-title" style="color: #9E9E9E;">Lowest Temp</div>
+                            <div class="stat-value">${peak.lowestTemperatureReached.toFixed(1)}°C</div>
+                        </div>
+                        <div class="stat-card" style="border-color: #9E9E9E; background: rgba(158, 158, 158, 0.1);">
+                            <div class="stat-title" style="color: #9E9E9E;">Highest Temp</div>
+                            <div class="stat-value">${peak.highestTemperatureReached.toFixed(1)}°C</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render temperature details
+        function renderTemperatureDetails() {
+            const temp = analyticsData.enhancedTemperatureAnalytics;
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon temp-blue">🌡️</div>
+                        <div class="card-title">Temperature Analysis</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card" style="border-color: #2196F3; background: rgba(33, 150, 243, 0.1);">
+                            <div class="stat-title" style="color: #2196F3;">Lowest Air Temperature</div>
+                            <div class="stat-value">${temp.minTemperature.toFixed(3)}°C</div>
+                            <div class="stat-subtitle">Time: ${formatTimestamp(temp.minTempTimestamp)}</div>
+                        </div>
+                        <div class="stat-card" style="border-color: #FF9800; background: rgba(255, 152, 0, 0.1);">
+                            <div class="stat-title" style="color: #FF9800;">Highest Air Temperature</div>
+                            <div class="stat-value">${temp.maxTemperature.toFixed(3)}°C</div>
+                            <div class="stat-subtitle">Time: ${formatTimestamp(temp.maxTempTimestamp)}</div>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card" style="border-color: #00BCD4; background: rgba(0, 188, 212, 0.1);">
+                            <div class="stat-title" style="color: #00BCD4;">Air Temperature Range</div>
+                            <div class="stat-value">${temp.minAirTemperature.toFixed(1)}°C - ${temp.maxAirTemperature.toFixed(1)}°C</div>
+                            <div class="stat-subtitle">Avg: ${temp.avgAirTemperature.toFixed(1)}°C</div>
+                        </div>
+                        <div class="stat-card" style="border-color: #009688; background: rgba(0, 150, 136, 0.1);">
+                            <div class="stat-title" style="color: #009688;">Drain Temperature Range</div>
+                            <div class="stat-value">${temp.minDrainTemperature.toFixed(1)}°C - ${temp.maxDrainTemperature.toFixed(1)}°C</div>
+                            <div class="stat-subtitle">Avg: ${temp.avgDrainTemperature.toFixed(1)}°C</div>
+                        </div>
+                    </div>
+                    <div style="background: #fafafa; padding: 8px; border-radius: 6px; margin-top: 12px;">
+                        <div style="display: flex; justify-content: space-around; text-align: center;">
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Average</div>
+                                <div style="font-size: 12px; font-weight: 600;">${temp.avgTemperature.toFixed(2)}°C</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Variance</div>
+                                <div style="font-size: 12px; font-weight: 600;">${temp.temperatureVariance.toFixed(2)}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Total Readings</div>
+                                <div style="font-size: 12px; font-weight: 600;">${temp.totalReadings}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render pressure details
+        function renderPressureDetails() {
+            const pressure = analyticsData.enhancedPressureAnalytics;
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon temp-purple">⚡</div>
+                        <div class="card-title">Pressure Analysis</div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card" style="border-color: #2196F3; background: rgba(33, 150, 243, 0.1);">
+                            <div class="stat-title" style="color: #2196F3;">Low Pressure Range</div>
+                            <div class="stat-value">${pressure.minPressureLow.toFixed(1)} - ${pressure.maxPressureLow.toFixed(1)} PSI</div>
+                            <div class="stat-subtitle">Avg: ${pressure.avgPressureLow.toFixed(1)} PSI</div>
+                        </div>
+                        <div class="stat-card" style="border-color: #F44336; background: rgba(244, 67, 54, 0.1);">
+                            <div class="stat-title" style="color: #F44336;">High Pressure Range</div>
+                            <div class="stat-value">${pressure.minPressureHigh.toFixed(1)} - ${pressure.maxPressureHigh.toFixed(1)} PSI</div>
+                            <div class="stat-subtitle">Avg: ${pressure.avgPressureHigh.toFixed(1)} PSI</div>
+                        </div>
+                    </div>
+                    <div style="background: #fafafa; padding: 8px; border-radius: 6px; margin-top: 12px;">
+                        <div style="display: flex; justify-content: space-around; text-align: center;">
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Differential</div>
+                                <div style="font-size: 12px; font-weight: 600;">${pressure.avgPressureDifferential.toFixed(1)} PSI</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Total Readings</div>
+                                <div style="font-size: 12px; font-weight: 600;">${pressure.totalReadings}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render compressor details
+        function renderCompressorDetails() {
+            const enhanced = analyticsData.enhancedCompressorAnalytics;
+            const status = enhanced.currentStatus;
+            const analytics = enhanced.analytics;
+            const stats = enhanced.statistics;
+            
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon temp-green">⚙️</div>
+                        <div class="card-title">Compressor Analysis</div>
+                        <div class="status-badge ${status.isRunning ? 'status-running' : 'status-stopped'}">
+                            ${status.isRunning ? 'RUNNING' : 'STOPPED'}
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card" style="border-color: #4CAF50; background: rgba(76, 175, 80, 0.1);">
+                            <div class="stat-title" style="color: #4CAF50;">Duty Cycle</div>
+                            <div class="stat-value">${stats.dutyCyclePercentage.toFixed(1)}%</div>
+                            <div class="stat-subtitle">Total cycles: ${stats.totalStartCycles}</div>
+                        </div>
+                        <div class="stat-card" style="border-color: #2196F3; background: rgba(33, 150, 243, 0.1);">
+                            <div class="stat-title" style="color: #2196F3;">Current Amps</div>
+                            <div class="stat-value">${status.currentTotalAmps.toFixed(1)}A</div>
+                            <div class="stat-subtitle">Avg when running: ${analytics.avgAmpsWhenRunning.toFixed(1)}A</div>
+                        </div>
+                    </div>
+                    <div style="background: rgba(255, 152, 0, 0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 152, 0, 0.3); margin-top: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="color: #FF9800;">⏱️</span>
+                            <span style="font-size: 14px; font-weight: 600; color: #FF9800;">Runtime Information</span>
+                        </div>
+                        <div style="font-size: 12px; color: #666;">
+                            Current state duration: ${analytics.currentStateDurationMinutes.toFixed(1)} minutes
+                        </div>
+                    </div>
+                    <div style="background: #fafafa; padding: 8px; border-radius: 6px; margin-top: 12px;">
+                        <div style="display: flex; justify-content: space-around; text-align: center;">
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Min Amps</div>
+                                <div style="font-size: 12px; font-weight: 600;">${analytics.minTotalAmps.toFixed(1)}A</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Max Amps</div>
+                                <div style="font-size: 12px; font-weight: 600;">${analytics.maxTotalAmps.toFixed(1)}A</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Avg Amps</div>
+                                <div style="font-size: 12px; font-weight: 600;">${analytics.avgTotalAmps.toFixed(1)}A</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render charts
+        function renderCharts() {
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon temp-blue">📈</div>
+                        <div class="card-title">Temperature Trends</div>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #2196F3;"></div>
+                            <div class="legend-label">Temperature</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FF9800;"></div>
+                            <div class="legend-label">Air Temp</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #4CAF50;"></div>
+                            <div class="legend-label">Coil Temp</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="temperatureChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon temp-red">⚡</div>
+                        <div class="card-title">Power Consumption</div>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #F44336;"></div>
+                            <div class="legend-label">Total Power</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="powerChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon temp-green">⚙️</div>
+                        <div class="card-title">Compressor Performance</div>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #4CAF50;"></div>
+                            <div class="legend-label">Compressor On Count</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="compressorChart"></canvas>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            // Temperature Chart
+            const tempCtx = document.getElementById('temperatureChart').getContext('2d');
+            new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: 'Temperature',
+                        data: [-15.2, -16.1, -14.8, -13.9, -15.5, -16.3],
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Air Temp',
+                        data: [-15.1, -16.0, -14.7, -13.8, -15.4, -16.2],
+                        borderColor: '#FF9800',
+                        backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Coil Temp',
+                        data: [-16.3, -17.2, -15.9, -15.0, -16.6, -17.4],
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Power Chart
+            const powerCtx = document.getElementById('powerChart').getContext('2d');
+            new Chart(powerCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: 'Total Power',
+                        data: [2.8, 3.1, 2.9, 3.2, 2.7, 3.0],
+                        borderColor: '#F44336',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Power (kW)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Compressor Chart
+            const compCtx = document.getElementById('compressorChart').getContext('2d');
+            new Chart(compCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: 'Compressor On Count',
+                        data: [45, 52, 38, 61, 42, 48],
+                        backgroundColor: '#4CAF50',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Format timestamp
+        function formatTimestamp(isoString) {
+            if (!isoString) return 'Unknown';
+            try {
+                const date = new Date(isoString);
+                return `${date.getDate()}/${date.getMonth() + 1} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            } catch (e) {
+                return 'Invalid Date';
+            }
+        }
+    </script>
+</body>
+</html> 
