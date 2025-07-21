@@ -216,6 +216,7 @@ class DailyAggregate {
 
   // Door analysis
   final int? doorOpenCount;
+  final int? doorClosedCount;
   final double? totalDoorOpenMinutes;
   final String? doorStabilityStatus;
 
@@ -241,6 +242,7 @@ class DailyAggregate {
 
   // Compressor runtime
   final int? compressorOnCount;
+  final int? compressorOffCount;
   final double? compressorRuntimePercentage;
 
   // Data quality metrics
@@ -286,6 +288,7 @@ class DailyAggregate {
     this.maxTemp,
     this.iceEvents,
     this.doorOpenCount,
+    this.doorClosedCount,
     this.totalDoorOpenMinutes,
     this.doorStabilityStatus,
     this.avgCompAmp,
@@ -304,6 +307,7 @@ class DailyAggregate {
     this.minHighSidePressureTimestamp,
     this.maxHighSidePressureTimestamp,
     this.compressorOnCount,
+    this.compressorOffCount,
     this.compressorRuntimePercentage,
     this.totalReadings,
     this.validTempAirReadings,
@@ -370,6 +374,7 @@ class DailyAggregate {
 
       // Door analysis
       doorOpenCount: json['door_open_count'],
+      doorClosedCount: json['door_closed_count'],
       totalDoorOpenMinutes: json['total_door_open_minutes']?.toDouble(),
       doorStabilityStatus: json['door_stability_status'],
 
@@ -407,6 +412,7 @@ class DailyAggregate {
 
       // Runtime - Note: compressor_on_count is missing from JSON response
       compressorOnCount: json['compressor_on_count'],
+      compressorOffCount: json['compressor_off_count'],
       compressorRuntimePercentage:
           json['compressor_runtime_percentage']?.toDouble(),
 

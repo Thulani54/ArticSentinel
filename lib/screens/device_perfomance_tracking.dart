@@ -437,6 +437,7 @@ class CompressorStatistics {
   final int totalReadings;
   final double dutyCyclePercentage;
   final int totalStartCycles;
+  final int totalStopCycles;
   final double avgRunningAmps;
   final double ampVarianceWhenRunning;
 
@@ -446,6 +447,7 @@ class CompressorStatistics {
     required this.totalReadings,
     required this.dutyCyclePercentage,
     required this.totalStartCycles,
+    required this.totalStopCycles,
     required this.avgRunningAmps,
     required this.ampVarianceWhenRunning,
   });
@@ -457,6 +459,7 @@ class CompressorStatistics {
       totalReadings: json['total_readings'] ?? 0,
       dutyCyclePercentage: (json['duty_cycle_percentage'] ?? 0.0).toDouble(),
       totalStartCycles: json['total_start_cycles'] ?? 0,
+      totalStopCycles: json['total_stop_cycles'] ?? 0,
       avgRunningAmps: (json['avg_running_amps'] ?? 0.0).toDouble(),
       ampVarianceWhenRunning:
           (json['amp_variance_when_running'] ?? 0.0).toDouble(),
@@ -675,6 +678,7 @@ class CompressorAnalytics {
   final List<double> avgPressureLow;
   final List<double> avgPressureHigh;
   final List<int> compressorOnCount;
+  final List<int> compressorOffCount;
   final List<int> totalReadings;
 
   CompressorAnalytics({
@@ -686,6 +690,7 @@ class CompressorAnalytics {
     required this.avgPressureLow,
     required this.avgPressureHigh,
     required this.compressorOnCount,
+    required this.compressorOffCount,
     required this.totalReadings,
   });
 
@@ -706,6 +711,8 @@ class CompressorAnalytics {
           json['avg_pressure_high'], (e) => (e as num).toDouble()),
       compressorOnCount: _fromDynamicList(
           json['compressor_on_count'], (e) => (e as num).toInt()),
+      compressorOffCount: _fromDynamicList(
+          json['compressor_off_count'], (e) => (e as num).toInt()),
       totalReadings:
           _fromDynamicList(json['total_readings'], (e) => (e as num).toInt()),
     );
@@ -2368,19 +2375,43 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             ),
             const SizedBox(height: 20),
 
-            // Compressor metrics
+            // Compressor metrics - First row
             Row(
               children: [
                 _buildMetricCard(
-                  'Duty Cycle',
-                  '${enhanced.statistics.dutyCyclePercentage.toStringAsFixed(1)}%',
-                  '${enhanced.statistics.totalStartCycles} total cycles',
+                  'Start Cycles',
+                  '${enhanced.statistics.totalStartCycles}',
+                  'Compressor start events',
                 ),
                 const SizedBox(width: 12),
+                _buildMetricCard(
+                  'Stop Cycles',
+                  '${enhanced.statistics.totalStopCycles}',
+                  'Compressor stop events',
+                ),
+                const SizedBox(width: 12),
+                _buildMetricCard(
+                  'Duty Cycle',
+                  '${enhanced.statistics.dutyCyclePercentage.toStringAsFixed(1)}%',
+                  'Runtime percentage',
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Second row - Load and readings
+            Row(
+              children: [
                 _buildMetricCard(
                   'Current Load',
                   '${status.currentTotalAmps.toStringAsFixed(1)}A',
                   'Running avg: ${analytics.avgAmpsWhenRunning.toStringAsFixed(1)}A',
+                ),
+                const SizedBox(width: 12),
+                _buildMetricCard(
+                  'On Readings',
+                  '${enhanced.statistics.totalOnReadings}',
+                  'Off: ${enhanced.statistics.totalOffReadings}',
                 ),
                 const SizedBox(width: 12),
                 _buildMetricCard(
@@ -2837,9 +2868,21 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             ),
             const SizedBox(height: 20),
 
-            // Main door metrics
+            // Main door metrics - First row
             Row(
               children: [
+                _buildMetricCard(
+                  'Total Opens',
+                  '${doorData.doorOpenCount.fold(0, (sum, count) => sum + count)}',
+                  'Avg: ${(doorData.doorOpenCount.fold(0, (sum, count) => sum + count) / doorData.doorOpenCount.length).toStringAsFixed(1)}/period',
+                ),
+                const SizedBox(width: 12),
+                _buildMetricCard(
+                  'Total Closes',
+                  '${doorData.doorClosedCount.fold(0, (sum, count) => sum + count)}',
+                  'Avg: ${(doorData.doorClosedCount.fold(0, (sum, count) => sum + count) / doorData.doorClosedCount.length).toStringAsFixed(1)}/period',
+                ),
+                const SizedBox(width: 12),
                 _buildMetricCard(
                   'Total Open Time',
                   totalDoorOpenTime > 60
@@ -2847,18 +2890,22 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       : '${totalDoorOpenTime.toStringAsFixed(1)} minutes',
                   'Avg: ${avgOpenPercentage.toStringAsFixed(1)}% open',
                 ),
-                const SizedBox(width: 12),
+              ],
+            ),
+            const SizedBox(height: 12),
+            
+            // Second row
+            Row(
+              children: [
                 _buildMetricCard(
                   'Longest Opening',
                   '${(longestDoorOpenTime / 60).toStringAsFixed(1)} minutes',
                   'Time: ${_formatTimestamp(longestDoorOpenTimestamp)}',
                 ),
                 const SizedBox(width: 12),
-                _buildMetricCard(
-                  'Total Opens',
-                  '${doorData.doorOpenCount.fold(0, (sum, count) => sum + count)}',
-                  'Avg: ${(doorData.doorOpenCount.fold(0, (sum, count) => sum + count) / doorData.doorOpenCount.length).toStringAsFixed(1)}/period',
-                ),
+                // Add some padding to balance the row
+                Expanded(child: Container()),
+                Expanded(child: Container()),
               ],
             ),
             const SizedBox(height: 16),
@@ -5356,7 +5403,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildLegendItem(Colors.green, 'Compressor On Count'),
+                _buildLegendItem(Colors.green, 'Compressor On'),
+                const SizedBox(width: 24),
+                _buildLegendItem(Colors.red.shade400, 'Compressor Off'),
               ],
             ),
             const SizedBox(height: 16),
@@ -5435,9 +5484,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     return BarChartGroupData(
                       x: e.key,
                       barRods: [
+                        // Compressor On
                         BarChartRodData(
                           toY: e.value.toDouble(),
                           color: Colors.green,
+                          width: 12,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        // Compressor Off
+                        BarChartRodData(
+                          toY: e.key < data.compressorOffCount.length 
+                            ? data.compressorOffCount[e.key].toDouble() 
+                            : 0.0,
+                          color: Colors.red.shade400,
                           width: 12,
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -5656,7 +5715,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildLegendItem(Colors.amber, 'Door Open'),
+                _buildLegendItem(Colors.amber, 'Door Opens'),
+                const SizedBox(width: 24),
+                _buildLegendItem(Colors.blueGrey, 'Door Closes'),
               ],
             ),
             const SizedBox(height: 16),
@@ -5735,10 +5796,20 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     return BarChartGroupData(
                       x: e.key,
                       barRods: [
+                        // Door Opens
                         BarChartRodData(
                           toY: e.value.toDouble(),
                           color: Colors.amber,
-                          width: 16,
+                          width: 12,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        // Door Closes
+                        BarChartRodData(
+                          toY: e.key < data.doorClosedCount.length 
+                            ? data.doorClosedCount[e.key].toDouble() 
+                            : 0.0,
+                          color: Colors.blueGrey,
+                          width: 12,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ],

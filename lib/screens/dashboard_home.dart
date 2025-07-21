@@ -2350,33 +2350,46 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         // Open count
         Expanded(
           child: _buildCompactMetricCard(
-            'Open Count',
+            'Door Opens',
             '${dailyData?.doorOpenCount ?? 0}',
             'times today',
-            FontAwesomeIcons.hashtag,
+            FontAwesomeIcons.doorOpen,
             Constants.ctaColorLight,
           ),
         ),
 
-        SizedBox(width: 16),
+        SizedBox(width: 12),
+
+        // Closed count
+        Expanded(
+          child: _buildCompactMetricCard(
+            'Door Closes',
+            '${dailyData?.doorClosedCount ?? 0}',
+            'times today',
+            FontAwesomeIcons.doorClosed,
+            Colors.blueGrey,
+          ),
+        ),
+
+        SizedBox(width: 12),
 
         // Total open time
         Expanded(
           child: _buildCompactMetricCard(
-            'Total Open Time',
+            'Open Duration',
             _formatDoorOpenTime(dailyData?.totalDoorOpenMinutes),
             _getDoorTimeUnit(dailyData?.totalDoorOpenMinutes),
             FontAwesomeIcons.clock,
-            Constants.ctaColorLight,
+            Colors.orange,
           ),
         ),
 
-        SizedBox(width: 16),
+        SizedBox(width: 12),
 
         // Average per opening
         Expanded(
           child: _buildCompactMetricCard(
-            'Avg per Opening',
+            'Avg per Open',
             _formatAverageOpenTime(
                 dailyData?.totalDoorOpenMinutes, dailyData?.doorOpenCount),
             'minutes',
@@ -2385,12 +2398,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           ),
         ),
 
-        SizedBox(width: 16),
+        SizedBox(width: 12),
 
         // Stability score
         Expanded(
           child: _buildCompactMetricCard(
-            'Door Stability',
+            'Stability',
             _getStabilityScore(dailyData?.doorStabilityStatus),
             '/100',
             FontAwesomeIcons.shield,
@@ -2405,26 +2418,26 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       LatestDeviceData selectedDevice, DailyAggregate? dailyData) {
     return Column(
       children: [
-        // First row
+        // First row - Door events
         Row(
           children: [
             Expanded(
               child: _buildCompactMetricCard(
-                'Open Count',
+                'Door Opens',
                 '${dailyData?.doorOpenCount ?? 0}',
                 'times today',
-                FontAwesomeIcons.hashtag,
+                FontAwesomeIcons.doorOpen,
                 Constants.ctaColorLight,
               ),
             ),
             SizedBox(width: 12),
             Expanded(
               child: _buildCompactMetricCard(
-                'Total Time',
-                _formatDoorOpenTime(dailyData?.totalDoorOpenMinutes),
-                _getDoorTimeUnit(dailyData?.totalDoorOpenMinutes),
-                FontAwesomeIcons.clock,
-                Constants.ctaColorLight,
+                'Door Closes',
+                '${dailyData?.doorClosedCount ?? 0}',
+                'times today',
+                FontAwesomeIcons.doorClosed,
+                Colors.blueGrey,
               ),
             ),
           ],
@@ -2432,9 +2445,19 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
         SizedBox(height: 12),
 
-        // Second row
+        // Second row - Duration metrics
         Row(
           children: [
+            Expanded(
+              child: _buildCompactMetricCard(
+                'Open Duration',
+                _formatDoorOpenTime(dailyData?.totalDoorOpenMinutes),
+                _getDoorTimeUnit(dailyData?.totalDoorOpenMinutes),
+                FontAwesomeIcons.clock,
+                Colors.orange,
+              ),
+            ),
+            SizedBox(width: 12),
             Expanded(
               child: _buildCompactMetricCard(
                 'Avg/Opening',
@@ -2445,10 +2468,17 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 Colors.purple,
               ),
             ),
-            SizedBox(width: 12),
+          ],
+        ),
+
+        SizedBox(height: 12),
+
+        // Third row - Stability
+        Row(
+          children: [
             Expanded(
               child: _buildCompactMetricCard(
-                'Stability',
+                'Stability Score',
                 _getStabilityScore(dailyData?.doorStabilityStatus),
                 '/100',
                 FontAwesomeIcons.shield,
