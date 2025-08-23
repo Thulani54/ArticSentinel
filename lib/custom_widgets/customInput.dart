@@ -162,7 +162,7 @@ class CustomInputTransparent1 extends StatelessWidget {
             borderRadius: BorderRadius.circular(32),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Constants.ctaColorGreen),
+            borderSide: BorderSide(color: Constants.ctaColorLight),
             borderRadius: BorderRadius.circular(32),
           ),
         ),

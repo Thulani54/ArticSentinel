@@ -13,11 +13,11 @@ class Constants {
   static String business_name = "";
   static int business_uid = 0;
   static int user_uid = 0;
-  static String articBaseUrl2 = "https://api.articsentinel.com/";
+  static String articBaseUrl2 = "http://localhost:8018/";
   static String articBaseUrl3 = "https://api.articsentinel.com/";
   static String myDisplayname = "";
 
-  static String myFirstname = "------";
+  static String myFirstname = "";
   static String myLastname = "------";
   static String myEmail = "khutsondao7@gmail.com";
   static String myAddress = "-----";
@@ -27,21 +27,21 @@ class Constants {
   // Main color constants
   static var ctaColorLight = Color(0xFF222b45);
   static var ctaColorGreen = Color(0xFF10B981); // Proper green color
-  static var ctaColorGrey = Color(0xFF9CA3AF);   // Proper grey color
+  static var ctaColorGrey = Color(0xFF9CA3AF); // Proper grey color
   static var ctaTextColor = Color(0xFF737791);
-  
+
   // State colors
-  static var criticalColor = Color(0xFFEF4444);    // Red for critical conditions
+  static var criticalColor = Color(0xFFEF4444); // Red for critical conditions
   static var compressorOnColor = Color(0xFF10B981); // Green for compressor on
   static var compressorOffColor = Color(0xFF9CA3AF); // Grey for compressor off
-  
+
   // Spacing constants
   static const double spacingXs = 4.0;
   static const double spacingSm = 8.0;
   static const double spacingMd = 12.0;
   static const double spacingLg = 16.0;
   static const double spacingXl = 24.0;
-  
+
   // Opacity constants
   static const double opacityLight = 0.1;
   static const double opacityMedium = 0.25;
