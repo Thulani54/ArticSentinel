@@ -13,13 +13,13 @@ class Constants {
   static String business_name = "";
   static int business_uid = 0;
   static int user_uid = 0;
-  static String articBaseUrl2 = "http://localhost:8018/";
+  static String articBaseUrl2 = "https://api.articsentinel.com/";
   static String articBaseUrl3 = "https://api.articsentinel.com/";
   static String myDisplayname = "";
 
   static String myFirstname = "";
   static String myLastname = "------";
-  static String myEmail = "khutsondao7@gmail.com";
+  static String myEmail = "";
   static String myAddress = "-----";
   static String myCountry = "-------";
   static String myPostalCode = "------";

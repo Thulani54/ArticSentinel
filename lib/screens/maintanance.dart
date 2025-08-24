@@ -1001,7 +1001,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                   Icon(Icons.person, size: 14, color: Colors.grey[500]),
                   SizedBox(width: 4),
                   Text(
-                    maintenance['assigned_to']['username'] ?? '',
+                    (maintenance['assigned_to'] ?? '').toString(),
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -3148,9 +3148,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   ),
                   SizedBox(height: 8),
                   Text(
-                    canEdit
-                        ? 'No parts recorded yet'
-                        : 'No parts recorded',
+                    canEdit ? 'No parts recorded yet' : 'No parts recorded',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -3187,7 +3185,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Constants.ctaColorLight.withOpacity(0.2)),
+                      border: Border.all(
+                          color: Constants.ctaColorLight.withOpacity(0.2)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
@@ -3201,7 +3200,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -3268,7 +3268,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               decoration: BoxDecoration(
                 color: Constants.ctaColorLight.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Constants.ctaColorLight.withOpacity(0.2)),
+                border:
+                    Border.all(color: Constants.ctaColorLight.withOpacity(0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3298,7 +3299,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         child: TextField(
                           controller: controller,
                           decoration: InputDecoration(
-                            hintText: 'Enter part name or code (e.g., Air Filter #AF-100)',
+                            hintText:
+                                'Enter part name or code (e.g., Air Filter #AF-100)',
                             filled: true,
                             fillColor: Colors.white,
                             border: OutlineInputBorder(
@@ -3307,29 +3309,31 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
+                              borderSide: BorderSide(
+                                  color: Constants.ctaColorLight, width: 2),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(color: Colors.grey[300]!),
                             ),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
                             prefixIcon: Icon(
                               Icons.settings,
                               color: Colors.grey[500],
                               size: 20,
                             ),
                           ),
-                    onSubmitted: (value) {
-                      if (value.trim().isEmpty) return;
-                      setState(() {
-                        final updated = <String>[...parts];
-                        updated.add(value.trim());
-                        _maintenance['parts_used'] = updated;
-                      });
-                      controller.clear();
-                    },
-                  ),
+                          onSubmitted: (value) {
+                            if (value.trim().isEmpty) return;
+                            setState(() {
+                              final updated = <String>[...parts];
+                              updated.add(value.trim());
+                              _maintenance['parts_used'] = updated;
+                            });
+                            controller.clear();
+                          },
+                        ),
                       ),
                       SizedBox(width: 12),
                       ElevatedButton.icon(
@@ -3347,7 +3351,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Constants.ctaColorLight,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
                           elevation: 0,
                         ),
                       ),
@@ -3486,7 +3491,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Constants.ctaColorLight.withOpacity(0.2)),
+                      border: Border.all(
+                          color: Constants.ctaColorLight.withOpacity(0.2)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
@@ -3500,7 +3506,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -3567,7 +3574,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               decoration: BoxDecoration(
                 color: Constants.ctaColorLight.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Constants.ctaColorLight.withOpacity(0.2)),
+                border:
+                    Border.all(color: Constants.ctaColorLight.withOpacity(0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3597,7 +3605,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         child: TextField(
                           controller: controller,
                           decoration: InputDecoration(
-                            hintText: 'Enter material name or type (e.g., Lubricant Oil 1L)',
+                            hintText:
+                                'Enter material name or type (e.g., Lubricant Oil 1L)',
                             filled: true,
                             fillColor: Colors.white,
                             border: OutlineInputBorder(
@@ -3606,28 +3615,30 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
+                              borderSide: BorderSide(
+                                  color: Constants.ctaColorLight, width: 2),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide(color: Colors.grey[300]!),
                             ),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
                             prefixIcon: Icon(
                               Icons.science,
                               color: Colors.grey[500],
                               size: 20,
                             ),
                           ),
-                    onSubmitted: (value) {
-                      if (value.trim().isEmpty) return;
-                      setState(() {
-                        final updated = <String>[...materials];
-                        updated.add(value.trim());
-                        _maintenance['materials_used'] = updated;
-                      });
-                      controller.clear();
-                    },
+                          onSubmitted: (value) {
+                            if (value.trim().isEmpty) return;
+                            setState(() {
+                              final updated = <String>[...materials];
+                              updated.add(value.trim());
+                              _maintenance['materials_used'] = updated;
+                            });
+                            controller.clear();
+                          },
                         ),
                       ),
                       SizedBox(width: 12),
@@ -3646,7 +3657,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Constants.ctaColorLight,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
                           elevation: 0,
                         ),
                       ),
