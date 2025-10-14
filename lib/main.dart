@@ -20,6 +20,7 @@ import 'screens/health_wellness.dart';
 import 'screens/help.dart';
 import 'screens/livestock_management.dart';
 import 'screens/maintanance.dart';
+import 'screens/reports.dart';
 import 'screens/roles.dart';
 import 'screens/units.dart';
 
@@ -171,6 +172,14 @@ class MyApp extends StatelessWidget {
             name: 'maintenance',
             builder: (BuildContext context, GoRouterState state) =>
                 MaintenanceDashboard(),
+          ),
+
+          // Reports route
+          GoRoute(
+            path: '/reports',
+            name: 'reports',
+            builder: (BuildContext context, GoRouterState state) =>
+                const Reports(),
           ),
 
           // Units and roles routes

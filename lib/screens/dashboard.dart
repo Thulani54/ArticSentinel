@@ -229,6 +229,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
         CupertinoIcons.device_laptop),
     SideBarItems(8, "notification", "Notifications", CupertinoIcons.bell),
     SideBarItems(8, "maintenance", "Maintenance", CupertinoIcons.wrench_fill),
+    SideBarItems(11, "reports", "Reports", CupertinoIcons.doc_chart_fill),
     SideBarItems(8, "access", "Access Management", CupertinoIcons.person_2),
     SideBarItems(9, "settings", "Settings", CupertinoIcons.gear_alt),
     SideBarItems(10, "help", "Help & Support", CupertinoIcons.question_circle),

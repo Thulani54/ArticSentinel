@@ -78,6 +78,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
         3, "geo_fencing", "Location Management", CupertinoIcons.location_solid),
     SideBarItems(5, "device_management", "Device Management",
         CupertinoIcons.device_laptop),
+    SideBarItems(11, "reports", "Reports", CupertinoIcons.doc_chart_fill),
     SideBarItems(8, "notification", "Notifications", CupertinoIcons.bell),
     SideBarItems(8, "maintenance", "Maintenance", CupertinoIcons.wrench_fill),
     SideBarItems(8, "access", "Access Management", CupertinoIcons.person_2),
@@ -101,10 +102,12 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
         return 4;
       case '/device-management':
         return 5;
-      case '/alerts':
+      case '/reports':
         return 6;
-      case '/maintenance':
+      case '/alerts':
         return 7;
+      case '/maintenance':
+        return 8;
       case '/roles':
         return 8;
       case '/settings':
@@ -142,6 +145,9 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
         break;
       case "geo_fencing":
         context.go('/geo-fencing');
+        break;
+      case "reports":
+        context.go('/reports');
         break;
       case "maintenance":
         context.go('/maintenance');

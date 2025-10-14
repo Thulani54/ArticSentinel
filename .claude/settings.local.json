@@ -3,7 +3,8 @@
     "allow": [
       "Bash(grep:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(flutter:*)"
+      "Bash(flutter:*)",
+      "Bash(dart analyze:*)"
     ],
     "deny": []
   }

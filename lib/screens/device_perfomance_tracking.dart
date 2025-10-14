@@ -2893,7 +2893,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ],
             ),
             const SizedBox(height: 12),
-            
+
             // Second row
             Row(
               children: [
@@ -5493,9 +5493,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         ),
                         // Compressor Off
                         BarChartRodData(
-                          toY: e.key < data.compressorOffCount.length 
-                            ? data.compressorOffCount[e.key].toDouble() 
-                            : 0.0,
+                          toY: e.key < data.compressorOffCount.length
+                              ? data.compressorOffCount[e.key].toDouble()
+                              : 0.0,
                           color: Colors.red.shade400,
                           width: 12,
                           borderRadius: BorderRadius.circular(4),
@@ -5805,9 +5805,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         ),
                         // Door Closes
                         BarChartRodData(
-                          toY: e.key < data.doorClosedCount.length 
-                            ? data.doorClosedCount[e.key].toDouble() 
-                            : 0.0,
+                          toY: e.key < data.doorClosedCount.length
+                              ? data.doorClosedCount[e.key].toDouble()
+                              : 0.0,
                           color: Colors.blueGrey,
                           width: 12,
                           borderRadius: BorderRadius.circular(4),
