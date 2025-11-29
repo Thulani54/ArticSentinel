@@ -994,6 +994,19 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         .where((device) => device.deviceId == selectedDeviceId)
         .firstOrNull;
 
+    // Debug logging
+    print('_buildTemperatureRanges called:');
+    print('  dailyAggregatesList.length: ${dailyAggregatesList.length}');
+    print('  selectedDeviceId: $selectedDeviceId');
+    if (dailyData != null) {
+      print('  dailyData found:');
+      print('    Air - min: ${dailyData.minTempAir}, max: ${dailyData.maxTempAir}, avg: ${dailyData.avgTempAir}');
+      print('    Coil - min: ${dailyData.minTempCoil}, max: ${dailyData.maxTempCoil}, avg: ${dailyData.avgTempCoil}');
+      print('    Drain - min: ${dailyData.minTempDrain}, max: ${dailyData.maxTempDrain}, avg: ${dailyData.avgTempDrain}');
+    } else {
+      print('  dailyData is null!');
+    }
+
     if (selectedDevice == null) {
       temperatureRanges = [
         TemperatureRange(
@@ -1717,7 +1730,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               SizedBox(width: 12),
               Expanded(
                 child: _buildTemperatureExtremeCard(
-                  'Highest',
+                  'Highest1',
                   range.max,
                   range
                       .maxTimestamp, // Add this field to your TemperatureRange model
@@ -3383,7 +3396,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     "Uptime Today",
                     dailyAggregatesList.isEmpty
                         ? "-"
-                        : "${dailyAggregatesList.last.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
+                        : "${dailyAggregatesList.first.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
                     Constants.ctaColorLight,
                     Icons.timer,
                   ),
@@ -3883,8 +3896,23 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         print('Hourly aggregates: ${hourlyAggregatesList.length}');
         print('Active alerts: ${activeAlerts.length}');
 
-        // Process the data to build metrics
-        _processDashboardData();
+        // Debug: Print daily aggregates data
+        if (dailyAggregatesList.isNotEmpty) {
+          final firstDaily = dailyAggregatesList.first;
+          print('Daily Aggregate Debug:');
+          print('  Device ID: ${firstDaily.deviceId}');
+          print('  Day Bucket: ${firstDaily.dayBucket}');
+          print('  Air - min: ${firstDaily.minTempAir}, max: ${firstDaily.maxTempAir}, avg: ${firstDaily.avgTempAir}');
+          print('  Coil - min: ${firstDaily.minTempCoil}, max: ${firstDaily.maxTempCoil}, avg: ${firstDaily.avgTempCoil}');
+          print('  Drain - min: ${firstDaily.minTempDrain}, max: ${firstDaily.maxTempDrain}, avg: ${firstDaily.avgTempDrain}');
+          print('  Compressor Runtime %: ${firstDaily.compressorRuntimePercentage}');
+          print('  Compressor On Count: ${firstDaily.compressorOnCount}');
+          print('  Data Transmission %: ${firstDaily.dataTransmissionPercentage}');
+          print('  Device Uptime %: ${firstDaily.deviceUptimePercentage}');
+          print('Raw daily_aggregates JSON: ${data['daily_aggregates']}');
+        }
+
+        // Note: _processDashboardData() is called in _loadAllData after all futures complete
       } else {
         print('Failed to fetch dashboard data: ${response.statusCode}');
         //  _showError('Failed to load dashboard data');

@@ -5,11 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import '../utils/pdf_saver.dart';
 
 import '../models/device.dart' hide Device;
@@ -101,7 +104,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Future<void> _loadMaintenanceRecords() async {
     final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/api/maintenance/list/'),
+      Uri.parse('${ApiConfig.baseUrl}api/maintenance/list/'),
       headers: ApiConfig.headers,
       body: json.encode({
         'business_id': await SharedPrefs.getBusinessId(),
@@ -4776,7 +4779,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   // Upload Media File to Backend
   Future<void> _uploadMediaFile(PlatformFile file, String type) async {
     final url = Uri.parse(
-        '${Constants.articBaseUrl2}/maintenance/${widget.maintenanceId}/upload-media');
+        '${Constants.articBaseUrl2}maintenance/${widget.maintenanceId}/upload-media');
     final request = http.MultipartRequest('POST', url);
 
     // Add file
@@ -4823,7 +4826,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   Future<void> _uploadDocumentFile(
       PlatformFile file, String description) async {
     final url = Uri.parse(
-        '${Constants.articBaseUrl2}/maintenance/${widget.maintenanceId}/upload-document');
+        '${Constants.articBaseUrl2}maintenance/${widget.maintenanceId}/upload-document');
     final request = http.MultipartRequest('POST', url);
 
     // Add file
@@ -7308,23 +7311,93 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
 
   Future<void> _generateDetailedPDF(String maintenanceId) async {
     try {
-      final response = await http.get(
-        Uri.parse(
-            '${ApiConfig.baseUrl}/api/maintenance/reports/$maintenanceId/pdf/?business_id=${await SharedPrefs.getBusinessId()}'),
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Generating Professional Report...',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Fetch comprehensive maintenance data
+      final detailResponse = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/maintenance/$maintenanceId/'),
         headers: ApiConfig.headers,
       );
 
-      if (response.statusCode == 200) {
-        // Save PDF to device
-        await _savePdfToDevice(
-          response.bodyBytes,
-          'maintenance_report_${maintenanceId}_${DateTime.now().millisecondsSinceEpoch}.pdf',
-        );
-      } else {
-        throw Exception('Failed to generate PDF report');
+      if (detailResponse.statusCode != 200) {
+        throw Exception('Failed to fetch maintenance details');
       }
-    } catch (e) {
+
+      final maintenanceData = json.decode(detailResponse.body);
+
+      // Fetch observations
+      final observationsResponse = await http.get(
+        Uri.parse(
+            '${ApiConfig.baseUrl}/api/maintenance/$maintenanceId/observations/'),
+        headers: ApiConfig.headers,
+      );
+
+      List<dynamic> observations = [];
+      if (observationsResponse.statusCode == 200) {
+        final obsData = json.decode(observationsResponse.body);
+        observations = obsData['observations'] ?? [];
+      }
+
+      // Generate professional PDF
+      Uint8List pdfBytes;
+      try {
+        pdfBytes = await _buildProfessionalMaintenancePDF(
+          maintenanceData,
+          observations,
+        );
+      } catch (pdfError, pdfStack) {
+        print('Error building PDF: $pdfError');
+        print('PDF Stack: $pdfStack');
+        throw Exception('PDF Generation Error: $pdfError');
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading dialog
+
+      // Save PDF to device
+      await _savePdfToDevice(
+        pdfBytes,
+        'maintenance_report_${maintenanceId}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+    } catch (e, stackTrace) {
+      print('Error in _generateDetailedPDF: $e');
+      print('Stack trace: $stackTrace');
       if (mounted) {
+        try {
+          Navigator.pop(context); // Close loading dialog if open
+        } catch (_) {
+          // Dialog might not be open
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to generate PDF: ${e.toString()}'),
@@ -7335,31 +7408,1499 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
     }
   }
 
-  Future<void> _generateMonthlySummaryPDF(int year, int month) async {
+  Future<void> _generateSampleDetailedPDF() async {
     try {
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConfig.baseUrl}/api/maintenance/reports/$year/$month/summary-pdf/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'business_id': await SharedPrefs.getBusinessId(),
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        // Save PDF to device or open in PDF viewer
-        _showPDFDownloadSuccess(
-            'Monthly summary report downloaded successfully');
-      } else {
-        throw Exception('Failed to generate monthly summary PDF');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to generate monthly PDF: ${e.toString()}'),
-          backgroundColor: Colors.red,
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Generating Sample Report...',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
+
+      // Create comprehensive sample maintenance data
+      final sampleData = {
+        'id': 'SAMPLE-${DateTime.now().millisecondsSinceEpoch}',
+        'device': {
+          'name': 'Refrigeration Unit #5',
+          'device_id': 'REFR-005',
+          'device_type': 'Commercial Refrigerator',
+          'location': 'Building A - Cold Storage Room 3',
+        },
+        'maintenance_type': {
+          'name': 'Preventive Maintenance',
+          'category': 'preventive',
+        },
+        'priority': 'high',
+        'status': 'completed',
+        'status_display': 'Completed',
+        'scheduled_date':
+            DateTime.now().subtract(Duration(days: 2)).toIso8601String(),
+        'actual_start_date': DateTime.now()
+            .subtract(Duration(days: 2, hours: 1))
+            .toIso8601String(),
+        'actual_end_date':
+            DateTime.now().subtract(Duration(days: 2)).toIso8601String(),
+        'actual_duration_hours': 2.5,
+        'assigned_to': {
+          'name': 'John Smith',
+        },
+        'performed_by': {
+          'name': 'John Smith',
+        },
+        'supervised_by': {
+          'name': 'Sarah Johnson',
+        },
+        'description':
+            'Scheduled quarterly preventive maintenance for refrigeration unit to ensure optimal performance and prevent equipment failure.',
+        'work_performed':
+            'Conducted comprehensive inspection of refrigeration system including:\n- Cleaned condenser and evaporator coils\n- Checked and adjusted refrigerant levels\n- Inspected and lubricated motor bearings\n- Tested temperature control accuracy\n- Verified door seals and gaskets\n- Cleaned drain lines and condensate pans\n- Calibrated temperature sensors',
+        'parts_used':
+            '- Replacement air filter (Model AF-2500)\n- Compressor oil (1 quart)\n- Door gasket sealant\n- Cleaning solution (2 bottles)',
+        'estimated_cost': 450.00,
+        'actual_cost': 425.50,
+        'outcome': 'successful',
+        'notes':
+            'Unit is operating within normal parameters. Temperature stability improved after calibration. Recommend monitoring for the next 48 hours to ensure sustained performance.',
+        'recommendations':
+            'Schedule next preventive maintenance in 3 months. Consider installing smart temperature monitoring sensor for real-time alerts. Minor wear detected on compressor belt - plan replacement during next maintenance cycle.',
+        'next_scheduled_date':
+            DateTime.now().add(Duration(days: 90)).toIso8601String(),
+        'checklist_items': [
+          {
+            'description': 'Visual inspection of unit exterior',
+            'is_completed': true,
+            'notes': 'No visible damage or corrosion',
+          },
+          {
+            'description': 'Check temperature readings',
+            'is_completed': true,
+            'notes': 'All within spec: -5°C to 0°C',
+          },
+          {
+            'description': 'Clean condenser coils',
+            'is_completed': true,
+            'notes': 'Moderate dust buildup removed',
+          },
+          {
+            'description': 'Inspect door seals',
+            'is_completed': true,
+            'notes': 'Good condition, no leaks detected',
+          },
+          {
+            'description': 'Test temperature controls',
+            'is_completed': true,
+            'notes': 'Calibrated and functioning correctly',
+          },
+          {
+            'description': 'Lubricate moving parts',
+            'is_completed': true,
+            'notes': 'All bearings and hinges lubricated',
+          },
+          {
+            'description': 'Check electrical connections',
+            'is_completed': true,
+            'notes': 'All connections secure, no overheating',
+          },
+          {
+            'description': 'Document all findings',
+            'is_completed': true,
+            'notes': 'Complete maintenance log updated',
+          },
+        ],
+      };
+
+      final sampleObservations = [
+        {
+          'category': {'name': 'Mechanical'},
+          'description':
+              'Minor wear observed on compressor drive belt. No immediate action required but should be monitored.',
+          'severity': 'low',
+        },
+        {
+          'category': {'name': 'Electrical'},
+          'description':
+              'All electrical connections secure. Power consumption within normal range.',
+          'severity': 'normal',
+        },
+        {
+          'category': {'name': 'Performance'},
+          'description':
+              'Temperature recovery time improved by 15% after coil cleaning and calibration.',
+          'severity': 'normal',
+        },
+        {
+          'category': {'name': 'Safety'},
+          'description':
+              'All safety systems operational. Emergency shut-off tested successfully.',
+          'severity': 'normal',
+        },
+      ];
+
+      // Generate professional PDF
+      Uint8List pdfBytes;
+      try {
+        pdfBytes = await _buildProfessionalMaintenancePDF(
+          sampleData,
+          sampleObservations,
+        );
+      } catch (pdfError, pdfStack) {
+        print('Error building sample PDF: $pdfError');
+        print('PDF Stack: $pdfStack');
+        throw Exception('PDF Generation Error: $pdfError');
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading dialog
+
+      // Save PDF to device
+      await _savePdfToDevice(
+        pdfBytes,
+        'sample_maintenance_report_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+    } catch (e, stackTrace) {
+      print('Error in _generateSampleDetailedPDF: $e');
+      print('Stack trace: $stackTrace');
+      if (mounted) {
+        try {
+          Navigator.pop(context); // Close loading dialog if open
+        } catch (_) {
+          // Dialog might not be open
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate sample PDF: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _generateMonthlySummaryPDF(int year, int month) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Generating Monthly Summary Report...',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // Fetch monthly records data
+      final response = await http.get(
+        Uri.parse(
+            '${ApiConfig.baseUrl}/api/maintenance/reports/$year/$month/records/?business_id=${await SharedPrefs.getBusinessId()}'),
+        headers: ApiConfig.headers,
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to fetch monthly records');
+      }
+
+      final data = json.decode(response.body);
+      final monthlyRecords = data['maintenance_records'] ?? [];
+
+      // Get month statistics from the selected month data
+      final monthStats = _selectedMonth;
+
+      // Generate professional monthly PDF
+      final pdfBytes = await _buildProfessionalMonthlySummaryPDF(
+        year,
+        month,
+        monthlyRecords,
+        monthStats,
+      );
+
+      Navigator.pop(context); // Close loading dialog
+
+      // Save PDF to device
+      await _savePdfToDevice(
+        pdfBytes,
+        'monthly_maintenance_${year}_${month.toString().padLeft(2, '0')}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog if open
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate monthly PDF: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Build a professional, comprehensive maintenance report PDF
+  Future<Uint8List> _buildProfessionalMaintenancePDF(
+    Map<String, dynamic> maintenanceData,
+    List<dynamic> observations,
+  ) async {
+    final pdf = pw.Document();
+    final now = DateTime.now();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: pw.EdgeInsets.all(40),
+        build: (context) => [
+          // Header with Company Branding
+          _buildPDFHeader('MAINTENANCE ACTIVITY REPORT'),
+          pw.SizedBox(height: 30),
+
+          // Report Metadata
+          _buildPDFSection('Report Information', [
+            _buildPDFInfoRow('Report Generated',
+                DateFormat('MMMM dd, yyyy - HH:mm').format(now)),
+            _buildPDFInfoRow(
+                'Maintenance ID', maintenanceData['id']?.toString() ?? 'N/A'),
+            _buildPDFInfoRow('Report Type', 'Detailed Maintenance Activity'),
+          ]),
+          pw.SizedBox(height: 20),
+
+          // Device Information
+          _buildPDFSection('Equipment Details', [
+            _buildPDFInfoRow('Device Name',
+                maintenanceData['device']?['name']?.toString() ?? 'N/A'),
+            _buildPDFInfoRow('Device ID',
+                maintenanceData['device']?['device_id']?.toString() ?? 'N/A'),
+            _buildPDFInfoRow('Device Type',
+                maintenanceData['device']?['device_type']?.toString() ?? 'N/A'),
+            _buildPDFInfoRow('Location',
+                maintenanceData['device']?['location']?.toString() ?? 'N/A'),
+          ]),
+          pw.SizedBox(height: 20),
+
+          // Maintenance Details
+          _buildPDFSection('Maintenance Activity Details', [
+            _buildPDFInfoRow(
+                'Maintenance Type',
+                maintenanceData['maintenance_type']?['name']?.toString() ??
+                    'N/A'),
+            _buildPDFInfoRow(
+                'Category',
+                _capitalizeText(maintenanceData['maintenance_type']?['category']
+                        ?.toString() ??
+                    'N/A')),
+            _buildPDFInfoRow(
+                'Priority',
+                _capitalizeText(
+                    maintenanceData['priority']?.toString() ?? 'N/A')),
+            _buildPDFInfoRow(
+                'Status',
+                _capitalizeText(maintenanceData['status_display']?.toString() ??
+                    maintenanceData['status']?.toString() ??
+                    'N/A')),
+          ]),
+          pw.SizedBox(height: 20),
+
+          // Schedule and Timeline
+          _buildPDFSection('Schedule & Timeline', [
+            _buildPDFInfoRow('Scheduled Date',
+                _formatPDFDateTime(maintenanceData['scheduled_date'])),
+            _buildPDFInfoRow('Actual Start',
+                _formatPDFDateTime(maintenanceData['actual_start_date'])),
+            _buildPDFInfoRow('Actual End',
+                _formatPDFDateTime(maintenanceData['actual_end_date'])),
+            _buildPDFInfoRow(
+                'Duration',
+                maintenanceData['actual_duration_hours'] != null
+                    ? '${maintenanceData['actual_duration_hours']} hours'
+                    : 'N/A'),
+            pw.SizedBox(height: 12),
+            _buildTimelineProgressBar(maintenanceData),
+          ]),
+          pw.SizedBox(height: 20),
+
+          // Personnel Information
+          _buildPDFSection('Personnel', [
+            _buildPDFInfoRow(
+                'Assigned To',
+                maintenanceData['assigned_to']?['name']?.toString() ??
+                    'Unassigned'),
+            _buildPDFInfoRow('Performed By',
+                maintenanceData['performed_by']?['name']?.toString() ?? 'N/A'),
+            if (maintenanceData['supervised_by'] != null)
+              _buildPDFInfoRow(
+                  'Supervised By',
+                  maintenanceData['supervised_by']?['name']?.toString() ??
+                      'N/A'),
+          ]),
+          pw.SizedBox(height: 20),
+
+          // Work Performed
+          if (maintenanceData['description'] != null &&
+              maintenanceData['description'].toString().isNotEmpty)
+            _buildPDFSection('Work Description', [
+              pw.Text(
+                maintenanceData['description']?.toString() ?? '',
+                style: pw.TextStyle(fontSize: 10),
+              ),
+            ]),
+          if (maintenanceData['description'] != null &&
+              maintenanceData['description'].toString().isNotEmpty)
+            pw.SizedBox(height: 20),
+
+          if (maintenanceData['work_performed'] != null &&
+              maintenanceData['work_performed'].toString().isNotEmpty)
+            _buildPDFSection('Work Performed', [
+              pw.Text(
+                maintenanceData['work_performed']?.toString() ?? '',
+                style: pw.TextStyle(fontSize: 10),
+              ),
+            ]),
+          if (maintenanceData['work_performed'] != null &&
+              maintenanceData['work_performed'].toString().isNotEmpty)
+            pw.SizedBox(height: 20),
+
+          // Checklist if available
+          if (maintenanceData['checklist_items'] != null &&
+              (maintenanceData['checklist_items'] as List).isNotEmpty)
+            _buildPDFSection('Maintenance Checklist', [
+              _buildMaintenanceStatusPieChart(maintenanceData),
+              pw.SizedBox(height: 12),
+              _buildChecklistTable(maintenanceData['checklist_items']),
+            ]),
+          if (maintenanceData['checklist_items'] != null &&
+              (maintenanceData['checklist_items'] as List).isNotEmpty)
+            pw.SizedBox(height: 20),
+
+          // Observations
+          if (observations.isNotEmpty)
+            _buildPDFSection('Observations & Findings', [
+              _buildObservationsSeverityChart(observations),
+              pw.SizedBox(height: 12),
+              _buildObservationsTable(observations),
+            ]),
+          if (observations.isNotEmpty) pw.SizedBox(height: 20),
+
+          // Parts and Materials
+          if (maintenanceData['parts_used'] != null &&
+              maintenanceData['parts_used'].toString().isNotEmpty)
+            _buildPDFSection('Parts & Materials Used', [
+              _buildPartsUsedTable(
+                  maintenanceData['parts_used']?.toString() ?? ''),
+            ]),
+          if (maintenanceData['parts_used'] != null &&
+              maintenanceData['parts_used'].toString().isNotEmpty)
+            pw.SizedBox(height: 20),
+
+          // Cost Information
+          _buildPDFSection('Cost Analysis', [
+            _buildPDFInfoRow(
+                'Estimated Cost',
+                maintenanceData['estimated_cost'] != null
+                    ? '\$${maintenanceData['estimated_cost']}'
+                    : 'N/A'),
+            _buildPDFInfoRow(
+                'Actual Cost',
+                maintenanceData['actual_cost'] != null
+                    ? '\$${maintenanceData['actual_cost']}'
+                    : 'N/A'),
+            if (maintenanceData['estimated_cost'] != null &&
+                maintenanceData['actual_cost'] != null)
+              _buildPDFInfoRow(
+                  'Variance',
+                  _calculateCostVariance(maintenanceData['estimated_cost'],
+                      maintenanceData['actual_cost'])),
+            pw.SizedBox(height: 12),
+            _buildCostComparisonChart(maintenanceData),
+          ]),
+          pw.SizedBox(height: 20),
+
+          // Outcome and Follow-up
+          if (maintenanceData['outcome'] != null ||
+              maintenanceData['notes'] != null ||
+              maintenanceData['recommendations'] != null)
+            _buildPDFSection('Outcome & Recommendations', [
+              if (maintenanceData['outcome'] != null)
+                _buildPDFInfoRow(
+                    'Outcome',
+                    _capitalizeText(
+                        maintenanceData['outcome']?.toString() ?? 'N/A')),
+              if (maintenanceData['notes'] != null &&
+                  maintenanceData['notes'].toString().isNotEmpty)
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Notes:',
+                        style: pw.TextStyle(
+                            fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 4),
+                    pw.Text(maintenanceData['notes']?.toString() ?? '',
+                        style: pw.TextStyle(fontSize: 10)),
+                    pw.SizedBox(height: 8),
+                  ],
+                ),
+              if (maintenanceData['recommendations'] != null &&
+                  maintenanceData['recommendations'].toString().isNotEmpty)
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Recommendations:',
+                        style: pw.TextStyle(
+                            fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                        maintenanceData['recommendations']?.toString() ?? '',
+                        style: pw.TextStyle(fontSize: 10)),
+                  ],
+                ),
+            ]),
+          if (maintenanceData['outcome'] != null ||
+              maintenanceData['notes'] != null ||
+              maintenanceData['recommendations'] != null)
+            pw.SizedBox(height: 20),
+
+          // Next Scheduled Maintenance
+          if (maintenanceData['next_scheduled_date'] != null)
+            _buildPDFSection('Follow-up', [
+              _buildPDFInfoRow('Next Scheduled Maintenance',
+                  _formatPDFDateTime(maintenanceData['next_scheduled_date'])),
+            ]),
+
+          // Footer
+          pw.SizedBox(height: 40),
+          _buildPDFFooter(),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  /// Build a professional monthly summary PDF
+  Future<Uint8List> _buildProfessionalMonthlySummaryPDF(
+    int year,
+    int month,
+    List<dynamic> monthlyRecords,
+    dynamic monthStats,
+  ) async {
+    final pdf = pw.Document();
+    final now = DateTime.now();
+    final monthName = DateFormat('MMMM').format(DateTime(year, month));
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: pw.EdgeInsets.all(40),
+        build: (context) => [
+          // Header
+          _buildPDFHeader('MONTHLY MAINTENANCE SUMMARY REPORT'),
+          pw.SizedBox(height: 30),
+
+          // Report Information
+          _buildPDFSection('Report Information', [
+            _buildPDFInfoRow('Report Period', '$monthName $year'),
+            _buildPDFInfoRow('Generated On',
+                DateFormat('MMMM dd, yyyy - HH:mm').format(now)),
+            _buildPDFInfoRow('Total Activities',
+                monthStats?['total_maintenance']?.toString() ?? '0'),
+          ]),
+          pw.SizedBox(height: 20),
+
+          // Executive Summary
+          _buildPDFSection('Executive Summary', [
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+              children: [
+                _buildPDFTableRow('Total Maintenance Activities',
+                    monthStats?['total_maintenance']?.toString() ?? '0', true),
+                _buildPDFTableRow('Completed',
+                    monthStats?['completed']?.toString() ?? '0', false),
+                _buildPDFTableRow('In Progress',
+                    monthStats?['in_progress']?.toString() ?? '0', false),
+                _buildPDFTableRow('Overdue',
+                    monthStats?['overdue']?.toString() ?? '0', false),
+                _buildPDFTableRow(
+                    'Completion Rate',
+                    '${monthStats?['completion_rate']?.toString() ?? '0'}%',
+                    false),
+                _buildPDFTableRow('Total Cost',
+                    '\$${_formatCost(monthStats?['total_cost'])}', false),
+                _buildPDFTableRow(
+                    'Average Duration',
+                    '${_formatDuration(monthStats?['avg_duration_hours'])} hours',
+                    false),
+              ],
+            ),
+          ]),
+          pw.SizedBox(height: 30),
+
+          // Detailed Activities List
+          _buildPDFSection('Detailed Activity Log', [
+            pw.Text(
+              'This section contains a comprehensive list of all maintenance activities performed during $monthName $year.',
+              style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic),
+            ),
+            pw.SizedBox(height: 10),
+            _buildMonthlyActivitiesTable(monthlyRecords),
+          ]),
+
+          // Footer
+          pw.SizedBox(height: 40),
+          _buildPDFFooter(),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  // PDF Helper Methods
+  pw.Widget _buildPDFHeader(String title) {
+    return pw.Container(
+      padding: pw.EdgeInsets.only(bottom: 20),
+      decoration: pw.BoxDecoration(
+        border: pw.Border(
+          bottom: pw.BorderSide(color: PdfColors.blue800, width: 2),
+        ),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    'ArticSentinel',
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.blue800,
+                    ),
+                  ),
+                  pw.Text(
+                    'IoT Device Management System',
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      color: PdfColors.grey700,
+                    ),
+                  ),
+                ],
+              ),
+              pw.Container(
+                padding: pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.blue50,
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+                child: pw.Text(
+                  'OFFICIAL REPORT',
+                  style: pw.TextStyle(
+                    fontSize: 8,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blue800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 12),
+          pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontSize: 18,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.grey800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPDFSection(String title, List<pw.Widget> children) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Container(
+          padding: pw.EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.blue50,
+            borderRadius: pw.BorderRadius.circular(4),
+          ),
+          child: pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontSize: 12,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blue900,
+            ),
+          ),
+        ),
+        pw.SizedBox(height: 10),
+        pw.Container(
+          padding: pw.EdgeInsets.all(12),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey300),
+            borderRadius: pw.BorderRadius.circular(4),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildPDFInfoRow(String label, String value) {
+    return pw.Padding(
+      padding: pw.EdgeInsets.symmetric(vertical: 4),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Container(
+            width: 150,
+            child: pw.Text(
+              '$label:',
+              style: pw.TextStyle(
+                fontSize: 10,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.grey800,
+              ),
+            ),
+          ),
+          pw.Expanded(
+            child: pw.Text(
+              value,
+              style: pw.TextStyle(fontSize: 10, color: PdfColors.grey900),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.TableRow _buildPDFTableRow(String label, String value, bool isHeader) {
+    return pw.TableRow(
+      decoration: isHeader ? pw.BoxDecoration(color: PdfColors.blue50) : null,
+      children: [
+        pw.Padding(
+          padding: pw.EdgeInsets.all(8),
+          child: pw.Text(
+            label,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+            ),
+          ),
+        ),
+        pw.Padding(
+          padding: pw.EdgeInsets.all(8),
+          child: pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildChecklistTable(List<dynamic> checklistItems) {
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+      children: [
+        pw.TableRow(
+          decoration: pw.BoxDecoration(color: PdfColors.grey200),
+          children: [
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Item',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Status',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Notes',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+          ],
+        ),
+        ...checklistItems.map((item) {
+          final itemMap = item as Map<String, dynamic>;
+          return pw.TableRow(
+            children: [
+              pw.Padding(
+                padding: pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  itemMap['description']?.toString() ?? '',
+                  style: pw.TextStyle(fontSize: 9),
+                ),
+              ),
+              pw.Padding(
+                padding: pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  itemMap['is_completed'] == true ? '✓ Completed' : '○ Pending',
+                  style: pw.TextStyle(fontSize: 9),
+                ),
+              ),
+              pw.Padding(
+                padding: pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  itemMap['notes']?.toString() ?? '-',
+                  style: pw.TextStyle(fontSize: 9),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  pw.Widget _buildObservationsTable(List<dynamic> observations) {
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+      children: [
+        pw.TableRow(
+          decoration: pw.BoxDecoration(color: PdfColors.grey200),
+          children: [
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Category',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Observation',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Severity',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+          ],
+        ),
+        ...observations.map((obs) {
+          final obsMap = obs as Map<String, dynamic>;
+          return pw.TableRow(
+            children: [
+              pw.Padding(
+                padding: pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  obsMap['category']?['name']?.toString() ?? 'N/A',
+                  style: pw.TextStyle(fontSize: 9),
+                ),
+              ),
+              pw.Padding(
+                padding: pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  obsMap['description']?.toString() ?? '',
+                  style: pw.TextStyle(fontSize: 9),
+                ),
+              ),
+              pw.Padding(
+                padding: pw.EdgeInsets.all(6),
+                child: pw.Text(
+                  _capitalizeText(obsMap['severity']?.toString() ?? 'normal'),
+                  style: pw.TextStyle(fontSize: 9),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  pw.Widget _buildMonthlyActivitiesTable(List<dynamic> records) {
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+      columnWidths: {
+        0: pw.FixedColumnWidth(80),
+        1: pw.FlexColumnWidth(2),
+        2: pw.FlexColumnWidth(2),
+        3: pw.FlexColumnWidth(1),
+        4: pw.FixedColumnWidth(60),
+      },
+      children: [
+        pw.TableRow(
+          decoration: pw.BoxDecoration(color: PdfColors.blue100),
+          children: [
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Date',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Device',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Type',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Personnel',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Padding(
+              padding: pw.EdgeInsets.all(6),
+              child: pw.Text('Status',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+          ],
+        ),
+        ...records
+            .map((record) => pw.TableRow(
+                  children: [
+                    pw.Padding(
+                      padding: pw.EdgeInsets.all(6),
+                      child: pw.Text(
+                        _formatPDFDate(record['scheduled_date']),
+                        style: pw.TextStyle(fontSize: 8),
+                      ),
+                    ),
+                    pw.Padding(
+                      padding: pw.EdgeInsets.all(6),
+                      child: pw.Text(
+                        record['device']?['name']?.toString() ?? 'N/A',
+                        style: pw.TextStyle(fontSize: 8),
+                      ),
+                    ),
+                    pw.Padding(
+                      padding: pw.EdgeInsets.all(6),
+                      child: pw.Text(
+                        record['maintenance_type']?['name']?.toString() ??
+                            'N/A',
+                        style: pw.TextStyle(fontSize: 8),
+                      ),
+                    ),
+                    pw.Padding(
+                      padding: pw.EdgeInsets.all(6),
+                      child: pw.Text(
+                        record['performed_by']?['name']?.toString() ??
+                            record['assigned_to']?['name']?.toString() ??
+                            'N/A',
+                        style: pw.TextStyle(fontSize: 8),
+                      ),
+                    ),
+                    pw.Padding(
+                      padding: pw.EdgeInsets.all(6),
+                      child: pw.Text(
+                        _capitalizeText(record['status_display']?.toString() ??
+                            record['status']?.toString() ??
+                            'N/A'),
+                        style: pw.TextStyle(fontSize: 8),
+                      ),
+                    ),
+                  ],
+                ))
+            .toList(),
+      ],
+    );
+  }
+
+  pw.Widget _buildPDFFooter() {
+    return pw.Container(
+      padding: pw.EdgeInsets.only(top: 20),
+      decoration: pw.BoxDecoration(
+        border: pw.Border(
+          top: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
+        ),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          pw.Text(
+            'This is an automated report generated by ArticSentinel IoT Management System',
+            style: pw.TextStyle(
+                fontSize: 8,
+                color: PdfColors.grey600,
+                fontStyle: pw.FontStyle.italic),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            'For questions or concerns, please contact your system administrator',
+            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+          ),
+          pw.SizedBox(height: 8),
+          pw.Text(
+            '© ${DateTime.now().year} ArticSentinel. All rights reserved.',
+            style: pw.TextStyle(fontSize: 7, color: PdfColors.grey500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Chart builders for PDF
+  pw.Widget _buildMaintenanceStatusPieChart(Map<String, dynamic> data) {
+    final completed = (data['checklist_items'] as List?)
+            ?.where((item) => item['is_completed'] == true)
+            .length ??
+        0;
+    final total = (data['checklist_items'] as List?)?.length ?? 1;
+    final pending = total - completed;
+    final completedPercent = (completed / total) * 100;
+
+    return pw.Container(
+      padding: pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Row(
+        children: [
+          pw.Expanded(
+            flex: 2,
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                pw.Container(
+                  width: 120,
+                  height: 120,
+                  decoration: pw.BoxDecoration(
+                    shape: pw.BoxShape.circle,
+                    color: PdfColors.green300,
+                  ),
+                  child: pw.Center(
+                    child: pw.Column(
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      children: [
+                        pw.Text(
+                          '${completedPercent.toStringAsFixed(0)}%',
+                          style: pw.TextStyle(
+                            fontSize: 28,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.white,
+                          ),
+                        ),
+                        pw.Text(
+                          'Complete',
+                          style: pw.TextStyle(
+                              fontSize: 11, color: PdfColors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Text(
+                  '$completed of $total tasks',
+                  style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                ),
+              ],
+            ),
+          ),
+          pw.Expanded(
+            flex: 1,
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                _buildLegendItem(
+                    'Completed', PdfColors.green, '$completed items'),
+                pw.SizedBox(height: 8),
+                _buildLegendItem('Pending', PdfColors.orange, '$pending items'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildLegendItem(String label, PdfColor color, String value) {
+    return pw.Row(
+      children: [
+        pw.Container(
+          width: 12,
+          height: 12,
+          decoration: pw.BoxDecoration(
+            color: color,
+            borderRadius: pw.BorderRadius.circular(2),
+          ),
+        ),
+        pw.SizedBox(width: 8),
+        pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(label,
+                style:
+                    pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            pw.Text(value,
+                style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildCostComparisonChart(Map<String, dynamic> data) {
+    final estimated =
+        double.tryParse(data['estimated_cost']?.toString() ?? '0') ?? 0;
+    final actual = double.tryParse(data['actual_cost']?.toString() ?? '0') ?? 0;
+    final maxValue = [estimated, actual].reduce((a, b) => a > b ? a : b);
+
+    return pw.Container(
+      height: 180,
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Cost Analysis (USD)',
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 16),
+          _buildBarChartRow(
+              'Estimated', estimated, maxValue, PdfColors.blue300),
+          pw.SizedBox(height: 12),
+          _buildBarChartRow('Actual', actual, maxValue, PdfColors.green300),
+          pw.SizedBox(height: 16),
+          pw.Container(
+            padding: pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(
+              color:
+                  actual <= estimated ? PdfColors.green50 : PdfColors.orange50,
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'Variance:',
+                  style: pw.TextStyle(
+                      fontSize: 10, fontWeight: pw.FontWeight.bold),
+                ),
+                pw.Text(
+                  '\$${(actual - estimated).toStringAsFixed(2)} (${((actual - estimated) / estimated * 100).toStringAsFixed(1)}%)',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    color: actual <= estimated
+                        ? PdfColors.green800
+                        : PdfColors.orange800,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildBarChartRow(
+      String label, double value, double maxValue, PdfColor color) {
+    final percentage = maxValue > 0 ? (value / maxValue) : 0;
+
+    return pw.Row(
+      children: [
+        pw.Container(
+          width: 80,
+          child: pw.Text(label, style: pw.TextStyle(fontSize: 10)),
+        ),
+        pw.Expanded(
+          child: pw.Stack(
+            children: [
+              pw.Container(
+                height: 24,
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey200,
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+              ),
+              pw.Container(
+                width: percentage * 300,
+                height: 24,
+                decoration: pw.BoxDecoration(
+                  color: color,
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+              ),
+              pw.Positioned(
+                left: 8,
+                top: 0,
+                bottom: 0,
+                child: pw.Center(
+                  child: pw.Text(
+                    '\$${value.toStringAsFixed(2)}',
+                    style: pw.TextStyle(
+                      fontSize: 9,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.grey800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildObservationsSeverityChart(List<dynamic> observations) {
+    final severityCounts = <String, int>{
+      'low': 0,
+      'normal': 0,
+      'high': 0,
+      'critical': 0,
+    };
+
+    for (var obs in observations) {
+      final severity = (obs['severity']?.toString() ?? 'normal').toLowerCase();
+      severityCounts[severity] = (severityCounts[severity] ?? 0) + 1;
+    }
+
+    final total = observations.length;
+
+    return pw.Container(
+      height: 200,
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Observations by Severity',
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 12),
+          pw.Expanded(
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+              children: [
+                _buildVerticalBar('Critical', severityCounts['critical'] ?? 0,
+                    total, PdfColors.red),
+                _buildVerticalBar('High', severityCounts['high'] ?? 0, total,
+                    PdfColors.orange),
+                _buildVerticalBar('Normal', severityCounts['normal'] ?? 0,
+                    total, PdfColors.blue),
+                _buildVerticalBar(
+                    'Low', severityCounts['low'] ?? 0, total, PdfColors.green),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildVerticalBar(
+      String label, int value, int total, PdfColor color) {
+    final maxHeight = 120.0;
+    final height = total > 0 ? (value / total) * maxHeight : 0.0;
+
+    return pw.Column(
+      mainAxisAlignment: pw.MainAxisAlignment.end,
+      children: [
+        if (value > 0)
+          pw.Container(
+            padding: pw.EdgeInsets.all(4),
+            child: pw.Text(
+              value.toString(),
+              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+        pw.Container(
+          width: 50,
+          height: height.clamp(20, maxHeight),
+          decoration: pw.BoxDecoration(
+            color: color,
+            borderRadius: pw.BorderRadius.only(
+              topLeft: pw.Radius.circular(4),
+              topRight: pw.Radius.circular(4),
+            ),
+          ),
+        ),
+        pw.SizedBox(height: 8),
+        pw.Text(
+          label,
+          style: pw.TextStyle(fontSize: 9),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildTimelineProgressBar(Map<String, dynamic> data) {
+    try {
+      final scheduled = DateTime.parse(data['scheduled_date']?.toString() ??
+          DateTime.now().toIso8601String());
+      final actualStart = data['actual_start_date'] != null
+          ? DateTime.parse(data['actual_start_date'].toString())
+          : scheduled;
+      final actualEnd = data['actual_end_date'] != null
+          ? DateTime.parse(data['actual_end_date'].toString())
+          : DateTime.now();
+
+      final duration = data['actual_duration_hours'] ?? 0;
+
+      return pw.Container(
+        padding: pw.EdgeInsets.all(16),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.blue50,
+          borderRadius: pw.BorderRadius.circular(8),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(
+              'Maintenance Timeline',
+              style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 12),
+            pw.Row(
+              children: [
+                _buildTimelineStep(
+                    'Scheduled', _formatPDFDate(data['scheduled_date']), true),
+                pw.Expanded(
+                    child: pw.Container(height: 2, color: PdfColors.blue300)),
+                _buildTimelineStep(
+                    'Started',
+                    _formatPDFDate(data['actual_start_date']),
+                    data['actual_start_date'] != null),
+                pw.Expanded(
+                    child: pw.Container(height: 2, color: PdfColors.blue300)),
+                _buildTimelineStep(
+                    'Completed',
+                    _formatPDFDate(data['actual_end_date']),
+                    data['actual_end_date'] != null),
+              ],
+            ),
+            pw.SizedBox(height: 12),
+            pw.Container(
+              padding: pw.EdgeInsets.all(8),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.white,
+                borderRadius: pw.BorderRadius.circular(4),
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                children: [
+                  pw.Icon(pw.IconData(0xe192),
+                      size: 16, color: PdfColors.blue600),
+                  pw.SizedBox(width: 8),
+                  pw.Text(
+                    'Total Duration: $duration hours',
+                    style: pw.TextStyle(
+                        fontSize: 10, fontWeight: pw.FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      return pw.Container();
+    }
+  }
+
+  pw.Widget _buildTimelineStep(String label, String date, bool completed) {
+    return pw.Column(
+      children: [
+        pw.Container(
+          width: 40,
+          height: 40,
+          decoration: pw.BoxDecoration(
+            color: completed ? PdfColors.green : PdfColors.grey300,
+            shape: pw.BoxShape.circle,
+          ),
+          child: pw.Center(
+            child: pw.Icon(
+              completed ? pw.IconData(0xe5ca) : pw.IconData(0xe5d5),
+              color: PdfColors.white,
+              size: 20,
+            ),
+          ),
+        ),
+        pw.SizedBox(height: 8),
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            fontSize: 9,
+            fontWeight: completed ? pw.FontWeight.bold : pw.FontWeight.normal,
+          ),
+        ),
+        pw.Text(
+          date,
+          style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _buildPartsUsedTable(String partsText) {
+    final parts =
+        partsText.split('\n').where((line) => line.trim().isNotEmpty).toList();
+
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+      children: [
+        pw.TableRow(
+          decoration: pw.BoxDecoration(color: PdfColors.grey200),
+          children: [
+            pw.Padding(
+              padding: pw.EdgeInsets.all(8),
+              child: pw.Text('#',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Padding(
+              padding: pw.EdgeInsets.all(8),
+              child: pw.Text('Part / Material',
+                  style: pw.TextStyle(
+                      fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+          ],
+        ),
+        ...parts.asMap().entries.map((entry) {
+          final index = entry.key + 1;
+          final part = entry.value.replaceAll(RegExp(r'^[-•]\s*'), '');
+          return pw.TableRow(
+            children: [
+              pw.Padding(
+                padding: pw.EdgeInsets.all(8),
+                child:
+                    pw.Text(index.toString(), style: pw.TextStyle(fontSize: 9)),
+              ),
+              pw.Padding(
+                padding: pw.EdgeInsets.all(8),
+                child: pw.Text(part, style: pw.TextStyle(fontSize: 9)),
+              ),
+            ],
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  // Utility methods for PDF formatting
+  String _formatPDFDateTime(dynamic dateStr) {
+    if (dateStr == null) return 'N/A';
+    try {
+      final date = DateTime.parse(dateStr.toString());
+      return DateFormat('MMM dd, yyyy HH:mm').format(date.toLocal());
+    } catch (e) {
+      return dateStr.toString();
+    }
+  }
+
+  String _formatPDFDate(dynamic dateStr) {
+    if (dateStr == null) return 'N/A';
+    try {
+      final date = DateTime.parse(dateStr.toString());
+      return DateFormat('MMM dd, yyyy').format(date.toLocal());
+    } catch (e) {
+      return dateStr.toString();
+    }
+  }
+
+  String _capitalizeText(String text) {
+    if (text.isEmpty) return text;
+    return text
+        .split('_')
+        .map((word) =>
+            word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+  }
+
+  String _calculateCostVariance(dynamic estimated, dynamic actual) {
+    try {
+      final est = double.parse(estimated.toString());
+      final act = double.parse(actual.toString());
+      final variance = act - est;
+      final percentVariance = ((variance / est) * 100).toStringAsFixed(1);
+      return '\$${variance.toStringAsFixed(2)} (${variance >= 0 ? '+' : ''}$percentVariance%)';
+    } catch (e) {
+      return 'N/A';
+    }
+  }
+
+  String _formatCost(dynamic value) {
+    if (value == null) return '0.00';
+    try {
+      final cost = double.parse(value.toString());
+      return cost.toStringAsFixed(2);
+    } catch (e) {
+      return '0.00';
+    }
+  }
+
+  String _formatDuration(dynamic value) {
+    if (value == null) return '0.0';
+    try {
+      final duration = double.parse(value.toString());
+      return duration.toStringAsFixed(1);
+    } catch (e) {
+      return '0.0';
     }
   }
 
@@ -7630,6 +9171,23 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                         ],
                       ),
                     ),
+                    Spacer(),
+                    ElevatedButton.icon(
+                      onPressed: _generateSampleDetailedPDF,
+                      icon: Icon(Icons.picture_as_pdf, size: 18),
+                      label: Text('Generate Sample Report'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Constants.ctaColorLight,
+                        foregroundColor: Colors.white,
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                    SizedBox(width: 12),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
                       icon: Icon(
@@ -8067,8 +9625,8 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                                                                         .red),
                                                                 onPressed: () =>
                                                                     _generateDetailedPDF(
-                                                                        record[
-                                                                            'id']),
+                                                                        record['id']?.toString() ??
+                                                                            ''),
                                                                 tooltip:
                                                                     'Download Detailed PDF Report',
                                                               ),

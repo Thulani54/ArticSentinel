@@ -2,6 +2,14 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 
+// Helper function to convert dynamic values (number or string) to double
+double? _toDoubleOrNull(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
 class DashboardData {
   final List<LatestDeviceData> currentData;
   final List<DailyAggregate> dailyAggregates;
@@ -332,9 +340,9 @@ class DailyAggregate {
       deviceId: json['device_id'],
 
       // Temperature Air with timestamps
-      avgTempAir: json['avg_temp_air']?.toDouble(),
-      minTempAir: json['min_temp_air']?.toDouble(),
-      maxTempAir: json['max_temp_air']?.toDouble(),
+      avgTempAir: _toDoubleOrNull(json['avg_temp_air']),
+      minTempAir: _toDoubleOrNull(json['min_temp_air']),
+      maxTempAir: _toDoubleOrNull(json['max_temp_air']),
       minTempAirTimestamp: json['min_temp_air_timestamp'] != null
           ? DateTime.parse(json['min_temp_air_timestamp'])
           : null,
@@ -343,9 +351,9 @@ class DailyAggregate {
           : null,
 
       // Temperature Coil with timestamps
-      avgTempCoil: json['avg_temp_coil']?.toDouble(),
-      minTempCoil: json['min_temp_coil']?.toDouble(),
-      maxTempCoil: json['max_temp_coil']?.toDouble(),
+      avgTempCoil: _toDoubleOrNull(json['avg_temp_coil']),
+      minTempCoil: _toDoubleOrNull(json['min_temp_coil']),
+      maxTempCoil: _toDoubleOrNull(json['max_temp_coil']),
       minTempCoilTimestamp: json['min_temp_coil_timestamp'] != null
           ? DateTime.parse(json['min_temp_coil_timestamp'])
           : null,
@@ -354,9 +362,9 @@ class DailyAggregate {
           : null,
 
       // Temperature Drain with timestamps
-      avgTempDrain: json['avg_temp_drain']?.toDouble(),
-      minTempDrain: json['min_temp_drain']?.toDouble(),
-      maxTempDrain: json['max_temp_drain']?.toDouble(),
+      avgTempDrain: _toDoubleOrNull(json['avg_temp_drain']),
+      minTempDrain: _toDoubleOrNull(json['min_temp_drain']),
+      maxTempDrain: _toDoubleOrNull(json['max_temp_drain']),
       minTempDrainTimestamp: json['min_temp_drain_timestamp'] != null
           ? DateTime.parse(json['min_temp_drain_timestamp'])
           : null,
@@ -365,9 +373,9 @@ class DailyAggregate {
           : null,
 
       // General temperature
-      avgTemp: json['avg_temp']?.toDouble(),
-      minTemp: json['min_temp']?.toDouble(),
-      maxTemp: json['max_temp']?.toDouble(),
+      avgTemp: _toDoubleOrNull(json['avg_temp']),
+      minTemp: _toDoubleOrNull(json['min_temp']),
+      maxTemp: _toDoubleOrNull(json['max_temp']),
 
       // Events
       iceEvents: json['ice_events'],
@@ -375,20 +383,20 @@ class DailyAggregate {
       // Door analysis
       doorOpenCount: json['door_open_count'],
       doorClosedCount: json['door_closed_count'],
-      totalDoorOpenMinutes: json['total_door_open_minutes']?.toDouble(),
+      totalDoorOpenMinutes: _toDoubleOrNull(json['total_door_open_minutes']),
       doorStabilityStatus: json['door_stability_status'],
 
       // Compressor - Note: these fields are missing from the JSON response
-      avgCompAmp: json['avg_comp_amp']?.toDouble(),
-      maxCompAmp: json['max_comp_amp']?.toDouble(),
-      avgCompAmpPh1: json['avg_comp_amp_ph1']?.toDouble(),
-      avgCompAmpPh2: json['avg_comp_amp_ph2']?.toDouble(),
-      avgCompAmpPh3: json['avg_comp_amp_ph3']?.toDouble(),
+      avgCompAmp: _toDoubleOrNull(json['avg_comp_amp']),
+      maxCompAmp: _toDoubleOrNull(json['max_comp_amp']),
+      avgCompAmpPh1: _toDoubleOrNull(json['avg_comp_amp_ph1']),
+      avgCompAmpPh2: _toDoubleOrNull(json['avg_comp_amp_ph2']),
+      avgCompAmpPh3: _toDoubleOrNull(json['avg_comp_amp_ph3']),
 
       // Pressure with timestamps
-      avgLowSidePressure: json['avg_low_side_pressure']?.toDouble(),
-      minLowSidePressure: json['min_low_side_pressure']?.toDouble(),
-      maxLowSidePressure: json['max_low_side_pressure']?.toDouble(),
+      avgLowSidePressure: _toDoubleOrNull(json['avg_low_side_pressure']),
+      minLowSidePressure: _toDoubleOrNull(json['min_low_side_pressure']),
+      maxLowSidePressure: _toDoubleOrNull(json['max_low_side_pressure']),
       minLowSidePressureTimestamp:
           json['min_low_side_pressure_timestamp'] != null
               ? DateTime.parse(json['min_low_side_pressure_timestamp'])
@@ -398,9 +406,9 @@ class DailyAggregate {
               ? DateTime.parse(json['max_low_side_pressure_timestamp'])
               : null,
 
-      avgHighSidePressure: json['avg_high_side_pressure']?.toDouble(),
-      minHighSidePressure: json['min_high_side_pressure']?.toDouble(),
-      maxHighSidePressure: json['max_high_side_pressure']?.toDouble(),
+      avgHighSidePressure: _toDoubleOrNull(json['avg_high_side_pressure']),
+      minHighSidePressure: _toDoubleOrNull(json['min_high_side_pressure']),
+      maxHighSidePressure: _toDoubleOrNull(json['max_high_side_pressure']),
       minHighSidePressureTimestamp:
           json['min_high_side_pressure_timestamp'] != null
               ? DateTime.parse(json['min_high_side_pressure_timestamp'])
@@ -414,7 +422,7 @@ class DailyAggregate {
       compressorOnCount: json['compressor_on_count'],
       compressorOffCount: json['compressor_off_count'],
       compressorRuntimePercentage:
-          json['compressor_runtime_percentage']?.toDouble(),
+          _toDoubleOrNull(json['compressor_runtime_percentage']),
 
       // Data quality - Note: these fields are missing from JSON response
       totalReadings: json['total_readings'],
@@ -424,15 +432,15 @@ class DailyAggregate {
       lastReadingTime: json['last_reading_time'],
 
       // NEW: Uptime Analysis
-      deviceUptimePercentage: json['device_uptime_percentage']?.toDouble(),
+      deviceUptimePercentage: _toDoubleOrNull(json['device_uptime_percentage']),
       unitOperationalPercentage:
-          json['unit_operational_percentage']?.toDouble(),
+          _toDoubleOrNull(json['unit_operational_percentage']),
       deviceOnReadings: json['device_on_readings'],
       unitOperationalReadings: json['unit_operational_readings'],
       expectedTotalReadings: json['expected_total_readings'],
       dataTransmissionPercentage:
-          json['data_transmission_percentage']?.toDouble(),
-      dataQualityPercentage: json['data_quality_percentage']?.toDouble(),
+          _toDoubleOrNull(json['data_transmission_percentage']),
+      dataQualityPercentage: _toDoubleOrNull(json['data_quality_percentage']),
       deviceStatus: json['device_status'],
       unitStatus: json['unit_status'],
     );
@@ -540,33 +548,33 @@ class HourlyAggregate {
   factory HourlyAggregate.fromJson(Map<String, dynamic> json) {
     return HourlyAggregate(
       hourBucket: json['hour_bucket'],
-      avgTempAir: json['avg_temp_air']?.toDouble(),
-      minTempAir: json['min_temp_air']?.toDouble(),
-      maxTempAir: json['max_temp_air']?.toDouble(),
-      avgTemp: json['avg_temp']?.toDouble(),
-      minTemp: json['min_temp']?.toDouble(),
-      maxTemp: json['max_temp']?.toDouble(),
-      avgTempCoil: json['avg_temp_coil']?.toDouble(),
-      avgTempDrain: json['avg_temp_drain']?.toDouble(),
+      avgTempAir: _toDoubleOrNull(json['avg_temp_air']),
+      minTempAir: _toDoubleOrNull(json['min_temp_air']),
+      maxTempAir: _toDoubleOrNull(json['max_temp_air']),
+      avgTemp: _toDoubleOrNull(json['avg_temp']),
+      minTemp: _toDoubleOrNull(json['min_temp']),
+      maxTemp: _toDoubleOrNull(json['max_temp']),
+      avgTempCoil: _toDoubleOrNull(json['avg_temp_coil']),
+      avgTempDrain: _toDoubleOrNull(json['avg_temp_drain']),
       compressorOnCount: json['compressor_on_count'],
       compressorRuntimePercentage:
-          json['compressor_runtime_percentage']?.toDouble(),
-      avgLowSidePressure: json['avg_low_side_pressure']?.toDouble(),
-      minLowSidePressure: json['min_low_side_pressure']?.toDouble(),
-      maxLowSidePressure: json['max_low_side_pressure']?.toDouble(),
-      avgHighSidePressure: json['avg_high_side_pressure']?.toDouble(),
-      minHighSidePressure: json['min_high_side_pressure']?.toDouble(),
-      maxHighSidePressure: json['max_high_side_pressure']?.toDouble(),
-      avgCompAmp: json['avg_comp_amp']?.toDouble(),
-      maxCompAmp: json['max_comp_amp']?.toDouble(),
-      avgCompAmpPh1: json['avg_comp_amp_ph1']?.toDouble(),
-      avgCompAmpPh2: json['avg_comp_amp_ph2']?.toDouble(),
-      avgCompAmpPh3: json['avg_comp_amp_ph3']?.toDouble(),
+          _toDoubleOrNull(json['compressor_runtime_percentage']),
+      avgLowSidePressure: _toDoubleOrNull(json['avg_low_side_pressure']),
+      minLowSidePressure: _toDoubleOrNull(json['min_low_side_pressure']),
+      maxLowSidePressure: _toDoubleOrNull(json['max_low_side_pressure']),
+      avgHighSidePressure: _toDoubleOrNull(json['avg_high_side_pressure']),
+      minHighSidePressure: _toDoubleOrNull(json['min_high_side_pressure']),
+      maxHighSidePressure: _toDoubleOrNull(json['max_high_side_pressure']),
+      avgCompAmp: _toDoubleOrNull(json['avg_comp_amp']),
+      maxCompAmp: _toDoubleOrNull(json['max_comp_amp']),
+      avgCompAmpPh1: _toDoubleOrNull(json['avg_comp_amp_ph1']),
+      avgCompAmpPh2: _toDoubleOrNull(json['avg_comp_amp_ph2']),
+      avgCompAmpPh3: _toDoubleOrNull(json['avg_comp_amp_ph3']),
       doorOpenCount: json['door_open_count'],
       iceEvents: json['ice_events'],
       totalReadings: json['total_readings'],
       validReadings: json['valid_readings'],
-      energyEfficiencyRatio: json['energy_efficiency_ratio']?.toDouble(),
+      energyEfficiencyRatio: _toDoubleOrNull(json['energy_efficiency_ratio']),
     );
   }
 }

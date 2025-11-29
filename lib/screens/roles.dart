@@ -131,7 +131,7 @@ class PermissionRequest {
 
 // API Service
 class AuthApiService {
-  static String baseUrl = '${Constants.articBaseUrl2}/api';
+  static String baseUrl = '${Constants.articBaseUrl2}api';
 
   static Future<List<Role>> getRoles({String? category, String? search}) async {
     String url = '$baseUrl/roles/';
@@ -215,7 +215,7 @@ class AuthApiService {
 
   static Future<List<Permission>> getPermissions(
       {String? module, String? type}) async {
-    String url = '$baseUrl/permissions/';
+    String url = '${baseUrl}/permissions/';
     Map<String, String> params = {};
 
     if (module != null) params['module'] = module;
@@ -431,7 +431,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                   Tab(
                     height: 48,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -445,7 +446,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                   Tab(
                     height: 48,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -459,7 +461,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                   Tab(
                     height: 48,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -473,7 +476,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                   Tab(
                     height: 48,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [

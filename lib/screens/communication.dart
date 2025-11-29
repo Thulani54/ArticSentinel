@@ -1548,7 +1548,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
 
 // API Configuration class (add this to your existing API config)
 class ApiConfig {
-  static String baseUrl = '${Constants.articBaseUrl2}/api';
+  static String baseUrl = '${Constants.articBaseUrl2}api';
   static Map<String, String> get headers => {
         'Content-Type': 'application/json',
       };

@@ -4,7 +4,14 @@
       "Bash(grep:*)",
       "mcp__ide__getDiagnostics",
       "Bash(flutter:*)",
-      "Bash(dart analyze:*)"
+      "Bash(dart analyze:*)",
+      "Read(//Users/thulanimoyo/Documents/Work/ExVr/exvr/services/**)",
+      "Read(//Users/thulanimoyo/Documents/Work/ExVr/exvr/**)",
+      "Bash(python:*)",
+      "Read(//Users/thulanimoyo/Desktop/**)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

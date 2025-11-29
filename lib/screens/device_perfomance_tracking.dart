@@ -1222,7 +1222,7 @@ class ApiService {
 
   static Future<List<Device>> getDevices(int companyId) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/api/companies/$companyId/devices/'),
+      Uri.parse('${baseUrl}api/companies/$companyId/devices/'),
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -1250,7 +1250,7 @@ class ApiService {
     };
     print("gfghgh $queryParams");
 
-    final uri = Uri.parse('$baseUrl/api/device-metrics/')
+    final uri = Uri.parse('${baseUrl}api/device-metrics/')
         .replace(queryParameters: queryParams);
 
     final response = await http.get(
@@ -1268,7 +1268,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getDeviceDetail(String deviceId) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/api/devices/$deviceId/'),
+      Uri.parse('${baseUrl}api/devices/$deviceId/'),
       headers: {'Content-Type': 'application/json'},
     );
 

@@ -107,7 +107,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
       var headers = {'Content-Type': 'application/json'};
       var request = http.Request(
         'POST',
-        Uri.parse('${Constants.articBaseUrl2}/api/units/list/'),
+        Uri.parse('${Constants.articBaseUrl2}api/units/list/'),
       );
       request.body = json.encode({"business_id": businessId});
       request.headers.addAll(headers);
@@ -153,7 +153,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
       var headers = {'Content-Type': 'application/json'};
       var request = http.Request(
         'POST',
-        Uri.parse('${Constants.articBaseUrl2}/api/suppliers/local/'),
+        Uri.parse('${Constants.articBaseUrl2}api/suppliers/local/'),
       );
       request.body = json.encode({
         "business_id": businessId,
