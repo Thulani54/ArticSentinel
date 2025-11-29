@@ -32,6 +32,12 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
   bool _isSidebarExpanded = true;
   late AnimationController _animationController;
   late Animation<double> _sidebarAnimation;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // Helper method to check if screen is mobile
+  bool _isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < 768;
+  }
 
   @override
   void initState() {
@@ -164,9 +170,202 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
     }
   }
 
+  // Build sidebar content (reusable for both drawer and inline sidebar)
+  Widget _buildSidebarContent({required bool isMobileDrawer}) {
+    return Container(
+      padding: EdgeInsets.all(_isSidebarExpanded ? 16 : 8),
+      color: isMobileDrawer ? Colors.white : Colors.grey.withValues(alpha: 0.25),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Toggle button at top of sidebar with Home text (hidden on mobile drawer)
+            if (!isMobileDrawer)
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.only(top: 8, bottom: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (_isSidebarExpanded)
+                      Text(
+                        "Home",
+                        style: GoogleFonts.inter(
+                          textStyle: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    if (!_isSidebarExpanded)
+                      Icon(
+                        CupertinoIcons.home,
+                        color: Colors.black54,
+                        size: 20,
+                      ),
+                    IconButton(
+                      onPressed: _toggleSidebar,
+                      icon: Icon(
+                        _isSidebarExpanded
+                            ? CupertinoIcons.chevron_left
+                            : CupertinoIcons.chevron_right,
+                        color: Colors.black54,
+                        size: 20,
+                      ),
+                      padding: EdgeInsets.all(8),
+                      constraints: BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // Mobile drawer header (shown only on mobile)
+            if (isMobileDrawer)
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.only(top: 16, bottom: 24),
+                child: Text(
+                  "Navigation",
+                  style: GoogleFonts.inter(
+                    textStyle: TextStyle(
+                      fontSize: 20,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ListView.builder(
+                itemCount: sideBarList.length,
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: index == 7 ? 100 : 16),
+                    child: InkWell(
+                      highlightColor: Colors.transparent,
+                      hoverColor: Colors.transparent,
+                      focusColor: Colors.transparent,
+                      child: Container(
+                        height: (isMobileDrawer || _isSidebarExpanded) ? 50 : 40,
+                        padding: EdgeInsets.only(
+                            left: (isMobileDrawer || _isSidebarExpanded) ? 16 : 8,
+                            right: (isMobileDrawer || _isSidebarExpanded) ? 12 : 8),
+                        width: MediaQuery.of(context).size.width,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                              (isMobileDrawer || _isSidebarExpanded) ? 24 : 20),
+                          color: sideColorIndex == index
+                              ? Constants.ctaColorLight
+                              : (isMobileDrawer
+                                  ? Colors.grey.withValues(alpha: 0.1)
+                                  : Colors.white60),
+                        ),
+                        child: (isMobileDrawer || _isSidebarExpanded)
+                            ? Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    sideBarList[index].itemIcon,
+                                    size: 20,
+                                    color: sideColorIndex == index
+                                        ? Colors.white
+                                        : Colors.black,
+                                  ),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      sideBarList[index].itemName,
+                                      style: GoogleFonts.inter(
+                                        textStyle: TextStyle(
+                                            fontSize: 12,
+                                            color: sideColorIndex == index
+                                                ? Colors.white
+                                                : Colors.black54,
+                                            letterSpacing: 0,
+                                            fontWeight: FontWeight.w500),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Center(
+                                child: Icon(
+                                  sideBarList[index].itemIcon,
+                                  size: 20,
+                                  color: sideColorIndex == index
+                                      ? Colors.white
+                                      : Colors.black,
+                                ),
+                              ),
+                      ),
+                      onTap: () {
+                        _navigateToRoute(sideBarList[index].item_id);
+                        // Close drawer on mobile after navigation
+                        if (isMobileDrawer) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                    ),
+                  );
+                }),
+            SizedBox(height: 16),
+            InkWell(
+              highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              child: Container(
+                height: 40,
+                padding: EdgeInsets.only(
+                    left: (isMobileDrawer || _isSidebarExpanded) ? 16 : 8,
+                    right: (isMobileDrawer || _isSidebarExpanded) ? 12 : 8),
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(
+                      (isMobileDrawer || _isSidebarExpanded) ? 32 : 20),
+                  color: Constants.ctaColorLight,
+                ),
+                child: Center(
+                  child: (isMobileDrawer || _isSidebarExpanded)
+                      ? Text(
+                          "Sign Out",
+                          style: GoogleFonts.inter(
+                            textStyle: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white,
+                                letterSpacing: 0,
+                                fontWeight: FontWeight.normal),
+                          ),
+                        )
+                      : Icon(
+                          CupertinoIcons.square_arrow_right,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                ),
+              ),
+              onTap: () {
+                context.go('/login');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isMobile = _isMobile(context);
+
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -175,6 +374,14 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
         surfaceTintColor: Colors.transparent,
         automaticallyImplyLeading: false,
         toolbarHeight: 64,
+        leading: isMobile
+            ? IconButton(
+                icon: Icon(CupertinoIcons.bars, color: Colors.black87),
+                onPressed: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+              )
+            : null,
         title: Row(
           children: [
             // Logo and brand
@@ -194,7 +401,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
               "Artic Sentinel",
               style: GoogleFonts.inter(
                 textStyle: TextStyle(
-                  fontSize: 20,
+                  fontSize: isMobile ? 16 : 20,
                   color: Colors.black87,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.5,
@@ -208,7 +415,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
           Container(
             height: 40,
             width: 40,
-            margin: EdgeInsets.only(right: 12),
+            margin: EdgeInsets.only(right: isMobile ? 8 : 12),
             decoration: BoxDecoration(
               color: Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
@@ -222,70 +429,88 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
 
           // User info
           Container(
-            margin: EdgeInsets.only(right: 24),
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            margin: EdgeInsets.only(right: isMobile ? 12 : 24),
+            padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 4 : 12, vertical: isMobile ? 4 : 8),
             decoration: BoxDecoration(
               color: Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  backgroundColor: Constants.ctaColorLight,
-                  radius: 16,
-                  child: Text(
-                    Constants.myDisplayname.isNotEmpty
-                        ? Constants.myDisplayname[0].toUpperCase()
-                        : 'U',
-                    style: GoogleFonts.inter(
-                      textStyle: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+            child: isMobile
+                ? CircleAvatar(
+                    backgroundColor: Constants.ctaColorLight,
+                    radius: 16,
+                    child: Text(
+                      Constants.myDisplayname.isNotEmpty
+                          ? Constants.myDisplayname[0].toUpperCase()
+                          : 'U',
+                      style: GoogleFonts.inter(
+                        textStyle: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Constants.ctaColorLight,
+                        radius: 16,
+                        child: Text(
+                          Constants.myDisplayname.isNotEmpty
+                              ? Constants.myDisplayname[0].toUpperCase()
+                              : 'U',
+                          style: GoogleFonts.inter(
+                            textStyle: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            Constants.myDisplayname,
+                            style: GoogleFonts.inter(
+                              textStyle: TextStyle(
+                                fontSize: 13,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                          Text(
+                            "Administrator",
+                            style: GoogleFonts.inter(
+                              textStyle: TextStyle(
+                                fontSize: 11,
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        CupertinoIcons.chevron_down,
+                        color: Colors.black54,
+                        size: 16,
+                      ),
+                    ],
                   ),
-                ),
-                SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      Constants.myDisplayname,
-                      style: GoogleFonts.inter(
-                        textStyle: TextStyle(
-                          fontSize: 13,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                    Text(
-                      "Administrator",
-                      style: GoogleFonts.inter(
-                        textStyle: TextStyle(
-                          fontSize: 11,
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ],
-                ),
-                SizedBox(width: 4),
-                Icon(
-                  CupertinoIcons.chevron_down,
-                  color: Colors.black54,
-                  size: 16,
-                ),
-              ],
-            ),
           ),
         ],
         bottom: PreferredSize(
@@ -296,6 +521,11 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
           ),
         ),
       ),
+      drawer: isMobile
+          ? Drawer(
+              child: _buildSidebarContent(isMobileDrawer: true),
+            )
+          : null,
       body: Container(
         width: MediaQuery.of(context).size.width,
         height: MediaQuery.of(context).size.height,
@@ -303,184 +533,18 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            // Sidebar
-            AnimatedBuilder(
-              animation: _sidebarAnimation,
-              builder: (context, child) {
-                return Container(
+            // Desktop Sidebar (hidden on mobile)
+            if (!isMobile)
+              AnimatedBuilder(
+                animation: _sidebarAnimation,
+                builder: (context, child) {
+                  return Container(
                     height: MediaQuery.of(context).size.height,
                     width: _sidebarAnimation.value,
-                    padding: EdgeInsets.all(_isSidebarExpanded ? 16 : 8),
-                    color: Colors.grey.withValues(alpha: 0.25),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          // Toggle button at top of sidebar with Home text
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.only(top: 8, bottom: 16),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                if (_isSidebarExpanded)
-                                  Text(
-                                    "Home",
-                                    style: GoogleFonts.inter(
-                                      textStyle: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.black87,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ),
-                                if (!_isSidebarExpanded)
-                                  Icon(
-                                    CupertinoIcons.home,
-                                    color: Colors.black54,
-                                    size: 20,
-                                  ),
-                                IconButton(
-                                  onPressed: _toggleSidebar,
-                                  icon: Icon(
-                                    _isSidebarExpanded
-                                        ? CupertinoIcons.chevron_left
-                                        : CupertinoIcons.chevron_right,
-                                    color: Colors.black54,
-                                    size: 20,
-                                  ),
-                                  padding: EdgeInsets.all(8),
-                                  constraints: BoxConstraints(
-                                    minWidth: 32,
-                                    minHeight: 32,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          ListView.builder(
-                              itemCount: sideBarList.length,
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: EdgeInsets.only(
-                                      bottom: index == 7 ? 100 : 16),
-                                  child: InkWell(
-                                    highlightColor: Colors.transparent,
-                                    hoverColor: Colors.transparent,
-                                    focusColor: Colors.transparent,
-                                    child: Container(
-                                      height: _isSidebarExpanded ? 50 : 40,
-                                      padding: EdgeInsets.only(
-                                          left: _isSidebarExpanded ? 16 : 8,
-                                          right: _isSidebarExpanded ? 12 : 8),
-                                      width: MediaQuery.of(context).size.width,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                            _isSidebarExpanded ? 24 : 20),
-                                        color: sideColorIndex == index
-                                            ? Constants.ctaColorLight
-                                            : Colors.white60,
-                                      ),
-                                      child: _isSidebarExpanded
-                                          ? Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              children: [
-                                                Icon(
-                                                  sideBarList[index].itemIcon,
-                                                  size: 20,
-                                                  color: sideColorIndex == index
-                                                      ? Colors.white
-                                                      : Colors.black,
-                                                ),
-                                                SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Text(
-                                                    sideBarList[index].itemName,
-                                                    style: GoogleFonts.inter(
-                                                      textStyle: TextStyle(
-                                                          fontSize: 12,
-                                                          color:
-                                                              sideColorIndex ==
-                                                                      index
-                                                                  ? Colors.white
-                                                                  : Colors
-                                                                      .black54,
-                                                          letterSpacing: 0,
-                                                          fontWeight:
-                                                              FontWeight.w500),
-                                                    ),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          : Center(
-                                              child: Icon(
-                                                sideBarList[index].itemIcon,
-                                                size: 20,
-                                                color: sideColorIndex == index
-                                                    ? Colors.white
-                                                    : Colors.black,
-                                              ),
-                                            ),
-                                    ),
-                                    onTap: () {
-                                      _navigateToRoute(
-                                          sideBarList[index].item_id);
-                                    },
-                                  ),
-                                );
-                              }),
-                          SizedBox(height: 16),
-                          InkWell(
-                            highlightColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
-                            focusColor: Colors.transparent,
-                            child: Container(
-                              height: 40,
-                              padding: EdgeInsets.only(
-                                  left: _isSidebarExpanded ? 16 : 8,
-                                  right: _isSidebarExpanded ? 12 : 8),
-                              width: MediaQuery.of(context).size.width,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                    _isSidebarExpanded ? 32 : 20),
-                                color: Constants.ctaColorLight,
-                              ),
-                              child: Center(
-                                child: _isSidebarExpanded
-                                    ? Text(
-                                        "Sign Out",
-                                        style: GoogleFonts.inter(
-                                          textStyle: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.white,
-                                              letterSpacing: 0,
-                                              fontWeight: FontWeight.normal),
-                                        ),
-                                      )
-                                    : Icon(
-                                        CupertinoIcons.square_arrow_right,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                              ),
-                            ),
-                            onTap: () {
-                              context.go('/login');
-                            },
-                          ),
-                        ],
-                      ),
-                    ));
-              },
-            ),
+                    child: _buildSidebarContent(isMobileDrawer: false),
+                  );
+                },
+              ),
             // Main content
             Expanded(
               child: Container(

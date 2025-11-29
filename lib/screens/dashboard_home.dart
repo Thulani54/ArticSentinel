@@ -1332,26 +1332,28 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return _buildEmptyDetailedTemperatureView();
     }
 
+    final isMobile = _isMobile(context);
+
     return Padding(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 8 : 16),
           Text(
             'Detailed Temperature Analysis',
             style: GoogleFonts.inter(
-              fontSize: 20,
+              fontSize: isMobile ? 16 : 20,
               fontWeight: FontWeight.w600,
               color: Colors.grey.shade800,
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           (temperatureRanges == null || temperatureRanges!.isEmpty)
               ? _buildEmptyAnalyticsView()
               : Container(
                   margin: EdgeInsets.all(0),
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(isMobile ? 12 : 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -1369,45 +1371,62 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         Text(
                           'Temperature Analytics',
                           style: GoogleFonts.inter(
-                            fontSize: 18,
+                            fontSize: isMobile ? 14 : 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.grey.shade800,
                           ),
                         ),
-                        SizedBox(height: 16),
-                        Row(
-                          children: [
-                            // Temperature spread analysis
-                            Expanded(child: _buildTemperatureSpreadCard()),
-                            SizedBox(width: 12),
-
-                            // Temperature stability indicator
-                            Expanded(child: _buildTemperatureStabilityCard()),
-                            SizedBox(width: 12),
-
-                            // Temperature alerts summary
-                            Expanded(child: _buildTemperatureAlertsCard()),
-                          ],
-                        ),
+                        SizedBox(height: isMobile ? 12 : 16),
+                        isMobile
+                            ? Column(
+                                children: [
+                                  _buildTemperatureSpreadCard(),
+                                  SizedBox(height: 12),
+                                  _buildTemperatureStabilityCard(),
+                                  SizedBox(height: 12),
+                                  _buildTemperatureAlertsCard(),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Expanded(child: _buildTemperatureSpreadCard()),
+                                  SizedBox(width: 12),
+                                  Expanded(child: _buildTemperatureStabilityCard()),
+                                  SizedBox(width: 12),
+                                  Expanded(child: _buildTemperatureAlertsCard()),
+                                ],
+                              ),
                       ]),
                 ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              if (temperatureRanges.length > 0)
-                Expanded(
-                    child: _buildDetailedTemperatureCard(temperatureRanges[0])),
-              SizedBox(width: 16),
-              if (temperatureRanges.length > 1)
-                Expanded(
-                    child: _buildDetailedTemperatureCard(temperatureRanges[1])),
-              SizedBox(width: 16),
-              if (temperatureRanges.length > 2)
-                Expanded(
-                    child: _buildDetailedTemperatureCard(temperatureRanges[2]))
-            ],
-          )
-          // ...temperatureRanges!.map((range) => _buildDetailedTemperatureCard(range)),
+          SizedBox(height: isMobile ? 12 : 16),
+          isMobile
+              ? Column(
+                  children: [
+                    if (temperatureRanges.length > 0)
+                      _buildDetailedTemperatureCard(temperatureRanges[0]),
+                    if (temperatureRanges.length > 0) SizedBox(height: 12),
+                    if (temperatureRanges.length > 1)
+                      _buildDetailedTemperatureCard(temperatureRanges[1]),
+                    if (temperatureRanges.length > 1) SizedBox(height: 12),
+                    if (temperatureRanges.length > 2)
+                      _buildDetailedTemperatureCard(temperatureRanges[2]),
+                  ],
+                )
+              : Row(
+                  children: [
+                    if (temperatureRanges.length > 0)
+                      Expanded(
+                          child: _buildDetailedTemperatureCard(temperatureRanges[0])),
+                    SizedBox(width: 16),
+                    if (temperatureRanges.length > 1)
+                      Expanded(
+                          child: _buildDetailedTemperatureCard(temperatureRanges[1])),
+                    SizedBox(width: 16),
+                    if (temperatureRanges.length > 2)
+                      Expanded(
+                          child: _buildDetailedTemperatureCard(temperatureRanges[2]))
+                  ],
+                )
         ],
       ),
     );
@@ -1419,25 +1438,27 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return _buildEmptyDetailedPressureView();
     }
 
+    final isMobile = _isMobile(context);
+
     return Padding(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 8 : 16),
           Text(
             'Detailed Pressure Analysis',
             style: GoogleFonts.inter(
-              fontSize: 20,
+              fontSize: isMobile ? 16 : 20,
               fontWeight: FontWeight.w600,
               color: Colors.grey.shade800,
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           (pressureMetrics == null)
               ? _buildEmptyAnalyticsView()
               : Container(
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(isMobile ? 12 : 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -1455,59 +1476,88 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       Text(
                         'Pressure Analytics',
                         style: GoogleFonts.inter(
-                          fontSize: 18,
+                          fontSize: isMobile ? 14 : 18,
                           fontWeight: FontWeight.w600,
                           color: Colors.grey.shade800,
                         ),
                       ),
-                      SizedBox(height: 16),
-                      Row(
-                        children: [
-                          // Pressure ratio analysis
-                          Expanded(child: _buildPressureRatioCard()),
-                          SizedBox(width: 12),
-
-                          // Pressure stability
-                          Expanded(child: _buildPressureStabilityCard()),
-                        ],
-                      ),
+                      SizedBox(height: isMobile ? 12 : 16),
+                      isMobile
+                          ? Column(
+                              children: [
+                                _buildPressureRatioCard(),
+                                SizedBox(height: 12),
+                                _buildPressureStabilityCard(),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(child: _buildPressureRatioCard()),
+                                SizedBox(width: 12),
+                                Expanded(child: _buildPressureStabilityCard()),
+                              ],
+                            ),
                     ],
                   ),
                 ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              // Low Side Pressure
-              Expanded(
-                child: _buildDetailedPressureCard(
-                  'Low Side Pressure',
-                  pressureMetrics!.lowSideCurrent,
-                  pressureMetrics!.lowSideMin,
-                  pressureMetrics!.lowSideMax,
-                  pressureMetrics!.lowSideMinTimestamp, // Add to your model
-                  pressureMetrics!.lowSideMaxTimestamp, // Add to your model
-                  Constants.ctaColorLight,
-                  Icons.compress,
+          SizedBox(height: isMobile ? 12 : 16),
+          isMobile
+              ? Column(
+                  children: [
+                    _buildDetailedPressureCard(
+                      'Low Side Pressure',
+                      pressureMetrics!.lowSideCurrent,
+                      pressureMetrics!.lowSideMin,
+                      pressureMetrics!.lowSideMax,
+                      pressureMetrics!.lowSideMinTimestamp,
+                      pressureMetrics!.lowSideMaxTimestamp,
+                      Constants.ctaColorLight,
+                      Icons.compress,
+                    ),
+                    SizedBox(height: 12),
+                    _buildDetailedPressureCard(
+                      'High Side Pressure',
+                      pressureMetrics!.highSideCurrent,
+                      pressureMetrics!.highSideMin,
+                      pressureMetrics!.highSideMax,
+                      pressureMetrics!.highSideMinTimestamp,
+                      pressureMetrics!.highSideMaxTimestamp,
+                      Constants.ctaColorLight,
+                      Icons.expand,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    // Low Side Pressure
+                    Expanded(
+                      child: _buildDetailedPressureCard(
+                        'Low Side Pressure',
+                        pressureMetrics!.lowSideCurrent,
+                        pressureMetrics!.lowSideMin,
+                        pressureMetrics!.lowSideMax,
+                        pressureMetrics!.lowSideMinTimestamp,
+                        pressureMetrics!.lowSideMaxTimestamp,
+                        Constants.ctaColorLight,
+                        Icons.compress,
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    // High Side Pressure
+                    Expanded(
+                      child: _buildDetailedPressureCard(
+                        'High Side Pressure',
+                        pressureMetrics!.highSideCurrent,
+                        pressureMetrics!.highSideMin,
+                        pressureMetrics!.highSideMax,
+                        pressureMetrics!.highSideMinTimestamp,
+                        pressureMetrics!.highSideMaxTimestamp,
+                        Colors.red,
+                        Icons.unfold_more,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-
-              SizedBox(width: 16),
-
-              // High Side Pressure
-              Expanded(
-                child: _buildDetailedPressureCard(
-                  'High Side Pressure',
-                  pressureMetrics!.highSideCurrent,
-                  pressureMetrics!.highSideMin,
-                  pressureMetrics!.highSideMax,
-                  pressureMetrics!.highSideMinTimestamp, // Add to your model
-                  pressureMetrics!.highSideMaxTimestamp, // Add to your model
-                  Colors.red,
-                  Icons.unfold_more,
-                ),
-              ),
-            ],
-          ),
 
           SizedBox(height: 16),
 
@@ -1554,30 +1604,31 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return _buildEmptyDetailedCompressorView();
     }
 
+    final isMobile = _isMobile(context);
+
     // Get real-time compressor status
     final selectedDevice = latestDeviceDataList
         .where((device) => device.deviceId == selectedDeviceId)
         .firstOrNull;
 
     return Padding(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Detailed Compressor Analysis',
             style: GoogleFonts.inter(
-              fontSize: 20,
+              fontSize: isMobile ? 16 : 20,
               fontWeight: FontWeight.w600,
               color: Colors.grey.shade800,
             ),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           (compressorMetrics == null)
               ? _buildEmptyAnalyticsView()
               : Container(
-                  // margin: EdgeInsets.all(16),
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(isMobile ? 12 : 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -1592,20 +1643,25 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          // Efficiency indicator
-                          Expanded(child: _buildCompressorEfficiencyCard()),
-                          SizedBox(width: 12),
-
-                          // Load analysis
-                          Expanded(child: _buildCompressorLoadCard()),
-                          SizedBox(width: 12),
-
-                          // Health status
-                          Expanded(child: _buildCompressorHealthCard()),
-                        ],
-                      ),
+                      isMobile
+                          ? Column(
+                              children: [
+                                _buildCompressorEfficiencyCard(),
+                                SizedBox(height: 12),
+                                _buildCompressorLoadCard(),
+                                SizedBox(height: 12),
+                                _buildCompressorHealthCard(),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(child: _buildCompressorEfficiencyCard()),
+                                SizedBox(width: 12),
+                                Expanded(child: _buildCompressorLoadCard()),
+                                SizedBox(width: 12),
+                                Expanded(child: _buildCompressorHealthCard()),
+                              ],
+                            ),
                     ],
                   ),
                 ),
@@ -1613,23 +1669,26 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           // Real-time Status Card
           _buildCompressorStatusCard(selectedDevice),
 
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
           Container(child: _buildLastOffCard(selectedDevice)),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _buildPhaseAmperageCard(selectedDevice)),
-              SizedBox(width: 12),
-              // Runtime & Cycle Details
-              Expanded(child: _buildRuntimeDetailsCard()),
-              SizedBox(width: 12),
+          SizedBox(height: isMobile ? 12 : 16),
+          isMobile
+              ? Column(
+                  children: [
+                    _buildPhaseAmperageCard(selectedDevice),
+                    SizedBox(height: 12),
+                    _buildRuntimeDetailsCard(),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: _buildPhaseAmperageCard(selectedDevice)),
+                    SizedBox(width: 12),
+                    Expanded(child: _buildRuntimeDetailsCard()),
+                  ],
+                ),
 
-              // Last Off Information
-            ],
-          ),
-          // Phase Amperage Details
-
-          SizedBox(height: 16),
+          SizedBox(height: isMobile ? 12 : 16),
         ],
       ),
     );
@@ -3123,8 +3182,36 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return 'stable';
   }
 
+  // Helper method to check if screen is mobile
+  bool _isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < 768;
+  }
+
+  // Helper method to build mobile section headers
+  Widget _buildMobileSectionHeader(String title) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Constants.ctaColorLight.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        title,
+        style: GoogleFonts.inter(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Constants.ctaColorLight,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isMobile = _isMobile(context);
+    final padding = isMobile ? 16.0 : 24.0;
+
     return Container(
       child: isLoading
           ? Container(
@@ -3140,22 +3227,22 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 // Main content
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.all(24),
+                    padding: EdgeInsets.all(padding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildWelcomeHeader(),
-                        SizedBox(height: 24),
+                        SizedBox(height: isMobile ? 16 : 24),
                         _buildPerformanceOverview(),
-                        SizedBox(height: 24),
+                        SizedBox(height: isMobile ? 16 : 24),
                         _buildEnhancedSummaryCards2(),
-                        SizedBox(height: 24),
+                        SizedBox(height: isMobile ? 16 : 24),
                         _buildMetricsTabView(),
-                        SizedBox(height: 24),
+                        SizedBox(height: isMobile ? 16 : 24),
                         //_buildChartsTabView(),
-                        SizedBox(height: 24),
+                        SizedBox(height: isMobile ? 16 : 24),
                         _buildAlertsSection(),
-                        SizedBox(height: 24),
+                        SizedBox(height: isMobile ? 16 : 24),
                         _buildDeviceMapSection(),
                       ],
                     ),
@@ -3334,6 +3421,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   Widget _buildPerformanceOverview() {
     if (currentPerformanceMetrics == null) return Container();
+    final isMobile = _isMobile(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -3348,72 +3436,125 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.all(isMobile ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text("System Performance Overview",
-                    style: GoogleFonts.inter(
-                        fontSize: 18, fontWeight: FontWeight.w600)),
-                Spacer(),
-                Container(width: 300, child: _buildDeviceDropdown()),
-              ],
-            ),
+            isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("System Performance Overview",
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w600)),
+                      SizedBox(height: 12),
+                      _buildDeviceDropdown(),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Text("System Performance Overview",
+                          style: GoogleFonts.inter(
+                              fontSize: 18, fontWeight: FontWeight.w600)),
+                      Spacer(),
+                      Container(width: 300, child: _buildDeviceDropdown()),
+                    ],
+                  ),
             SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildPerformanceMetric(
-                    "Performance Score",
-                    "${currentPerformanceMetrics!.performanceScore}/100",
-                    _getPerformanceScoreColor(
-                        currentPerformanceMetrics!.performanceScore ?? 0),
-                    Icons.speed,
+            isMobile
+                ? Column(
+                    children: [
+                      _buildPerformanceMetric(
+                        "Performance Score",
+                        "${currentPerformanceMetrics!.performanceScore}/100",
+                        _getPerformanceScoreColor(
+                            currentPerformanceMetrics!.performanceScore ?? 0),
+                        Icons.speed,
+                      ),
+                      SizedBox(height: 8),
+                      _buildPerformanceMetric(
+                        "System Status",
+                        (currentPerformanceMetrics!.systemStatus
+                                    ?.replaceAll('_', ' ') ??
+                                'Unknown')
+                            .split(' ')
+                            .map((word) {
+                          if (word.isEmpty) return '';
+                          return word[0].toUpperCase() + word.substring(1);
+                        }).join(' '),
+                        _getSystemStatusColor(
+                            currentPerformanceMetrics!.systemStatus),
+                        Icons.stadium_outlined,
+                      ),
+                      SizedBox(height: 8),
+                      _buildPerformanceMetric(
+                        "Uptime Today",
+                        dailyAggregatesList.isEmpty
+                            ? "-"
+                            : "${dailyAggregatesList.first.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
+                        Constants.ctaColorLight,
+                        Icons.timer,
+                      ),
+                      SizedBox(height: 8),
+                      _buildPerformanceMetric(
+                        "Active Alerts",
+                        "${currentPerformanceMetrics!.totalAlerts}",
+                        currentPerformanceMetrics!.criticalAlerts! > 0
+                            ? Colors.red
+                            : Constants.ctaColorLight,
+                        Icons.warning,
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: _buildPerformanceMetric(
+                          "Performance Score",
+                          "${currentPerformanceMetrics!.performanceScore}/100",
+                          _getPerformanceScoreColor(
+                              currentPerformanceMetrics!.performanceScore ?? 0),
+                          Icons.speed,
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildPerformanceMetric(
+                          "System Status",
+                          (currentPerformanceMetrics!.systemStatus
+                                      ?.replaceAll('_', ' ') ??
+                                  'Unknown')
+                              .split(' ')
+                              .map((word) {
+                            if (word.isEmpty) return '';
+                            return word[0].toUpperCase() + word.substring(1);
+                          }).join(' '),
+                          _getSystemStatusColor(
+                              currentPerformanceMetrics!.systemStatus),
+                          Icons.stadium_outlined,
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildPerformanceMetric(
+                          "Uptime Today",
+                          dailyAggregatesList.isEmpty
+                              ? "-"
+                              : "${dailyAggregatesList.first.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
+                          Constants.ctaColorLight,
+                          Icons.timer,
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildPerformanceMetric(
+                          "Active Alerts",
+                          "${currentPerformanceMetrics!.totalAlerts}",
+                          currentPerformanceMetrics!.criticalAlerts! > 0
+                              ? Colors.red
+                              : Constants.ctaColorLight,
+                          Icons.warning,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                Expanded(
-                  child: _buildPerformanceMetric(
-                    "System Status",
-                    // --- MODIFICATION START ---
-                    (currentPerformanceMetrics!.systemStatus
-                                ?.replaceAll('_', ' ') ??
-                            'Unknown')
-                        .split(' ')
-                        .map((word) {
-                      if (word.isEmpty) return '';
-                      return word[0].toUpperCase() + word.substring(1);
-                    }).join(' '),
-                    // --- MODIFICATION END ---
-                    _getSystemStatusColor(
-                        currentPerformanceMetrics!.systemStatus),
-                    Icons.stadium_outlined,
-                  ),
-                ),
-                Expanded(
-                  child: _buildPerformanceMetric(
-                    "Uptime Today",
-                    dailyAggregatesList.isEmpty
-                        ? "-"
-                        : "${dailyAggregatesList.first.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
-                    Constants.ctaColorLight,
-                    Icons.timer,
-                  ),
-                ),
-                Expanded(
-                  child: _buildPerformanceMetric(
-                    "Active Alerts",
-                    "${currentPerformanceMetrics!.totalAlerts}",
-                    //   "${currentPerformanceMetrics!.totalAlerts}/${currentPerformanceMetrics!.totalAlerts}",
-                    currentPerformanceMetrics!.criticalAlerts! > 0
-                        ? Colors.red
-                        : Constants.ctaColorLight,
-                    Icons.warning,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -3422,9 +3563,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   Widget _buildPerformanceMetric(
       String title, String value, Color color, IconData icon) {
+    final isMobile = _isMobile(context);
     return Container(
+      width: isMobile ? double.infinity : null,
       padding: EdgeInsets.all(12),
-      margin: EdgeInsets.only(right: 8),
+      margin: isMobile ? EdgeInsets.zero : EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
         color: Constants.ctaColorLight.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -3475,100 +3618,214 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   }
 
   Widget _buildEnhancedSummaryCards2() {
+    final isMobile = _isMobile(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("Key Metrics",
-            style:
-                GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.inter(
+                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
         SizedBox(height: 16),
-        Container(
-          height: 160,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: enhancedSummaryCards.length,
-            itemBuilder: (context, index) {
-              final card = enhancedSummaryCards[index];
-              return Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Container(
-                  width: 220,
-                  margin: EdgeInsets.only(right: 16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.shade300,
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
+        isMobile
+            ? Column(
+                children: enhancedSummaryCards.map((card) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.shade300,
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: card.accentColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(card.icon,
+                                      color: Colors.white, size: 20),
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(card.title,
+                                          style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600)),
+                                      Row(
+                                        children: [
+                                          Text("${card.value}${card.unit}",
+                                              style: GoogleFonts.inter(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold)),
+                                          if (card.trendDirection != 'stable')
+                                            Icon(
+                                              card.trendDirection == 'up'
+                                                  ? Icons.trending_up
+                                                  : Icons.trending_down,
+                                              size: 16,
+                                              color: card.trendDirection == 'up'
+                                                  ? Constants.ctaColorLight
+                                                  : Colors.red,
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            if (card.subtitle != null)
+                              Text(card.subtitle!,
+                                  style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade600)),
+                            if (card.trend != null)
+                              Text(card.trend!,
+                                  style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      color: card.accentColor,
+                                      fontWeight: FontWeight.w500)),
+                            if (card.alerts != null && card.alerts!.isNotEmpty)
                               Container(
-                                padding: EdgeInsets.all(12),
+                                margin: EdgeInsets.only(top: 8),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: card.accentColor,
-                                  borderRadius: BorderRadius.circular(12),
+                                  color: Constants.ctaColorLight
+                                      .withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Icon(card.icon,
-                                    color: Colors.white, size: 20),
+                                child: Text(
+                                  "${card.alerts!.length} alert${card.alerts!.length > 1 ? 's' : ''}",
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    color: Constants.ctaColorLight,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(card.title,
-                                        style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600)),
-                                    Row(
-                                      children: [
-                                        Text("${card.value}${card.unit}",
-                                            style: GoogleFonts.inter(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold)),
-                                        if (card.trendDirection != 'stable')
-                                          Icon(
-                                            card.trendDirection == 'up'
-                                                ? Icons.trending_up
-                                                : Icons.trending_down,
-                                            size: 16,
-                                            color: card.trendDirection == 'up'
-                                                ? Constants.ctaColorLight
-                                                : Colors.red,
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              )
+            : Container(
+                height: 160,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: enhancedSummaryCards.length,
+                  itemBuilder: (context, index) {
+                    final card = enhancedSummaryCards[index];
+                    return Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Container(
+                        width: 220,
+                        margin: EdgeInsets.only(right: 16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade300,
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
                               ),
                             ],
                           ),
-                          SizedBox(height: 12),
-                          if (card.subtitle != null)
-                            Text(card.subtitle!,
-                                style: GoogleFonts.inter(
-                                    fontSize: 11, color: Colors.grey.shade600)),
-                          if (card.trend != null)
-                            Text(card.trend!,
-                                style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    color: card.accentColor,
-                                    fontWeight: FontWeight.w500)),
-                          if (card.alerts != null && card.alerts!.isNotEmpty)
-                            Container(
-                              margin: EdgeInsets.only(top: 8),
-                              padding: EdgeInsets.symmetric(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: card.accentColor,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(card.icon,
+                                          color: Colors.white, size: 20),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(card.title,
+                                              style: GoogleFonts.inter(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade600)),
+                                          Row(
+                                            children: [
+                                              Text("${card.value}${card.unit}",
+                                                  style: GoogleFonts.inter(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                              if (card.trendDirection !=
+                                                  'stable')
+                                                Icon(
+                                                  card.trendDirection == 'up'
+                                                      ? Icons.trending_up
+                                                      : Icons.trending_down,
+                                                  size: 16,
+                                                  color:
+                                                      card.trendDirection == 'up'
+                                                          ? Constants
+                                                              .ctaColorLight
+                                                          : Colors.red,
+                                                ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 12),
+                                if (card.subtitle != null)
+                                  Text(card.subtitle!,
+                                      style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade600)),
+                                if (card.trend != null)
+                                  Text(card.trend!,
+                                      style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          color: card.accentColor,
+                                          fontWeight: FontWeight.w500)),
+                                if (card.alerts != null &&
+                                    card.alerts!.isNotEmpty)
+                                  Container(
+                                    margin: EdgeInsets.only(top: 8),
+                                    padding: EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Constants.ctaColorLight.withOpacity(0.2),
@@ -3593,83 +3850,102 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   }
 
   Widget _buildMetricsTabView() {
+    final isMobile = _isMobile(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("Detailed Metrics",
-            style:
-                GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.inter(
+                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
         SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 5)
-            ],
-          ),
-          child: Column(
-            children: [
-              // TabBar with corrected and logical order
-              TabBar(
-                isScrollable: false,
-                enableFeedback: false,
-                physics: const NeverScrollableScrollPhysics(),
-                controller: _metricsTabController,
-                tabs: [
-                  // Tab(text: "Temperature Analytics"),
-                  Tab(text: "Detailed Temperature"),
-                  //  Tab(text: "Pressure Analytics"),
-                  Tab(text: "Detailed Pressure"),
-                  //Tab(text: "Compressor Analytics"),
-                  Tab(text: "Detailed Compressor"),
-                  Tab(
-                      text:
-                          "Door Analytics"), // Consolidated from "Door Analysis"
+        isMobile
+            ? Column(
+                children: [
+                  // Temperature Section
+                  _buildMobileSectionHeader("Temperature Analytics"),
+                  SizedBox(height: 12),
+                  _buildDetailedTemperatureMetrics(),
+                  SizedBox(height: 24),
+
+                  // Pressure Section
+                  _buildMobileSectionHeader("Pressure Analytics"),
+                  SizedBox(height: 12),
+                  _buildDetailedPressureMetrics(),
+                  SizedBox(height: 24),
+
+                  // Compressor Section
+                  _buildMobileSectionHeader("Compressor Analytics"),
+                  SizedBox(height: 12),
+                  _buildDetailedCompressorMetrics(),
+                  SizedBox(height: 24),
+
+                  // Door Analytics Section
+                  _buildMobileSectionHeader("Door Analytics"),
+                  SizedBox(height: 12),
+                  _buildDesktopDoorMetrics(),
                 ],
-                labelColor: Constants.ctaColorLight,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: Constants.ctaColorLight,
-              ),
-
-              // TabBarView with its children reordered to match the TabBar
-              Container(
-                height: 655,
-                child: TabBarView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  controller: _metricsTabController,
+              )
+            : Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 5)
+                  ],
+                ),
+                child: Column(
                   children: [
-                    // 1. Temperature
-
-                    _buildDetailedTemperatureMetrics(),
-
-                    // 2. Pressure
-                    // _buildPressureAnalytics(),
-                    _buildDetailedPressureMetrics(),
-
-                    // 3. Compressor
-                    //_buildCompressorAnalytics(),
-                    _buildDetailedCompressorMetrics(),
-
-                    // 4. Door
-                    Column(
-                      children: [
-                        SizedBox(
-                          height: 16,
-                        ),
-                        Container(
-                            height: 100, child: _buildDesktopDoorMetrics()),
+                    // TabBar with corrected and logical order
+                    TabBar(
+                      isScrollable: false,
+                      enableFeedback: false,
+                      physics: const NeverScrollableScrollPhysics(),
+                      controller: _metricsTabController,
+                      tabs: [
+                        Tab(text: "Detailed Temperature"),
+                        Tab(text: "Detailed Pressure"),
+                        Tab(text: "Detailed Compressor"),
+                        Tab(text: "Door Analytics"),
                       ],
+                      labelColor: Constants.ctaColorLight,
+                      unselectedLabelColor: Colors.grey,
+                      indicatorColor: Constants.ctaColorLight,
+                    ),
+
+                    // TabBarView with its children reordered to match the TabBar
+                    Container(
+                      height: 655,
+                      child: TabBarView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        controller: _metricsTabController,
+                        children: [
+                          // 1. Temperature
+                          _buildDetailedTemperatureMetrics(),
+
+                          // 2. Pressure
+                          _buildDetailedPressureMetrics(),
+
+                          // 3. Compressor
+                          _buildDetailedCompressorMetrics(),
+
+                          // 4. Door
+                          Column(
+                            children: [
+                              SizedBox(height: 16),
+                              Container(
+                                  height: 100, child: _buildDesktopDoorMetrics()),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
       ],
     );
   }
