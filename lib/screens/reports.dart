@@ -762,6 +762,11 @@ class _ReportsState extends State<Reports> {
     'Custom Range',
   ];
 
+  // Helper method for mobile responsiveness
+  bool _isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < 768;
+  }
+
   final List<ScheduledReport> scheduledReports = [
     ScheduledReport(
       id: '1',
@@ -8624,287 +8629,572 @@ class _ReportsState extends State<Reports> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = _isMobile(context);
+
     return Container(
       color: Colors.white,
       child: SingleChildScrollView(
-        padding: EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Reports",
-                      style: GoogleFonts.inter(
-                        textStyle: TextStyle(
-                          fontSize: 28,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.5,
+            SizedBox(
+              width: double.infinity,
+              child: isMobile
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Reports",
+                              style: GoogleFonts.inter(
+                                textStyle: TextStyle(
+                                  fontSize: 24,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              "Generate and download comprehensive system reports",
+                              style: GoogleFonts.inter(
+                                textStyle: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black54,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      "Generate and download comprehensive system reports",
-                      style: GoogleFonts.inter(
-                        textStyle: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                // Period Selector
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        CupertinoIcons.calendar,
-                        size: 18,
-                        color: Constants.ctaColorLight,
-                      ),
-                      SizedBox(width: 8),
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: selectedPeriod,
-                          icon: Icon(
-                            Icons.keyboard_arrow_down,
-                            color: Constants.ctaColorLight,
-                            size: 20,
+                        SizedBox(height: 16),
+                        Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300),
                           ),
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                CupertinoIcons.calendar,
+                                size: 18,
+                                color: Constants.ctaColorLight,
+                              ),
+                              SizedBox(width: 8),
+                              DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: selectedPeriod,
+                                  icon: Icon(
+                                    Icons.keyboard_arrow_down,
+                                    color: Constants.ctaColorLight,
+                                    size: 20,
+                                  ),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  items: periods.map((String period) {
+                                    return DropdownMenuItem<String>(
+                                      value: period,
+                                      child: Text(period),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue) {
+                                    if (newValue != null) {
+                                      setState(() {
+                                        selectedPeriod = newValue;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
-                          items: periods.map((String period) {
-                            return DropdownMenuItem<String>(
-                              value: period,
-                              child: Text(period),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            if (newValue != null) {
-                              setState(() {
-                                selectedPeriod = newValue;
-                              });
-                            }
-                          },
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Reports",
+                              style: GoogleFonts.inter(
+                                textStyle: TextStyle(
+                                  fontSize: 28,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              "Generate and download comprehensive system reports",
+                              style: GoogleFonts.inter(
+                                textStyle: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black54,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Period Selector
+                        Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                CupertinoIcons.calendar,
+                                size: 18,
+                                color: Constants.ctaColorLight,
+                              ),
+                              SizedBox(width: 8),
+                              DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: selectedPeriod,
+                                  icon: Icon(
+                                    Icons.keyboard_arrow_down,
+                                    color: Constants.ctaColorLight,
+                                    size: 20,
+                                  ),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  items: periods.map((String period) {
+                                    return DropdownMenuItem<String>(
+                                      value: period,
+                                      child: Text(period),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue) {
+                                    if (newValue != null) {
+                                      setState(() {
+                                        selectedPeriod = newValue;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
             ),
             SizedBox(height: 4),
             Divider(thickness: 0.5, color: Colors.grey),
             SizedBox(height: 32),
 
             // Quick Stats Section
-            Row(
-              children: [
-                Expanded(
-                  child: CustomCard(
-                    elevation: 2,
-                    color: Colors.white,
-                    surfaceTintColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: InkWell(
-                      onTap: _showGeneratedReportsDialog,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: EdgeInsets.all(20),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                CupertinoIcons.doc_text,
-                                color: Colors.blue,
-                                size: 24,
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+            SizedBox(
+              width: double.infinity,
+              child: isMobile
+                  ? Column(
+                      children: [
+                        CustomCard(
+                          elevation: 2,
+                          color: Colors.white,
+                          surfaceTintColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: InkWell(
+                            onTap: _showGeneratedReportsDialog,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: EdgeInsets.all(20),
+                              child: Row(
                                 children: [
-                                  Text(
-                                    '${generatedReports.length}',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black87,
+                                  Container(
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      CupertinoIcons.doc_text,
+                                      color: Colors.blue,
+                                      size: 24,
                                     ),
                                   ),
-                                  Text(
-                                    'Reports Generated',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      color: Colors.black54,
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${generatedReports.length}',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Reports Generated',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                  ),
+                                  Icon(
+                                    CupertinoIcons.chevron_right,
+                                    color: Colors.black54,
+                                    size: 16,
                                   ),
                                 ],
                               ),
                             ),
-                            Icon(
-                              CupertinoIcons.chevron_right,
-                              color: Colors.black54,
-                              size: 16,
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: CustomCard(
-                    elevation: 2,
-                    color: Colors.white,
-                    surfaceTintColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: InkWell(
-                      onTap: _showDownloadsDialog,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: EdgeInsets.all(20),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                CupertinoIcons.arrow_down_circle,
-                                color: Colors.green,
-                                size: 24,
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        SizedBox(height: 12),
+                        CustomCard(
+                          elevation: 2,
+                          color: Colors.white,
+                          surfaceTintColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: InkWell(
+                            onTap: _showDownloadsDialog,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: EdgeInsets.all(20),
+                              child: Row(
                                 children: [
-                                  Text(
-                                    '${downloadedReports.length}',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black87,
+                                  Container(
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      CupertinoIcons.arrow_down_circle,
+                                      color: Colors.green,
+                                      size: 24,
                                     ),
                                   ),
-                                  Text(
-                                    'Downloads This Month',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      color: Colors.black54,
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${downloadedReports.length}',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Downloads This Month',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                  ),
+                                  Icon(
+                                    CupertinoIcons.chevron_right,
+                                    color: Colors.black54,
+                                    size: 16,
                                   ),
                                 ],
                               ),
                             ),
-                            Icon(
-                              CupertinoIcons.chevron_right,
-                              color: Colors.black54,
-                              size: 16,
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: CustomCard(
-                    elevation: 2,
-                    color: Colors.white,
-                    surfaceTintColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: InkWell(
-                      onTap: _showScheduledReportsDialog,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: EdgeInsets.all(20),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.purple.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                CupertinoIcons.time,
-                                color: Colors.purple,
-                                size: 24,
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        SizedBox(height: 12),
+                        CustomCard(
+                          elevation: 2,
+                          color: Colors.white,
+                          surfaceTintColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: InkWell(
+                            onTap: _showScheduledReportsDialog,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: EdgeInsets.all(20),
+                              child: Row(
                                 children: [
-                                  Text(
-                                    '${scheduledReports.length}',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black87,
+                                  Container(
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.purple.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      CupertinoIcons.time,
+                                      color: Colors.purple,
+                                      size: 24,
                                     ),
                                   ),
-                                  Text(
-                                    'Scheduled Reports',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      color: Colors.black54,
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${scheduledReports.length}',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Scheduled Reports',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                  ),
+                                  Icon(
+                                    CupertinoIcons.chevron_right,
+                                    color: Colors.black54,
+                                    size: 16,
                                   ),
                                 ],
                               ),
                             ),
-                            Icon(
-                              CupertinoIcons.chevron_right,
-                              color: Colors.black54,
-                              size: 16,
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: CustomCard(
+                            elevation: 2,
+                            color: Colors.white,
+                            surfaceTintColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: InkWell(
+                              onTap: _showGeneratedReportsDialog,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: EdgeInsets.all(20),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors.blue.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        CupertinoIcons.doc_text,
+                                        color: Colors.blue,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${generatedReports.length}',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Reports Generated',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(
+                                      CupertinoIcons.chevron_right,
+                                      color: Colors.black54,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: CustomCard(
+                            elevation: 2,
+                            color: Colors.white,
+                            surfaceTintColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: InkWell(
+                              onTap: _showDownloadsDialog,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: EdgeInsets.all(20),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors.green.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        CupertinoIcons.arrow_down_circle,
+                                        color: Colors.green,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${downloadedReports.length}',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Downloads This Month',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(
+                                      CupertinoIcons.chevron_right,
+                                      color: Colors.black54,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: CustomCard(
+                            elevation: 2,
+                            color: Colors.white,
+                            surfaceTintColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: InkWell(
+                              onTap: _showScheduledReportsDialog,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: EdgeInsets.all(20),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple
+                                            .withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        CupertinoIcons.time,
+                                        color: Colors.purple,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${scheduledReports.length}',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Scheduled Reports',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(
+                                      CupertinoIcons.chevron_right,
+                                      color: Colors.black54,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ],
             ),
             SizedBox(height: 32),
 
@@ -8912,7 +9202,7 @@ class _ReportsState extends State<Reports> {
             Text(
               "Report Types",
               style: GoogleFonts.inter(
-                fontSize: 18,
+                fontSize: isMobile ? 16 : 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),
@@ -8924,10 +9214,10 @@ class _ReportsState extends State<Reports> {
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
+                crossAxisCount: isMobile ? 1 : 3,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 1.5,
+                childAspectRatio: isMobile ? 2.5 : 2.0,
               ),
               itemCount: reportTypes.length,
               itemBuilder: (context, index) {
@@ -9025,7 +9315,7 @@ class _ReportsState extends State<Reports> {
             Text(
               "Recent Reports",
               style: GoogleFonts.inter(
-                fontSize: 18,
+                fontSize: isMobile ? 16 : 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),

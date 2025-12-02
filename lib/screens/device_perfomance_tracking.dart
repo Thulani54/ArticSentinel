@@ -1302,6 +1302,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   String? errorMessage;
   Timer? _refreshTimer;
 
+  // Helper method to check if screen is mobile
+  bool _isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < 768;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1504,9 +1509,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   }
 
   Widget _buildControlPanel() {
+    final isMobile = _isMobile(context);
+
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.all(isMobile ? 12 : 16),
+      padding: EdgeInsets.all(isMobile ? 16 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1519,11 +1526,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Column(children: [
-        Row(
-          children: [
-            // ───────── Device selector ─────────
-            Expanded(
-              child: Container(
+        isMobile
+            ? Column(
+                children: [
+                  // ───────── Device selector ─────────
+                  Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
@@ -1597,13 +1604,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
               ),
-            ),
+                  const SizedBox(height: 12),
 
-            const SizedBox(width: 12),
-
-            // ───────── Start date ─────────
-            Expanded(
-              child: Container(
+                  // ───────── Start date ─────────
+                  Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(12),
@@ -1658,13 +1662,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
               ),
-            ),
+                  const SizedBox(height: 12),
 
-            const SizedBox(width: 12),
-
-            // ───────── End date ─────────
-            Expanded(
-              child: Container(
+                  // ───────── End date ─────────
+                  Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(12),
@@ -1719,12 +1720,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
               ),
-            ),
+                  const SizedBox(height: 12),
 
-            const SizedBox(width: 12),
-
-            // ───────── Refresh button ─────────
-            ElevatedButton.icon(
+                  // ───────── Refresh button ─────────
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
               onPressed: _loadAnalytics,
               icon: Icon(
                 Icons.refresh_rounded,
@@ -1746,9 +1747,234 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-          ],
-        ),
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  // ───────── Device selector ─────────
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedDevice?.deviceId,
+                          hint: Text(
+                            'Select Device',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: const Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          icon: Icon(Icons.keyboard_arrow_down,
+                              color: Constants.ctaColorLight),
+                          isExpanded: true,
+                          items: [
+                            DropdownMenuItem<String>(
+                              value: null,
+                              child: Text(
+                                'All Devices',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            ...devices.map((device) => DropdownMenuItem<String>(
+                                  value: device.deviceId,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        margin: const EdgeInsets.only(right: 8),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Constants.ctaColorLight,
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          device.name,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )),
+                          ],
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedDevice = devices
+                                  .firstWhere((d) => d.deviceId == newValue);
+                            });
+                            _loadAnalytics();
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // ───────── Start date ─────────
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: InkWell(
+                        onTap: () => _selectDate(true),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_rounded,
+                                size: 18,
+                                color: Constants.ctaColorLight,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Start Date',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        color: const Color(0xFF64748B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      DateFormat('MMM dd, yyyy')
+                                          .format(startDate),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        color: const Color(0xFF1E293B),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: Constants.ctaColorLight,
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // ───────── End date ─────────
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: InkWell(
+                        onTap: () => _selectDate(false),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_rounded,
+                                size: 18,
+                                color: Constants.ctaColorLight,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'End Date',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        color: const Color(0xFF64748B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      DateFormat('MMM dd, yyyy').format(endDate),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        color: const Color(0xFF1E293B),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: Constants.ctaColorLight,
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // ───────── Refresh button ─────────
+                  ElevatedButton.icon(
+                    onPressed: _loadAnalytics,
+                    icon: Icon(
+                      Icons.refresh_rounded,
+                      size: 18,
+                    ),
+                    label: Text('Refresh'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Constants.ctaColorLight,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                      textStyle: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
       ]),
     );
   }
@@ -1774,6 +2000,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildTemperatureDetailsCard() {
     final tempAnalytics = analyticsData!.enhancedTemperatureAnalytics;
+    final isMobile = _isMobile(context);
 
     // Check for temperature errors/warnings - updated to use coil temperature for broader range
     bool hasError = tempAnalytics.maxCoilTemperature > 80 ||
@@ -1782,7 +2009,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         tempAnalytics.minAirTemperature < -5;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1799,7 +2026,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isMobile ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1828,7 +2055,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       Text(
                         'Temperature Analysis',
                         style: GoogleFonts.inter(
-                          fontSize: 16,
+                          fontSize: isMobile ? 14 : 16,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF0F172A),
                         ),
@@ -1836,7 +2063,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       Text(
                         '${tempAnalytics.totalReadings} total readings',
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: isMobile ? 11 : 12,
                           color: const Color(0xFF64748B),
                         ),
                       ),
@@ -1862,41 +2089,72 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
 
             // Temperature breakdown - FIXED coil temperature section
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInfoSection4(
-                    'Air Temperature',
-                    '${tempAnalytics.minAirTemperature.toStringAsFixed(1)}°C - ${tempAnalytics.maxAirTemperature.toStringAsFixed(1)}°C',
-                    'Average: ${tempAnalytics.avgAirTemperature.toStringAsFixed(1)}°C | Variance: ±${tempAnalytics.airTemperatureVariance.toStringAsFixed(1)}',
-                    'Low: ${_formatTimestamp(tempAnalytics.minAirTempTimestamp ?? "")} • High: ${_formatTimestamp(tempAnalytics.maxAirTempTimestamp ?? "")}',
-                    Icons.air_rounded,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildInfoSection4(
-                    'Drain Temperature',
-                    '${tempAnalytics.minDrainTemperature.toStringAsFixed(1)}°C - ${tempAnalytics.maxDrainTemperature.toStringAsFixed(1)}°C',
-                    'Average: ${tempAnalytics.avgDrainTemperature.toStringAsFixed(1)}°C | Variance: ±${tempAnalytics.drainTemperatureVariance.toStringAsFixed(1)}',
-                    'Low: ${_formatTimestamp(tempAnalytics.minDrainTempTimestamp ?? "")} • High: ${_formatTimestamp(tempAnalytics.maxDrainTempTimestamp ?? "")}',
-                    Icons.water_drop_outlined,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildInfoSection4(
-                    'Coil Temperature',
-                    '${tempAnalytics.minCoilTemperature.toStringAsFixed(1)}°C - ${tempAnalytics.maxCoilTemperature.toStringAsFixed(1)}°C',
-                    'Average: ${tempAnalytics.avgCoilTemperature.toStringAsFixed(1)}°C | Variance: ±${tempAnalytics.coilTemperatureVariance.toStringAsFixed(1)}',
-                    'Low: ${_formatTimestamp(tempAnalytics.minCoilTempTimestamp ?? "")} • High: ${_formatTimestamp(tempAnalytics.maxCoilTempTimestamp ?? "")}',
-                    Icons.device_thermostat_rounded,
-                  ),
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: isMobile
+                  ? Column(
+                      children: [
+                        _buildInfoSection4(
+                          'Air Temperature',
+                          '${tempAnalytics.minAirTemperature.toStringAsFixed(1)}°C - ${tempAnalytics.maxAirTemperature.toStringAsFixed(1)}°C',
+                          'Average: ${tempAnalytics.avgAirTemperature.toStringAsFixed(1)}°C | Variance: ±${tempAnalytics.airTemperatureVariance.toStringAsFixed(1)}',
+                          'Low: ${_formatTimestamp(tempAnalytics.minAirTempTimestamp ?? "")} • High: ${_formatTimestamp(tempAnalytics.maxAirTempTimestamp ?? "")}',
+                          Icons.air_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoSection4(
+                          'Drain Temperature',
+                          '${tempAnalytics.minDrainTemperature.toStringAsFixed(1)}°C - ${tempAnalytics.maxDrainTemperature.toStringAsFixed(1)}°C',
+                          'Average: ${tempAnalytics.avgDrainTemperature.toStringAsFixed(1)}°C | Variance: ±${tempAnalytics.drainTemperatureVariance.toStringAsFixed(1)}',
+                          'Low: ${_formatTimestamp(tempAnalytics.minDrainTempTimestamp ?? "")} • High: ${_formatTimestamp(tempAnalytics.maxDrainTempTimestamp ?? "")}',
+                          Icons.water_drop_outlined,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoSection4(
+                          'Coil Temperature',
+                          '${tempAnalytics.minCoilTemperature.toStringAsFixed(1)}°C - ${tempAnalytics.maxCoilTemperature.toStringAsFixed(1)}°C',
+                          'Average: ${tempAnalytics.avgCoilTemperature.toStringAsFixed(1)}°C | Variance: ±${tempAnalytics.coilTemperatureVariance.toStringAsFixed(1)}',
+                          'Low: ${_formatTimestamp(tempAnalytics.minCoilTempTimestamp ?? "")} • High: ${_formatTimestamp(tempAnalytics.maxCoilTempTimestamp ?? "")}',
+                          Icons.device_thermostat_rounded,
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: _buildInfoSection4(
+                            'Air Temperature',
+                            '${tempAnalytics.minAirTemperature.toStringAsFixed(1)}°C - ${tempAnalytics.maxAirTemperature.toStringAsFixed(1)}°C',
+                            'Average: ${tempAnalytics.avgAirTemperature.toStringAsFixed(1)}°C | Variance: ±${tempAnalytics.airTemperatureVariance.toStringAsFixed(1)}',
+                            'Low: ${_formatTimestamp(tempAnalytics.minAirTempTimestamp ?? "")} • High: ${_formatTimestamp(tempAnalytics.maxAirTempTimestamp ?? "")}',
+                            Icons.air_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildInfoSection4(
+                            'Drain Temperature',
+                            '${tempAnalytics.minDrainTemperature.toStringAsFixed(1)}°C - ${tempAnalytics.maxDrainTemperature.toStringAsFixed(1)}°C',
+                            'Average: ${tempAnalytics.avgDrainTemperature.toStringAsFixed(1)}°C | Variance: ±${tempAnalytics.drainTemperatureVariance.toStringAsFixed(1)}',
+                            'Low: ${_formatTimestamp(tempAnalytics.minDrainTempTimestamp ?? "")} • High: ${_formatTimestamp(tempAnalytics.maxDrainTempTimestamp ?? "")}',
+                            Icons.water_drop_outlined,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildInfoSection4(
+                            'Coil Temperature',
+                            '${tempAnalytics.minCoilTemperature.toStringAsFixed(1)}°C - ${tempAnalytics.maxCoilTemperature.toStringAsFixed(1)}°C',
+                            'Average: ${tempAnalytics.avgCoilTemperature.toStringAsFixed(1)}°C | Variance: ±${tempAnalytics.coilTemperatureVariance.toStringAsFixed(1)}',
+                            'Low: ${_formatTimestamp(tempAnalytics.minCoilTempTimestamp ?? "")} • High: ${_formatTimestamp(tempAnalytics.maxCoilTempTimestamp ?? "")}',
+                            Icons.device_thermostat_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -1906,7 +2164,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildInfoSection4(String title, String value, String subtitle,
       String timestamps, IconData icon) {
+    final isMobile = _isMobile(context);
     return Container(
+      width: isMobile ? double.infinity : null,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFFAFAFA),
@@ -1963,13 +2223,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildPressureDetailsCard() {
     final pressureAnalytics = analyticsData!.enhancedPressureAnalytics;
+    final isMobile = _isMobile(context);
 
     // Check for pressure errors
     bool hasError = pressureAnalytics.avgPressureDifferential > 50 ||
         pressureAnalytics.avgPressureHigh > 200;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1986,7 +2247,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isMobile ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2015,7 +2276,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       Text(
                         'Pressure Analysis',
                         style: GoogleFonts.inter(
-                          fontSize: 16,
+                          fontSize: isMobile ? 14 : 16,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF0F172A),
                         ),
@@ -2023,7 +2284,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       Text(
                         '${pressureAnalytics.totalReadings} total readings',
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: isMobile ? 11 : 12,
                           color: const Color(0xFF64748B),
                         ),
                       ),
@@ -2049,29 +2310,54 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
 
             // Pressure metrics
-            Row(
-              children: [
-                _buildMetricCard(
-                  'Low Pressure',
-                  '${pressureAnalytics.avgPressureLow.toStringAsFixed(1)} PSI',
-                  '${pressureAnalytics.minPressureLow.toStringAsFixed(1)} - ${pressureAnalytics.maxPressureLow.toStringAsFixed(1)} PSI',
-                ),
-                const SizedBox(width: 12),
-                _buildMetricCard(
-                  'High Pressure',
-                  '${pressureAnalytics.avgPressureHigh.toStringAsFixed(1)} PSI',
-                  '${pressureAnalytics.minPressureHigh.toStringAsFixed(1)} - ${pressureAnalytics.maxPressureHigh.toStringAsFixed(1)} PSI',
-                ),
-                const SizedBox(width: 12),
-                _buildMetricCard(
-                  'Differential',
-                  '${pressureAnalytics.avgPressureDifferential.toStringAsFixed(1)} PSI',
-                  'Average difference',
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: isMobile
+                  ? Column(
+                      children: [
+                        _buildMetricCard(
+                          'Low Pressure',
+                          '${pressureAnalytics.avgPressureLow.toStringAsFixed(1)} PSI',
+                          '${pressureAnalytics.minPressureLow.toStringAsFixed(1)} - ${pressureAnalytics.maxPressureLow.toStringAsFixed(1)} PSI',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMetricCard(
+                          'High Pressure',
+                          '${pressureAnalytics.avgPressureHigh.toStringAsFixed(1)} PSI',
+                          '${pressureAnalytics.minPressureHigh.toStringAsFixed(1)} - ${pressureAnalytics.maxPressureHigh.toStringAsFixed(1)} PSI',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMetricCard(
+                          'Differential',
+                          '${pressureAnalytics.avgPressureDifferential.toStringAsFixed(1)} PSI',
+                          'Average difference',
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        _buildMetricCard(
+                          'Low Pressure',
+                          '${pressureAnalytics.avgPressureLow.toStringAsFixed(1)} PSI',
+                          '${pressureAnalytics.minPressureLow.toStringAsFixed(1)} - ${pressureAnalytics.maxPressureLow.toStringAsFixed(1)} PSI',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMetricCard(
+                          'High Pressure',
+                          '${pressureAnalytics.avgPressureHigh.toStringAsFixed(1)} PSI',
+                          '${pressureAnalytics.minPressureHigh.toStringAsFixed(1)} - ${pressureAnalytics.maxPressureHigh.toStringAsFixed(1)} PSI',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMetricCard(
+                          'Differential',
+                          '${pressureAnalytics.avgPressureDifferential.toStringAsFixed(1)} PSI',
+                          'Average difference',
+                        ),
+                      ],
+                    ),
             ),
 
             const SizedBox(height: 16),
@@ -2096,166 +2382,328 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Lowest Pressure',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF64748B),
+                  SizedBox(
+                    width: double.infinity,
+                    child: isMobile
+                        ? Column(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Lowest Pressure',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${pressureAnalytics.minPressureLow.toStringAsFixed(2)} PSI',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Constants.ctaColorLight,
+                                    ),
+                                  ),
+                                  if (pressureAnalytics.minPressureLowTimestamp !=
+                                      null)
+                                    Text(
+                                      _formatTimestamp(
+                                          pressureAnalytics.minPressureLowTimestamp ??
+                                              ""),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        color: const Color(0xFF94A3B8),
+                                      ),
+                                    ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${pressureAnalytics.minPressureLow.toStringAsFixed(2)} PSI',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Constants.ctaColorLight,
+                              const SizedBox(height: 16),
+                              Container(
+                                width: double.infinity,
+                                height: 1,
+                                color: const Color(0xFFE2E8F0),
                               ),
-                            ),
-                            if (pressureAnalytics.minPressureLowTimestamp !=
-                                null)
-                              Text(
-                                _formatTimestamp(
-                                    pressureAnalytics.minPressureLowTimestamp ??
-                                        ""),
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  color: const Color(0xFF94A3B8),
+                              const SizedBox(height: 16),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Highest Pressure',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${pressureAnalytics.maxPressureHigh.toStringAsFixed(2)} PSI',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Constants.ctaColorLight,
+                                    ),
+                                  ),
+                                  if (pressureAnalytics.maxPressureHighTimestamp !=
+                                      null)
+                                    Text(
+                                      _formatTimestamp(pressureAnalytics
+                                              .maxPressureHighTimestamp ??
+                                          ""),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        color: const Color(0xFF94A3B8),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Lowest Pressure',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${pressureAnalytics.minPressureLow.toStringAsFixed(2)} PSI',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Constants.ctaColorLight,
+                                      ),
+                                    ),
+                                    if (pressureAnalytics.minPressureLowTimestamp !=
+                                        null)
+                                      Text(
+                                        _formatTimestamp(
+                                            pressureAnalytics.minPressureLowTimestamp ??
+                                                ""),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10,
+                                          color: const Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 50,
-                        color: const Color(0xFFE2E8F0),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Highest Pressure',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF64748B),
+                              Container(
+                                width: 1,
+                                height: 50,
+                                color: const Color(0xFFE2E8F0),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${pressureAnalytics.maxPressureHigh.toStringAsFixed(2)} PSI',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Constants.ctaColorLight,
-                              ),
-                            ),
-                            if (pressureAnalytics.maxPressureHighTimestamp !=
-                                null)
-                              Text(
-                                _formatTimestamp(pressureAnalytics
-                                        .maxPressureHighTimestamp ??
-                                    ""),
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  color: const Color(0xFF94A3B8),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Highest Pressure',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${pressureAnalytics.maxPressureHigh.toStringAsFixed(2)} PSI',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Constants.ctaColorLight,
+                                      ),
+                                    ),
+                                    if (pressureAnalytics.maxPressureHighTimestamp !=
+                                        null)
+                                      Text(
+                                        _formatTimestamp(pressureAnalytics
+                                                .maxPressureHighTimestamp ??
+                                            ""),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10,
+                                          color: const Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-                    ],
+                            ],
+                          ),
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Highest Pressure (Low Side)',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Constants.ctaColorLight,
+                  SizedBox(
+                    width: double.infinity,
+                    child: isMobile
+                        ? Column(
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Highest Pressure (Low Side)',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Constants.ctaColorLight,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${pressureAnalytics.maxPressureLow.toStringAsFixed(2)} PSI',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Constants.ctaColorLight,
+                                    ),
+                                  ),
+                                  if (pressureAnalytics.maxPressureLowTimestamp !=
+                                      null)
+                                    Text(
+                                      _formatTimestamp(
+                                          pressureAnalytics.maxPressureLowTimestamp ??
+                                              ""),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        color: const Color(0xFF94A3B8),
+                                      ),
+                                    ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${pressureAnalytics.maxPressureLow.toStringAsFixed(2)} PSI',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Constants.ctaColorLight,
+                              const SizedBox(height: 16),
+                              Container(
+                                height: 1,
+                                width: double.infinity,
+                                color: const Color(0xFFE2E8F0),
                               ),
-                            ),
-                            if (pressureAnalytics.maxPressureLowTimestamp !=
-                                null)
-                              Text(
-                                _formatTimestamp(
-                                    pressureAnalytics.maxPressureLowTimestamp ??
-                                        ""),
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  color: const Color(0xFF94A3B8),
+                              const SizedBox(height: 16),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Lowest Pressure (High Side)',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${pressureAnalytics.minPressureHigh.toStringAsFixed(2)} PSI',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Constants.ctaColorLight,
+                                    ),
+                                  ),
+                                  if (pressureAnalytics.minPressureHighTimestamp !=
+                                      null)
+                                    Text(
+                                      _formatTimestamp(pressureAnalytics
+                                              .minPressureHighTimestamp ??
+                                          ""),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        color: const Color(0xFF94A3B8),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Highest Pressure (Low Side)',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Constants.ctaColorLight,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${pressureAnalytics.maxPressureLow.toStringAsFixed(2)} PSI',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Constants.ctaColorLight,
+                                      ),
+                                    ),
+                                    if (pressureAnalytics.maxPressureLowTimestamp !=
+                                        null)
+                                      Text(
+                                        _formatTimestamp(
+                                            pressureAnalytics.maxPressureLowTimestamp ??
+                                                ""),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10,
+                                          color: const Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 50,
-                        color: const Color(0xFFE2E8F0),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Lowest Pressure (High Side)',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF64748B),
+                              Container(
+                                width: 1,
+                                height: 50,
+                                color: const Color(0xFFE2E8F0),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${pressureAnalytics.minPressureHigh.toStringAsFixed(2)} PSI',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Constants.ctaColorLight,
-                              ),
-                            ),
-                            if (pressureAnalytics.minPressureHighTimestamp !=
-                                null)
-                              Text(
-                                _formatTimestamp(pressureAnalytics
-                                        .minPressureHighTimestamp ??
-                                    ""),
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  color: const Color(0xFF94A3B8),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Lowest Pressure (High Side)',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${pressureAnalytics.minPressureHigh.toStringAsFixed(2)} PSI',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Constants.ctaColorLight,
+                                      ),
+                                    ),
+                                    if (pressureAnalytics.minPressureHighTimestamp !=
+                                        null)
+                                      Text(
+                                        _formatTimestamp(pressureAnalytics
+                                                .minPressureHighTimestamp ??
+                                            ""),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 10,
+                                          color: const Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-                    ],
+                            ],
+                          ),
                   ),
                 ],
               ),
@@ -2270,13 +2718,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final enhanced = analyticsData!.enhancedCompressorAnalytics;
     final analytics = enhanced.analytics;
     final status = enhanced.currentStatus;
+    final isMobile = _isMobile(context);
 
     // Check for compressor errors
     bool hasError = status.currentTotalAmps > 30 ||
         enhanced.statistics.dutyCyclePercentage > 80;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -2293,7 +2742,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isMobile ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2322,7 +2771,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       Text(
                         'Compressor Analysis',
                         style: GoogleFonts.inter(
-                          fontSize: 16,
+                          fontSize: isMobile ? 14 : 16,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF0F172A),
                         ),
@@ -2345,7 +2794,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                 ? 'Currently Running'
                                 : 'Currently Stopped',
                             style: GoogleFonts.inter(
-                              fontSize: 12,
+                              fontSize: isMobile ? 11 : 12,
                               color: const Color(0xFF64748B),
                             ),
                           ),
@@ -2373,85 +2822,164 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
 
             // Compressor metrics - First row
-            Row(
-              children: [
-                _buildMetricCard(
-                  'Start Cycles',
-                  '${enhanced.statistics.totalStartCycles}',
-                  'Compressor start events',
-                ),
-                const SizedBox(width: 12),
-                _buildMetricCard(
-                  'Stop Cycles',
-                  '${enhanced.statistics.totalStopCycles}',
-                  'Compressor stop events',
-                ),
-                const SizedBox(width: 12),
-                _buildMetricCard(
-                  'Duty Cycle',
-                  '${enhanced.statistics.dutyCyclePercentage.toStringAsFixed(1)}%',
-                  'Runtime percentage',
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: isMobile
+                  ? Column(
+                      children: [
+                        _buildMetricCard(
+                          'Start Cycles',
+                          '${enhanced.statistics.totalStartCycles}',
+                          'Compressor start events',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMetricCard(
+                          'Stop Cycles',
+                          '${enhanced.statistics.totalStopCycles}',
+                          'Compressor stop events',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMetricCard(
+                          'Duty Cycle',
+                          '${enhanced.statistics.dutyCyclePercentage.toStringAsFixed(1)}%',
+                          'Runtime percentage',
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        _buildMetricCard(
+                          'Start Cycles',
+                          '${enhanced.statistics.totalStartCycles}',
+                          'Compressor start events',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMetricCard(
+                          'Stop Cycles',
+                          '${enhanced.statistics.totalStopCycles}',
+                          'Compressor stop events',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMetricCard(
+                          'Duty Cycle',
+                          '${enhanced.statistics.dutyCyclePercentage.toStringAsFixed(1)}%',
+                          'Runtime percentage',
+                        ),
+                      ],
+                    ),
             ),
             const SizedBox(height: 12),
 
             // Second row - Load and readings
-            Row(
-              children: [
-                _buildMetricCard(
-                  'Current Load',
-                  '${status.currentTotalAmps.toStringAsFixed(1)}A',
-                  'Running avg: ${analytics.avgAmpsWhenRunning.toStringAsFixed(1)}A',
-                ),
-                const SizedBox(width: 12),
-                _buildMetricCard(
-                  'On Readings',
-                  '${enhanced.statistics.totalOnReadings}',
-                  'Off: ${enhanced.statistics.totalOffReadings}',
-                ),
-                const SizedBox(width: 12),
-                _buildMetricCard(
-                  'Runtime',
-                  '${analytics.currentStateDurationMinutes.toStringAsFixed(0)} min',
-                  status.isRunning ? 'Current session' : 'Since stopped',
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: isMobile
+                  ? Column(
+                      children: [
+                        _buildMetricCard(
+                          'Current Load',
+                          '${status.currentTotalAmps.toStringAsFixed(1)}A',
+                          'Running avg: ${analytics.avgAmpsWhenRunning.toStringAsFixed(1)}A',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMetricCard(
+                          'On Readings',
+                          '${enhanced.statistics.totalOnReadings}',
+                          'Off: ${enhanced.statistics.totalOffReadings}',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMetricCard(
+                          'Runtime',
+                          '${analytics.currentStateDurationMinutes.toStringAsFixed(0)} min',
+                          status.isRunning ? 'Current session' : 'Since stopped',
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        _buildMetricCard(
+                          'Current Load',
+                          '${status.currentTotalAmps.toStringAsFixed(1)}A',
+                          'Running avg: ${analytics.avgAmpsWhenRunning.toStringAsFixed(1)}A',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMetricCard(
+                          'On Readings',
+                          '${enhanced.statistics.totalOnReadings}',
+                          'Off: ${enhanced.statistics.totalOffReadings}',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMetricCard(
+                          'Runtime',
+                          '${analytics.currentStateDurationMinutes.toStringAsFixed(0)} min',
+                          status.isRunning ? 'Current session' : 'Since stopped',
+                        ),
+                      ],
+                    ),
             ),
             const SizedBox(height: 16),
 
             // Performance summary
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInfoCompressorSection(
-                    'Longest Off',
-                    analytics.longestOffStart != null
-                        ? '${analytics.longestOffDurationMinutes.toStringAsFixed(1)} min'
-                        : 'No data',
-                    analytics.longestOffStart != null
-                        ? 'Started: ${_formatTimestamp(analytics.longestOffStart!)}'
-                        : 'No off periods recorded',
-                    Icons.power_off_rounded,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildInfoCompressorSection(
-                    'Longest On',
-                    analytics.longestOnStart != null
-                        ? '${analytics.longestOnDurationMinutes.toStringAsFixed(1)} min'
-                        : 'No data',
-                    analytics.longestOnStart != null
-                        ? 'Started: ${_formatTimestamp(analytics.longestOnStart!)}'
-                        : 'No on periods recorded',
-                    Icons.power_rounded,
-                  ),
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: isMobile
+                  ? Column(
+                      children: [
+                        _buildInfoCompressorSection(
+                          'Longest Off',
+                          analytics.longestOffStart != null
+                              ? '${analytics.longestOffDurationMinutes.toStringAsFixed(1)} min'
+                              : 'No data',
+                          analytics.longestOffStart != null
+                              ? 'Started: ${_formatTimestamp(analytics.longestOffStart!)}'
+                              : 'No off periods recorded',
+                          Icons.power_off_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoCompressorSection(
+                          'Longest On',
+                          analytics.longestOnStart != null
+                              ? '${analytics.longestOnDurationMinutes.toStringAsFixed(1)} min'
+                              : 'No data',
+                          analytics.longestOnStart != null
+                              ? 'Started: ${_formatTimestamp(analytics.longestOnStart!)}'
+                              : 'No on periods recorded',
+                          Icons.power_rounded,
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: _buildInfoCompressorSection(
+                            'Longest Off',
+                            analytics.longestOffStart != null
+                                ? '${analytics.longestOffDurationMinutes.toStringAsFixed(1)} min'
+                                : 'No data',
+                            analytics.longestOffStart != null
+                                ? 'Started: ${_formatTimestamp(analytics.longestOffStart!)}'
+                                : 'No off periods recorded',
+                            Icons.power_off_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildInfoCompressorSection(
+                            'Longest On',
+                            analytics.longestOnStart != null
+                                ? '${analytics.longestOnDurationMinutes.toStringAsFixed(1)} min'
+                                : 'No data',
+                            analytics.longestOnStart != null
+                                ? 'Started: ${_formatTimestamp(analytics.longestOnStart!)}'
+                                : 'No on periods recorded',
+                            Icons.power_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -2460,48 +2988,50 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   }
 
   Widget _buildMetricCard(String title, String value, String subtitle) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFAFAFA),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF64748B),
-              ),
+    final isMobile = _isMobile(context);
+    final card = Container(
+      width: isMobile ? double.infinity : null,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF64748B),
             ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF0F172A),
-              ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0F172A),
             ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: const Color(0xFF64748B),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: const Color(0xFF64748B),
             ),
-          ],
-        ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
+
+    return isMobile ? card : Expanded(child: card);
   }
 
   Widget _buildInfoSection(
@@ -2610,21 +3140,25 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   }
 
   Widget _buildDashboard() {
+    final isMobile = _isMobile(context);
+    final padding = isMobile ? 12.0 : 16.0;
+    final spacing = isMobile ? 8.0 : 12.0;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(padding),
       child: Column(
         children: [
           // Real-time Insights Summary Cards
           _buildRealTimeInsightsCards(),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
 
           // Enhanced Analytics Section
           _buildEnhancedAnalyticsCards(),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
 
           // Peak Performance Summary Card
           _buildPeakPerformanceCard(),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
 
           // Temperature Analytics Row
           Row(
@@ -2635,7 +3169,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
           Row(
             children: [
               Expanded(
@@ -2644,7 +3178,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
 
           // Power Analytics Row
           Row(
@@ -2655,7 +3189,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
           Row(
             children: [
               Expanded(
@@ -2663,7 +3197,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
 
           // Compressor Analytics Row
           Row(
@@ -2674,7 +3208,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
           Row(
             children: [
               Expanded(
@@ -2683,7 +3217,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
 
           // Door and Ice Analytics Row
           Row(
@@ -2693,7 +3227,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
           Row(
             children: [
               Expanded(
@@ -2701,7 +3235,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
 
           // Maintenance and Pressure Row
           Row(
@@ -2712,7 +3246,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
           Row(
             children: [
               Expanded(
@@ -2720,7 +3254,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
 
           // Operational Cycles and Correlations Row
           Row(
@@ -2731,7 +3265,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             ],
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
 
           // Daily Summary
           _buildChart('Daily Summary', _buildDailySummaryChart()),
@@ -2743,6 +3277,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Widget _buildDoorAnalysisCard() {
     final doorData = analyticsData!.doorAnalytics;
     final operationalData = analyticsData!.operationalCyclesAnalytics;
+    final isMobile = _isMobile(context);
 
     // Calculate total door open time and statistics
     double totalDoorOpenTime = 0;
@@ -2795,7 +3330,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     bool hasLongOpenings = longestDoorOpenTime > 300; // 5 minutes
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -2814,7 +3349,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isMobile ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2840,7 +3375,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   child: Text(
                     'Door Analysis',
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: isMobile ? 14 : 16,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF0F172A),
                     ),
@@ -2866,48 +3401,81 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
 
             // Main door metrics - First row
-            Row(
-              children: [
-                _buildMetricCard(
-                  'Total Opens',
-                  '${doorData.doorOpenCount.fold(0, (sum, count) => sum + count)}',
-                  'Avg: ${(doorData.doorOpenCount.fold(0, (sum, count) => sum + count) / doorData.doorOpenCount.length).toStringAsFixed(1)}/period',
-                ),
-                const SizedBox(width: 12),
-                _buildMetricCard(
-                  'Total Closes',
-                  '${doorData.doorClosedCount.fold(0, (sum, count) => sum + count)}',
-                  'Avg: ${(doorData.doorClosedCount.fold(0, (sum, count) => sum + count) / doorData.doorClosedCount.length).toStringAsFixed(1)}/period',
-                ),
-                const SizedBox(width: 12),
-                _buildMetricCard(
-                  'Total Open Time',
-                  totalDoorOpenTime > 60
-                      ? '${(totalDoorOpenTime / 60).toStringAsFixed(1)} hours'
-                      : '${totalDoorOpenTime.toStringAsFixed(1)} minutes',
-                  'Avg: ${avgOpenPercentage.toStringAsFixed(1)}% open',
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: isMobile
+                  ? Column(
+                      children: [
+                        _buildMetricCard(
+                          'Total Opens',
+                          '${doorData.doorOpenCount.fold(0, (sum, count) => sum + count)}',
+                          'Avg: ${(doorData.doorOpenCount.fold(0, (sum, count) => sum + count) / doorData.doorOpenCount.length).toStringAsFixed(1)}/period',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMetricCard(
+                          'Total Closes',
+                          '${doorData.doorClosedCount.fold(0, (sum, count) => sum + count)}',
+                          'Avg: ${(doorData.doorClosedCount.fold(0, (sum, count) => sum + count) / doorData.doorClosedCount.length).toStringAsFixed(1)}/period',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMetricCard(
+                          'Total Open Time',
+                          totalDoorOpenTime > 60
+                              ? '${(totalDoorOpenTime / 60).toStringAsFixed(1)} hours'
+                              : '${totalDoorOpenTime.toStringAsFixed(1)} minutes',
+                          'Avg: ${avgOpenPercentage.toStringAsFixed(1)}% open',
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        _buildMetricCard(
+                          'Total Opens',
+                          '${doorData.doorOpenCount.fold(0, (sum, count) => sum + count)}',
+                          'Avg: ${(doorData.doorOpenCount.fold(0, (sum, count) => sum + count) / doorData.doorOpenCount.length).toStringAsFixed(1)}/period',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMetricCard(
+                          'Total Closes',
+                          '${doorData.doorClosedCount.fold(0, (sum, count) => sum + count)}',
+                          'Avg: ${(doorData.doorClosedCount.fold(0, (sum, count) => sum + count) / doorData.doorClosedCount.length).toStringAsFixed(1)}/period',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMetricCard(
+                          'Total Open Time',
+                          totalDoorOpenTime > 60
+                              ? '${(totalDoorOpenTime / 60).toStringAsFixed(1)} hours'
+                              : '${totalDoorOpenTime.toStringAsFixed(1)} minutes',
+                          'Avg: ${avgOpenPercentage.toStringAsFixed(1)}% open',
+                        ),
+                      ],
+                    ),
             ),
             const SizedBox(height: 12),
 
             // Second row
-            Row(
-              children: [
-                _buildMetricCard(
-                  'Longest Opening',
-                  '${(longestDoorOpenTime / 60).toStringAsFixed(1)} minutes',
-                  'Time: ${_formatTimestamp(longestDoorOpenTimestamp)}',
-                ),
-                const SizedBox(width: 12),
-                // Add some padding to balance the row
-                Expanded(child: Container()),
-                Expanded(child: Container()),
-              ],
-            ),
+            isMobile
+                ? _buildMetricCard(
+                    'Longest Opening',
+                    '${(longestDoorOpenTime / 60).toStringAsFixed(1)} minutes',
+                    'Time: ${_formatTimestamp(longestDoorOpenTimestamp)}',
+                  )
+                : Row(
+                    children: [
+                      _buildMetricCard(
+                        'Longest Opening',
+                        '${(longestDoorOpenTime / 60).toStringAsFixed(1)} minutes',
+                        'Time: ${_formatTimestamp(longestDoorOpenTimestamp)}',
+                      ),
+                      const SizedBox(width: 12),
+                      // Add some padding to balance the row
+                      Expanded(child: Container()),
+                      Expanded(child: Container()),
+                    ],
+                  ),
             const SizedBox(height: 16),
 
             // Stability analysis
@@ -2998,6 +3566,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final enhanced = analyticsData!.enhancedCompressorAnalytics;
     final tempAnalytics = analyticsData!.enhancedTemperatureAnalytics;
     final pressureAnalytics = analyticsData!.enhancedPressureAnalytics;
+    final isMobile = _isMobile(context);
 
     // Check for any critical conditions
     bool hasCriticalCondition = enhanced.statistics.dutyCyclePercentage > 80 ||
@@ -3006,7 +3575,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         pressureAnalytics.avgPressureDifferential > 50;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -3025,7 +3594,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isMobile ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -3051,7 +3620,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   child: Text(
                     'Enhanced Analytics Overview',
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: isMobile ? 14 : 16,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF0F172A),
                     ),
@@ -3076,7 +3645,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
 
             // Compressor Status Row
             Container(
@@ -3140,26 +3709,51 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             const SizedBox(height: 16),
 
             // Statistics Grid
-            Row(
-              children: [
-                _buildMetricCard(
-                  'Duty Cycle',
-                  '${enhanced.statistics.dutyCyclePercentage.toStringAsFixed(1)}%',
-                  '${enhanced.statistics.totalStartCycles} cycles',
-                ),
-                const SizedBox(width: 12),
-                _buildMetricCard(
-                  'Avg Air Temperature',
-                  '${tempAnalytics.avgAirTemperature.toStringAsFixed(1)}°C',
-                  '±${tempAnalytics.temperatureVariance.toStringAsFixed(1)}',
-                ),
-                const SizedBox(width: 12),
-                _buildMetricCard(
-                  'Avg Pressure',
-                  '${pressureAnalytics.avgPressureDifferential.toStringAsFixed(1)} PSI',
-                  'Differential',
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: isMobile
+                  ? Column(
+                      children: [
+                        _buildMetricCard(
+                          'Duty Cycle',
+                          '${enhanced.statistics.dutyCyclePercentage.toStringAsFixed(1)}%',
+                          '${enhanced.statistics.totalStartCycles} cycles',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMetricCard(
+                          'Avg Air Temperature',
+                          '${tempAnalytics.avgAirTemperature.toStringAsFixed(1)}°C',
+                          '±${tempAnalytics.temperatureVariance.toStringAsFixed(1)}',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildMetricCard(
+                          'Avg Pressure',
+                          '${pressureAnalytics.avgPressureDifferential.toStringAsFixed(1)} PSI',
+                          'Differential',
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        _buildMetricCard(
+                          'Duty Cycle',
+                          '${enhanced.statistics.dutyCyclePercentage.toStringAsFixed(1)}%',
+                          '${enhanced.statistics.totalStartCycles} cycles',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMetricCard(
+                          'Avg Air Temperature',
+                          '${tempAnalytics.avgAirTemperature.toStringAsFixed(1)}°C',
+                          '±${tempAnalytics.temperatureVariance.toStringAsFixed(1)}',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildMetricCard(
+                          'Avg Pressure',
+                          '${pressureAnalytics.avgPressureDifferential.toStringAsFixed(1)} PSI',
+                          'Differential',
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -3182,6 +3776,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildRealTimeInsightsCards() {
     final insights = analyticsData!.realTimeInsights;
+    final isMobile = _isMobile(context);
 
     // Check for any critical issues
     bool hasCriticalIssue =
@@ -3190,7 +3785,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             insights.efficiencyRating.efficiencyScore < 40;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -3209,7 +3804,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isMobile ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -3235,7 +3830,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   child: Text(
                     'Real-Time Device Insights',
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: isMobile ? 14 : 16,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF0F172A),
                     ),
@@ -3260,45 +3855,86 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: isMobile ? 16 : 20),
 
             // Insights metrics
-            Row(
-              children: [
-                _buildInsightMetricCard(
-                  'Health Score',
-                  '${insights.deviceHealthScore.overallScore.toStringAsFixed(0)}/100',
-                  insights.deviceHealthScore.healthGrade,
-                  Icons.favorite_rounded,
-                  _isHealthCritical(insights.deviceHealthScore.healthGrade),
-                ),
-                const SizedBox(width: 12),
-                _buildInsightMetricCard(
-                  'Efficiency',
-                  '${insights.efficiencyRating.efficiencyScore.toStringAsFixed(0)}/100',
-                  insights.efficiencyRating.efficiencyGrade,
-                  Icons.eco_rounded,
-                  _isEfficiencyCritical(
-                      insights.efficiencyRating.efficiencyGrade),
-                ),
-                const SizedBox(width: 12),
-                _buildInsightMetricCard(
-                  'Maintenance',
-                  '${insights.maintenanceUrgency.totalAlerts} alerts',
-                  insights.maintenanceUrgency.urgencyLevel,
-                  Icons.build_rounded,
-                  _isMaintenanceCritical(
-                      insights.maintenanceUrgency.urgencyLevel),
-                ),
-                const SizedBox(width: 12),
-                _buildInsightMetricCard(
-                  'Annual Cost',
-                  'R${insights.energyCostEstimate.annualCostUsd.toStringAsFixed(0)}',
-                  'Estimated',
-                  Icons.attach_money_rounded,
-                  false,
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: isMobile
+                  ? Column(
+                      children: [
+                        _buildInsightMetricCard(
+                          'Health Score',
+                          '${insights.deviceHealthScore.overallScore.toStringAsFixed(0)}/100',
+                          insights.deviceHealthScore.healthGrade,
+                          Icons.favorite_rounded,
+                          _isHealthCritical(insights.deviceHealthScore.healthGrade),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInsightMetricCard(
+                          'Efficiency',
+                          '${insights.efficiencyRating.efficiencyScore.toStringAsFixed(0)}/100',
+                          insights.efficiencyRating.efficiencyGrade,
+                          Icons.eco_rounded,
+                          _isEfficiencyCritical(
+                              insights.efficiencyRating.efficiencyGrade),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInsightMetricCard(
+                          'Maintenance',
+                          '${insights.maintenanceUrgency.totalAlerts} alerts',
+                          insights.maintenanceUrgency.urgencyLevel,
+                          Icons.build_rounded,
+                          _isMaintenanceCritical(
+                              insights.maintenanceUrgency.urgencyLevel),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInsightMetricCard(
+                          'Annual Cost',
+                          'R${insights.energyCostEstimate.annualCostUsd.toStringAsFixed(0)}',
+                          'Estimated',
+                          Icons.attach_money_rounded,
+                          false,
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        _buildInsightMetricCard(
+                          'Health Score',
+                          '${insights.deviceHealthScore.overallScore.toStringAsFixed(0)}/100',
+                          insights.deviceHealthScore.healthGrade,
+                          Icons.favorite_rounded,
+                          _isHealthCritical(insights.deviceHealthScore.healthGrade),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildInsightMetricCard(
+                          'Efficiency',
+                          '${insights.efficiencyRating.efficiencyScore.toStringAsFixed(0)}/100',
+                          insights.efficiencyRating.efficiencyGrade,
+                          Icons.eco_rounded,
+                          _isEfficiencyCritical(
+                              insights.efficiencyRating.efficiencyGrade),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildInsightMetricCard(
+                          'Maintenance',
+                          '${insights.maintenanceUrgency.totalAlerts} alerts',
+                          insights.maintenanceUrgency.urgencyLevel,
+                          Icons.build_rounded,
+                          _isMaintenanceCritical(
+                              insights.maintenanceUrgency.urgencyLevel),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildInsightMetricCard(
+                          'Annual Cost',
+                          'R${insights.energyCostEstimate.annualCostUsd.toStringAsFixed(0)}',
+                          'Estimated',
+                          Icons.attach_money_rounded,
+                          false,
+                        ),
+                      ],
+                    ),
             ),
 
             // Recommendation section
@@ -3371,71 +4007,74 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     IconData icon,
     bool isError,
   ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isError ? const Color(0xFFFEF2F2) : const Color(0xFFFAFAFA),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isError ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color:
-                    isError ? const Color(0xFFEF4444) : const Color(0xFF1E293B),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: const Color(0xFF64748B),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color:
-                    isError ? const Color(0xFFEF4444) : const Color(0xFF64748B),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                subtitle,
-                style: GoogleFonts.inter(
-                  fontSize: 9,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+    final isMobile = _isMobile(context);
+
+    final cardContent = Container(
+      width: isMobile ? double.infinity : null,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isError ? const Color(0xFFFEF2F2) : const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isError ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
         ),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color:
+                  isError ? const Color(0xFFEF4444) : const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: const Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color:
+                  isError ? const Color(0xFFEF4444) : const Color(0xFF64748B),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 9,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
+
+    return isMobile ? cardContent : Expanded(child: cardContent);
   }
 
   bool _isHealthCritical(String grade) {
@@ -5826,7 +6465,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildInfoCompressorSection(
       String title, String value, String subtitle, IconData icon) {
+    final isMobile = _isMobile(context);
     return Container(
+      width: isMobile ? double.infinity : null,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFFAFAFA),

@@ -45,14 +45,19 @@ class _SettingsPageState extends State<SettingsPage>
     super.dispose();
   }
 
+  bool _isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < 768;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isMobile = _isMobile(context);
     return Container(
       height: 1000,
       //backgroundColor: const Color(0xFFF8FAFC),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(isMobile ? 16 : 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -67,205 +72,282 @@ class _SettingsPageState extends State<SettingsPage>
 
               // Main Content Area
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Sidebar Navigation
-                    Container(
-                      width: 280,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
+                child: isMobile
+                    ? Column(
+                        children: [
+                          // Section selector dropdown
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: DropdownButton<String>(
+                              value: itemIdIndex,
+                              isExpanded: true,
+                              underline: const SizedBox(),
+                              icon: const Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: Color(0xFF64748B),
+                              ),
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1E293B),
+                              ),
+                              items: sideBarList.map((item) {
+                                return DropdownMenuItem<String>(
+                                  value: item.item_id,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        item.icon,
+                                        size: 20,
+                                        color: itemIdIndex == item.item_id
+                                            ? Constants.ctaColorGreen
+                                            : const Color(0xFF64748B),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(item.itemName),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  itemIdIndex = value!;
+                                  sideColorIndex = sideBarList
+                                      .indexWhere((item) => item.item_id == value);
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Content area (full width on mobile)
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: _buildContentArea(),
+                            ),
                           ),
                         ],
-                      ),
-                      child: Column(
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Navigation Header
+                          // Sidebar Navigation
                           Container(
-                            padding: const EdgeInsets.all(20),
+                            width: 280,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.menu_rounded,
-                                  color: const Color(0xFF64748B),
-                                  size: 20,
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
                                 ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  "Navigation",
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF64748B),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                // Navigation Header
+                                Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(16),
+                                      topRight: Radius.circular(16),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.menu_rounded,
+                                        color: const Color(0xFF64748B),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        "Navigation",
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Navigation Items
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      children: [
+                                        ...sideBarList.asMap().entries.map((entry) {
+                                          int index = entry.key;
+                                          SettingSideBar item = entry.value;
+                                          bool isSelected = sideColorIndex == index;
+
+                                          return Padding(
+                                            padding: const EdgeInsets.only(bottom: 8),
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  sideColorIndex = index;
+                                                  itemIdIndex = item.item_id;
+                                                });
+                                              },
+                                              child: AnimatedContainer(
+                                                duration:
+                                                    const Duration(milliseconds: 200),
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 12,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? Constants.ctaColorGreen
+                                                          .withOpacity(0.1)
+                                                      : Colors.transparent,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: isSelected
+                                                        ? Constants.ctaColorGreen
+                                                            .withOpacity(0.3)
+                                                        : Colors.transparent,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      item.icon,
+                                                      size: 20,
+                                                      color: isSelected
+                                                          ? Constants.ctaColorGreen
+                                                          : const Color(0xFF64748B),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: Text(
+                                                        item.itemName,
+                                                        style: GoogleFonts.inter(
+                                                          fontSize: 14,
+                                                          fontWeight: isSelected
+                                                              ? FontWeight.w600
+                                                              : FontWeight.w500,
+                                                          color: isSelected
+                                                              ? Constants
+                                                                  .ctaColorGreen
+                                                              : const Color(
+                                                                  0xFF64748B),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    if (isSelected)
+                                                      Container(
+                                                        width: 6,
+                                                        height: 6,
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              Constants.ctaColorGreen,
+                                                          shape: BoxShape.circle,
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+
+                                        const Spacer(),
+
+                                        // Delete Account Button
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 20),
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFEF2F2),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: const Color(0xFFFECACA),
+                                            ),
+                                          ),
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              // Handle delete account
+                                            },
+                                            child: Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.delete_outline_rounded,
+                                                  color: Color(0xFFEF4444),
+                                                  size: 18,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  "Delete Account",
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: const Color(0xFFEF4444),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
 
-                          // Navigation Items
+                          const SizedBox(width: 24),
+
+                          // Content Area
                           Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                children: [
-                                  ...sideBarList.asMap().entries.map((entry) {
-                                    int index = entry.key;
-                                    SettingSideBar item = entry.value;
-                                    bool isSelected = sideColorIndex == index;
-
-                                    return Padding(
-                                      padding: const EdgeInsets.only(bottom: 8),
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            sideColorIndex = index;
-                                            itemIdIndex = item.item_id;
-                                          });
-                                        },
-                                        child: AnimatedContainer(
-                                          duration:
-                                              const Duration(milliseconds: 200),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 12,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? Constants.ctaColorGreen
-                                                    .withOpacity(0.1)
-                                                : Colors.transparent,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: isSelected
-                                                  ? Constants.ctaColorGreen
-                                                      .withOpacity(0.3)
-                                                  : Colors.transparent,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                item.icon,
-                                                size: 20,
-                                                color: isSelected
-                                                    ? Constants.ctaColorGreen
-                                                    : const Color(0xFF64748B),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Text(
-                                                  item.itemName,
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: 14,
-                                                    fontWeight: isSelected
-                                                        ? FontWeight.w600
-                                                        : FontWeight.w500,
-                                                    color: isSelected
-                                                        ? Constants
-                                                            .ctaColorGreen
-                                                        : const Color(
-                                                            0xFF64748B),
-                                                  ),
-                                                ),
-                                              ),
-                                              if (isSelected)
-                                                Container(
-                                                  width: 6,
-                                                  height: 6,
-                                                  decoration: BoxDecoration(
-                                                    color:
-                                                        Constants.ctaColorGreen,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-
-                                  const Spacer(),
-
-                                  // Delete Account Button
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 20),
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFEF2F2),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: const Color(0xFFFECACA),
-                                      ),
-                                    ),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        // Handle delete account
-                                      },
-                                      child: Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.delete_outline_rounded,
-                                            color: Color(0xFFEF4444),
-                                            size: 18,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            "Delete Account",
-                                            style: GoogleFonts.inter(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: const Color(0xFFEF4444),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
+                              child: _buildContentArea(),
                             ),
                           ),
                         ],
                       ),
-                    ),
-
-                    const SizedBox(width: 24),
-
-                    // Content Area
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: _buildContentArea(),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),
@@ -290,6 +372,7 @@ class _SettingsPageState extends State<SettingsPage>
   }
 
   Widget _buildProfileContent() {
+    final isMobile = _isMobile(context);
     return Column(
       children: [
         // Profile Header with Tabs
@@ -326,7 +409,7 @@ class _SettingsPageState extends State<SettingsPage>
                       Text(
                         "Profile Settings",
                         style: GoogleFonts.inter(
-                          fontSize: 20,
+                          fontSize: isMobile ? 18 : 20,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF1E293B),
                         ),
@@ -334,7 +417,7 @@ class _SettingsPageState extends State<SettingsPage>
                       Text(
                         "Manage your personal and business information",
                         style: GoogleFonts.inter(
-                          fontSize: 14,
+                          fontSize: isMobile ? 12 : 14,
                           color: const Color(0xFF64748B),
                           fontWeight: FontWeight.w500,
                         ),
@@ -396,6 +479,7 @@ class _SettingsPageState extends State<SettingsPage>
   }
 
   Widget _buildPersonalProfileTab() {
+    final isMobile = _isMobile(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -416,60 +500,116 @@ class _SettingsPageState extends State<SettingsPage>
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Constants.ctaColorLight,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Constants.ctaColorLight.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+            child: isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Constants.ctaColorLight,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Constants.ctaColorLight.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          CupertinoIcons.person,
+                          size: 28,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            Constants.myDisplayname,
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Constants.ctaColorGreen.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "Workplace Admin",
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Constants.ctaColorGreen,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Constants.ctaColorLight,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Constants.ctaColorLight.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          CupertinoIcons.person,
+                          size: 32,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            Constants.myDisplayname,
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Constants.ctaColorGreen.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "Workplace Admin",
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Constants.ctaColorGreen,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    CupertinoIcons.person,
-                    size: 32,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      Constants.myDisplayname,
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Constants.ctaColorGreen.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        "Workplace Admin",
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Constants.ctaColorGreen,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
           ),
 
           const SizedBox(height: 32),
@@ -510,6 +650,7 @@ class _SettingsPageState extends State<SettingsPage>
   }
 
   Widget _buildBusinessProfileTab() {
+    final isMobile = _isMobile(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -530,38 +671,77 @@ class _SettingsPageState extends State<SettingsPage>
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF10B981).withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+            child: isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.business_rounded,
+                          size: 28,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            Constants.myBusinessName,
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.business_rounded,
+                          size: 32,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        Constants.myBusinessName,
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                        ),
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.business_rounded,
-                    size: 32,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  Constants.myBusinessName,
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
-                  ),
-                ),
-              ],
-            ),
           ),
 
           const SizedBox(height: 32),
@@ -704,6 +884,7 @@ class _SettingsPageState extends State<SettingsPage>
 
   Widget _buildActionButtons(
       {required VoidCallback onEdit, required VoidCallback onSave}) {
+    final isMobile = _isMobile(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -711,54 +892,105 @@ class _SettingsPageState extends State<SettingsPage>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              label: Text(
-                "Edit Information",
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+      child: isMobile
+          ? Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: Text(
+                      "Edit Information",
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF64748B),
+                      side: const BorderSide(color: Color(0xFFE2E8F0)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF64748B),
-                side: const BorderSide(color: Color(0xFFE2E8F0)),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: onSave,
+                    icon: const Icon(Icons.save_outlined, size: 18),
+                    label: Text(
+                      "Save Changes",
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Constants.ctaColorGreen,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
                 ),
-              ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: Text(
+                      "Edit Information",
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF64748B),
+                      side: const BorderSide(color: Color(0xFFE2E8F0)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: onSave,
+                    icon: const Icon(Icons.save_outlined, size: 18),
+                    label: Text(
+                      "Save Changes",
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Constants.ctaColorGreen,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: onSave,
-              icon: const Icon(Icons.save_outlined, size: 18),
-              label: Text(
-                "Save Changes",
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.ctaColorGreen,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -822,6 +1054,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 768;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
@@ -935,41 +1168,73 @@ class _EditMyProfileState extends State<EditMyProfile> {
                       const SizedBox(height: 20),
 
                       // First Name & Last Name Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildModernTextField(
-                              controller: _firstNameController,
-                              focusNode: firstNameFocusNode,
-                              label: 'First Name',
-                              hint: 'Enter your first name',
-                              icon: Icons.person_outline,
-                              validator: (value) {
-                                if (value?.isEmpty ?? true) {
-                                  return 'First name is required';
-                                }
-                                return null;
-                              },
+                      isMobile
+                          ? Column(
+                              children: [
+                                _buildModernTextField(
+                                  controller: _firstNameController,
+                                  focusNode: firstNameFocusNode,
+                                  label: 'First Name',
+                                  hint: 'Enter your first name',
+                                  icon: Icons.person_outline,
+                                  validator: (value) {
+                                    if (value?.isEmpty ?? true) {
+                                      return 'First name is required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                _buildModernTextField(
+                                  controller: _lastNameController,
+                                  focusNode: lastNameFocusNode,
+                                  label: 'Last Name',
+                                  hint: 'Enter your last name',
+                                  icon: Icons.person_outline,
+                                  validator: (value) {
+                                    if (value?.isEmpty ?? true) {
+                                      return 'Last name is required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    controller: _firstNameController,
+                                    focusNode: firstNameFocusNode,
+                                    label: 'First Name',
+                                    hint: 'Enter your first name',
+                                    icon: Icons.person_outline,
+                                    validator: (value) {
+                                      if (value?.isEmpty ?? true) {
+                                        return 'First name is required';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    controller: _lastNameController,
+                                    focusNode: lastNameFocusNode,
+                                    label: 'Last Name',
+                                    hint: 'Enter your last name',
+                                    icon: Icons.person_outline,
+                                    validator: (value) {
+                                      if (value?.isEmpty ?? true) {
+                                        return 'Last name is required';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildModernTextField(
-                              controller: _lastNameController,
-                              focusNode: lastNameFocusNode,
-                              label: 'Last Name',
-                              hint: 'Enter your last name',
-                              icon: Icons.person_outline,
-                              validator: (value) {
-                                if (value?.isEmpty ?? true) {
-                                  return 'Last name is required';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
 
                       const SizedBox(height: 20),
 
@@ -1013,41 +1278,73 @@ class _EditMyProfileState extends State<EditMyProfile> {
                       const SizedBox(height: 20),
 
                       // Country & Postal Code Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildModernTextField(
-                              controller: _nationalityController,
-                              focusNode: nationalityFocusNode,
-                              label: 'Country',
-                              hint: 'Enter your country',
-                              icon: Icons.public_rounded,
-                              validator: (value) {
-                                if (value?.isEmpty ?? true) {
-                                  return 'Country is required';
-                                }
-                                return null;
-                              },
+                      isMobile
+                          ? Column(
+                              children: [
+                                _buildModernTextField(
+                                  controller: _nationalityController,
+                                  focusNode: nationalityFocusNode,
+                                  label: 'Country',
+                                  hint: 'Enter your country',
+                                  icon: Icons.public_rounded,
+                                  validator: (value) {
+                                    if (value?.isEmpty ?? true) {
+                                      return 'Country is required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                _buildModernTextField(
+                                  controller: _postalCodeController,
+                                  focusNode: postalCodeFocusNode,
+                                  label: 'Postal Code',
+                                  hint: 'Enter postal code',
+                                  icon: Icons.markunread_mailbox_outlined,
+                                  validator: (value) {
+                                    if (value?.isEmpty ?? true) {
+                                      return 'Postal code is required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    controller: _nationalityController,
+                                    focusNode: nationalityFocusNode,
+                                    label: 'Country',
+                                    hint: 'Enter your country',
+                                    icon: Icons.public_rounded,
+                                    validator: (value) {
+                                      if (value?.isEmpty ?? true) {
+                                        return 'Country is required';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    controller: _postalCodeController,
+                                    focusNode: postalCodeFocusNode,
+                                    label: 'Postal Code',
+                                    hint: 'Enter postal code',
+                                    icon: Icons.markunread_mailbox_outlined,
+                                    validator: (value) {
+                                      if (value?.isEmpty ?? true) {
+                                        return 'Postal code is required';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildModernTextField(
-                              controller: _postalCodeController,
-                              focusNode: postalCodeFocusNode,
-                              label: 'Postal Code',
-                              hint: 'Enter postal code',
-                              icon: Icons.markunread_mailbox_outlined,
-                              validator: (value) {
-                                if (value?.isEmpty ?? true) {
-                                  return 'Postal code is required';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
 
                       const SizedBox(height: 20),
 
@@ -1548,6 +1845,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 768;
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
@@ -1678,46 +1976,83 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                       const SizedBox(height: 20),
 
                       // Country & Email Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildModernTextField(
-                              controller: _countryController,
-                              focusNode: countryFocusNode,
-                              label: 'Country',
-                              hint: 'Enter country',
-                              icon: Icons.public_rounded,
-                              validator: (value) {
-                                if (value?.isEmpty ?? true) {
-                                  return 'Country is required';
-                                }
-                                return null;
-                              },
+                      isMobile
+                          ? Column(
+                              children: [
+                                _buildModernTextField(
+                                  controller: _countryController,
+                                  focusNode: countryFocusNode,
+                                  label: 'Country',
+                                  hint: 'Enter country',
+                                  icon: Icons.public_rounded,
+                                  validator: (value) {
+                                    if (value?.isEmpty ?? true) {
+                                      return 'Country is required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                _buildModernTextField(
+                                  controller: _businessEmailController,
+                                  focusNode: businessEmailFocusNode,
+                                  label: 'Business Email',
+                                  hint: 'Enter business email',
+                                  icon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
+                                  validator: (value) {
+                                    if (value?.isEmpty ?? true) {
+                                      return 'Email is required';
+                                    }
+                                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                        .hasMatch(value!)) {
+                                      return 'Please enter a valid email';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    controller: _countryController,
+                                    focusNode: countryFocusNode,
+                                    label: 'Country',
+                                    hint: 'Enter country',
+                                    icon: Icons.public_rounded,
+                                    validator: (value) {
+                                      if (value?.isEmpty ?? true) {
+                                        return 'Country is required';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    controller: _businessEmailController,
+                                    focusNode: businessEmailFocusNode,
+                                    label: 'Business Email',
+                                    hint: 'Enter business email',
+                                    icon: Icons.email_outlined,
+                                    keyboardType: TextInputType.emailAddress,
+                                    validator: (value) {
+                                      if (value?.isEmpty ?? true) {
+                                        return 'Email is required';
+                                      }
+                                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                          .hasMatch(value!)) {
+                                        return 'Please enter a valid email';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildModernTextField(
-                              controller: _businessEmailController,
-                              focusNode: businessEmailFocusNode,
-                              label: 'Business Email',
-                              hint: 'Enter business email',
-                              icon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value?.isEmpty ?? true) {
-                                  return 'Email is required';
-                                }
-                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                    .hasMatch(value!)) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
 
                       const SizedBox(height: 20),
 
@@ -1773,29 +2108,49 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                       const SizedBox(height: 20),
 
                       // City & Province Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildModernTextField(
-                              controller: _businessCityController,
-                              focusNode: businessCityFocusNode,
-                              label: 'City',
-                              hint: 'Enter city',
-                              icon: Icons.location_city_rounded,
-                              validator: (value) {
-                                if (value?.isEmpty ?? true) {
-                                  return 'City is required';
-                                }
-                                return null;
-                              },
+                      isMobile
+                          ? Column(
+                              children: [
+                                _buildModernTextField(
+                                  controller: _businessCityController,
+                                  focusNode: businessCityFocusNode,
+                                  label: 'City',
+                                  hint: 'Enter city',
+                                  icon: Icons.location_city_rounded,
+                                  validator: (value) {
+                                    if (value?.isEmpty ?? true) {
+                                      return 'City is required';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                _buildProvinceDropdown(),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    controller: _businessCityController,
+                                    focusNode: businessCityFocusNode,
+                                    label: 'City',
+                                    hint: 'Enter city',
+                                    icon: Icons.location_city_rounded,
+                                    validator: (value) {
+                                      if (value?.isEmpty ?? true) {
+                                        return 'City is required';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildProvinceDropdown(),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildProvinceDropdown(),
-                          ),
-                        ],
-                      ),
 
                       const SizedBox(height: 20),
 
@@ -1822,29 +2177,49 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                       const SizedBox(height: 20),
 
                       // VAT & Registration Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildModernTextField(
-                              controller: _vatNumberController,
-                              focusNode: vatNumberFocusNode,
-                              label: 'VAT Number',
-                              hint: 'Enter VAT number',
-                              icon: Icons.receipt_long_outlined,
+                      isMobile
+                          ? Column(
+                              children: [
+                                _buildModernTextField(
+                                  controller: _vatNumberController,
+                                  focusNode: vatNumberFocusNode,
+                                  label: 'VAT Number',
+                                  hint: 'Enter VAT number',
+                                  icon: Icons.receipt_long_outlined,
+                                ),
+                                const SizedBox(height: 20),
+                                _buildModernTextField(
+                                  controller: _registrationNumberController,
+                                  focusNode: registrationNumberFocusNode,
+                                  label: 'Registration Number',
+                                  hint: 'Enter registration number',
+                                  icon: Icons.verified_outlined,
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    controller: _vatNumberController,
+                                    focusNode: vatNumberFocusNode,
+                                    label: 'VAT Number',
+                                    hint: 'Enter VAT number',
+                                    icon: Icons.receipt_long_outlined,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    controller: _registrationNumberController,
+                                    focusNode: registrationNumberFocusNode,
+                                    label: 'Registration Number',
+                                    hint: 'Enter registration number',
+                                    icon: Icons.verified_outlined,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildModernTextField(
-                              controller: _registrationNumberController,
-                              focusNode: registrationNumberFocusNode,
-                              label: 'Registration Number',
-                              hint: 'Enter registration number',
-                              icon: Icons.verified_outlined,
-                            ),
-                          ),
-                        ],
-                      ),
 
                       const SizedBox(height: 32),
                     ],
