@@ -33,6 +33,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
@@ -43,263 +46,539 @@ class _LoginPageState extends State<LoginPage> {
             height: MediaQuery.of(context).size.height,
             child: Row(
               children: [
-                Spacer(),
-                CustomCard(
-                  elevation: 5,
-                  color: Colors.white,
-                  surfaceTintColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(2)),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12)),
-                    constraints: BoxConstraints(maxWidth: 500, maxHeight: 633),
-                    //padding: EdgeInsets.symmetric(horizontal: 32),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                      height: 140,
-                                      width: 140,
-                                      child: Image.asset(
-                                          "lib/assets/artic_logo.png")),
-                                  Text(
-                                    "Artic Sentinel.",
-                                    style: GoogleFonts.lato(
-                                      fontSize: 30,
-                                      color: Constants.ctaColorLight,
-                                      letterSpacing: 1.3,
-                                      fontWeight: FontWeight.w300,
-                                    ),
-                                  ),
-                                  Text(
-                                    "Login",
-                                    style: GoogleFonts.lato(
-                                      textStyle: const TextStyle(
-                                          fontSize: 18,
-                                          color: Colors.black,
-                                          letterSpacing: 0,
-                                          fontWeight: FontWeight.normal),
-                                    ),
-                                  ),
-                                  SizedBox(height: 20),
-                                  // Email field
-                                  CustomInputTransparent1(
-                                    controller: _emailController,
-                                    hintText: "Email",
-                                    onChanged: (value) {},
-                                    onSubmitted: (value) {},
-                                    focusNode: emailFocusNode,
-                                    textInputAction: TextInputAction.none,
-                                    isPasswordField: false,
-                                  ),
-                                  SizedBox(height: 20),
-                                  // Password field
-                                  CustomInputTransparent1(
-                                      controller: _passwordController,
-                                      hintText: "Password",
-                                      onChanged: (value) {},
-                                      onSubmitted: (value) {},
-                                      focusNode: passwordFocusNode,
-                                      textInputAction: TextInputAction.none,
-                                      maxLines: 1,
-                                      isPasswordField: isHidden,
-                                      suffix: Padding(
-                                        padding:
-                                            const EdgeInsets.only(right: 8.0),
-                                        child: IconButton(
-                                            onPressed: () {
-                                              isHidden = !isHidden;
-                                              setState(() {});
-                                            },
-                                            icon: Icon(
-                                              isHidden == true
-                                                  ? CupertinoIcons.eye_slash
-                                                  : CupertinoIcons.eye,
-                                              color: Constants.ctaColorLight,
-                                            )),
-                                      )),
-
-                                  SizedBox(height: 20),
-                                  Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        Checkbox(
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(32),
-                                              side: BorderSide(
-                                                  color:
-                                                      Constants.ctaColorLight)),
-                                          checkColor: Colors.white,
-                                          activeColor: Constants.ctaColorLight,
-                                          value: isChecked,
-                                          onChanged: (bool? value) {
-                                            setState(() {
-                                              isChecked = value!;
-                                            });
-                                          },
+                if (!isMobile) Spacer(),
+                if (isMobile)
+                  Expanded(
+                    child: CustomCard(
+                      elevation: 0,
+                      color: Colors.white,
+                      surfaceTintColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(0)),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(0)),
+                        constraints: BoxConstraints(
+                          maxWidth: double.infinity,
+                          maxHeight: double.infinity,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.all(isMobile ? 24 : 16),
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(height: isMobile ? 40 : 0),
+                                      Container(
+                                          height: isMobile ? 100 : 140,
+                                          width: isMobile ? 100 : 140,
+                                          child: Image.asset(
+                                              "lib/assets/artic_logo.png")),
+                                      Text(
+                                        "Artic Sentinel.",
+                                        style: GoogleFonts.lato(
+                                          fontSize: isMobile ? 24 : 30,
+                                          color: Constants.ctaColorLight,
+                                          letterSpacing: 1.3,
+                                          fontWeight: FontWeight.w300,
                                         ),
-                                        SizedBox(
-                                          width: 22,
+                                      ),
+                                      Text(
+                                        "Login",
+                                        style: GoogleFonts.lato(
+                                          textStyle: TextStyle(
+                                              fontSize: isMobile ? 16 : 18,
+                                              color: Colors.black,
+                                              letterSpacing: 0,
+                                              fontWeight: FontWeight.normal),
                                         ),
-                                        Expanded(
-                                          child: Padding(
+                                      ),
+                                      SizedBox(height: 20),
+                                      // Email field
+                                      CustomInputTransparent1(
+                                        controller: _emailController,
+                                        hintText: "Email",
+                                        onChanged: (value) {},
+                                        onSubmitted: (value) {},
+                                        focusNode: emailFocusNode,
+                                        textInputAction: TextInputAction.none,
+                                        isPasswordField: false,
+                                      ),
+                                      SizedBox(height: 20),
+                                      // Password field
+                                      CustomInputTransparent1(
+                                          controller: _passwordController,
+                                          hintText: "Password",
+                                          onChanged: (value) {},
+                                          onSubmitted: (value) {},
+                                          focusNode: passwordFocusNode,
+                                          textInputAction: TextInputAction.none,
+                                          maxLines: 1,
+                                          isPasswordField: isHidden,
+                                          suffix: Padding(
                                             padding: const EdgeInsets.only(
                                                 right: 8.0),
-                                            child: Text(
-                                              'By proceeding to login, you accept our Terms of use and Privacy policy.',
-                                              style: GoogleFonts.lato(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.normal,
-                                                  color: Colors.black),
+                                            child: IconButton(
+                                                onPressed: () {
+                                                  isHidden = !isHidden;
+                                                  setState(() {});
+                                                },
+                                                icon: Icon(
+                                                  isHidden == true
+                                                      ? CupertinoIcons.eye_slash
+                                                      : CupertinoIcons.eye,
+                                                  color:
+                                                      Constants.ctaColorLight,
+                                                )),
+                                          )),
+
+                                      SizedBox(height: 20),
+                                      Container(
+                                        width:
+                                            MediaQuery.of(context).size.width,
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            Checkbox(
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(32),
+                                                  side: BorderSide(
+                                                      color: Constants
+                                                          .ctaColorLight)),
+                                              checkColor: Colors.white,
+                                              activeColor:
+                                                  Constants.ctaColorLight,
+                                              value: isChecked,
+                                              onChanged: (bool? value) {
+                                                setState(() {
+                                                  isChecked = value!;
+                                                });
+                                              },
                                             ),
-                                          ),
+                                            SizedBox(
+                                              width: 22,
+                                            ),
+                                            Expanded(
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(
+                                                    right: 8.0),
+                                                child: Text(
+                                                  'By proceeding to login, you accept our Terms of use and Privacy policy.',
+                                                  style: GoogleFonts.lato(
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.normal,
+                                                      color: Colors.black),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(height: 20),
-                                  // Login button
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: TextButton(
-                                          onPressed: () {
-                                            if (_emailController.text.isEmpty) {
-                                              MotionToast.error(
-                                                onClose: () {},
-                                                description: Text(
-                                                  "Please enter your email",
-                                                  style: GoogleFonts.lato(
-                                                      color: Colors.white),
-                                                ),
-                                              ).show(context);
-                                            } else if (_passwordController
-                                                .text.isEmpty) {
-                                              MotionToast.error(
-                                                onClose: () {},
-                                                description: Text(
-                                                  "Please enter your password",
-                                                  style: GoogleFonts.lato(
-                                                      color: Colors.white),
-                                                ),
-                                              ).show(context);
-                                            } else {
-                                              signInUser();
-                                              /*Navigator.push(
+                                      ),
+                                      SizedBox(height: 20),
+                                      // Login button
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: TextButton(
+                                              onPressed: () {
+                                                if (_emailController
+                                                    .text.isEmpty) {
+                                                  MotionToast.error(
+                                                    onClose: () {},
+                                                    description: Text(
+                                                      "Please enter your email",
+                                                      style: GoogleFonts.lato(
+                                                          color: Colors.white),
+                                                    ),
+                                                  ).show(context);
+                                                } else if (_passwordController
+                                                    .text.isEmpty) {
+                                                  MotionToast.error(
+                                                    onClose: () {},
+                                                    description: Text(
+                                                      "Please enter your password",
+                                                      style: GoogleFonts.lato(
+                                                          color: Colors.white),
+                                                    ),
+                                                  ).show(context);
+                                                } else {
+                                                  signInUser();
+                                                  /*Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                   builder: (context) =>
                                                       LymeDashboard()),
                                             );*/
-                                            }
-                                          },
-                                          style: TextButton.styleFrom(
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(32)),
-                                            minimumSize: Size.fromHeight(50),
-                                            backgroundColor: Constants
-                                                .ctaColorLight, // Background color
+                                                }
+                                              },
+                                              style: TextButton.styleFrom(
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            32)),
+                                                minimumSize:
+                                                    Size.fromHeight(50),
+                                                backgroundColor: Constants
+                                                    .ctaColorLight, // Background color
+                                              ),
+                                              child: Text(
+                                                'Login',
+                                                style: GoogleFonts.lato(
+                                                    color: Colors.white,
+                                                    fontWeight:
+                                                        FontWeight.normal),
+                                              ),
+                                            ),
                                           ),
-                                          child: Text(
-                                            'Login',
-                                            style: GoogleFonts.lato(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.normal),
+                                        ],
+                                      ),
+                                      SizedBox(height: 20),
+                                      // Login button
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: TextButton(
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          SignUpPage()),
+                                                );
+                                                setState(() {});
+                                              },
+                                              style: TextButton.styleFrom(
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              32)),
+                                                  minimumSize:
+                                                      Size.fromHeight(50),
+                                                  side: BorderSide(
+                                                    width: 1.0,
+                                                    color:
+                                                        Constants.ctaColorLight,
+                                                  ),
+                                                  backgroundColor: Colors
+                                                      .transparent // Background color
+                                                  ),
+                                              child: Text(
+                                                'Create Account',
+                                                style: GoogleFonts.lato(
+                                                    color: Colors.black,
+                                                    fontWeight:
+                                                        FontWeight.normal),
+                                              ),
+                                            ),
                                           ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 20),
+                                      RichText(
+                                        text: TextSpan(
+                                          text:
+                                              'Artic Sentinel © ${DateTime.now().year}.',
+                                          style: GoogleFonts.inter(
+                                            textStyle: TextStyle(
+                                                fontSize: isMobile ? 12 : 14,
+                                                color: Colors.black,
+                                                letterSpacing: 0,
+                                                fontWeight: FontWeight.w500),
+                                          ),
+                                          children: <TextSpan>[
+                                            TextSpan(
+                                              text: 'All rights reserved',
+                                              style: GoogleFonts.inter(
+                                                textStyle: TextStyle(
+                                                    fontSize:
+                                                        isMobile ? 12 : 14,
+                                                    color: Colors.black,
+                                                    letterSpacing: 0,
+                                                    fontWeight:
+                                                        FontWeight.w400),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
+                                      SizedBox(height: isMobile ? 40 : 20),
                                     ],
                                   ),
-                                  SizedBox(height: 20),
-                                  // Login button
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: TextButton(
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      SignUpPage()),
-                                            );
-                                            setState(() {});
-                                          },
-                                          style: TextButton.styleFrom(
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                if (!isMobile)
+                  CustomCard(
+                    elevation: 5,
+                    color: Colors.white,
+                    surfaceTintColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(2)),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12)),
+                      constraints:
+                          BoxConstraints(maxWidth: 500, maxHeight: 633),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                        height: 140,
+                                        width: 140,
+                                        child: Image.asset(
+                                            "lib/assets/artic_logo.png")),
+                                    Text(
+                                      "Artic Sentinel.",
+                                      style: GoogleFonts.lato(
+                                        fontSize: 30,
+                                        color: Constants.ctaColorLight,
+                                        letterSpacing: 1.3,
+                                        fontWeight: FontWeight.w300,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Login",
+                                      style: GoogleFonts.lato(
+                                        textStyle: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.black,
+                                            letterSpacing: 0,
+                                            fontWeight: FontWeight.normal),
+                                      ),
+                                    ),
+                                    SizedBox(height: 20),
+                                    // Email field
+                                    CustomInputTransparent1(
+                                      controller: _emailController,
+                                      hintText: "Email",
+                                      onChanged: (value) {},
+                                      onSubmitted: (value) {},
+                                      focusNode: emailFocusNode,
+                                      textInputAction: TextInputAction.none,
+                                      isPasswordField: false,
+                                    ),
+                                    SizedBox(height: 20),
+                                    // Password field
+                                    CustomInputTransparent1(
+                                        controller: _passwordController,
+                                        hintText: "Password",
+                                        onChanged: (value) {},
+                                        onSubmitted: (value) {},
+                                        focusNode: passwordFocusNode,
+                                        textInputAction: TextInputAction.none,
+                                        maxLines: 1,
+                                        isPasswordField: isHidden,
+                                        suffix: Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 8.0),
+                                          child: IconButton(
+                                              onPressed: () {
+                                                isHidden = !isHidden;
+                                                setState(() {});
+                                              },
+                                              icon: Icon(
+                                                isHidden == true
+                                                    ? CupertinoIcons.eye_slash
+                                                    : CupertinoIcons.eye,
+                                                color: Constants.ctaColorLight,
+                                              )),
+                                        )),
+
+                                    SizedBox(height: 20),
+                                    Container(
+                                      width: MediaQuery.of(context).size.width,
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          Checkbox(
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(32),
+                                                side: BorderSide(
+                                                    color: Constants
+                                                        .ctaColorLight)),
+                                            checkColor: Colors.white,
+                                            activeColor:
+                                                Constants.ctaColorLight,
+                                            value: isChecked,
+                                            onChanged: (bool? value) {
+                                              setState(() {
+                                                isChecked = value!;
+                                              });
+                                            },
+                                          ),
+                                          SizedBox(
+                                            width: 22,
+                                          ),
+                                          Expanded(
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(
+                                                  right: 8.0),
+                                              child: Text(
+                                                'By proceeding to login, you accept our Terms of use and Privacy policy.',
+                                                style: GoogleFonts.lato(
+                                                    fontSize: 13,
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                    color: Colors.black),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 20),
+                                    // Login button
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextButton(
+                                            onPressed: () {
+                                              if (_emailController
+                                                  .text.isEmpty) {
+                                                MotionToast.error(
+                                                  onClose: () {},
+                                                  description: Text(
+                                                    "Please enter your email",
+                                                    style: GoogleFonts.lato(
+                                                        color: Colors.white),
+                                                  ),
+                                                ).show(context);
+                                              } else if (_passwordController
+                                                  .text.isEmpty) {
+                                                MotionToast.error(
+                                                  onClose: () {},
+                                                  description: Text(
+                                                    "Please enter your password",
+                                                    style: GoogleFonts.lato(
+                                                        color: Colors.white),
+                                                  ),
+                                                ).show(context);
+                                              } else {
+                                                signInUser();
+                                              }
+                                            },
+                                            style: TextButton.styleFrom(
                                               shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           32)),
                                               minimumSize: Size.fromHeight(50),
-                                              side: BorderSide(
-                                                width: 1.0,
-                                                color: Constants.ctaColorLight,
-                                              ),
-                                              backgroundColor: Colors
-                                                  .transparent // Background color
-                                              ),
-                                          child: Text(
-                                            'Create Account',
-                                            style: GoogleFonts.lato(
-                                                color: Colors.black,
-                                                fontWeight: FontWeight.normal),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 20),
-                                  RichText(
-                                    text: TextSpan(
-                                      text:
-                                          'Artic Sentinel © ${DateTime.now().year}.',
-                                      style: GoogleFonts.inter(
-                                        textStyle: const TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.black,
-                                            letterSpacing: 0,
-                                            fontWeight: FontWeight.w500),
-                                      ),
-                                      children: <TextSpan>[
-                                        TextSpan(
-                                          text: 'All rights reserved',
-                                          style: GoogleFonts.inter(
-                                            textStyle: const TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.black,
-                                                letterSpacing: 0,
-                                                fontWeight: FontWeight.w400),
+                                              backgroundColor:
+                                                  Constants.ctaColorLight,
+                                            ),
+                                            child: Text(
+                                              'Login',
+                                              style: GoogleFonts.lato(
+                                                  color: Colors.white,
+                                                  fontWeight:
+                                                      FontWeight.normal),
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  SizedBox(height: 20),
-                                ],
+                                    SizedBox(height: 20),
+                                    // Create Account button
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextButton(
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        SignUpPage()),
+                                              );
+                                              setState(() {});
+                                            },
+                                            style: TextButton.styleFrom(
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            32)),
+                                                minimumSize:
+                                                    Size.fromHeight(50),
+                                                side: BorderSide(
+                                                  width: 1.0,
+                                                  color:
+                                                      Constants.ctaColorLight,
+                                                ),
+                                                backgroundColor:
+                                                    Colors.transparent),
+                                            child: Text(
+                                              'Create Account',
+                                              style: GoogleFonts.lato(
+                                                  color: Colors.black,
+                                                  fontWeight:
+                                                      FontWeight.normal),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 20),
+                                    RichText(
+                                      text: TextSpan(
+                                        text:
+                                            'Artic Sentinel © ${DateTime.now().year}.',
+                                        style: GoogleFonts.inter(
+                                          textStyle: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                              letterSpacing: 0,
+                                              fontWeight: FontWeight.w500),
+                                        ),
+                                        children: <TextSpan>[
+                                          TextSpan(
+                                            text: 'All rights reserved',
+                                            style: GoogleFonts.inter(
+                                              textStyle: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.black,
+                                                  letterSpacing: 0,
+                                                  fontWeight: FontWeight.w400),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 20),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                Spacer(),
+                if (!isMobile) Spacer(),
               ],
             ),
           ),

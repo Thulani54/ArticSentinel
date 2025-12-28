@@ -1000,9 +1000,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     print('  selectedDeviceId: $selectedDeviceId');
     if (dailyData != null) {
       print('  dailyData found:');
-      print('    Air - min: ${dailyData.minTempAir}, max: ${dailyData.maxTempAir}, avg: ${dailyData.avgTempAir}');
-      print('    Coil - min: ${dailyData.minTempCoil}, max: ${dailyData.maxTempCoil}, avg: ${dailyData.avgTempCoil}');
-      print('    Drain - min: ${dailyData.minTempDrain}, max: ${dailyData.maxTempDrain}, avg: ${dailyData.avgTempDrain}');
+      print(
+          '    Air - min: ${dailyData.minTempAir}, max: ${dailyData.maxTempAir}, avg: ${dailyData.avgTempAir}');
+      print(
+          '    Coil - min: ${dailyData.minTempCoil}, max: ${dailyData.maxTempCoil}, avg: ${dailyData.avgTempCoil}');
+      print(
+          '    Drain - min: ${dailyData.minTempDrain}, max: ${dailyData.maxTempDrain}, avg: ${dailyData.avgTempDrain}');
     } else {
       print('  dailyData is null!');
     }
@@ -1389,11 +1392,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                               )
                             : Row(
                                 children: [
-                                  Expanded(child: _buildTemperatureSpreadCard()),
+                                  Expanded(
+                                      child: _buildTemperatureSpreadCard()),
                                   SizedBox(width: 12),
-                                  Expanded(child: _buildTemperatureStabilityCard()),
+                                  Expanded(
+                                      child: _buildTemperatureStabilityCard()),
                                   SizedBox(width: 12),
-                                  Expanded(child: _buildTemperatureAlertsCard()),
+                                  Expanded(
+                                      child: _buildTemperatureAlertsCard()),
                                 ],
                               ),
                       ]),
@@ -1416,15 +1422,18 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   children: [
                     if (temperatureRanges.length > 0)
                       Expanded(
-                          child: _buildDetailedTemperatureCard(temperatureRanges[0])),
+                          child: _buildDetailedTemperatureCard(
+                              temperatureRanges[0])),
                     SizedBox(width: 16),
                     if (temperatureRanges.length > 1)
                       Expanded(
-                          child: _buildDetailedTemperatureCard(temperatureRanges[1])),
+                          child: _buildDetailedTemperatureCard(
+                              temperatureRanges[1])),
                     SizedBox(width: 16),
                     if (temperatureRanges.length > 2)
                       Expanded(
-                          child: _buildDetailedTemperatureCard(temperatureRanges[2]))
+                          child: _buildDetailedTemperatureCard(
+                              temperatureRanges[2]))
                   ],
                 )
         ],
@@ -1655,7 +1664,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                             )
                           : Row(
                               children: [
-                                Expanded(child: _buildCompressorEfficiencyCard()),
+                                Expanded(
+                                    child: _buildCompressorEfficiencyCard()),
                                 SizedBox(width: 12),
                                 Expanded(child: _buildCompressorLoadCard()),
                                 SizedBox(width: 12),
@@ -3406,13 +3416,23 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         ),
         SizedBox(height: 8),
         Divider(thickness: 0.5, color: Colors.grey.shade300),
-        if (latestDeviceDataList.isNotEmpty)
+        if (latestDeviceDataList.isNotEmpty && selectedDeviceId != null)
           Padding(
             padding: EdgeInsets.only(top: 8),
-            child: Text(
-              "Last Updated: ${DateFormat('EEE, dd MMM - HH:mm').format(DateTime.parse(latestDeviceDataList.first.time!).add(Duration(hours: 2)))}",
-              style:
-                  GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600),
+            child: Builder(
+              builder: (context) {
+                final selectedDevice = latestDeviceDataList
+                    .where((device) => device.deviceId == selectedDeviceId)
+                    .firstOrNull;
+                if (selectedDevice?.time == null) {
+                  return SizedBox.shrink();
+                }
+                return Text(
+                  "Last Updated: ${DateFormat('EEE, dd MMM - HH:mm').format(DateTime.parse(selectedDevice!.time!).add(Duration(hours: 2)))}",
+                  style: GoogleFonts.inter(
+                      fontSize: 12, color: Colors.grey.shade600),
+                );
+              },
             ),
           ),
       ],
@@ -3473,7 +3493,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       ),
                       SizedBox(height: 8),
                       _buildPerformanceMetric(
-                        "System Status",
+                        "System Status2",
                         (currentPerformanceMetrics!.systemStatus
                                     ?.replaceAll('_', ' ') ??
                                 'Unknown')
@@ -3712,8 +3732,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Constants.ctaColorLight
-                                      .withOpacity(0.2),
+                                  color:
+                                      Constants.ctaColorLight.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -3796,11 +3816,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                                       ? Icons.trending_up
                                                       : Icons.trending_down,
                                                   size: 16,
-                                                  color:
-                                                      card.trendDirection == 'up'
-                                                          ? Constants
-                                                              .ctaColorLight
-                                                          : Colors.red,
+                                                  color: card.trendDirection ==
+                                                          'up'
+                                                      ? Constants.ctaColorLight
+                                                      : Colors.red,
                                                 ),
                                             ],
                                           ),
@@ -3826,25 +3845,27 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                   Container(
                                     margin: EdgeInsets.only(top: 8),
                                     padding: EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Constants.ctaColorLight.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text("${card.alerts!.length} alert(s)",
-                                  style: GoogleFonts.inter(
-                                      fontSize: 10,
-                                      color: Constants.ctaColorLight)),
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Constants.ctaColorLight
+                                          .withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                        "${card.alerts!.length} alert(s)",
+                                        style: GoogleFonts.inter(
+                                            fontSize: 10,
+                                            color: Constants.ctaColorLight)),
+                                  ),
+                              ],
                             ),
-                        ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
-        ),
+              ),
       ],
     );
   }
@@ -3937,7 +3958,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                             children: [
                               SizedBox(height: 16),
                               Container(
-                                  height: 100, child: _buildDesktopDoorMetrics()),
+                                  height: 100,
+                                  child: _buildDesktopDoorMetrics()),
                             ],
                           ),
                         ],
@@ -4178,12 +4200,17 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           print('Daily Aggregate Debug:');
           print('  Device ID: ${firstDaily.deviceId}');
           print('  Day Bucket: ${firstDaily.dayBucket}');
-          print('  Air - min: ${firstDaily.minTempAir}, max: ${firstDaily.maxTempAir}, avg: ${firstDaily.avgTempAir}');
-          print('  Coil - min: ${firstDaily.minTempCoil}, max: ${firstDaily.maxTempCoil}, avg: ${firstDaily.avgTempCoil}');
-          print('  Drain - min: ${firstDaily.minTempDrain}, max: ${firstDaily.maxTempDrain}, avg: ${firstDaily.avgTempDrain}');
-          print('  Compressor Runtime %: ${firstDaily.compressorRuntimePercentage}');
+          print(
+              '  Air - min: ${firstDaily.minTempAir}, max: ${firstDaily.maxTempAir}, avg: ${firstDaily.avgTempAir}');
+          print(
+              '  Coil - min: ${firstDaily.minTempCoil}, max: ${firstDaily.maxTempCoil}, avg: ${firstDaily.avgTempCoil}');
+          print(
+              '  Drain - min: ${firstDaily.minTempDrain}, max: ${firstDaily.maxTempDrain}, avg: ${firstDaily.avgTempDrain}');
+          print(
+              '  Compressor Runtime %: ${firstDaily.compressorRuntimePercentage}');
           print('  Compressor On Count: ${firstDaily.compressorOnCount}');
-          print('  Data Transmission %: ${firstDaily.dataTransmissionPercentage}');
+          print(
+              '  Data Transmission %: ${firstDaily.dataTransmissionPercentage}');
           print('  Device Uptime %: ${firstDaily.deviceUptimePercentage}');
           print('Raw daily_aggregates JSON: ${data['daily_aggregates']}');
         }
