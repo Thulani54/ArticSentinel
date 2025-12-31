@@ -2331,13 +2331,18 @@ class _ReportsState extends State<Reports> {
     String temperatureRange = 'all';
     bool includeAnomalies = true;
     List<DeviceModel3> deviceList = [];
+    bool isLoadingDevices = true;
+    DateTime startDate = DateTime.now().subtract(Duration(days: 7));
+    DateTime endDate = DateTime.now();
 
     // Fetch devices
     try {
       deviceList =
           await DevicePerformanceApiService.getDevices(widget.companyId);
+      isLoadingDevices = false;
     } catch (e) {
       print('Error loading devices: $e');
+      isLoadingDevices = false;
     }
 
     showDialog(
@@ -2356,239 +2361,408 @@ class _ReportsState extends State<Reports> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFE94B3C).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          FontAwesomeIcons.temperatureHalf,
-                          color: Color(0xFFE94B3C),
-                          size: 24,
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Temperature Analytics Report',
-                              style: GoogleFonts.inter(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            Text(
-                              'Configure temperature analysis',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(CupertinoIcons.xmark, size: 20),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 24),
-
-                  // Device Selection
-                  Text(
-                    'Select Device',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedDevice,
-                        isExpanded: true,
-                        icon: Icon(Icons.keyboard_arrow_down,
-                            color: Constants.ctaColorLight),
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                        items: [
-                          DropdownMenuItem(
-                              value: 'all', child: Text('All Devices')),
-                          DropdownMenuItem(
-                              value: 'device_001',
-                              child: Text('Device 001 - Chiller A')),
-                          DropdownMenuItem(
-                              value: 'device_002',
-                              child: Text('Device 002 - Freezer B')),
-                        ],
-                        onChanged: (value) {
-                          setDialogState(() {
-                            selectedDevice = value!;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Temperature Range
-                  Text(
-                    'Temperature Range',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: temperatureRange,
-                        isExpanded: true,
-                        icon: Icon(Icons.keyboard_arrow_down,
-                            color: Constants.ctaColorLight),
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                        items: [
-                          DropdownMenuItem(
-                              value: 'all', child: Text('All Temperatures')),
-                          DropdownMenuItem(
-                              value: 'normal',
-                              child: Text('Normal Range Only')),
-                          DropdownMenuItem(
-                              value: 'high', child: Text('Above Threshold')),
-                          DropdownMenuItem(
-                              value: 'low', child: Text('Below Threshold')),
-                        ],
-                        onChanged: (value) {
-                          setDialogState(() {
-                            temperatureRange = value!;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Options
-                  CheckboxListTile(
-                    title: Text(
-                      'Highlight Temperature Anomalies',
-                      style: GoogleFonts.inter(fontSize: 14),
-                    ),
-                    value: includeAnomalies,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        includeAnomalies = value!;
-                      });
-                    },
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                  ),
-                  SizedBox(height: 24),
-
-                  // Footer buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey.withValues(alpha: 0.1),
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFE94B3C).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          child: Icon(
+                            FontAwesomeIcons.temperatureHalf,
+                            color: Color(0xFFE94B3C),
+                            size: 24,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Temperature Analytics Report',
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              Text(
+                                'Configure temperature analysis',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(CupertinoIcons.xmark, size: 20),
                           onPressed: () => Navigator.pop(context),
-                          child: Text(
-                            'Cancel',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w500,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 24),
+
+                    // Device Selection
+                    Text(
+                      'Select Device',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: isLoadingDevices
+                          ? Center(child: CircularProgressIndicator())
+                          : DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: selectedDevice,
+                                isExpanded: true,
+                                icon: Icon(Icons.keyboard_arrow_down,
+                                    color: Constants.ctaColorLight),
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                ),
+                                items: [
+                                  DropdownMenuItem(
+                                      value: 'all', child: Text('All Devices')),
+                                  ...deviceList.map((device) => DropdownMenuItem(
+                                        value: device.deviceId,
+                                        child: Text(
+                                            '${device.name} (${device.deviceId})'),
+                                      )),
+                                ],
+                                onChanged: (value) {
+                                  setDialogState(() {
+                                    selectedDevice = value!;
+                                  });
+                                },
+                              ),
+                            ),
+                    ),
+                    SizedBox(height: 16),
+
+                    // Date Range Selection
+                    Text(
+                      'Date Range',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: startDate,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime.now(),
+                              );
+                              if (picked != null) {
+                                setDialogState(() {
+                                  startDate = picked;
+                                });
+                              }
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.calendar_today,
+                                      size: 16, color: Constants.ctaColorLight),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    DateFormat('MMM dd, yyyy').format(startDate),
+                                    style: GoogleFonts.inter(fontSize: 14),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            backgroundColor: Constants.ctaColorLight,
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Text('to', style: GoogleFonts.inter()),
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: endDate,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime.now(),
+                              );
+                              if (picked != null) {
+                                setDialogState(() {
+                                  endDate = picked;
+                                });
+                              }
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.calendar_today,
+                                      size: 16, color: Constants.ctaColorLight),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    DateFormat('MMM dd, yyyy').format(endDate),
+                                    style: GoogleFonts.inter(fontSize: 14),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          onPressed: () async {
-                            Navigator.pop(context);
-                            setState(() {
-                              isGenerating = true;
-                              selectedReportType = 'temperature_analytics';
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+
+                    // Temperature Range
+                    Text(
+                      'Temperature Range',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: temperatureRange,
+                          isExpanded: true,
+                          icon: Icon(Icons.keyboard_arrow_down,
+                              color: Constants.ctaColorLight),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                          items: [
+                            DropdownMenuItem(
+                                value: 'all', child: Text('All Temperatures')),
+                            DropdownMenuItem(
+                                value: 'normal',
+                                child: Text('Normal Range Only')),
+                            DropdownMenuItem(
+                                value: 'high', child: Text('Above Threshold')),
+                            DropdownMenuItem(
+                                value: 'low', child: Text('Below Threshold')),
+                          ],
+                          onChanged: (value) {
+                            setDialogState(() {
+                              temperatureRange = value!;
                             });
-
-                            await _generateTemperatureAnalysisReport(
-                              selectedDevice: selectedDevice,
-                              deviceList: deviceList,
-                            );
-
-                            if (mounted) {
-                              setState(() {
-                                isGenerating = false;
-                              });
-                              _showPDFPreviewDialog(
-                                  'Temperature Analysis Report',
-                                  'temperature_analysis');
-                            }
                           },
-                          child: Text(
-                            'Generate Report',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+
+                    // Options
+                    CheckboxListTile(
+                      title: Text(
+                        'Highlight Temperature Anomalies',
+                        style: GoogleFonts.inter(fontSize: 14),
+                      ),
+                      value: includeAnomalies,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          includeAnomalies = value!;
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                    SizedBox(height: 24),
+
+                    // Footer buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(
+                              'Cancel',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: Constants.ctaColorLight,
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: deviceList.isEmpty
+                                ? null
+                                : () async {
+                                    Navigator.pop(context);
+                                    setState(() {
+                                      isGenerating = true;
+                                      selectedReportType = 'temperature_analytics';
+                                    });
+
+                                    final startDateStr =
+                                        startDate.toIso8601String().split('T')[0];
+                                    final endDateStr =
+                                        endDate.toIso8601String().split('T')[0];
+
+                                    await _generateTemperatureAnalysisReportWithDates(
+                                      selectedDevice: selectedDevice,
+                                      deviceList: deviceList,
+                                      startDate: startDateStr,
+                                      endDate: endDateStr,
+                                    );
+
+                                    if (mounted) {
+                                      setState(() {
+                                        isGenerating = false;
+                                      });
+                                      _showPDFPreviewDialog(
+                                          'Temperature Analysis Report',
+                                          'temperature_analysis');
+                                    }
+                                  },
+                            child: Text(
+                              'Generate Report',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           );
         },
       ),
     );
+  }
+
+  Future<void> _generateTemperatureAnalysisReportWithDates({
+    required String selectedDevice,
+    required List<DeviceModel3> deviceList,
+    required String startDate,
+    required String endDate,
+  }) async {
+    List<TemperatureAnalysisData> reportData = [];
+
+    if (selectedDevice == 'all') {
+      for (var device in deviceList) {
+        try {
+          final data =
+              await TemperatureAnalysisApiService.getTemperatureAnalysis(
+            deviceId: device.deviceId,
+            deviceName: device.name,
+            startDate: startDate,
+            endDate: endDate,
+          );
+          reportData.add(data);
+        } catch (e) {
+          print('Error fetching temperature data for ${device.deviceId}: $e');
+        }
+      }
+    } else {
+      final device = deviceList.firstWhere(
+        (d) => d.deviceId == selectedDevice,
+        orElse: () => DeviceModel3(
+          id: 0,
+          deviceId: selectedDevice,
+          name: 'Unknown',
+          deviceType: 'Unknown',
+          isActive: false,
+          isOnline: false,
+          isInRepairMode: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          currentStatus: 'Unknown',
+          latitude: '0',
+          longitude: '0',
+        ),
+      );
+      try {
+        final data =
+            await TemperatureAnalysisApiService.getTemperatureAnalysis(
+          deviceId: device.deviceId,
+          deviceName: device.name,
+          startDate: startDate,
+          endDate: endDate,
+        );
+        reportData.add(data);
+      } catch (e) {
+        print('Error fetching temperature data for ${device.deviceId}: $e');
+      }
+    }
+
+    // Store the generated report data
+    setState(() {
+      lastGeneratedTempReportData = reportData;
+      lastGeneratedTempReportDevice = selectedDevice;
+      lastGeneratedTempReportStartDate = startDate;
+      lastGeneratedTempReportEndDate = endDate;
+      lastGeneratedTempReportPeriod = 'Custom Range';
+    });
   }
 
   void _showAlertsSummaryDialog() {
