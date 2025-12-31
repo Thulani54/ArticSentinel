@@ -3651,7 +3651,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   }
 
   Widget _buildDocumentationTab() {
-    final bool canEdit = _maintenance['status'] == 'in_progress';
+    // Allow uploads for in_progress, scheduled, and completed maintenance
+    final status = _maintenance['status'] ?? '';
+    final bool canEdit = status == 'in_progress' || status == 'scheduled' || status == 'completed' || status == 'pending';
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
