@@ -95,7 +95,7 @@ class DevicePerformanceApiService {
   }) async {
     try {
       final url =
-          '$baseUrl/api/devices/$deviceId/analytics/?start_date=$startDate&end_date=$endDate';
+          '${baseUrl}api/devices/$deviceId/analytics/?start_date=$startDate&end_date=$endDate';
       print('Fetching device performance from: $url');
 
       final response = await http.get(
@@ -234,7 +234,7 @@ class TemperatureAnalysisApiService {
   }) async {
     try {
       final url =
-          '$baseUrl/api/devices/$deviceId/temperature-analytics/?start_date=$startDate&end_date=$endDate';
+          '${baseUrl}api/devices/$deviceId/temperature-analytics/?start_date=$startDate&end_date=$endDate';
       print('Fetching temperature analysis from: $url');
 
       final response = await http.get(
@@ -324,7 +324,7 @@ class AlertsSummaryApiService {
   }) async {
     try {
       final url =
-          '$baseUrl/api/alerts/summary/?business_id=$businessId&start_date=$startDate&end_date=$endDate';
+          '${baseUrl}api/alerts/summary/?business_id=$businessId&start_date=$startDate&end_date=$endDate';
       print('Fetching alerts summary from: $url');
 
       final response = await http.get(
@@ -420,7 +420,7 @@ class MaintenanceReportApiService {
     required String endDate,
   }) async {
     try {
-      final url = '$baseUrl/api/maintenance/report/?business_id=$businessId&start_date=$startDate&end_date=$endDate';
+      final url = '${baseUrl}api/maintenance/report/?business_id=$businessId&start_date=$startDate&end_date=$endDate';
       print('Fetching maintenance report from: $url');
 
       final response = await http.get(Uri.parse(url));
