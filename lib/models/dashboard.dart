@@ -582,7 +582,10 @@ class HourlyAggregate {
 class LatestDeviceData {
   final String? deviceId;
   final String? time;
+  final String? deviceType; // 'device1', 'device2', 'device3'
   final double? temperature;
+
+  // Device 1 specific fields (Refrigeration units)
   final double? temperatureAir;
   final double? temperatureCoil;
   final double? temperatureDrain;
@@ -594,6 +597,82 @@ class LatestDeviceData {
   final double? compAmpPh1;
   final double? compAmpPh2;
   final double? compAmpPh3;
+
+  // Device 2 specific fields (Multi-zone temperature monitoring)
+  final double? temp1;
+  final double? temp2;
+  final double? temp3;
+  final double? temp4;
+  final double? temp5;
+  final double? temp6;
+  final double? temp7;
+  final double? temp8;
+  // Device 2 min/max values (24-hour)
+  final double? temp1Min;
+  final double? temp1Max;
+  final double? temp2Min;
+  final double? temp2Max;
+  final double? temp3Min;
+  final double? temp3Max;
+  final double? temp4Min;
+  final double? temp4Max;
+  final double? temp5Min;
+  final double? temp5Max;
+  final double? temp6Min;
+  final double? temp6Max;
+  final double? temp7Min;
+  final double? temp7Max;
+  final double? temp8Min;
+  final double? temp8Max;
+  // Device 2 min/max timestamps (24-hour)
+  final String? temp1MinTime;
+  final String? temp1MaxTime;
+  final String? temp2MinTime;
+  final String? temp2MaxTime;
+  final String? temp3MinTime;
+  final String? temp3MaxTime;
+  final String? temp4MinTime;
+  final String? temp4MaxTime;
+  final String? temp5MinTime;
+  final String? temp5MaxTime;
+  final String? temp6MinTime;
+  final String? temp6MaxTime;
+  final String? temp7MinTime;
+  final String? temp7MaxTime;
+  final String? temp8MinTime;
+  final String? temp8MaxTime;
+
+  // Device 3 specific fields (Ice machine monitoring)
+  final double? hsTemp;  // High side temperature
+  final double? lsTemp;  // Low side temperature
+  final double? iceTemp; // Ice temperature
+  final double? airTemp; // Air temperature
+  final bool? harvsw;    // Harvest switch
+  final double? wtrlvl;  // Water level
+  final String? wtrlvlLastEmpty;  // Last time water level was 0%
+  final String? wtrlvlLastFull;   // Last time water level was 100%
+  // Device 3 min/max values (24-hour)
+  final double? hsTempMin;
+  final double? hsTempMax;
+  final double? lsTempMin;
+  final double? lsTempMax;
+  final double? iceTempMin;
+  final double? iceTempMax;
+  final double? airTempMin;
+  final double? airTempMax;
+  // Device 3 min/max timestamps (24-hour)
+  final String? hsTempMinTime;
+  final String? hsTempMaxTime;
+  final String? lsTempMinTime;
+  final String? lsTempMaxTime;
+  final String? iceTempMinTime;
+  final String? iceTempMaxTime;
+  final String? airTempMinTime;
+  final String? airTempMaxTime;
+  // Device 3 last harvest timestamp
+  final String? lastHarvestTime;
+  // Device 3 harvest count (last 24 hours)
+  final int? harvestCount;
 
   // Enhanced calculated metrics
   final double? avgCompAmp;
@@ -617,6 +696,7 @@ class LatestDeviceData {
   LatestDeviceData({
     this.deviceId,
     this.time,
+    this.deviceType,
     this.temperature,
     this.temperatureAir,
     this.temperatureCoil,
@@ -629,6 +709,80 @@ class LatestDeviceData {
     this.compAmpPh1,
     this.compAmpPh2,
     this.compAmpPh3,
+    // Device 2 fields
+    this.temp1,
+    this.temp2,
+    this.temp3,
+    this.temp4,
+    this.temp5,
+    this.temp6,
+    this.temp7,
+    this.temp8,
+    // Device 2 min/max
+    this.temp1Min,
+    this.temp1Max,
+    this.temp2Min,
+    this.temp2Max,
+    this.temp3Min,
+    this.temp3Max,
+    this.temp4Min,
+    this.temp4Max,
+    this.temp5Min,
+    this.temp5Max,
+    this.temp6Min,
+    this.temp6Max,
+    this.temp7Min,
+    this.temp7Max,
+    this.temp8Min,
+    this.temp8Max,
+    // Device 2 min/max timestamps
+    this.temp1MinTime,
+    this.temp1MaxTime,
+    this.temp2MinTime,
+    this.temp2MaxTime,
+    this.temp3MinTime,
+    this.temp3MaxTime,
+    this.temp4MinTime,
+    this.temp4MaxTime,
+    this.temp5MinTime,
+    this.temp5MaxTime,
+    this.temp6MinTime,
+    this.temp6MaxTime,
+    this.temp7MinTime,
+    this.temp7MaxTime,
+    this.temp8MinTime,
+    this.temp8MaxTime,
+    // Device 3 fields
+    this.hsTemp,
+    this.lsTemp,
+    this.iceTemp,
+    this.airTemp,
+    this.harvsw,
+    this.wtrlvl,
+    this.wtrlvlLastEmpty,
+    this.wtrlvlLastFull,
+    // Device 3 min/max
+    this.hsTempMin,
+    this.hsTempMax,
+    this.lsTempMin,
+    this.lsTempMax,
+    this.iceTempMin,
+    this.iceTempMax,
+    this.airTempMin,
+    this.airTempMax,
+    // Device 3 min/max timestamps
+    this.hsTempMinTime,
+    this.hsTempMaxTime,
+    this.lsTempMinTime,
+    this.lsTempMaxTime,
+    this.iceTempMinTime,
+    this.iceTempMaxTime,
+    this.airTempMinTime,
+    this.airTempMaxTime,
+    // Device 3 last harvest
+    this.lastHarvestTime,
+    this.harvestCount,
+    // Calculated metrics
     this.avgCompAmp,
     this.maxCompAmp,
     this.minCompAmp,
@@ -644,12 +798,32 @@ class LatestDeviceData {
     this.lastDoorCloseTimestamp,
   });
 
+  // Helper method to get device type
+  String get resolvedDeviceType {
+    if (deviceType != null && deviceType!.isNotEmpty) return deviceType!;
+    // Infer device type from available fields
+    if (temp1 != null || temp2 != null) return 'device2';
+    if (hsTemp != null || lsTemp != null || iceTemp != null) return 'device3';
+    return 'device1';
+  }
+
+  // Helper method to get average temperature for Device 2
+  double? get device2AvgTemp {
+    final temps = [temp1, temp2, temp3, temp4, temp5, temp6, temp7, temp8]
+        .whereType<double>()
+        .toList();
+    if (temps.isEmpty) return null;
+    return temps.reduce((a, b) => a + b) / temps.length;
+  }
+
   factory LatestDeviceData.fromJson(Map<String, dynamic> json) {
-    print("fggghh ${json}");
+    print("LatestDeviceData.fromJson: ${json}");
     return LatestDeviceData(
       deviceId: json['device_id'],
       time: json['time'],
+      deviceType: json['device_type'],
       temperature: json['temperature']?.toDouble(),
+      // Device 1 fields
       temperatureAir: json['temperatureAir']?.toDouble(),
       temperatureCoil: json['temperatureCoil']?.toDouble(),
       temperatureDrain: json['temperatureDrain']?.toDouble(),
@@ -661,6 +835,80 @@ class LatestDeviceData {
       compAmpPh1: json['compAmpPh1']?.toDouble(),
       compAmpPh2: json['compAmpPh2']?.toDouble(),
       compAmpPh3: json['compAmpPh3']?.toDouble(),
+      // Device 2 fields
+      temp1: json['temp1']?.toDouble(),
+      temp2: json['temp2']?.toDouble(),
+      temp3: json['temp3']?.toDouble(),
+      temp4: json['temp4']?.toDouble(),
+      temp5: json['temp5']?.toDouble(),
+      temp6: json['temp6']?.toDouble(),
+      temp7: json['temp7']?.toDouble(),
+      temp8: json['temp8']?.toDouble(),
+      // Device 2 min/max
+      temp1Min: json['temp1_min']?.toDouble(),
+      temp1Max: json['temp1_max']?.toDouble(),
+      temp2Min: json['temp2_min']?.toDouble(),
+      temp2Max: json['temp2_max']?.toDouble(),
+      temp3Min: json['temp3_min']?.toDouble(),
+      temp3Max: json['temp3_max']?.toDouble(),
+      temp4Min: json['temp4_min']?.toDouble(),
+      temp4Max: json['temp4_max']?.toDouble(),
+      temp5Min: json['temp5_min']?.toDouble(),
+      temp5Max: json['temp5_max']?.toDouble(),
+      temp6Min: json['temp6_min']?.toDouble(),
+      temp6Max: json['temp6_max']?.toDouble(),
+      temp7Min: json['temp7_min']?.toDouble(),
+      temp7Max: json['temp7_max']?.toDouble(),
+      temp8Min: json['temp8_min']?.toDouble(),
+      temp8Max: json['temp8_max']?.toDouble(),
+      // Device 2 min/max timestamps
+      temp1MinTime: json['temp1_min_time'],
+      temp1MaxTime: json['temp1_max_time'],
+      temp2MinTime: json['temp2_min_time'],
+      temp2MaxTime: json['temp2_max_time'],
+      temp3MinTime: json['temp3_min_time'],
+      temp3MaxTime: json['temp3_max_time'],
+      temp4MinTime: json['temp4_min_time'],
+      temp4MaxTime: json['temp4_max_time'],
+      temp5MinTime: json['temp5_min_time'],
+      temp5MaxTime: json['temp5_max_time'],
+      temp6MinTime: json['temp6_min_time'],
+      temp6MaxTime: json['temp6_max_time'],
+      temp7MinTime: json['temp7_min_time'],
+      temp7MaxTime: json['temp7_max_time'],
+      temp8MinTime: json['temp8_min_time'],
+      temp8MaxTime: json['temp8_max_time'],
+      // Device 3 fields
+      hsTemp: json['hs_temp']?.toDouble(),
+      lsTemp: json['ls_temp']?.toDouble(),
+      iceTemp: json['ice_temp']?.toDouble(),
+      airTemp: json['air_temp']?.toDouble(),
+      harvsw: json['harvsw'],
+      wtrlvl: json['wtrlvl']?.toDouble(),
+      wtrlvlLastEmpty: json['wtrlvlLastEmpty'],
+      wtrlvlLastFull: json['wtrlvlLastFull'],
+      // Device 3 min/max
+      hsTempMin: json['hs_temp_min']?.toDouble(),
+      hsTempMax: json['hs_temp_max']?.toDouble(),
+      lsTempMin: json['ls_temp_min']?.toDouble(),
+      lsTempMax: json['ls_temp_max']?.toDouble(),
+      iceTempMin: json['ice_temp_min']?.toDouble(),
+      iceTempMax: json['ice_temp_max']?.toDouble(),
+      airTempMin: json['air_temp_min']?.toDouble(),
+      airTempMax: json['air_temp_max']?.toDouble(),
+      // Device 3 min/max timestamps
+      hsTempMinTime: json['hs_temp_min_time'],
+      hsTempMaxTime: json['hs_temp_max_time'],
+      lsTempMinTime: json['ls_temp_min_time'],
+      lsTempMaxTime: json['ls_temp_max_time'],
+      iceTempMinTime: json['ice_temp_min_time'],
+      iceTempMaxTime: json['ice_temp_max_time'],
+      airTempMinTime: json['air_temp_min_time'],
+      airTempMaxTime: json['air_temp_max_time'],
+      // Device 3 last harvest
+      lastHarvestTime: json['last_harvest_time'],
+      harvestCount: json['harvest_count'],
+      // Calculated metrics
       avgCompAmp: json['avgCompAmp']?.toDouble(),
       maxCompAmp: json['maxCompAmp']?.toDouble(),
       minCompAmp: json['minCompAmp']?.toDouble(),

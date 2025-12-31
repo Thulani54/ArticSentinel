@@ -937,7 +937,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return;
     }
 
-    final latestData = latestDeviceDataList.first;
+    // Use selected device instead of first device
+    final latestData = selectedDeviceId != null
+        ? latestDeviceDataList.where((d) => d.deviceId == selectedDeviceId).firstOrNull ?? latestDeviceDataList.first
+        : latestDeviceDataList.first;
     final dailyData =
         dailyAggregatesList.isNotEmpty ? dailyAggregatesList.first : null;
 
@@ -1260,7 +1263,24 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     final dailyData =
         dailyAggregatesList.isNotEmpty ? dailyAggregatesList.first : null;
 
-    enhancedSummaryCards = [
+    // Get device type and build appropriate cards
+    final deviceType = selectedDevice.resolvedDeviceType;
+
+    if (deviceType == 'device2') {
+      // Device 2: Multi-zone temperature monitoring
+      enhancedSummaryCards = _buildDevice2SummaryCards(selectedDevice);
+    } else if (deviceType == 'device3') {
+      // Device 3: Ice machine monitoring
+      enhancedSummaryCards = _buildDevice3SummaryCards(selectedDevice);
+    } else {
+      // Device 1: Refrigeration unit (default)
+      enhancedSummaryCards = _buildDevice1SummaryCards(selectedDevice, dailyData);
+    }
+  }
+
+  // Device 1 Summary Cards (Refrigeration units)
+  List<EnhancedSummaryCard> _buildDevice1SummaryCards(LatestDeviceData selectedDevice, DailyAggregate? dailyData) {
+    return [
       EnhancedSummaryCard(
         title: 'Door Analysis',
         value: selectedDevice.door == false ? "Door Closed" : "Door Opened",
@@ -1325,6 +1345,140 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         cardColor: const Color(0XccF4F4F4),
         accentColor: _getPressureColor(selectedDevice.compressorHigh),
         icon: FontAwesomeIcons.gaugeHigh,
+      ),
+    ];
+  }
+
+  // Device 2 Summary Cards (Multi-zone temperature monitoring)
+  List<EnhancedSummaryCard> _buildDevice2SummaryCards(LatestDeviceData selectedDevice) {
+    final avgTemp = selectedDevice.device2AvgTemp;
+    final temps = [
+      selectedDevice.temp1, selectedDevice.temp2, selectedDevice.temp3, selectedDevice.temp4,
+      selectedDevice.temp5, selectedDevice.temp6, selectedDevice.temp7, selectedDevice.temp8,
+    ].whereType<double>().toList();
+
+    final minTemp = temps.isNotEmpty ? temps.reduce((a, b) => a < b ? a : b) : null;
+    final maxTemp = temps.isNotEmpty ? temps.reduce((a, b) => a > b ? a : b) : null;
+    final activeZones = temps.length;
+
+    return [
+      EnhancedSummaryCard(
+        title: 'Average Temperature',
+        value: '${avgTemp?.toStringAsFixed(1) ?? '--'}',
+        unit: '°C',
+        subtitle: 'Across $activeZones active zones',
+        trend: avgTemp != null && avgTemp < 5 ? 'Normal' : 'Check zones',
+        trendDirection: avgTemp != null && avgTemp < 5 ? 'stable' : 'up',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: _getTemperatureColor(avgTemp),
+        icon: FontAwesomeIcons.thermometerHalf,
+        alerts: [],
+      ),
+      EnhancedSummaryCard(
+        title: 'Min Temperature',
+        value: '${minTemp?.toStringAsFixed(1) ?? '--'}',
+        unit: '°C',
+        subtitle: 'Lowest zone reading',
+        trend: 'Coldest zone',
+        trendDirection: 'down',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: Colors.blue,
+        icon: FontAwesomeIcons.snowflake,
+      ),
+      EnhancedSummaryCard(
+        title: 'Max Temperature',
+        value: '${maxTemp?.toStringAsFixed(1) ?? '--'}',
+        unit: '°C',
+        subtitle: 'Highest zone reading',
+        trend: maxTemp != null && maxTemp > 5 ? 'Above threshold' : 'Normal',
+        trendDirection: maxTemp != null && maxTemp > 5 ? 'up' : 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: maxTemp != null && maxTemp > 5 ? Colors.red : Constants.ctaColorLight,
+        icon: FontAwesomeIcons.temperatureHigh,
+      ),
+      EnhancedSummaryCard(
+        title: 'Active Zones',
+        value: '$activeZones',
+        unit: '/8',
+        subtitle: 'Temperature sensors online',
+        trend: activeZones == 8 ? 'All zones active' : '${8 - activeZones} zones offline',
+        trendDirection: activeZones == 8 ? 'stable' : 'down',
+        cardColor: const Color(0XccF4F4F4),
+        accentColor: activeZones == 8 ? Constants.ctaColorLight : Colors.orange,
+        icon: FontAwesomeIcons.chartArea,
+      ),
+      EnhancedSummaryCard(
+        title: 'Temperature Spread',
+        value: minTemp != null && maxTemp != null ? '${(maxTemp - minTemp).toStringAsFixed(1)}' : '--',
+        unit: '°C',
+        subtitle: 'Difference between zones',
+        trend: minTemp != null && maxTemp != null && (maxTemp - minTemp) < 5 ? 'Balanced' : 'Check distribution',
+        trendDirection: 'stable',
+        cardColor: const Color(0XccF4F4F4),
+        accentColor: Constants.ctaColorLight,
+        icon: FontAwesomeIcons.balanceScale,
+      ),
+    ];
+  }
+
+  // Device 3 Summary Cards (Ice machine monitoring)
+  List<EnhancedSummaryCard> _buildDevice3SummaryCards(LatestDeviceData selectedDevice) {
+    return [
+      EnhancedSummaryCard(
+        title: 'Ice Temperature',
+        value: '${selectedDevice.iceTemp?.toStringAsFixed(1) ?? '--'}',
+        unit: '°C',
+        subtitle: 'Current ice bin temperature',
+        trend: selectedDevice.iceTemp != null && selectedDevice.iceTemp! < -5 ? 'Optimal' : 'Check cooling',
+        trendDirection: selectedDevice.iceTemp != null && selectedDevice.iceTemp! < -5 ? 'stable' : 'up',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: _getTemperatureColor(selectedDevice.iceTemp),
+        icon: FontAwesomeIcons.icicles,
+        alerts: [],
+      ),
+      EnhancedSummaryCard(
+        title: 'High Side Temp',
+        value: '${selectedDevice.hsTemp?.toStringAsFixed(1) ?? '--'}',
+        unit: '°C',
+        subtitle: 'Compressor discharge',
+        trend: selectedDevice.hsTemp != null && selectedDevice.hsTemp! < 60 ? 'Normal' : 'High',
+        trendDirection: selectedDevice.hsTemp != null && selectedDevice.hsTemp! < 60 ? 'stable' : 'up',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: selectedDevice.hsTemp != null && selectedDevice.hsTemp! > 60 ? Colors.red : Constants.ctaColorLight,
+        icon: FontAwesomeIcons.temperatureHigh,
+      ),
+      EnhancedSummaryCard(
+        title: 'Low Side Temp',
+        value: '${selectedDevice.lsTemp?.toStringAsFixed(1) ?? '--'}',
+        unit: '°C',
+        subtitle: 'Evaporator temperature',
+        trend: selectedDevice.lsTemp != null && selectedDevice.lsTemp! < 0 ? 'Normal' : 'Check',
+        trendDirection: 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: Colors.blue,
+        icon: FontAwesomeIcons.temperatureLow,
+      ),
+      EnhancedSummaryCard(
+        title: 'Harvest Switch',
+        value: selectedDevice.harvsw == true ? 'Active' : 'Inactive',
+        unit: '',
+        subtitle: selectedDevice.harvsw == true ? 'Ice harvesting in progress' : 'Ice forming',
+        trend: selectedDevice.harvsw == true ? 'Harvesting' : 'Building',
+        trendDirection: 'stable',
+        cardColor: const Color(0XccF4F4F4),
+        accentColor: selectedDevice.harvsw == true ? Colors.orange : Constants.ctaColorLight,
+        icon: FontAwesomeIcons.cogs,
+      ),
+      EnhancedSummaryCard(
+        title: 'Water Level',
+        value: '${selectedDevice.wtrlvl?.toStringAsFixed(0) ?? '--'}',
+        unit: '%',
+        subtitle: 'Water reservoir level',
+        trend: selectedDevice.wtrlvl != null && selectedDevice.wtrlvl! > 20 ? 'Adequate' : 'Low - refill soon',
+        trendDirection: selectedDevice.wtrlvl != null && selectedDevice.wtrlvl! > 20 ? 'stable' : 'down',
+        cardColor: const Color(0XccF4F4F4),
+        accentColor: selectedDevice.wtrlvl != null && selectedDevice.wtrlvl! > 20 ? Constants.ctaColorLight : Colors.orange,
+        icon: FontAwesomeIcons.water,
       ),
     ];
   }
@@ -3318,13 +3472,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               );
             }).toList(),
           ],
-          onChanged: (String? newValue) {
+          onChanged: (String? newValue) async {
             setState(() {
               selectedDeviceId = newValue;
             });
-            _refreshDataForSelectedDevice();
-            fetchDashboardData();
-            _loadAllData();
+            // Only call _refreshDataForSelectedDevice which handles all data fetching
+            // Don't call multiple fetch methods that can race and reset selectedDeviceId
+            await _refreshDataForSelectedDevice();
           },
         ),
       ),
@@ -3357,6 +3511,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     print(
         '_loadAllData called for Dashboard Home with showLoading: $showLoading at ${DateTime.now()}');
 
+    // IMPORTANT: Preserve the currently selected device before refresh
+    final preservedDeviceId = selectedDeviceId;
+    print('Preserving selectedDeviceId before refresh: $preservedDeviceId');
+
     if (showLoading) {
       setState(() {
         isLoading = true;
@@ -3371,6 +3529,15 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         fetchDashboardData(),
         fetchAlerts(),
       ]);
+
+      // Restore the selected device if it still exists in the device list
+      if (preservedDeviceId != null && availableDevices.any((d) => d.deviceId == preservedDeviceId)) {
+        selectedDeviceId = preservedDeviceId;
+        print('Restored selectedDeviceId after refresh: $selectedDeviceId');
+      } else if (preservedDeviceId != null) {
+        print('Previously selected device $preservedDeviceId no longer available, keeping current selection');
+      }
+
       _processDashboardData();
 
       print('Data fetch completed successfully for Dashboard Home');
@@ -3870,13 +4037,38 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     );
   }
 
+  // Helper method to get the device type for the currently selected device
+  String _getSelectedDeviceType() {
+    if (selectedDeviceId == null || latestDeviceDataList.isEmpty) {
+      return 'device1';
+    }
+    final selectedDevice = latestDeviceDataList
+        .where((device) => device.deviceId == selectedDeviceId)
+        .firstOrNull;
+    return selectedDevice?.resolvedDeviceType ?? 'device1';
+  }
+
   Widget _buildMetricsTabView() {
     final isMobile = _isMobile(context);
+    final deviceType = _getSelectedDeviceType();
 
+    // Return device-specific metrics based on device type
+    if (deviceType == 'device2') {
+      return _buildDevice2MetricsView(isMobile);
+    } else if (deviceType == 'device3') {
+      return _buildDevice3MetricsView(isMobile);
+    }
+
+    // Default: Device 1 metrics
+    return _buildDevice1MetricsView(isMobile);
+  }
+
+  // Device 1 Metrics View (Refrigeration units)
+  Widget _buildDevice1MetricsView(bool isMobile) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Detailed Metrics",
+        Text("Detailed Metrics - Refrigeration Unit",
             style: GoogleFonts.inter(
                 fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
         SizedBox(height: 16),
@@ -3972,6 +4164,1050 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     );
   }
 
+  // Device 2 Metrics View (Multi-zone temperature monitoring)
+  Widget _buildDevice2MetricsView(bool isMobile) {
+    final selectedDevice = latestDeviceDataList
+        .where((device) => device.deviceId == selectedDeviceId)
+        .firstOrNull;
+
+    if (selectedDevice == null) {
+      return Center(child: Text('No device data available'));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Detailed Metrics - Multi-Zone Temperature Monitor",
+            style: GoogleFonts.inter(
+                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
+        SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 5)
+            ],
+          ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Average Temperature Card
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Constants.ctaColorLight, Constants.ctaColorLight.withOpacity(0.7)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Average Temperature",
+                            style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w500)),
+                        SizedBox(height: 4),
+                        Text(
+                            "${selectedDevice.device2AvgTemp?.toStringAsFixed(1) ?? '--'}°C",
+                            style: GoogleFonts.inter(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white)),
+                      ],
+                    ),
+                    Icon(Iconsax.chart, size: 48, color: Colors.white54),
+                  ],
+                ),
+              ),
+              SizedBox(height: 24),
+
+              // Zone Temperature Bar Chart
+              Text("Zone Temperature Comparison",
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              Container(
+                height: 220,
+                padding: EdgeInsets.only(top: 16, right: 16),
+                child: _buildDevice2ZoneBarChart(selectedDevice),
+              ),
+              SizedBox(height: 24),
+
+              // Zone Temperature Grid
+              Text("Zone Temperatures",
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: isMobile ? 2 : 4,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: isMobile ? 1.1 : 1.3,
+                children: [
+                  _buildZoneTemperatureCard("Zone 1", selectedDevice.temp1, selectedDevice.temp1Min, selectedDevice.temp1Max, selectedDevice.temp1MinTime, selectedDevice.temp1MaxTime, -25, 5),
+                  _buildZoneTemperatureCard("Zone 2", selectedDevice.temp2, selectedDevice.temp2Min, selectedDevice.temp2Max, selectedDevice.temp2MinTime, selectedDevice.temp2MaxTime, -25, 5),
+                  _buildZoneTemperatureCard("Zone 3", selectedDevice.temp3, selectedDevice.temp3Min, selectedDevice.temp3Max, selectedDevice.temp3MinTime, selectedDevice.temp3MaxTime, -25, 5),
+                  _buildZoneTemperatureCard("Zone 4", selectedDevice.temp4, selectedDevice.temp4Min, selectedDevice.temp4Max, selectedDevice.temp4MinTime, selectedDevice.temp4MaxTime, -25, 5),
+                  _buildZoneTemperatureCard("Zone 5", selectedDevice.temp5, selectedDevice.temp5Min, selectedDevice.temp5Max, selectedDevice.temp5MinTime, selectedDevice.temp5MaxTime, -25, 5),
+                  _buildZoneTemperatureCard("Zone 6", selectedDevice.temp6, selectedDevice.temp6Min, selectedDevice.temp6Max, selectedDevice.temp6MinTime, selectedDevice.temp6MaxTime, -25, 5),
+                  _buildZoneTemperatureCard("Zone 7", selectedDevice.temp7, selectedDevice.temp7Min, selectedDevice.temp7Max, selectedDevice.temp7MinTime, selectedDevice.temp7MaxTime, -25, 5),
+                  _buildZoneTemperatureCard("Zone 8", selectedDevice.temp8, selectedDevice.temp8Min, selectedDevice.temp8Max, selectedDevice.temp8MinTime, selectedDevice.temp8MaxTime, -25, 5),
+                ],
+              ),
+              SizedBox(height: 24),
+
+              // Temperature Distribution Pie Chart
+              Text("Temperature Distribution",
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              Container(
+                height: 200,
+                child: _buildDevice2TempDistributionChart(selectedDevice),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Bar chart for Device 2 zone temperatures
+  Widget _buildDevice2ZoneBarChart(LatestDeviceData device) {
+    final zones = [
+      {'name': 'Z1', 'temp': device.temp1 ?? 0.0},
+      {'name': 'Z2', 'temp': device.temp2 ?? 0.0},
+      {'name': 'Z3', 'temp': device.temp3 ?? 0.0},
+      {'name': 'Z4', 'temp': device.temp4 ?? 0.0},
+      {'name': 'Z5', 'temp': device.temp5 ?? 0.0},
+      {'name': 'Z6', 'temp': device.temp6 ?? 0.0},
+      {'name': 'Z7', 'temp': device.temp7 ?? 0.0},
+      {'name': 'Z8', 'temp': device.temp8 ?? 0.0},
+    ];
+
+    final zoneColors = [
+      Colors.blue, Colors.green, Colors.orange, Colors.purple,
+      Colors.red, Colors.teal, Colors.pink, Colors.indigo,
+    ];
+
+    final temps = zones.map((z) => z['temp'] as double).toList();
+    final maxTemp = temps.isNotEmpty ? temps.reduce((a, b) => a > b ? a : b) : 10.0;
+    final minTemp = temps.isNotEmpty ? temps.reduce((a, b) => a < b ? a : b) : -10.0;
+
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: maxTemp + 5,
+        minY: minTemp - 5,
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                'Zone ${groupIndex + 1}\n${rod.toY.toStringAsFixed(1)}°C',
+                GoogleFonts.inter(color: Colors.white, fontSize: 12),
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index >= 0 && index < zones.length) {
+                  return Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text(zones[index]['name'] as String,
+                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                  );
+                }
+                return Text('');
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
+                  style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+            ),
+          ),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 5,
+          getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: List.generate(zones.length, (index) {
+          final temp = zones[index]['temp'] as double;
+          return BarChartGroupData(
+            x: index,
+            barRods: [
+              BarChartRodData(
+                toY: temp,
+                color: zoneColors[index],
+                width: 24,
+                borderRadius: BorderRadius.vertical(
+                  top: temp >= 0 ? Radius.circular(4) : Radius.zero,
+                  bottom: temp < 0 ? Radius.circular(4) : Radius.zero,
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  // Pie chart showing temperature distribution for Device 2
+  Widget _buildDevice2TempDistributionChart(LatestDeviceData device) {
+    final temps = [
+      device.temp1, device.temp2, device.temp3, device.temp4,
+      device.temp5, device.temp6, device.temp7, device.temp8,
+    ].where((t) => t != null).toList();
+
+    if (temps.isEmpty) {
+      return Center(child: Text('No temperature data', style: GoogleFonts.inter(color: Colors.grey)));
+    }
+
+    int normal = 0, low = 0, high = 0;
+    for (var t in temps) {
+      if (t! < -25) {
+        low++;
+      } else if (t > 5) {
+        high++;
+      } else {
+        normal++;
+      }
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: PieChart(
+            PieChartData(
+              sectionsSpace: 2,
+              centerSpaceRadius: 40,
+              sections: [
+                if (normal > 0)
+                  PieChartSectionData(
+                    value: normal.toDouble(),
+                    color: Constants.ctaColorLight,
+                    title: '$normal',
+                    radius: 50,
+                    titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                if (low > 0)
+                  PieChartSectionData(
+                    value: low.toDouble(),
+                    color: Colors.blue,
+                    title: '$low',
+                    radius: 50,
+                    titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                if (high > 0)
+                  PieChartSectionData(
+                    value: high.toDouble(),
+                    color: Colors.red,
+                    title: '$high',
+                    radius: 50,
+                    titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(width: 16),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildLegendItem("Normal (-25 to 5°C)", Constants.ctaColorLight),
+            SizedBox(height: 8),
+            _buildLegendItem("Too Low (< -25°C)", Colors.blue),
+            SizedBox(height: 8),
+            _buildLegendItem("Too High (> 5°C)", Colors.red),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Helper widget for zone temperature card
+  String _formatTimestamp(String? isoTimestamp) {
+    if (isoTimestamp == null) return '--:--';
+    try {
+      final dt = DateTime.parse(isoTimestamp);
+      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return '--:--';
+    }
+  }
+
+  Widget _buildZoneTemperatureCard(String zoneName, double? temperature, double? minTemp, double? maxTemp, String? minTime, String? maxTime, double minThreshold, double maxThreshold) {
+    Color statusColor = Colors.grey;
+    String status = "No Data";
+
+    if (temperature != null) {
+      if (temperature < minThreshold) {
+        statusColor = Colors.blue;
+        status = "Low";
+      } else if (temperature > maxThreshold) {
+        statusColor = Colors.red;
+        status = "High";
+      } else {
+        statusColor = Constants.ctaColorLight;
+        status = "Normal";
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: statusColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(zoneName,
+              style: GoogleFonts.inter(
+                  fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+          SizedBox(height: 2),
+          Text("${temperature?.toStringAsFixed(1) ?? '--'}°C",
+              style: GoogleFonts.inter(
+                  fontSize: 18, fontWeight: FontWeight.bold, color: statusColor)),
+          SizedBox(height: 4),
+          // Min/Max row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Column(
+                children: [
+                  Text("Min", style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                  Text("${minTemp?.toStringAsFixed(1) ?? '--'}°",
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.blue)),
+                  Text(_formatTimestamp(minTime),
+                      style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[400])),
+                ],
+              ),
+              Container(
+                height: 30,
+                width: 1,
+                margin: EdgeInsets.symmetric(horizontal: 8),
+                color: Colors.grey.shade300,
+              ),
+              Column(
+                children: [
+                  Text("Max", style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                  Text("${maxTemp?.toStringAsFixed(1) ?? '--'}°",
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.red)),
+                  Text(_formatTimestamp(maxTime),
+                      style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[400])),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Device 3 Metrics View (Ice machine monitoring)
+  Widget _buildDevice3MetricsView(bool isMobile) {
+    final selectedDevice = latestDeviceDataList
+        .where((device) => device.deviceId == selectedDeviceId)
+        .firstOrNull;
+
+    if (selectedDevice == null) {
+      return Center(child: Text('No device data available'));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Detailed Metrics - Ice Machine",
+            style: GoogleFonts.inter(
+                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
+        SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 5)
+            ],
+          ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Temperature Metrics
+              Text("Temperature Readings",
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: isMobile ? 2 : 4,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: isMobile ? 0.9 : 1.1,
+                children: [
+                  _buildDevice3MetricCard(
+                    "High Side Temp",
+                    selectedDevice.hsTemp,
+                    "°C",
+                    Iconsax.arrow_up_2,
+                    Colors.orange,
+                    minValue: selectedDevice.hsTempMin,
+                    maxValue: selectedDevice.hsTempMax,
+                    minTime: selectedDevice.hsTempMinTime,
+                    maxTime: selectedDevice.hsTempMaxTime,
+                  ),
+                  _buildDevice3MetricCard(
+                    "Low Side Temp",
+                    selectedDevice.lsTemp,
+                    "°C",
+                    Iconsax.arrow_down,
+                    Colors.blue,
+                    minValue: selectedDevice.lsTempMin,
+                    maxValue: selectedDevice.lsTempMax,
+                    minTime: selectedDevice.lsTempMinTime,
+                    maxTime: selectedDevice.lsTempMaxTime,
+                  ),
+                  _buildDevice3MetricCard(
+                    "Ice Temp",
+                    selectedDevice.iceTemp,
+                    "°C",
+                    FontAwesomeIcons.snowflake,
+                    Colors.cyan,
+                    minValue: selectedDevice.iceTempMin,
+                    maxValue: selectedDevice.iceTempMax,
+                    minTime: selectedDevice.iceTempMinTime,
+                    maxTime: selectedDevice.iceTempMaxTime,
+                  ),
+                  _buildDevice3MetricCard(
+                    "Air Temp",
+                    selectedDevice.airTemp,
+                    "°C",
+                    Iconsax.wind,
+                    Constants.ctaColorLight,
+                    minValue: selectedDevice.airTempMin,
+                    maxValue: selectedDevice.airTempMax,
+                    minTime: selectedDevice.airTempMinTime,
+                    maxTime: selectedDevice.airTempMaxTime,
+                  ),
+                ],
+              ),
+              SizedBox(height: 24),
+
+              // Temperature Comparison Bar Chart
+              Text("Temperature Comparison",
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              Container(
+                height: 220,
+                padding: EdgeInsets.only(top: 16, right: 16),
+                child: _buildDevice3TempBarChart(selectedDevice),
+              ),
+              SizedBox(height: 24),
+
+              // Status Indicators
+              Text("System Status",
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDevice3HarvestCard(
+                      selectedDevice.harvsw == true,
+                      selectedDevice.lastHarvestTime,
+                      selectedDevice.harvestCount,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDevice3StatusCard(
+                      "Water Level",
+                      selectedDevice.wtrlvl != null
+                          ? "${selectedDevice.wtrlvl!.toStringAsFixed(0)}%"
+                          : "--",
+                      _getWaterLevelColor(selectedDevice.wtrlvl),
+                      FontAwesomeIcons.water,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24),
+
+              // Water Level Gauge Chart
+              Text("Water Level Indicator",
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              Container(
+                height: 180,
+                child: _buildDevice3WaterLevelGauge(selectedDevice),
+              ),
+              SizedBox(height: 24),
+
+              // Ice Machine Status Overview
+              Text("Status Overview",
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              Container(
+                height: 180,
+                child: _buildDevice3StatusPieChart(selectedDevice),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Bar chart for Device 3 temperatures
+  Widget _buildDevice3TempBarChart(LatestDeviceData device) {
+    final temps = [
+      {'name': 'High Side', 'temp': device.hsTemp ?? 0.0, 'color': Colors.orange},
+      {'name': 'Low Side', 'temp': device.lsTemp ?? 0.0, 'color': Colors.blue},
+      {'name': 'Ice', 'temp': device.iceTemp ?? 0.0, 'color': Colors.cyan},
+      {'name': 'Air', 'temp': device.airTemp ?? 0.0, 'color': Constants.ctaColorLight},
+    ];
+
+    final tempValues = temps.map((t) => t['temp'] as double).toList();
+    final maxTemp = tempValues.isNotEmpty ? tempValues.reduce((a, b) => a > b ? a : b) : 50.0;
+    final minTemp = tempValues.isNotEmpty ? tempValues.reduce((a, b) => a < b ? a : b) : -10.0;
+
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: maxTemp + 10,
+        minY: minTemp < 0 ? minTemp - 5 : 0,
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                '${temps[groupIndex]['name']}\n${rod.toY.toStringAsFixed(1)}°C',
+                GoogleFonts.inter(color: Colors.white, fontSize: 12),
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index >= 0 && index < temps.length) {
+                  return Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text(temps[index]['name'] as String,
+                        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w500)),
+                  );
+                }
+                return Text('');
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
+                  style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+            ),
+          ),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 10,
+          getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: List.generate(temps.length, (index) {
+          final temp = temps[index]['temp'] as double;
+          final color = temps[index]['color'] as Color;
+          return BarChartGroupData(
+            x: index,
+            barRods: [
+              BarChartRodData(
+                toY: temp,
+                color: color,
+                width: 40,
+                borderRadius: BorderRadius.vertical(
+                  top: temp >= 0 ? Radius.circular(6) : Radius.zero,
+                  bottom: temp < 0 ? Radius.circular(6) : Radius.zero,
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  // Water level gauge for Device 3
+  Widget _buildDevice3WaterLevelGauge(LatestDeviceData device) {
+    final waterLevel = device.wtrlvl ?? 0.0;
+    final color = _getWaterLevelColor(device.wtrlvl);
+
+    // Format timestamps helper
+    String formatTimestamp(String? isoTimestamp) {
+      if (isoTimestamp == null) return 'Never';
+      try {
+        final dateTime = DateTime.parse(isoTimestamp).toLocal();
+        final now = DateTime.now();
+        final diff = now.difference(dateTime);
+
+        if (diff.inMinutes < 60) {
+          return '${diff.inMinutes}m ago';
+        } else if (diff.inHours < 24) {
+          return '${diff.inHours}h ago';
+        } else if (diff.inDays < 7) {
+          return '${diff.inDays}d ago';
+        } else {
+          return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+        }
+      } catch (e) {
+        return 'Unknown';
+      }
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: PieChart(
+            PieChartData(
+              startDegreeOffset: 180,
+              sectionsSpace: 0,
+              centerSpaceRadius: 50,
+              sections: [
+                PieChartSectionData(
+                  value: waterLevel,
+                  color: color,
+                  title: '',
+                  radius: 30,
+                ),
+                PieChartSectionData(
+                  value: 100 - waterLevel,
+                  color: Colors.grey.shade200,
+                  title: '',
+                  radius: 30,
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Water Level',
+                  style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600])),
+              SizedBox(height: 4),
+              Text('${waterLevel.toStringAsFixed(1)}%',
+                  style: GoogleFonts.inter(fontSize: 36, fontWeight: FontWeight.bold, color: color)),
+              SizedBox(height: 8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: color.withOpacity(0.3)),
+                ),
+                child: Text(
+                  waterLevel < 20 ? 'Low - Refill Needed' : waterLevel > 90 ? 'High' : 'Normal',
+                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: color),
+                ),
+              ),
+              SizedBox(height: 12),
+              // Water level timestamps
+              Row(
+                children: [
+                  Icon(Icons.arrow_downward, size: 12, color: Colors.red[400]),
+                  SizedBox(width: 4),
+                  Text('Empty: ',
+                      style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
+                  Text(formatTimestamp(device.wtrlvlLastEmpty),
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.red[400])),
+                ],
+              ),
+              SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(Icons.arrow_upward, size: 12, color: Colors.green[400]),
+                  SizedBox(width: 4),
+                  Text('Full: ',
+                      style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
+                  Text(formatTimestamp(device.wtrlvlLastFull),
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.green[400])),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Status pie chart for Device 3
+  Widget _buildDevice3StatusPieChart(LatestDeviceData device) {
+    final harvestActive = device.harvsw == true;
+    final waterLevel = device.wtrlvl ?? 0.0;
+    final waterOk = waterLevel >= 20 && waterLevel <= 90;
+
+    // Calculate simple health score
+    int healthyMetrics = 0;
+    int totalMetrics = 0;
+
+    // Check temperatures are in reasonable ranges
+    if (device.hsTemp != null) {
+      totalMetrics++;
+      if (device.hsTemp! > 20 && device.hsTemp! < 80) healthyMetrics++;
+    }
+    if (device.lsTemp != null) {
+      totalMetrics++;
+      if (device.lsTemp! > -20 && device.lsTemp! < 30) healthyMetrics++;
+    }
+    if (device.iceTemp != null) {
+      totalMetrics++;
+      if (device.iceTemp! > -30 && device.iceTemp! < 10) healthyMetrics++;
+    }
+    if (device.wtrlvl != null) {
+      totalMetrics++;
+      if (waterOk) healthyMetrics++;
+    }
+
+    final healthPercent = totalMetrics > 0 ? (healthyMetrics / totalMetrics * 100) : 0.0;
+
+    return Row(
+      children: [
+        Expanded(
+          child: PieChart(
+            PieChartData(
+              sectionsSpace: 2,
+              centerSpaceRadius: 35,
+              sections: [
+                PieChartSectionData(
+                  value: healthPercent,
+                  color: Constants.ctaColorLight,
+                  title: '${healthPercent.toStringAsFixed(0)}%',
+                  radius: 45,
+                  titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                PieChartSectionData(
+                  value: 100 - healthPercent,
+                  color: Colors.grey.shade300,
+                  title: '',
+                  radius: 45,
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildStatusIndicator('Harvest', harvestActive ? 'Active' : 'Idle', harvestActive ? Colors.orange : Colors.grey),
+              SizedBox(height: 8),
+              _buildStatusIndicator('Water', waterOk ? 'Normal' : 'Alert', waterOk ? Constants.ctaColorLight : Colors.red),
+              SizedBox(height: 8),
+              _buildStatusIndicator('System', healthPercent >= 75 ? 'Healthy' : 'Check', healthPercent >= 75 ? Constants.ctaColorLight : Colors.orange),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusIndicator(String label, String status, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        SizedBox(width: 8),
+        Text('$label: ', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
+        Text(status, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+      ],
+    );
+  }
+
+  // Helper widget for Device 3 metric card with min/max
+  Widget _buildDevice3MetricCard(String title, double? value, String unit, IconData icon, Color color,
+      {double? minValue, double? maxValue, String? minTime, String? maxTime}) {
+    final isMobile = _isMobile(context);
+
+    // Format timestamp to show only time
+    String formatTime(String? isoTime) {
+      if (isoTime == null) return '--';
+      try {
+        final dt = DateTime.parse(isoTime);
+        return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (e) {
+        return '--';
+      }
+    }
+
+    // Format timestamp to show date and time
+    String formatDateTime(String? isoTime) {
+      if (isoTime == null) return '--';
+      try {
+        final dt = DateTime.parse(isoTime);
+        return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (e) {
+        return '--';
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 8 : 12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: isMobile ? 20 : 24),
+          SizedBox(height: 4),
+          Text(title,
+              style: GoogleFonts.inter(
+                  fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
+              textAlign: TextAlign.center),
+          SizedBox(height: 2),
+          Text("${value?.toStringAsFixed(1) ?? '--'}$unit",
+              style: GoogleFonts.inter(
+                  fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.bold, color: color)),
+          // Show min/max if available
+          if (minValue != null || maxValue != null) ...[
+            SizedBox(height: 4),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                children: [
+                  // Min value row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.arrow_downward, size: isMobile ? 10 : 12, color: Colors.blue),
+                      SizedBox(width: 2),
+                      Text(
+                        "${minValue?.toStringAsFixed(1) ?? '--'}$unit",
+                        style: GoogleFonts.inter(
+                          fontSize: isMobile ? 9 : 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        formatDateTime(minTime),
+                        style: GoogleFonts.inter(
+                          fontSize: isMobile ? 8 : 9,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 2),
+                  // Max value row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.arrow_upward, size: isMobile ? 10 : 12, color: Colors.red),
+                      SizedBox(width: 2),
+                      Text(
+                        "${maxValue?.toStringAsFixed(1) ?? '--'}$unit",
+                        style: GoogleFonts.inter(
+                          fontSize: isMobile ? 9 : 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.red,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        formatDateTime(maxTime),
+                        style: GoogleFonts.inter(
+                          fontSize: isMobile ? 8 : 9,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Helper widget for Device 3 status card
+  Widget _buildDevice3StatusCard(String title, String value, Color color, IconData icon) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 32),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: GoogleFonts.inter(
+                        fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+                Text(value,
+                    style: GoogleFonts.inter(
+                        fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper widget for Device 3 harvest card with last harvest time and count
+  Widget _buildDevice3HarvestCard(bool isActive, String? lastHarvestTime, int? harvestCount) {
+    final color = isActive ? Colors.orange : Constants.ctaColorLight;
+
+    // Format the last harvest time
+    String lastHarvestDisplay = '--';
+    if (lastHarvestTime != null) {
+      try {
+        final dt = DateTime.parse(lastHarvestTime);
+        final now = DateTime.now();
+        final diff = now.difference(dt);
+
+        if (diff.inMinutes < 1) {
+          lastHarvestDisplay = 'Just now';
+        } else if (diff.inMinutes < 60) {
+          lastHarvestDisplay = '${diff.inMinutes}m ago';
+        } else if (diff.inHours < 24) {
+          lastHarvestDisplay = '${diff.inHours}h ${diff.inMinutes % 60}m ago';
+        } else {
+          lastHarvestDisplay = '${diff.inDays}d ago';
+        }
+      } catch (e) {
+        lastHarvestDisplay = '--';
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Iconsax.activity, color: color, size: 32),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Harvest Status",
+                    style: GoogleFonts.inter(
+                        fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+                Text(isActive ? "Active" : "Idle",
+                    style: GoogleFonts.inter(
+                        fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+                SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.access_time, size: 12, color: Colors.grey[500]),
+                    SizedBox(width: 4),
+                    Text("Last: $lastHarvestDisplay",
+                        style: GoogleFonts.inter(
+                            fontSize: 10, color: Colors.grey[600])),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.repeat, size: 12, color: Colors.grey[500]),
+                    SizedBox(width: 4),
+                    Text("Harvests (24h): ${harvestCount ?? 0}",
+                        style: GoogleFonts.inter(
+                            fontSize: 10, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper to get water level color
+  Color _getWaterLevelColor(double? level) {
+    if (level == null) return Colors.grey;
+    if (level < 20) return Colors.red;
+    if (level > 90) return Colors.orange;
+    return Constants.ctaColorLight;
+  }
+
   Future<void> fetchLatestDeviceData() async {
     try {
       final response = await http.get(
@@ -3988,23 +5224,18 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             data.map((item) => LatestDeviceData.fromJson(item)).toList();
 
         if (newDeviceList.isNotEmpty) {
-          setState(() {
-            latestDeviceDataList = newDeviceList;
+          // Update the list without triggering setState - let the caller handle final setState
+          // This prevents race conditions during concurrent updates
+          latestDeviceDataList = newDeviceList;
 
-            // --- FIX STARTS HERE ---
-            // Check if no device is selected OR if the current selection is no longer valid
-            final isSelectionInvalid = selectedDeviceId == null ||
-                !latestDeviceDataList
-                    .any((d) => d.deviceId == selectedDeviceId);
+          // Only set default selected device on INITIAL load
+          // Don't change selectedDeviceId during refresh - let _loadAllData preserve it
+          if (selectedDeviceId == null && isInitialLoad) {
+            selectedDeviceId = latestDeviceDataList.first.deviceId;
+            print('Initial load: Setting selectedDeviceId to first device: $selectedDeviceId');
+          }
 
-            if (isSelectionInvalid) {
-              // Default the selection to the first device from the fetched list
-              selectedDeviceId = latestDeviceDataList.first.deviceId;
-            }
-            // --- FIX ENDS HERE ---
-          });
-
-          // Now that a device is guaranteed to be selected, update the UI
+          // Update the UI summary for the selected device
           _updateDailySummaryFromLatestData();
         }
       } else {
@@ -4038,66 +5269,192 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
       // The rest of the function now uses the safe 'deviceToDisplay' variable
       print(
-          "gfgfgfgfg ${deviceToDisplay.deviceId} ${deviceToDisplay.compressorHigh}");
+          "Selected device: ${deviceToDisplay.deviceId} type: ${deviceToDisplay.resolvedDeviceType}");
 
-      dailySummaryList = [
-        DailySummaryRecords(
-          deviceToDisplay.temperatureAir?.toInt() ?? 0,
-          0,
-          "Freezer Room Temperature",
-          FontAwesomeIcons.snowflake,
-          const Color(0XFFF4F4F4),
-        ),
-        DailySummaryRecords(
-          deviceToDisplay.compressorLow?.toInt() ?? 0,
-          0,
-          "Pressure [Low Side]",
-          FontAwesomeIcons.gauge,
-          const Color(0Xcc3C514933),
-        ),
-        DailySummaryRecords(
-          deviceToDisplay.compressorHigh?.toInt() ?? 0,
-          0,
-          "Pressure [High Side]",
-          FontAwesomeIcons.gaugeHigh,
-          const Color(0XccF4F4F4),
-        ),
-        DailySummaryRecords(
-          deviceToDisplay.temperatureCoil?.toInt() ?? 0,
-          0,
-          "Heater Coil Temperature",
-          FontAwesomeIcons.fire,
-          const Color(0Xcc3C514914),
-        ),
-        DailySummaryRecords(
-          deviceToDisplay.temperatureDrain?.toInt() ?? 0,
-          0,
-          "Heater Drain Temperature",
-          FontAwesomeIcons.tint,
-          const Color(0Xcc3C514980),
-        ),
-      ];
+      // Build device-type specific summary lists
+      final deviceType = deviceToDisplay.resolvedDeviceType;
 
-      dailySummaryList2 = [
-        DailySummaryRecords2(
-          "Door Open",
-          FontAwesomeIcons.doorOpen,
-          const Color(0XFFF4F4F4),
-          deviceToDisplay.door ?? false,
-        ),
-        DailySummaryRecords2(
-          "Compressor On",
-          FontAwesomeIcons.fan,
-          const Color(0XFFF4F4F4),
-          deviceToDisplay.comp ?? false,
-        ),
-        DailySummaryRecords2(
-          "Ice Build-Up",
-          FontAwesomeIcons.icicles,
-          const Color(0XFFF4F4F4),
-          deviceToDisplay.iceBuiltUp ?? false,
-        ),
-      ];
+      if (deviceType == 'device2') {
+        // Device 2: Multi-zone temperature monitoring
+        dailySummaryList = [
+          DailySummaryRecords(
+            deviceToDisplay.temp1?.toInt() ?? 0,
+            0,
+            "Zone 1 Temperature",
+            FontAwesomeIcons.thermometerHalf,
+            const Color(0XFFF4F4F4),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.temp2?.toInt() ?? 0,
+            0,
+            "Zone 2 Temperature",
+            FontAwesomeIcons.thermometerHalf,
+            const Color(0Xcc3C514933),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.temp3?.toInt() ?? 0,
+            0,
+            "Zone 3 Temperature",
+            FontAwesomeIcons.thermometerHalf,
+            const Color(0XccF4F4F4),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.temp4?.toInt() ?? 0,
+            0,
+            "Zone 4 Temperature",
+            FontAwesomeIcons.thermometerHalf,
+            const Color(0Xcc3C514914),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.device2AvgTemp?.toInt() ?? 0,
+            0,
+            "Average Temperature",
+            FontAwesomeIcons.chartLine,
+            const Color(0Xcc3C514980),
+          ),
+        ];
+
+        dailySummaryList2 = [
+          DailySummaryRecords2(
+            "Zone 5 Active",
+            FontAwesomeIcons.thermometerHalf,
+            const Color(0XFFF4F4F4),
+            deviceToDisplay.temp5 != null,
+          ),
+          DailySummaryRecords2(
+            "Zone 6 Active",
+            FontAwesomeIcons.thermometerHalf,
+            const Color(0XFFF4F4F4),
+            deviceToDisplay.temp6 != null,
+          ),
+          DailySummaryRecords2(
+            "Zone 7 Active",
+            FontAwesomeIcons.thermometerHalf,
+            const Color(0XFFF4F4F4),
+            deviceToDisplay.temp7 != null,
+          ),
+        ];
+      } else if (deviceType == 'device3') {
+        // Device 3: Ice machine monitoring
+        dailySummaryList = [
+          DailySummaryRecords(
+            deviceToDisplay.iceTemp?.toInt() ?? 0,
+            0,
+            "Ice Temperature",
+            FontAwesomeIcons.icicles,
+            const Color(0XFFF4F4F4),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.hsTemp?.toInt() ?? 0,
+            0,
+            "High Side Temperature",
+            FontAwesomeIcons.temperatureHigh,
+            const Color(0Xcc3C514933),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.lsTemp?.toInt() ?? 0,
+            0,
+            "Low Side Temperature",
+            FontAwesomeIcons.temperatureLow,
+            const Color(0XccF4F4F4),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.airTemp?.toInt() ?? 0,
+            0,
+            "Air Temperature",
+            FontAwesomeIcons.wind,
+            const Color(0Xcc3C514914),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.wtrlvl?.toInt() ?? 0,
+            0,
+            "Water Level %",
+            FontAwesomeIcons.water,
+            const Color(0Xcc3C514980),
+          ),
+        ];
+
+        dailySummaryList2 = [
+          DailySummaryRecords2(
+            "Harvest Switch",
+            FontAwesomeIcons.cogs,
+            const Color(0XFFF4F4F4),
+            deviceToDisplay.harvsw ?? false,
+          ),
+          DailySummaryRecords2(
+            "Water Available",
+            FontAwesomeIcons.water,
+            const Color(0XFFF4F4F4),
+            (deviceToDisplay.wtrlvl ?? 0) > 20,
+          ),
+          DailySummaryRecords2(
+            "Ice Ready",
+            FontAwesomeIcons.icicles,
+            const Color(0XFFF4F4F4),
+            (deviceToDisplay.iceTemp ?? 0) < -5,
+          ),
+        ];
+      } else {
+        // Device 1: Refrigeration unit (default)
+        dailySummaryList = [
+          DailySummaryRecords(
+            deviceToDisplay.temperatureAir?.toInt() ?? 0,
+            0,
+            "Freezer Room Temperature",
+            FontAwesomeIcons.snowflake,
+            const Color(0XFFF4F4F4),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.compressorLow?.toInt() ?? 0,
+            0,
+            "Pressure [Low Side]",
+            FontAwesomeIcons.gauge,
+            const Color(0Xcc3C514933),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.compressorHigh?.toInt() ?? 0,
+            0,
+            "Pressure [High Side]",
+            FontAwesomeIcons.gaugeHigh,
+            const Color(0XccF4F4F4),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.temperatureCoil?.toInt() ?? 0,
+            0,
+            "Heater Coil Temperature",
+            FontAwesomeIcons.fire,
+            const Color(0Xcc3C514914),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.temperatureDrain?.toInt() ?? 0,
+            0,
+            "Heater Drain Temperature",
+            FontAwesomeIcons.tint,
+            const Color(0Xcc3C514980),
+          ),
+        ];
+
+        dailySummaryList2 = [
+          DailySummaryRecords2(
+            "Door Open",
+            FontAwesomeIcons.doorOpen,
+            const Color(0XFFF4F4F4),
+            deviceToDisplay.door ?? false,
+          ),
+          DailySummaryRecords2(
+            "Compressor On",
+            FontAwesomeIcons.fan,
+            const Color(0XFFF4F4F4),
+            deviceToDisplay.comp ?? false,
+          ),
+          DailySummaryRecords2(
+            "Ice Build-Up",
+            FontAwesomeIcons.icicles,
+            const Color(0XFFF4F4F4),
+            deviceToDisplay.iceBuiltUp ?? false,
+          ),
+        ];
+      }
     }
   }
 
@@ -4167,26 +5524,20 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
 
-        setState(() {
-          // Parse the comprehensive dashboard data
-          dashboardData = DashboardData.fromJson(data);
+        // Update data without triggering setState - let the caller handle final setState
+        // This prevents race conditions during concurrent updates
+        // Parse the comprehensive dashboard data
+        dashboardData = DashboardData.fromJson(data);
 
-          // Update individual lists for backwards compatibility
-          latestDeviceDataList = dashboardData!.currentData
-              .where((device) =>
-                  selectedDeviceId == null ||
-                  device.deviceId == selectedDeviceId)
-              .toList();
+        // Update individual lists for backwards compatibility
+        // Note: Don't filter by selectedDeviceId here as it may change during refresh
+        // Store all data and let the UI filter as needed
+        latestDeviceDataList = dashboardData!.currentData;
 
-          dailyAggregatesList = dashboardData!.dailyAggregates
-              .where((aggregate) =>
-                  selectedDeviceId == null ||
-                  aggregate.deviceId == selectedDeviceId)
-              .toList();
+        dailyAggregatesList = dashboardData!.dailyAggregates;
 
-          hourlyAggregatesList = dashboardData!.hourlyAggregates;
-          activeAlerts = dashboardData!.alerts;
-        });
+        hourlyAggregatesList = dashboardData!.hourlyAggregates;
+        activeAlerts = dashboardData!.alerts;
 
         print('Successfully fetched dashboard data');
         print('Current devices: ${latestDeviceDataList.length}');
@@ -4243,12 +5594,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        setState(() {
-          alertsList = (data['alerts'] as List)
-              .map((item) => AlertData.fromJson(item))
-              .toList();
-          print("ghghghj ${alertsList.length}");
-        });
+        // Update data without triggering setState - let the caller handle final setState
+        alertsList = (data['alerts'] as List)
+            .map((item) => AlertData.fromJson(item))
+            .toList();
+        print("Alerts fetched: ${alertsList.length}");
         _updateNotificationList();
       } else {
         print('Failed to fetch alerts: ${response.statusCode}');
@@ -4275,7 +5625,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           devices.add(deviceModel);
         }
 
-        // Update global variables
+        // Update global variables (without triggering setState)
         totalActive = devices
             .where((device) => device.currentStatus == "Active")
             .toList();
@@ -4296,12 +5646,15 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         Constants.allDeviceData = devices;
         availableDevices = devices;
 
-        // Set default selected device to first device if none selected
-        if (selectedDeviceId == null && devices.isNotEmpty) {
+        // Only set default selected device on INITIAL load (when no device is selected)
+        // Don't change selectedDeviceId during refresh - let _loadAllData handle it
+        if (selectedDeviceId == null && devices.isNotEmpty && isInitialLoad) {
           selectedDeviceId = devices.first.deviceId;
+          print('Initial load: Setting selectedDeviceId to first device: $selectedDeviceId');
         }
 
-        setState(() {});
+        // Don't call empty setState here - let the caller (_loadAllData) handle the final setState
+        // This prevents race conditions during concurrent updates
         _initializeMarkers();
       } else {
         print('Failed to fetch devices: ${response.statusCode}');
