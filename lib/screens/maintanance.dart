@@ -9036,14 +9036,14 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
           _buildPDFSection('Personnel', [
             _buildPDFInfoRow(
                 'Assigned To',
-                maintenanceData['assigned_to']?['name']?.toString() ??
+                maintenanceData['assigned_to']?['full_name']?.toString() ??
                     'Unassigned'),
             _buildPDFInfoRow('Performed By',
-                maintenanceData['performed_by']?['name']?.toString() ?? 'N/A'),
+                maintenanceData['performed_by']?['full_name']?.toString() ?? 'N/A'),
             if (maintenanceData['supervised_by'] != null)
               _buildPDFInfoRow(
                   'Supervised By',
-                  maintenanceData['supervised_by']?['name']?.toString() ??
+                  maintenanceData['supervised_by']?['full_name']?.toString() ??
                       'N/A'),
           ]),
           pw.SizedBox(height: 20),
@@ -9616,8 +9616,8 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                     pw.Padding(
                       padding: pw.EdgeInsets.all(6),
                       child: pw.Text(
-                        record['performed_by']?['name']?.toString() ??
-                            record['assigned_to']?['name']?.toString() ??
+                        record['performed_by']?['full_name']?.toString() ??
+                            record['assigned_to']?['full_name']?.toString() ??
                             'N/A',
                         style: pw.TextStyle(fontSize: 8),
                       ),
