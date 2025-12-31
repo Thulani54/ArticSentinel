@@ -37,6 +37,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   List<dynamic> _maintenanceRecords = [];
   List<dynamic> _maintenanceTypes = [];
   List<dynamic> _upcomingMaintenance = [];
+  Map<String, dynamic> _remindersData = {};
+  List<dynamic> _schedules = [];
 
   // Filters
   Map<String, dynamic> _filters = {};
@@ -45,7 +47,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _loadInitialData();
   }
 
@@ -66,6 +68,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
         _loadDashboardData(),
         _loadMaintenanceRecords(),
         _loadMaintenanceTypes(),
+        _loadRemindersData(),
+        _loadSchedules(),
       ]);
     } catch (e) {
       setState(() {
@@ -136,6 +140,84 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     }
   }
 
+  Future<void> _loadRemindersData() async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/reminders/'),
+        headers: ApiConfig.headers,
+        body: json.encode({
+          'business_id': await SharedPrefs.getBusinessId(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _remindersData = data['reminders'] ?? {};
+        });
+      }
+    } catch (e) {
+      print('Error loading reminders: $e');
+    }
+  }
+
+  Future<void> _loadSchedules() async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedules/'),
+        headers: ApiConfig.headers,
+        body: json.encode({
+          'business_id': await SharedPrefs.getBusinessId(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _schedules = data['schedules'] ?? [];
+        });
+      }
+    } catch (e) {
+      print('Error loading schedules: $e');
+    }
+  }
+
+  Future<void> _sendManualReminder(String maintenanceId, String reminderType) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/$maintenanceId/send-reminder/'),
+        headers: ApiConfig.headers,
+        body: json.encode({
+          'reminder_type': reminderType,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Reminder sent successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadRemindersData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send reminder'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -160,6 +242,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                           _buildOverviewTab(),
                           _buildMaintenanceListTab(),
                           _buildSchedulingTab(),
+                          _buildRemindersTab(),
                           _buildAnalyticsTab(),
                           _buildSettingsTab(),
                         ],
@@ -299,6 +382,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
           _buildTabItem(Icons.dashboard_rounded, 'Overview'),
           _buildTabItem(Icons.format_list_bulleted_rounded, 'Records'),
           _buildTabItem(Icons.schedule_rounded, 'Scheduling'),
+          _buildTabItem(Icons.notifications_rounded, 'Reminders'),
           _buildTabItem(Icons.analytics_rounded, 'Analytics'),
           _buildTabItem(Icons.settings_rounded, 'Settings'),
         ],
@@ -383,85 +467,157 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   Widget _buildCompactQuickActions() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Constants.ctaColorLight.withOpacity(0.05),
-            Constants.ctaColorLight.withOpacity(0.02),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Constants.ctaColorLight.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 500;
+
+        return Container(
+          padding: EdgeInsets.all(isMobile ? 12 : 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Constants.ctaColorLight.withOpacity(0.05),
+                Constants.ctaColorLight.withOpacity(0.02),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Constants.ctaColorLight.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: Column(
             children: [
-              Icon(
-                Icons.flash_on,
-                color: Constants.ctaColorLight,
-                size: 20,
+              Row(
+                children: [
+                  Icon(
+                    Icons.flash_on,
+                    color: Constants.ctaColorLight,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Quick Actions',
+                    style: GoogleFonts.inter(
+                      fontSize: isMobile ? 14 : 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: 8),
-              Text(
-                'Quick Actions',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
+              SizedBox(height: isMobile ? 12 : 16),
+              if (isMobile) ...[
+                // Mobile layout: 3 buttons in top row, Schedule button at bottom
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildCompactActionButton(
+                        'Reports',
+                        Icons.assessment_outlined,
+                        Color(0xFF1976D2),
+                        () => _showReportsDialog(),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: _buildCompactActionButton(
+                        'Overdue',
+                        Icons.warning_amber_outlined,
+                        Color(0xFFEF6C00),
+                        () => _showOverdueItems(),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: _buildCompactActionButton(
+                        'Types',
+                        Icons.category_outlined,
+                        Color(0xFF7B1FA2),
+                        () => _showMaintenanceTypes(),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+                SizedBox(height: 12),
+                // Schedule button at bottom, full width on mobile
+                SizedBox(
+                  width: double.infinity,
+                  child: Material(
+                    color: Constants.ctaColorLight,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      onTap: () => _showCreateMaintenanceDialog(),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_circle_outline, color: Colors.white, size: 22),
+                            SizedBox(width: 8),
+                            Text(
+                              'Schedule Maintenance',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                // Desktop layout: all 4 buttons in a row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildCompactActionButton(
+                        'Schedule',
+                        Icons.add_circle_outline,
+                        Constants.ctaColorLight,
+                        () => _showCreateMaintenanceDialog(),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: _buildCompactActionButton(
+                        'Reports',
+                        Icons.assessment_outlined,
+                        Color(0xFF1976D2),
+                        () => _showReportsDialog(),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: _buildCompactActionButton(
+                        'Overdue',
+                        Icons.warning_amber_outlined,
+                        Color(0xFFEF6C00),
+                        () => _showOverdueItems(),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: _buildCompactActionButton(
+                        'Types',
+                        Icons.category_outlined,
+                        Color(0xFF7B1FA2),
+                        () => _showMaintenanceTypes(),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildCompactActionButton(
-                  'Schedule',
-                  Icons.add_circle_outline,
-                  Constants.ctaColorLight,
-                  () => _showCreateMaintenanceDialog(),
-                ),
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: _buildCompactActionButton(
-                  'Reports',
-                  Icons.assessment_outlined,
-                  Color(0xFF1976D2),
-                  () => _showReportsDialog(),
-                ),
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: _buildCompactActionButton(
-                  'Overdue',
-                  Icons.warning_amber_outlined,
-                  Color(0xFFEF6C00),
-                  () => _showOverdueItems(),
-                ),
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: _buildCompactActionButton(
-                  'Types',
-                  Icons.category_outlined,
-                  Color(0xFF7B1FA2),
-                  () => _showMaintenanceTypes(),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1142,13 +1298,19 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               Icon(Icons.schedule, color: Constants.ctaColorLight),
               SizedBox(width: 8),
               Text(
-                'Active Schedules',
+                'Active Schedules (${_schedules.length})',
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               Spacer(),
+              IconButton(
+                onPressed: () => _loadSchedules(),
+                icon: Icon(Icons.refresh, size: 20),
+                tooltip: 'Refresh',
+              ),
+              SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () => _showCreateScheduleDialog(),
                 icon: Icon(Icons.add, size: 16),
@@ -1161,11 +1323,162 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             ],
           ),
           SizedBox(height: 16),
-          // Add schedules list here
-          _buildEmptyState('No recurring schedules configured'),
+          if (_schedules.isEmpty)
+            _buildEmptyState('No recurring schedules configured')
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: _schedules.length,
+              separatorBuilder: (context, index) => Divider(height: 1),
+              itemBuilder: (context, index) {
+                final schedule = _schedules[index];
+                final isActive = schedule['is_active'] ?? false;
+                return ListTile(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isActive ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.repeat,
+                      color: isActive ? Colors.green : Colors.grey,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    '${schedule['device']?['name'] ?? 'Unknown Device'}',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${schedule['maintenance_type']?['name'] ?? ''} - ${schedule['frequency_display'] ?? ''}',
+                        style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Next due: ${schedule['next_due'] ?? 'N/A'}',
+                        style: GoogleFonts.inter(fontSize: 11, color: Constants.ctaColorLight),
+                      ),
+                    ],
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isActive ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          isActive ? 'Active' : 'Inactive',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isActive ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ),
+                      PopupMenuButton<String>(
+                        icon: Icon(Icons.more_vert, size: 18),
+                        onSelected: (value) {
+                          if (value == 'toggle') {
+                            _toggleScheduleStatus(schedule['id'], !isActive);
+                          } else if (value == 'delete') {
+                            _deleteSchedule(schedule['id']);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'toggle',
+                            child: Row(
+                              children: [
+                                Icon(isActive ? Icons.pause : Icons.play_arrow, size: 18),
+                                SizedBox(width: 8),
+                                Text(isActive ? 'Deactivate' : 'Activate'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete, size: 18, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Delete', style: TextStyle(color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );
+  }
+
+  Future<void> _toggleScheduleStatus(String scheduleId, bool isActive) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedule/$scheduleId/update/'),
+        headers: ApiConfig.headers,
+        body: json.encode({'is_active': isActive}),
+      );
+      if (response.statusCode == 200) {
+        _loadSchedules();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Schedule ${isActive ? 'activated' : 'deactivated'}'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating schedule'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _deleteSchedule(String scheduleId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Schedule'),
+        content: Text('Are you sure you want to delete this schedule?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedule/$scheduleId/delete/'),
+        headers: ApiConfig.headers,
+      );
+      if (response.statusCode == 200) {
+        _loadSchedules();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Schedule deleted'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting schedule'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   Widget _buildGenerateMaintenanceSection() {
@@ -1516,6 +1829,311 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
         ],
       ),
     );
+  }
+
+  Widget _buildRemindersTab() {
+    final summary = _remindersData['summary'] ?? {};
+    final upcoming = _remindersData['upcoming'] ?? [];
+    final overdue = _remindersData['overdue'] ?? [];
+    final sentReminders = _remindersData['sent_reminders'] ?? [];
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Reminder Stats
+          _buildReminderStats(summary),
+          SizedBox(height: 24),
+
+          // Overdue Maintenance
+          if (overdue.isNotEmpty) ...[
+            _buildSectionHeader('Overdue Maintenance', Icons.warning_rounded),
+            SizedBox(height: 12),
+            _buildRemindersList(overdue, isOverdue: true),
+            SizedBox(height: 24),
+          ],
+
+          // Upcoming Reminders
+          _buildSectionHeader('Upcoming Maintenance', Icons.schedule),
+          SizedBox(height: 12),
+          _buildRemindersList(upcoming, isOverdue: false),
+          SizedBox(height: 24),
+
+          // Sent Reminders History
+          _buildSectionHeader('Recent Reminders Sent', Icons.history),
+          SizedBox(height: 12),
+          _buildSentRemindersList(sentReminders),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReminderStats(Map<String, dynamic> summary) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Constants.ctaColorLight, Constants.ctaColorLight.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Constants.ctaColorLight.withOpacity(0.3),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildReminderStatCard(
+              'Upcoming',
+              '${summary['upcoming_count'] ?? 0}',
+              Icons.schedule,
+            ),
+          ),
+          Container(width: 1, height: 50, color: Colors.white.withOpacity(0.3)),
+          Expanded(
+            child: _buildReminderStatCard(
+              'Overdue',
+              '${summary['overdue_count'] ?? 0}',
+              Icons.warning_rounded,
+            ),
+          ),
+          Container(width: 1, height: 50, color: Colors.white.withOpacity(0.3)),
+          Expanded(
+            child: _buildReminderStatCard(
+              'Sent Today',
+              '${(summary['reminders_sent_today'] ?? 0) + (summary['overdue_reminders_sent_today'] ?? 0)}',
+              Icons.send,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReminderStatCard(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: Colors.white, size: 24),
+        SizedBox(height: 8),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: Colors.white.withOpacity(0.9),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRemindersList(List<dynamic> reminders, {required bool isOverdue}) {
+    if (reminders.isEmpty) {
+      return _buildEmptyState(isOverdue ? 'No overdue maintenance' : 'No upcoming maintenance');
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        itemCount: reminders.length,
+        separatorBuilder: (context, index) => Divider(height: 1),
+        itemBuilder: (context, index) {
+          final reminder = reminders[index];
+          return _buildReminderCard(reminder, isOverdue: isOverdue);
+        },
+      ),
+    );
+  }
+
+  Widget _buildReminderCard(Map<String, dynamic> reminder, {required bool isOverdue}) {
+    final priorityColor = _getPriorityColor(reminder['priority'] ?? 'normal');
+    final reminderSent = reminder['reminder_sent'] ?? false;
+    final overdueReminderSent = reminder['overdue_reminder_sent'] ?? false;
+
+    return ListTile(
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: Container(
+        padding: EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isOverdue ? Colors.red.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          isOverdue ? Icons.warning_rounded : Icons.schedule,
+          color: isOverdue ? Colors.red : Colors.blue,
+          size: 24,
+        ),
+      ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              reminder['device_name'] ?? 'Unknown Device',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: priorityColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              reminder['priority_display'] ?? '',
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: priorityColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 4),
+          Text(
+            reminder['maintenance_type'] ?? '',
+            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[700]),
+          ),
+          SizedBox(height: 2),
+          Row(
+            children: [
+              Icon(Icons.access_time, size: 12, color: isOverdue ? Colors.red : Colors.grey),
+              SizedBox(width: 4),
+              Text(
+                reminder['time_display'] ?? '',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: isOverdue ? Colors.red : Colors.grey[600],
+                  fontWeight: isOverdue ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+              SizedBox(width: 12),
+              if (reminderSent || overdueReminderSent)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle, size: 10, color: Colors.green),
+                      SizedBox(width: 4),
+                      Text(
+                        'Reminder Sent',
+                        style: GoogleFonts.inter(fontSize: 9, color: Colors.green, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          if (reminder['assigned_to'] != null) ...[
+            SizedBox(height: 2),
+            Text(
+              'Assigned: ${reminder['assigned_to']}',
+              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[500]),
+            ),
+          ],
+        ],
+      ),
+      trailing: IconButton(
+        onPressed: () => _sendManualReminder(
+          reminder['id'],
+          isOverdue ? 'overdue' : 'upcoming',
+        ),
+        icon: Icon(Icons.send, color: Constants.ctaColorLight, size: 20),
+        tooltip: 'Send Reminder',
+      ),
+    );
+  }
+
+  Widget _buildSentRemindersList(List<dynamic> sentReminders) {
+    if (sentReminders.isEmpty) {
+      return _buildEmptyState('No reminders sent recently');
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        itemCount: sentReminders.length > 10 ? 10 : sentReminders.length,
+        separatorBuilder: (context, index) => Divider(height: 1),
+        itemBuilder: (context, index) {
+          final reminder = sentReminders[index];
+          return ListTile(
+            dense: true,
+            leading: Container(
+              padding: EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(Icons.check, color: Colors.green, size: 16),
+            ),
+            title: Text(
+              reminder['device_name'] ?? 'Unknown Device',
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+            subtitle: Text(
+              '${reminder['maintenance_type'] ?? ''} - Sent: ${_formatReminderDate(reminder['reminder_sent_at'])}',
+              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _formatReminderDate(String? dateString) {
+    if (dateString == null) return 'N/A';
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('MMM dd, HH:mm').format(date);
+    } catch (e) {
+      return dateString;
+    }
   }
 
   Widget _buildSettingsTab() {
@@ -1903,7 +2521,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Future<void> _updateMaintenanceStatus(String id, String action) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/maintenance/$id/status/'),
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/$id/status/'),
         headers: ApiConfig.headers,
         body: json.encode({
           'action': action,
@@ -1933,7 +2551,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Future<void> _generateScheduledMaintenance() async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/maintenance/schedule/generate/'),
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedule/generate/'),
         headers: ApiConfig.headers,
         body: json.encode({
           'business_id': await SharedPrefs.getBusinessId(),
@@ -2070,7 +2688,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     try {
       final response = await http.get(
         Uri.parse(
-            '${ApiConfig.baseUrl}/api/maintenance/${widget.maintenanceId}/'),
+            '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/'),
         headers: ApiConfig.headers,
       );
 
@@ -2079,7 +2697,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
         print('=== FETCHING OBSERVATIONS ===');
         print(
-            'URL: ${ApiConfig.baseUrl}/api/maintenance/${widget.maintenanceId}/');
+            'URL: ${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/');
         print('Response Status: ${response.statusCode}');
         print('Full Response Data: ${json.encode(data)}');
         print('Maintenance Data: ${json.encode(data['maintenance'])}');
@@ -3118,20 +3736,35 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   ],
                 ),
               ),
-              if (canEdit)
+              if (canEdit) ...[
+                ElevatedButton.icon(
+                  onPressed: () => _uploadSectionImage('parts'),
+                  icon: Icon(Icons.add_photo_alternate, size: 16),
+                  label: Text('Add Photo'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[600],
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+                SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: parts.isEmpty ? null : _savePartsAndMaterials,
                   icon: Icon(Icons.save, size: 16),
-                  label: Text('Save Changes'),
+                  label: Text('Save'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Constants.ctaColorLight,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                 ),
+              ],
             ],
           ),
+          // Parts Images Gallery
+          _buildSectionImageGallery('parts', _maintenance['parts_images'] ?? [], canEdit),
           SizedBox(height: 20),
           if (parts.isEmpty)
             Container(
@@ -3422,20 +4055,35 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   ],
                 ),
               ),
-              if (canEdit)
+              if (canEdit) ...[
+                ElevatedButton.icon(
+                  onPressed: () => _uploadSectionImage('materials'),
+                  icon: Icon(Icons.add_photo_alternate, size: 16),
+                  label: Text('Add Photo'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[600],
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+                SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: materials.isEmpty ? null : _savePartsAndMaterials,
                   icon: Icon(Icons.save, size: 16),
-                  label: Text('Save Changes'),
+                  label: Text('Save'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Constants.ctaColorLight,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                 ),
+              ],
             ],
           ),
+          // Materials Images Gallery
+          _buildSectionImageGallery('materials', _maintenance['materials_images'] ?? [], canEdit),
           SizedBox(height: 20),
           if (materials.isEmpty)
             Container(
@@ -3676,11 +4324,15 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     );
   }
 
-  // Files/Media Section (UI scaffold; backend upload pending confirmation)
+  // Files/Media Section - Enhanced with categories
   Widget _buildInteractiveFilesSection(bool canEdit) {
     final beforePhotos = _maintenance['before_photos'] as List<dynamic>? ?? [];
     final afterPhotos = _maintenance['after_photos'] as List<dynamic>? ?? [];
     final documents = _maintenance['documents'] as List<dynamic>? ?? [];
+    final partsImages = _maintenance['parts_images'] as List<dynamic>? ?? [];
+    final materialsImages = _maintenance['materials_images'] as List<dynamic>? ?? [];
+
+    final totalFiles = beforePhotos.length + afterPhotos.length + documents.length + partsImages.length + materialsImages.length;
 
     return CustomCard(
       elevation: 4,
@@ -3689,85 +4341,337 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         width: double.infinity,
         padding: EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Header with stats and upload buttons
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  'Files & Media',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Constants.ctaColorLight.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.folder_open,
+                  color: Constants.ctaColorLight,
+                  size: 20,
                 ),
               ),
-              if (canEdit)
-                Wrap(
-                  spacing: 8,
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: () => _showUploadMediaDialog(),
-                      icon: Icon(Icons.upload, size: 16),
-                      label: Text('Upload Media'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Constants.ctaColorLight,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
+                    Text(
+                      'Files & Media',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Constants.ctaColorLight,
                       ),
                     ),
-                    ElevatedButton.icon(
-                      onPressed: () => _showUploadDocumentDialog(),
-                      icon: Icon(Icons.picture_as_pdf, size: 16),
-                      label: Text('Upload Document'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Constants.ctaColorLight,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
+                    Text(
+                      '$totalFiles file${totalFiles != 1 ? 's' : ''} uploaded',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
                 ),
+              ),
+              if (canEdit) ...[
+                ElevatedButton.icon(
+                  onPressed: () => _showUploadMediaDialog(),
+                  icon: Icon(Icons.add_photo_alternate, size: 16),
+                  label: Text('Photos'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[600],
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+                SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () => _showUploadDocumentDialog(),
+                  icon: Icon(Icons.upload_file, size: 16),
+                  label: Text('Documents'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Constants.ctaColorLight,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+              ],
             ],
           ),
-          SizedBox(height: 12),
-          if (beforePhotos.isEmpty && afterPhotos.isEmpty && documents.isEmpty)
-            Text(
-              'No files uploaded',
-              style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[500]),
+          SizedBox(height: 20),
+
+          if (totalFiles == 0)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.cloud_upload, size: 48, color: Colors.grey[400]),
+                  SizedBox(height: 12),
+                  Text(
+                    'No files uploaded yet',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  if (canEdit) ...[
+                    SizedBox(height: 4),
+                    Text(
+                      'Use the buttons above to add photos and documents',
+                      style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[500]),
+                    ),
+                  ],
+                ],
+              ),
             )
           else ...[
-            if (beforePhotos.isNotEmpty) ...[
-              Text('Before Photos',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-              SizedBox(height: 8),
-              _buildPhotoGrid(beforePhotos),
-              SizedBox(height: 12),
-            ],
-            if (afterPhotos.isNotEmpty) ...[
-              Text('After Photos',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-              SizedBox(height: 8),
-              _buildPhotoGrid(afterPhotos),
-              SizedBox(height: 12),
-            ],
+            // Before Photos Section
+            if (beforePhotos.isNotEmpty)
+              _buildMediaCategory(
+                'Before Photos',
+                Icons.photo_camera,
+                Colors.blue,
+                beforePhotos,
+                canEdit,
+              ),
+
+            // After Photos Section
+            if (afterPhotos.isNotEmpty)
+              _buildMediaCategory(
+                'After Photos',
+                Icons.photo_camera,
+                Colors.green,
+                afterPhotos,
+                canEdit,
+              ),
+
+            // Parts Images Section
+            if (partsImages.isNotEmpty)
+              _buildMediaCategory(
+                'Parts Images',
+                Icons.build,
+                Colors.orange,
+                partsImages,
+                canEdit,
+                section: 'parts',
+              ),
+
+            // Materials Images Section
+            if (materialsImages.isNotEmpty)
+              _buildMediaCategory(
+                'Materials Images',
+                Icons.inventory,
+                Colors.purple,
+                materialsImages,
+                canEdit,
+                section: 'materials',
+              ),
+
+            // Documents Section
             if (documents.isNotEmpty) ...[
-              Text('Documents',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-              SizedBox(height: 8),
-              Column(
-                children: documents
-                    .map((d) => ListTile(
-                          leading: Icon(Icons.insert_drive_file,
-                              color: Colors.grey[600]),
-                          title: Text(d.toString()),
-                          trailing: Icon(Icons.open_in_new, size: 18),
-                          onTap: () => _showNotImplemented('Open document'),
-                        ))
-                    .toList(),
+              Container(
+                margin: EdgeInsets.only(top: 16),
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.description, size: 18, color: Colors.teal),
+                        SizedBox(width: 8),
+                        Text(
+                          'Documents (${documents.length})',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    ...documents.map((doc) {
+                      final docData = doc is Map ? doc : {'filename': doc.toString()};
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 8),
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.insert_drive_file, color: Colors.teal, size: 24),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    docData['filename'] ?? docData.toString(),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (docData['description'] != null && docData['description'].toString().isNotEmpty)
+                                    Text(
+                                      docData['description'],
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            if (docData['url'] != null)
+                              IconButton(
+                                onPressed: () {
+                                  final url = docData['url'].startsWith('http')
+                                      ? docData['url']
+                                      : '${Constants.articBaseUrl2}${docData['url']}';
+                                  // Open document
+                                },
+                                icon: Icon(Icons.open_in_new, size: 20),
+                                color: Colors.grey[600],
+                              ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
               ),
             ],
           ],
         ]),
+      ),
+    );
+  }
+
+  // Build a media category with expandable gallery
+  Widget _buildMediaCategory(String title, IconData icon, Color color, List<dynamic> images, bool canEdit, {String? section}) {
+    return Container(
+      margin: EdgeInsets.only(top: 16),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: color),
+              SizedBox(width: 8),
+              Text(
+                '$title (${images.length})',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Container(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: images.length,
+              itemBuilder: (context, index) {
+                final img = images[index];
+                final imageUrl = img is Map ? (img['url'] ?? '') : img.toString();
+                final filename = img is Map ? (img['filename'] ?? 'Image') : 'Image';
+                final imageId = img is Map ? (img['id'] ?? '') : '';
+
+                return Container(
+                  margin: EdgeInsets.only(right: 12),
+                  child: Stack(
+                    children: [
+                      GestureDetector(
+                        onTap: () => _showImagePreview(imageUrl, filename),
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: color.withOpacity(0.3)),
+                            color: Colors.grey[200],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              imageUrl.startsWith('http')
+                                  ? imageUrl
+                                  : '${Constants.articBaseUrl2}$imageUrl',
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.broken_image,
+                                color: Colors.grey[400],
+                              ),
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: color,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (canEdit && section != null && imageId.isNotEmpty)
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => _deleteSectionImage(section, imageId),
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.red[400],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(Icons.close, size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -4235,80 +5139,144 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                 DateTime.now()
                             : DateTime.now();
 
+                        final observationImages = observation['images'] as List<dynamic>? ?? [];
+                        final observationId = observation['id']?.toString() ?? '';
+
                         return Container(
                           padding: EdgeInsets.all(16),
-                          child: Row(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                flex: 4,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      observation['text'] ??
-                                          'No observation text',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        color: Colors.grey[800],
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                    if (observation['is_critical'] == true) ...[
-                                      SizedBox(height: 8),
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.orange.withOpacity(0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          'CRITICAL',
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    flex: 4,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          observation['text'] ??
+                                              'No observation text',
                                           style: GoogleFonts.inter(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.orange[800],
+                                            fontSize: 14,
+                                            color: Colors.grey[800],
+                                            height: 1.4,
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                flex: 2,
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Constants.ctaColorLight
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    observation['created_by'] ?? 'Unknown',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Constants.ctaColorLight,
+                                        if (observation['is_critical'] == true) ...[
+                                          SizedBox(height: 8),
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.orange.withOpacity(0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              'CRITICAL',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.orange[800],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ),
-                                ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Constants.ctaColorLight
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        observation['created_by'] ?? 'Unknown',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Constants.ctaColorLight,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            _formatDateTime(dateAdded.toIso8601String()),
+                                            style: GoogleFonts.inter(
+                                              fontSize: 13,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ),
+                                        if (canEdit && observationId.isNotEmpty)
+                                          IconButton(
+                                            onPressed: () => _uploadObservationImage(observationId),
+                                            icon: Icon(Icons.add_photo_alternate, size: 20),
+                                            color: Colors.green[600],
+                                            tooltip: 'Add Photo',
+                                            padding: EdgeInsets.zero,
+                                            constraints: BoxConstraints(),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  _formatDateTime(dateAdded.toIso8601String()),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    color: Colors.grey[600],
+                              // Show observation images if any
+                              if (observationImages.isNotEmpty) ...[
+                                SizedBox(height: 12),
+                                Container(
+                                  height: 80,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: observationImages.length,
+                                    itemBuilder: (context, imgIndex) {
+                                      final img = observationImages[imgIndex];
+                                      final imageUrl = img['url'] ?? '';
+                                      return Container(
+                                        margin: EdgeInsets.only(right: 8),
+                                        child: Stack(
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () => _showImagePreview(imageUrl, img['filename'] ?? 'Image'),
+                                              child: Container(
+                                                width: 80,
+                                                height: 80,
+                                                decoration: BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  border: Border.all(color: Colors.grey[300]!),
+                                                  image: DecorationImage(
+                                                    image: NetworkImage(
+                                                      imageUrl.startsWith('http')
+                                                        ? imageUrl
+                                                        : '${Constants.articBaseUrl2}$imageUrl'
+                                                    ),
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         );
@@ -4434,14 +5402,14 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
       print('=== ADDING FINDING ===');
       print(
-          'URL: ${ApiConfig.baseUrl}/api/maintenance/${widget.maintenanceId}/observations/');
+          'URL: ${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/observations/');
       print('Headers: ${ApiConfig.headers}');
       print('Request Body: ${json.encode(requestBody)}');
       print('==========================');
 
       final response = await http.post(
         Uri.parse(
-            '${ApiConfig.baseUrl}/api/maintenance/${widget.maintenanceId}/observations/'),
+            '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/observations/'),
         headers: ApiConfig.headers,
         body: json.encode(requestBody),
       );
@@ -4779,8 +5747,12 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   // Upload Media File to Backend
   Future<void> _uploadMediaFile(PlatformFile file, String type) async {
     final url = Uri.parse(
-        '${Constants.articBaseUrl2}maintenance/${widget.maintenanceId}/upload-media');
+        '${Constants.articBaseUrl2}api/maintenance/${widget.maintenanceId}/upload-media/');
     final request = http.MultipartRequest('POST', url);
+
+    // Add authorization header
+    final token = await Sharedprefs.getAuthTokenPreference();
+    request.headers['Authorization'] = 'Bearer $token';
 
     // Add file
     if (file.bytes != null) {
@@ -4826,8 +5798,12 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   Future<void> _uploadDocumentFile(
       PlatformFile file, String description) async {
     final url = Uri.parse(
-        '${Constants.articBaseUrl2}maintenance/${widget.maintenanceId}/upload-document');
+        '${Constants.articBaseUrl2}api/maintenance/${widget.maintenanceId}/upload-document/');
     final request = http.MultipartRequest('POST', url);
+
+    // Add authorization header
+    final token = await Sharedprefs.getAuthTokenPreference();
+    request.headers['Authorization'] = 'Bearer $token';
 
     // Add file
     if (file.bytes != null) {
@@ -4874,6 +5850,311 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       SnackBar(
         content: Text('$feature not implemented yet'),
         backgroundColor: Colors.orange,
+      ),
+    );
+  }
+
+  // Upload image for parts section
+  Future<void> _uploadSectionImage(String section, {String? itemName}) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: true,
+      );
+
+      if (result != null) {
+        for (PlatformFile file in result.files) {
+          final url = Uri.parse(
+              '${Constants.articBaseUrl2}api/maintenance/${widget.maintenanceId}/upload-${section}-image/');
+          final request = http.MultipartRequest('POST', url);
+
+          // Add authorization header
+          final token = await Sharedprefs.getAuthTokenPreference();
+          request.headers['Authorization'] = 'Bearer $token';
+
+          // Add file
+          if (file.bytes != null) {
+            request.files.add(http.MultipartFile.fromBytes(
+              'file',
+              file.bytes!,
+              filename: file.name,
+            ));
+          }
+
+          // Add metadata
+          if (section == 'parts') {
+            request.fields['part_name'] = itemName ?? '';
+          } else if (section == 'materials') {
+            request.fields['material_name'] = itemName ?? '';
+          }
+          request.fields['caption'] = '';
+
+          final response = await request.send();
+          if (response.statusCode != 200) {
+            throw Exception('Failed to upload image');
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image(s) uploaded successfully'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        // Refresh maintenance data
+        _loadMaintenanceDetail();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to upload image: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  // Upload image for observation/finding
+  Future<void> _uploadObservationImage(String observationId) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: true,
+      );
+
+      if (result != null) {
+        for (PlatformFile file in result.files) {
+          final url = Uri.parse(
+              '${Constants.articBaseUrl2}api/maintenance/observation/$observationId/upload-image/');
+          final request = http.MultipartRequest('POST', url);
+
+          // Add authorization header
+          final token = await Sharedprefs.getAuthTokenPreference();
+          request.headers['Authorization'] = 'Bearer $token';
+
+          // Add file
+          if (file.bytes != null) {
+            request.files.add(http.MultipartFile.fromBytes(
+              'file',
+              file.bytes!,
+              filename: file.name,
+            ));
+          }
+
+          request.fields['caption'] = '';
+
+          final response = await request.send();
+          if (response.statusCode != 200) {
+            throw Exception('Failed to upload image');
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image(s) uploaded successfully'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        // Refresh maintenance data
+        _loadMaintenanceDetail();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to upload image: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  // Delete section image
+  Future<void> _deleteSectionImage(String section, String imageId) async {
+    try {
+      final token = await Sharedprefs.getAuthTokenPreference();
+      final response = await http.delete(
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/maintenance/${widget.maintenanceId}/$section/$imageId/delete/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image deleted'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        _loadMaintenanceDetail();
+      } else {
+        throw Exception('Failed to delete image');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete image: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  // Build image gallery for a section
+  Widget _buildSectionImageGallery(String section, List<dynamic> images, bool canEdit) {
+    if (images.isEmpty) {
+      return SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 16),
+        Row(
+          children: [
+            Icon(Icons.photo_library, size: 18, color: Colors.grey[600]),
+            SizedBox(width: 8),
+            Text(
+              'Images (${images.length})',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        Container(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: images.length,
+            itemBuilder: (context, index) {
+              final img = images[index];
+              final imageUrl = img['url'] ?? '';
+              return Container(
+                margin: EdgeInsets.only(right: 12),
+                child: Stack(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _showImagePreview(imageUrl, img['filename'] ?? 'Image'),
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!),
+                          image: DecorationImage(
+                            image: NetworkImage(
+                              imageUrl.startsWith('http')
+                                ? imageUrl
+                                : '${Constants.articBaseUrl2}$imageUrl'
+                            ),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (canEdit)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () => _deleteSectionImage(section, img['id']),
+                          child: Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red[400],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Show image preview dialog
+  void _showImagePreview(String imageUrl, String title) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 800, maxHeight: 600),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: Image.network(
+                  imageUrl.startsWith('http')
+                    ? imageUrl
+                    : '${Constants.articBaseUrl2}$imageUrl',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    padding: EdgeInsets.all(40),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text('Failed to load image'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -5176,7 +6457,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   Future<void> _updateStatus(String action) async {
     try {
       final url =
-          '${ApiConfig.baseUrl}/api/maintenance/${widget.maintenanceId}/status/';
+          '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/status/';
       print(
           '🔄 Updating status: $action for maintenance ID: ${widget.maintenanceId}');
       print('🌐 API URL: $url');
@@ -5236,7 +6517,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     try {
       final response = await http.post(
         Uri.parse(
-            '${ApiConfig.baseUrl}/api/maintenance/checklist/${item['id']}/update/'),
+            '${ApiConfig.baseUrl}api/maintenance/checklist/${item['id']}/update/'),
         headers: ApiConfig.headers,
         body: json.encode({
           'mark_completed': !item['is_completed'],
@@ -5842,7 +7123,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     try {
       final response = await http.put(
         Uri.parse(
-            '${ApiConfig.baseUrl}/api/maintenance/checklist/$itemId/update/'),
+            '${ApiConfig.baseUrl}api/maintenance/checklist/$itemId/update/'),
         headers: ApiConfig.headers,
         body: json.encode({
           'description': description,
@@ -5908,7 +7189,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     try {
       final response = await http.delete(
         Uri.parse(
-            '${ApiConfig.baseUrl}/api/maintenance/checklist/$itemId/delete/'),
+            '${ApiConfig.baseUrl}api/maintenance/checklist/$itemId/delete/'),
         headers: ApiConfig.headers,
         body: json.encode({
           'user_id': await SharedPrefs.getUserId(),
@@ -6118,12 +7399,8 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
   Future<void> _loadMaintenanceTypes() async {
     try {
       final response = await http.get(
-        Uri.parse('${Constants.articBaseUrl2}api/maintenance/types/'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization':
-              'Bearer ${await Sharedprefs.getAuthTokenPreference()}',
-        },
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/types/'),
+        headers: ApiConfig.headers,
       );
 
       if (response.statusCode == 200) {
@@ -6132,17 +7409,36 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
             .map((item) => MaintenanceType.fromJson(item))
             .toList();
       } else {
-        throw Exception('Failed to load maintenance types');
+        print('Failed to load maintenance types: ${response.statusCode}');
       }
-    } catch (e) {}
+    } catch (e) {
+      print('Error loading maintenance types: $e');
+    }
   }
 
   Future<void> _loadAssignableUsers() async {
-    _assignableUsers = [
-      {'id': '1', 'name': 'John Doe'},
-      {'id': '2', 'name': 'Jane Smith'},
-      {'id': '3', 'name': 'Mike Johnson'},
-    ];
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/assignable-users/'),
+        headers: ApiConfig.headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _assignableUsers = (data['users'] as List)
+            .map((user) => {
+                  'id': user['id'].toString(),
+                  'name': user['full_name'] ?? user['username'] ?? 'Unknown',
+                })
+            .toList();
+      } else {
+        // Fallback to empty list if API fails
+        _assignableUsers = [];
+      }
+    } catch (e) {
+      print('Error loading assignable users: $e');
+      _assignableUsers = [];
+    }
   }
 
   Future<void> _submitForm() async {
@@ -6417,6 +7713,46 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
+    // Use full screen scaffold for mobile, dialog for desktop
+    if (isMobile) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Constants.ctaColorLight,
+          elevation: 0,
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.build_circle, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Schedule Maintenance',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+        body: _buildFormContent(),
+      );
+    }
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
@@ -6476,64 +7812,67 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                 ],
               ),
             ),
+            // Form Content for desktop
+            Expanded(child: _buildFormContent()),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Form Content
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _error != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.error_outline,
-                                    size: 64, color: const Color(0xFFEF4444)),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _error!,
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 16),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Constants.ctaColorLight,
-                                        Constants.ctaColorLight.withOpacity(0.8)
-                                      ],
-                                    ),
-                                  ),
-                                  child: ElevatedButton(
-                                    onPressed: _loadData,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.transparent,
-                                      foregroundColor: Colors.white,
-                                      shadowColor: Colors.transparent,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 24, vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12)),
-                                    ),
-                                    child: Text(
-                                      'Retry',
-                                      style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : SingleChildScrollView(
+  Widget _buildFormContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: const Color(0xFFEF4444)),
+              const SizedBox(height: 16),
+              Text(
+                _error!,
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: [
+                      Constants.ctaColorLight,
+                      Constants.ctaColorLight.withOpacity(0.8)
+                    ],
+                  ),
+                ),
+                child: ElevatedButton(
+                  onPressed: _loadData,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                    'Retry',
+                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Main form content
+    return SingleChildScrollView(
                           padding: const EdgeInsets.all(24),
                           child: Form(
                             key: _formKey,
@@ -6577,23 +7916,18 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                   style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500),
+                                  isExpanded: true,
+                                  itemHeight: 60,
                                   items: _maintenanceTypes.map((type) {
                                     return DropdownMenuItem(
                                       value: type.id,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(type.name,
-                                              style: GoogleFonts.inter(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600)),
-                                          Text(type.categoryDisplay,
-                                              style: GoogleFonts.inter(
-                                                  fontSize: 12,
-                                                  color:
-                                                      Constants.ctaColorLight)),
-                                        ],
+                                      child: Text(
+                                        '${type.name} (${type.categoryDisplay})',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     );
                                   }).toList(),
@@ -7083,140 +8417,75 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                     ),
                                   ],
                                 ),
+
+                                // Footer Actions
+                                const SizedBox(height: 40),
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFAFAFA),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                                  ),
+                                  child: Wrap(
+                                    spacing: 12,
+                                    runSpacing: 12,
+                                    alignment: WrapAlignment.end,
+                                    children: [
+                                      TextButton(
+                                        onPressed: _isSubmitting ? null : _resetForm,
+                                        style: TextButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            side: const BorderSide(color: Color(0xFFE5E7EB)),
+                                          ),
+                                        ),
+                                        child: Text('Reset', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF6B7280))),
+                                      ),
+                                      TextButton(
+                                        onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+                                        style: TextButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            side: const BorderSide(color: Color(0xFFE5E7EB)),
+                                          ),
+                                        ),
+                                        child: Text('Cancel', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF6B7280))),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: _isSubmitting ? null : _submitForm,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Constants.ctaColorLight,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                        child: _isSubmitting
+                                            ? Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))),
+                                                  const SizedBox(width: 8),
+                                                  Text('Scheduling...', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
+                                                ],
+                                              )
+                                            : Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(Icons.build_circle, size: 18),
+                                                  const SizedBox(width: 8),
+                                                  Text('Schedule Maintenance', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
+                                                ],
+                                              ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                        ),
-            ),
-
-            // Footer Actions
-            if (!_isLoading && _error == null)
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFAFAFA),
-                  borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24)),
-                  border: Border(
-                      top: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: const Color(0xFFE5E7EB), width: 1.5),
-                      ),
-                      child: TextButton(
-                        onPressed: _isSubmitting ? null : _resetForm,
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Text(
-                          'Reset',
-                          style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF6B7280)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: const Color(0xFFE5E7EB), width: 1.5),
-                      ),
-                      child: TextButton(
-                        onPressed:
-                            _isSubmitting ? null : () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Text(
-                          'Cancel',
-                          style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF6B7280)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        gradient: LinearGradient(colors: [
-                          Constants.ctaColorLight,
-                          Constants.ctaColorLight.withOpacity(0.8)
-                        ]),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Constants.ctaColorLight.withOpacity(0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4))
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _submitForm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          foregroundColor: Colors.white,
-                          shadowColor: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 32, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: _isSubmitting
-                            ? Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                                Colors.white)),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text('Scheduling...',
-                                      style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600)),
-                                ],
-                              )
-                            : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.build_circle, size: 18),
-                                  const SizedBox(width: 8),
-                                  Text('Schedule Maintenance',
-                                      style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600)),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -7250,7 +8519,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
 
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/maintenance/reports/monthly/'),
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/reports/monthly/'),
         headers: ApiConfig.headers,
         body: json.encode({
           'business_id': await SharedPrefs.getBusinessId(),
@@ -7286,7 +8555,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
     try {
       final response = await http.get(
         Uri.parse(
-            '${ApiConfig.baseUrl}/api/maintenance/reports/$year/$month/records/?business_id=${await SharedPrefs.getBusinessId()}'),
+            '${ApiConfig.baseUrl}api/maintenance/reports/$year/$month/records/?business_id=${await SharedPrefs.getBusinessId()}'),
         headers: ApiConfig.headers,
       );
 
@@ -7345,7 +8614,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
 
       // Fetch comprehensive maintenance data
       final detailResponse = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/maintenance/$maintenanceId/'),
+        Uri.parse('${ApiConfig.baseUrl}api/maintenance/$maintenanceId/'),
         headers: ApiConfig.headers,
       );
 
@@ -7358,7 +8627,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
       // Fetch observations
       final observationsResponse = await http.get(
         Uri.parse(
-            '${ApiConfig.baseUrl}/api/maintenance/$maintenanceId/observations/'),
+            '${ApiConfig.baseUrl}api/maintenance/$maintenanceId/observations/'),
         headers: ApiConfig.headers,
       );
 
@@ -7638,7 +8907,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
       // Fetch monthly records data
       final response = await http.get(
         Uri.parse(
-            '${ApiConfig.baseUrl}/api/maintenance/reports/$year/$month/records/?business_id=${await SharedPrefs.getBusinessId()}'),
+            '${ApiConfig.baseUrl}api/maintenance/reports/$year/$month/records/?business_id=${await SharedPrefs.getBusinessId()}'),
         headers: ApiConfig.headers,
       );
 
@@ -9098,6 +10367,53 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
+    // Use full screen scaffold for mobile
+    if (isMobile) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Constants.ctaColorLight,
+          elevation: 0,
+          leading: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.assessment_outlined, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Maintenance Reports',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              onPressed: _generateSampleDetailedPDF,
+              icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+              tooltip: 'Generate Sample Report',
+            ),
+          ],
+        ),
+        body: _buildReportsContent(isMobile: true),
+      );
+    }
+
     return Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.all(20),
@@ -9204,472 +10520,342 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                   ],
                 ),
               ),
-
-              // Content Area
-              Expanded(
-                  child: Container(
-                      color: Colors.white,
-                      child: Column(children: [
-                        // Year Selection Bar
-                        Container(
-                          padding: EdgeInsets.all(24),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Report Year:',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Constants.ctaColorLight
-                                        .withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: DropdownButton<int>(
-                                  value: _selectedYear,
-                                  underline: SizedBox(),
-                                  icon: Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Constants.ctaColorLight,
-                                  ),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: Constants.ctaColorLight,
-                                  ),
-                                  items: List.generate(5, (index) {
-                                    int year = DateTime.now().year - 2 + index;
-                                    return DropdownMenuItem(
-                                      value: year,
-                                      child: Text(
-                                        year.toString(),
-                                        style: GoogleFonts.inter(
-                                          color: Colors.grey[800],
-                                        ),
-                                      ),
-                                    );
-                                  }),
-                                  onChanged: (year) {
-                                    if (year != null) {
-                                      setState(() {
-                                        _selectedYear = year;
-                                        _selectedMonth = null;
-                                        _selectedMonthRecords.clear();
-                                      });
-                                      _loadMonthlyReports();
-                                    }
-                                  },
-                                ),
-                              ),
-                              Spacer(),
-                              if (_selectedMonth != null)
-                                ElevatedButton.icon(
-                                  onPressed: () => _generateMonthlySummaryPDF(
-                                    _selectedYear,
-                                    _selectedMonth['month'],
-                                  ),
-                                  icon: Icon(Icons.download, size: 18),
-                                  label: Text(
-                                      'Download ${_selectedMonth['month_name']} Report'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Constants.ctaColorLight,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-
-                        // Error Display
-                        if (_error.isNotEmpty)
-                          Container(
-                            margin: EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 8),
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.red[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.red[200]!,
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.error_outline,
-                                    color: Colors.red[600], size: 20),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _error,
-                                    style: GoogleFonts.inter(
-                                      color: Colors.red[600],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        // Loading or Content
-                        if (_isLoading)
-                          Expanded(
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Constants.ctaColorLight,
-                                    ),
-                                    strokeWidth: 2,
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'Loading reports...',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        else
-                          Expanded(
-                            child: Container(
-                              padding: EdgeInsets.all(24),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Monthly Reports List - Left Panel
-                                  Expanded(
-                                    flex: 5,
-                                    child: Container(
-                                      height: double.infinity,
-                                      padding: EdgeInsets.all(20),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[50],
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: Colors.grey[200]!,
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.calendar_view_month,
-                                                color: Constants.ctaColorLight,
-                                                size: 20,
-                                              ),
-                                              SizedBox(width: 8),
-                                              Text(
-                                                'Monthly Reports',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.grey[800],
-                                                ),
-                                              ),
-                                              SizedBox(width: 8),
-                                              Container(
-                                                padding: EdgeInsets.symmetric(
-                                                    horizontal: 8, vertical: 4),
-                                                decoration: BoxDecoration(
-                                                  color: Constants.ctaColorLight
-                                                      .withOpacity(0.1),
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                                child: Text(
-                                                  _selectedYear.toString(),
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w600,
-                                                    color:
-                                                        Constants.ctaColorLight,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          SizedBox(height: 20),
-                                          Expanded(
-                                            child: ListView.builder(
-                                              itemCount: _monthlyReports.length,
-                                              itemBuilder: (context, index) {
-                                                final month =
-                                                    _monthlyReports[index];
-                                                final isSelected =
-                                                    _selectedMonth == month;
-
-                                                return Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: CustomCard(
-                                                    color: isSelected
-                                                        ? Constants
-                                                            .ctaColorLight
-                                                            .withOpacity(0.3)
-                                                        : Colors.white,
-                                                    elevation: 6,
-                                                    child: ListTile(
-                                                      title: Text(
-                                                        month['month_name'],
-                                                        style:
-                                                            GoogleFonts.inter(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600),
-                                                      ),
-                                                      subtitle: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            'Total: ${month['total_maintenance']}',
-                                                            style: GoogleFonts
-                                                                .inter(
-                                                                    fontSize:
-                                                                        12),
-                                                          ),
-                                                          Text(
-                                                            'Completed: ${month['completed']}',
-                                                            style: GoogleFonts
-                                                                .inter(
-                                                                    fontSize:
-                                                                        12),
-                                                          ),
-                                                          Text(
-                                                            'Completion Rate: ${month['completion_rate']}%',
-                                                            style: GoogleFonts
-                                                                .inter(
-                                                                    fontSize:
-                                                                        12),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      trailing: Row(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: [
-                                                          IconButton(
-                                                            icon: Icon(
-                                                                Icons
-                                                                    .picture_as_pdf,
-                                                                color:
-                                                                    Colors.red),
-                                                            onPressed: () =>
-                                                                _generateMonthlySummaryPDF(
-                                                                    month[
-                                                                        'year'],
-                                                                    month[
-                                                                        'month']),
-                                                            tooltip:
-                                                                'Download Monthly PDF',
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      onTap: () {
-                                                        setState(() {
-                                                          _selectedMonth =
-                                                              month;
-                                                        });
-                                                        _loadMonthRecords(
-                                                            month['year'],
-                                                            month['month']);
-                                                      },
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-
-                                  SizedBox(width: 16),
-
-                                  // Maintenance Records for Selected Month
-                                  Expanded(
-                                    flex: 3,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _selectedMonth != null
-                                              ? 'Maintenance Records - ${_selectedMonth['month_name']} ${_selectedMonth['year']}'
-                                              : 'Select a month to view records',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        SizedBox(height: 8),
-                                        Expanded(
-                                          child: _selectedMonth == null
-                                              ? Center(
-                                                  child: Text(
-                                                    'Please select a month from the list',
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 16,
-                                                      color: Colors.grey,
-                                                    ),
-                                                  ),
-                                                )
-                                              : ListView.builder(
-                                                  itemCount:
-                                                      _selectedMonthRecords
-                                                          .length,
-                                                  itemBuilder:
-                                                      (context, index) {
-                                                    final record =
-                                                        _selectedMonthRecords[
-                                                            index];
-
-                                                    return Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Container(
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: Colors.white,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(12),
-                                                          boxShadow: [
-                                                            BoxShadow(
-                                                              color: Colors.grey
-                                                                  .shade300,
-                                                              blurRadius: 8,
-                                                              offset:
-                                                                  Offset(0, 2),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        child: ListTile(
-                                                          title: Text(
-                                                            record['device']
-                                                                ['name'],
-                                                            style: GoogleFonts.inter(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600),
-                                                          ),
-                                                          subtitle: Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              Text(
-                                                                'Type: ${record['maintenance_type']['name']}',
-                                                                style: GoogleFonts
-                                                                    .inter(
-                                                                        fontSize:
-                                                                            12),
-                                                              ),
-                                                              Text(
-                                                                'Status: ${record['status_display']}',
-                                                                style: GoogleFonts
-                                                                    .inter(
-                                                                        fontSize:
-                                                                            12),
-                                                              ),
-                                                              Text(
-                                                                'Date: ${DateTime.parse(record['scheduled_date']).toLocal().toString().split(' ')[0]}',
-                                                                style: GoogleFonts
-                                                                    .inter(
-                                                                        fontSize:
-                                                                            12),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          trailing: Row(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            children: [
-                                                              IconButton(
-                                                                icon: Icon(
-                                                                    Icons
-                                                                        .picture_as_pdf,
-                                                                    color: Colors
-                                                                        .red),
-                                                                onPressed: () =>
-                                                                    _generateDetailedPDF(
-                                                                        record['id']?.toString() ??
-                                                                            ''),
-                                                                tooltip:
-                                                                    'Download Detailed PDF Report',
-                                                              ),
-                                                              IconButton(
-                                                                icon: Icon(
-                                                                    Icons
-                                                                        .visibility,
-                                                                    color: Constants
-                                                                        .ctaColorLight),
-                                                                onPressed: () {
-                                                                  // Navigate to maintenance detail screen
-                                                                  Navigator
-                                                                      .push(
-                                                                    context,
-                                                                    MaterialPageRoute(
-                                                                      builder:
-                                                                          (context) =>
-                                                                              MaintenanceDetailScreen(
-                                                                        maintenanceId:
-                                                                            record['id'],
-                                                                      ),
-                                                                    ),
-                                                                  );
-                                                                },
-                                                                tooltip:
-                                                                    'View Details',
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                      ])))
+              // Desktop content
+              Expanded(child: _buildReportsContent(isMobile: false)),
             ])));
+  }
+
+  Widget _buildReportsContent({required bool isMobile}) {
+    return Container(
+      color: Colors.white,
+      child: Column(children: [
+        // Year Selection Bar
+        Container(
+          padding: EdgeInsets.all(isMobile ? 16 : 24),
+          child: isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Report Year:',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Constants.ctaColorLight.withOpacity(0.3),
+                        width: 1,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButton<int>(
+                      value: _selectedYear,
+                      isExpanded: true,
+                      underline: SizedBox(),
+                      icon: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: Constants.ctaColorLight,
+                      ),
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Constants.ctaColorLight,
+                      ),
+                      items: List.generate(5, (index) {
+                        final year = DateTime.now().year - index;
+                        return DropdownMenuItem(
+                          value: year,
+                          child: Text(year.toString()),
+                        );
+                      }),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedYear = value;
+                            _selectedMonth = null;
+                            _selectedMonthRecords = [];
+                          });
+                          _loadMonthlyReports();
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Text(
+                    'Report Year:',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Constants.ctaColorLight.withOpacity(0.3),
+                        width: 1,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButton<int>(
+                      value: _selectedYear,
+                      underline: SizedBox(),
+                      icon: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: Constants.ctaColorLight,
+                      ),
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Constants.ctaColorLight,
+                      ),
+                      items: List.generate(5, (index) {
+                        final year = DateTime.now().year - index;
+                        return DropdownMenuItem(
+                          value: year,
+                          child: Text(year.toString()),
+                        );
+                      }),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedYear = value;
+                            _selectedMonth = null;
+                            _selectedMonthRecords = [];
+                          });
+                          _loadMonthlyReports();
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+        ),
+        // Main content area
+        Expanded(
+          child: _isLoading
+            ? Center(child: CircularProgressIndicator(color: Constants.ctaColorLight))
+            : _error.isNotEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red, size: 48),
+                      SizedBox(height: 16),
+                      Text(_error, style: GoogleFonts.inter(color: Colors.grey[600])),
+                      SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadMonthlyReports,
+                        child: Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : _buildMonthsGrid(isMobile),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildMonthsGrid(bool isMobile) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isMobile ? 12 : 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Monthly Reports',
+            style: GoogleFonts.inter(
+              fontSize: isMobile ? 16 : 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+          SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isMobile ? 2 : 4,
+              crossAxisSpacing: isMobile ? 8 : 16,
+              mainAxisSpacing: isMobile ? 8 : 16,
+              childAspectRatio: isMobile ? 1.2 : 1.5,
+            ),
+            itemCount: _monthlyReports.length,
+            itemBuilder: (context, index) {
+              final report = _monthlyReports[index];
+              return _buildMonthCard(report, isMobile);
+            },
+          ),
+          if (_selectedMonth != null) ...[
+            SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${_selectedMonth['month_name']} Records',
+                  style: GoogleFonts.inter(
+                    fontSize: isMobile ? 16 : 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => _generateMonthlySummaryPDF(
+                    _selectedYear,
+                    _selectedMonth['month'],
+                  ),
+                  icon: Icon(Icons.download, size: 16),
+                  label: Text(isMobile ? 'Download' : 'Download PDF'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Constants.ctaColorLight,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 12 : 16,
+                      vertical: isMobile ? 8 : 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            if (_selectedMonthRecords.isEmpty)
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Text(
+                    'No records for this month',
+                    style: GoogleFonts.inter(color: Colors.grey[500]),
+                  ),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: _selectedMonthRecords.length,
+                itemBuilder: (context, index) {
+                  final record = _selectedMonthRecords[index];
+                  return _buildRecordCard(record, isMobile);
+                },
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthCard(dynamic report, bool isMobile) {
+    final isSelected = _selectedMonth != null &&
+        _selectedMonth['month'] == report['month'];
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedMonth = report;
+        });
+        _loadMonthRecords(_selectedYear, report['month']);
+      },
+      child: Container(
+        padding: EdgeInsets.all(isMobile ? 12 : 16),
+        decoration: BoxDecoration(
+          color: isSelected ? Constants.ctaColorLight.withOpacity(0.1) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Constants.ctaColorLight : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              report['month_name'] ?? 'Month',
+              style: GoogleFonts.inter(
+                fontSize: isMobile ? 14 : 16,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Constants.ctaColorLight : Colors.grey[800],
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '${report['total_records'] ?? 0} records',
+              style: GoogleFonts.inter(
+                fontSize: isMobile ? 12 : 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecordCard(dynamic record, bool isMobile) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _getStatusColor(record['status']).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              _getStatusIcon(record['status']),
+              color: _getStatusColor(record['status']),
+              size: isMobile ? 18 : 24,
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  record['device']?['name'] ?? 'Unknown Device',
+                  style: GoogleFonts.inter(
+                    fontSize: isMobile ? 13 : 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  record['maintenance_type']?['name'] ?? 'Maintenance',
+                  style: GoogleFonts.inter(
+                    fontSize: isMobile ? 11 : 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.picture_as_pdf, color: Constants.ctaColorLight),
+            onPressed: () => _generateDetailedPDF(record['id']),
+            tooltip: 'Download PDF',
+          ),
+        ],
+      ),
+    );
   }
 }

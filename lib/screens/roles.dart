@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../widgets/compact_header.dart';
+import '../services/shared_preferences.dart';
 
 // Models
 class Role {
@@ -144,13 +145,16 @@ class AuthApiService {
       url += '?' + params.entries.map((e) => '${e.key}=${e.value}').join('&');
     }
 
+    final token = await Sharedprefs.getAuthTokenPreference();
     final response = await http.get(
       Uri.parse(url),
-      headers: {'Authorization': 'Bearer YOUR_TOKEN'},
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
-      List<dynamic> data = json.decode(response.body)['results'];
+      final body = json.decode(response.body);
+      // Handle both paginated and non-paginated responses
+      List<dynamic> data = body is List ? body : (body['results'] ?? body);
       return data.map((json) => Role.fromJson(json)).toList();
     } else {
       return [];
@@ -225,13 +229,15 @@ class AuthApiService {
       url += '?' + params.entries.map((e) => '${e.key}=${e.value}').join('&');
     }
 
+    final token = await Sharedprefs.getAuthTokenPreference();
     final response = await http.get(
       Uri.parse(url),
-      headers: {'Authorization': 'Bearer YOUR_TOKEN'},
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
-      List<dynamic> data = json.decode(response.body)['results'];
+      final body = json.decode(response.body);
+      List<dynamic> data = body is List ? body : (body['results'] ?? body);
       return data.map((json) => Permission.fromJson(json)).toList();
     } else {
       return [];
@@ -243,23 +249,27 @@ class AuthApiService {
     String url = '$baseUrl/permission-requests/';
     if (status != null) url += '?status=$status';
 
+    final token = await Sharedprefs.getAuthTokenPreference();
     final response = await http.get(
       Uri.parse(url),
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
-      List<dynamic> data = json.decode(response.body)['results'];
+      final body = json.decode(response.body);
+      List<dynamic> data = body is List ? body : (body['results'] ?? body);
       return data.map((json) => PermissionRequest.fromJson(json)).toList();
     } else {
       return [];
-      // throw Exception('Failed to load permission requests');
     }
   }
 
   static Future<bool> approveRequest(int requestId) async {
+    final token = await Sharedprefs.getAuthTokenPreference();
     final response = await http.post(
       Uri.parse('$baseUrl/permission-requests/$requestId/approve/'),
       headers: {
+        'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
     );
@@ -268,10 +278,11 @@ class AuthApiService {
   }
 
   static Future<bool> rejectRequest(int requestId, String reason) async {
+    final token = await Sharedprefs.getAuthTokenPreference();
     final response = await http.post(
       Uri.parse('$baseUrl/permission-requests/$requestId/reject/'),
       headers: {
-        'Authorization': 'Bearer YOUR_TOKEN',
+        'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
       body: json.encode({'rejection_reason': reason}),
@@ -2668,7 +2679,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
   }
 }
 
-/*
+/* Commented out - Solution 2 code not needed
 
 // Solution 2: Update Flutter to fetch available parent roles dynamically
 
@@ -2898,27 +2909,4 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
     );
   }
 }
-
-// Update AuthApiService to include a method for fetching roles
-class AuthApiService {
-  // ... existing code ...
-
-  static Future<List<Role>> getAvailableParentRoles() async {
-    try {
-      // Get roles that can be parent roles (management categories)
-      final response = await http.get(
-        Uri.parse('$baseUrl/roles/?category=executive,operations_management,technical_management,system_admin'),
-        headers: {'Authorization': 'Bearer YOUR_TOKEN'},
-      );
-
-      if (response.statusCode == 200) {
-        List<dynamic> data = json.decode(response.body)['results'];
-        return data.map((json) => Role.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load parent roles');
-      }
-    } catch (e) {
-      throw Exception('Error fetching parent roles: $e');
-    }
-  }
-}*/
+*/
