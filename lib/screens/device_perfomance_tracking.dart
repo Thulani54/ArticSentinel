@@ -1197,15 +1197,269 @@ extension DeviceAnalyticsExtensions on DeviceAnalytics {
   }
 }
 
+// Device 2 Analytics (Multi-zone temperature monitoring)
+class Device2Analytics {
+  final String deviceType;
+  final Device2TemperatureAnalytics temperatureAnalytics;
+  final Device2ZoneSummary zoneSummary;
+  final RealTimeInsights realTimeInsights;
+
+  Device2Analytics({
+    required this.deviceType,
+    required this.temperatureAnalytics,
+    required this.zoneSummary,
+    required this.realTimeInsights,
+  });
+
+  factory Device2Analytics.fromJson(Map<String, dynamic> json) {
+    return Device2Analytics(
+      deviceType: json['device_type'] ?? 'device2',
+      temperatureAnalytics: Device2TemperatureAnalytics.fromJson(json['temperature_analytics'] ?? {}),
+      zoneSummary: Device2ZoneSummary.fromJson(json['zone_summary'] ?? {}),
+      realTimeInsights: RealTimeInsights.fromJson(json['real_time_insights'] ?? {}),
+    );
+  }
+}
+
+class Device2TemperatureAnalytics {
+  final List<String> labels;
+  final List<double> zone1;
+  final List<double> zone2;
+  final List<double> zone3;
+  final List<double> zone4;
+  final List<double> zone5;
+  final List<double> zone6;
+  final List<double> zone7;
+  final List<double> zone8;
+  final List<double> minTemperature;
+  final List<double> maxTemperature;
+
+  Device2TemperatureAnalytics({
+    required this.labels,
+    required this.zone1,
+    required this.zone2,
+    required this.zone3,
+    required this.zone4,
+    required this.zone5,
+    required this.zone6,
+    required this.zone7,
+    required this.zone8,
+    required this.minTemperature,
+    required this.maxTemperature,
+  });
+
+  factory Device2TemperatureAnalytics.fromJson(Map<String, dynamic> json) {
+    return Device2TemperatureAnalytics(
+      labels: _fromDynamicList(json['labels'], (e) => e.toString()),
+      zone1: _fromDynamicList(json['zone1'], (e) => (e ?? 0.0).toDouble()),
+      zone2: _fromDynamicList(json['zone2'], (e) => (e ?? 0.0).toDouble()),
+      zone3: _fromDynamicList(json['zone3'], (e) => (e ?? 0.0).toDouble()),
+      zone4: _fromDynamicList(json['zone4'], (e) => (e ?? 0.0).toDouble()),
+      zone5: _fromDynamicList(json['zone5'], (e) => (e ?? 0.0).toDouble()),
+      zone6: _fromDynamicList(json['zone6'], (e) => (e ?? 0.0).toDouble()),
+      zone7: _fromDynamicList(json['zone7'], (e) => (e ?? 0.0).toDouble()),
+      zone8: _fromDynamicList(json['zone8'], (e) => (e ?? 0.0).toDouble()),
+      minTemperature: _fromDynamicList(json['min_temperature'], (e) => (e ?? 0.0).toDouble()),
+      maxTemperature: _fromDynamicList(json['max_temperature'], (e) => (e ?? 0.0).toDouble()),
+    );
+  }
+
+  List<double> getZone(int zoneNumber) {
+    switch (zoneNumber) {
+      case 1: return zone1;
+      case 2: return zone2;
+      case 3: return zone3;
+      case 4: return zone4;
+      case 5: return zone5;
+      case 6: return zone6;
+      case 7: return zone7;
+      case 8: return zone8;
+      default: return [];
+    }
+  }
+}
+
+class Device2ZoneSummary {
+  final List<ZoneStats> zones;
+  final int totalReadings;
+
+  Device2ZoneSummary({required this.zones, required this.totalReadings});
+
+  factory Device2ZoneSummary.fromJson(Map<String, dynamic> json) {
+    return Device2ZoneSummary(
+      zones: _fromDynamicList(json['zones'] ?? [], (e) => ZoneStats.fromJson(e)),
+      totalReadings: json['total_readings'] ?? 0,
+    );
+  }
+}
+
+class ZoneStats {
+  final int zone;
+  final double? min;
+  final double? max;
+  final double? avg;
+  final String? minTime;
+  final String? maxTime;
+
+  ZoneStats({required this.zone, this.min, this.max, this.avg, this.minTime, this.maxTime});
+
+  factory ZoneStats.fromJson(Map<String, dynamic> json) {
+    return ZoneStats(
+      zone: json['zone'] ?? 0,
+      min: json['min']?.toDouble(),
+      max: json['max']?.toDouble(),
+      avg: json['avg']?.toDouble(),
+      minTime: json['min_time'],
+      maxTime: json['max_time'],
+    );
+  }
+}
+
+// Device 3 Analytics (Ice machine monitoring)
+class Device3Analytics {
+  final String deviceType;
+  final Device3TemperatureAnalytics temperatureAnalytics;
+  final Device3WaterAnalytics waterAnalytics;
+  final Device3HarvestAnalytics harvestAnalytics;
+  final Device3Summary iceMachineSummary;
+  final RealTimeInsights realTimeInsights;
+
+  Device3Analytics({
+    required this.deviceType,
+    required this.temperatureAnalytics,
+    required this.waterAnalytics,
+    required this.harvestAnalytics,
+    required this.iceMachineSummary,
+    required this.realTimeInsights,
+  });
+
+  factory Device3Analytics.fromJson(Map<String, dynamic> json) {
+    return Device3Analytics(
+      deviceType: json['device_type'] ?? 'device3',
+      temperatureAnalytics: Device3TemperatureAnalytics.fromJson(json['temperature_analytics'] ?? {}),
+      waterAnalytics: Device3WaterAnalytics.fromJson(json['water_analytics'] ?? {}),
+      harvestAnalytics: Device3HarvestAnalytics.fromJson(json['harvest_analytics'] ?? {}),
+      iceMachineSummary: Device3Summary.fromJson(json['ice_machine_summary'] ?? {}),
+      realTimeInsights: RealTimeInsights.fromJson(json['real_time_insights'] ?? {}),
+    );
+  }
+}
+
+class Device3TemperatureAnalytics {
+  final List<String> labels;
+  final List<double> hsTemp;
+  final List<double> lsTemp;
+  final List<double> iceTemp;
+  final List<double> airTemp;
+
+  Device3TemperatureAnalytics({
+    required this.labels,
+    required this.hsTemp,
+    required this.lsTemp,
+    required this.iceTemp,
+    required this.airTemp,
+  });
+
+  factory Device3TemperatureAnalytics.fromJson(Map<String, dynamic> json) {
+    return Device3TemperatureAnalytics(
+      labels: _fromDynamicList(json['labels'], (e) => e.toString()),
+      hsTemp: _fromDynamicList(json['hs_temp'], (e) => (e ?? 0.0).toDouble()),
+      lsTemp: _fromDynamicList(json['ls_temp'], (e) => (e ?? 0.0).toDouble()),
+      iceTemp: _fromDynamicList(json['ice_temp'], (e) => (e ?? 0.0).toDouble()),
+      airTemp: _fromDynamicList(json['air_temp'], (e) => (e ?? 0.0).toDouble()),
+    );
+  }
+}
+
+class Device3WaterAnalytics {
+  final List<String> labels;
+  final List<double> waterLevel;
+
+  Device3WaterAnalytics({required this.labels, required this.waterLevel});
+
+  factory Device3WaterAnalytics.fromJson(Map<String, dynamic> json) {
+    return Device3WaterAnalytics(
+      labels: _fromDynamicList(json['labels'], (e) => e.toString()),
+      waterLevel: _fromDynamicList(json['water_level'], (e) => (e ?? 0.0).toDouble()),
+    );
+  }
+}
+
+class Device3HarvestAnalytics {
+  final List<String> labels;
+  final List<int> harvestCount;
+  final List<int> readings;
+
+  Device3HarvestAnalytics({required this.labels, required this.harvestCount, required this.readings});
+
+  factory Device3HarvestAnalytics.fromJson(Map<String, dynamic> json) {
+    return Device3HarvestAnalytics(
+      labels: _fromDynamicList(json['labels'], (e) => e.toString()),
+      harvestCount: _fromDynamicList(json['harvest_count'], (e) => (e ?? 0) as int),
+      readings: _fromDynamicList(json['readings'], (e) => (e ?? 0) as int),
+    );
+  }
+}
+
+class Device3Summary {
+  final TempStats? highSideTemp;
+  final TempStats? lowSideTemp;
+  final TempStats? iceTemp;
+  final TempStats? airTemp;
+  final TempStats? waterLevel;
+  final int totalHarvests;
+  final int totalReadings;
+
+  Device3Summary({
+    this.highSideTemp,
+    this.lowSideTemp,
+    this.iceTemp,
+    this.airTemp,
+    this.waterLevel,
+    required this.totalHarvests,
+    required this.totalReadings,
+  });
+
+  factory Device3Summary.fromJson(Map<String, dynamic> json) {
+    return Device3Summary(
+      highSideTemp: json['high_side_temp'] != null ? TempStats.fromJson(json['high_side_temp']) : null,
+      lowSideTemp: json['low_side_temp'] != null ? TempStats.fromJson(json['low_side_temp']) : null,
+      iceTemp: json['ice_temp'] != null ? TempStats.fromJson(json['ice_temp']) : null,
+      airTemp: json['air_temp'] != null ? TempStats.fromJson(json['air_temp']) : null,
+      waterLevel: json['water_level'] != null ? TempStats.fromJson(json['water_level']) : null,
+      totalHarvests: json['total_harvests'] ?? 0,
+      totalReadings: json['total_readings'] ?? 0,
+    );
+  }
+}
+
+class TempStats {
+  final double? min;
+  final double? max;
+  final double? avg;
+
+  TempStats({this.min, this.max, this.avg});
+
+  factory TempStats.fromJson(Map<String, dynamic> json) {
+    return TempStats(
+      min: json['min']?.toDouble(),
+      max: json['max']?.toDouble(),
+      avg: json['avg']?.toDouble(),
+    );
+  }
+}
+
 class Device {
   final int id;
   final String deviceId;
   final String name;
+  final String deviceType;
 
   Device({
     required this.id,
     required this.deviceId,
     required this.name,
+    required this.deviceType,
   });
 
   factory Device.fromJson(Map<String, dynamic> json) {
@@ -1213,6 +1467,7 @@ class Device {
       id: json['id'],
       deviceId: json['device_id'],
       name: json['name'],
+      deviceType: json['device_type'] ?? 'device1',
     );
   }
 }
@@ -1266,6 +1521,35 @@ class ApiService {
     }
   }
 
+  // Get raw analytics data for device-type specific parsing
+  static Future<Map<String, dynamic>> getDeviceAnalyticsRaw({
+    required String deviceId,
+    required String startDate,
+    required String endDate,
+    required int companyId,
+  }) async {
+    final queryParams = {
+      'device_id': deviceId,
+      'start_date': startDate,
+      'end_date': endDate,
+      'company_id': companyId.toString(),
+    };
+
+    final uri = Uri.parse('${baseUrl}api/device-metrics/')
+        .replace(queryParameters: queryParams);
+
+    final response = await http.get(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load analytics: ${response.body}');
+    }
+  }
+
   static Future<Map<String, dynamic>> getDeviceDetail(String deviceId) async {
     final response = await http.get(
       Uri.parse('${baseUrl}api/devices/$deviceId/'),
@@ -1297,6 +1581,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   DateTime startDate = DateTime.now().subtract(const Duration(days: 7));
   DateTime endDate = DateTime.now();
   DeviceAnalytics? analyticsData;
+  Device2Analytics? device2AnalyticsData;
+  Device3Analytics? device3AnalyticsData;
   bool isLoading = false;
   bool isInitialLoad = true;
   String? errorMessage;
@@ -1357,7 +1643,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     }
 
     try {
-      final analytics = await ApiService.getDeviceAnalytics(
+      final deviceType = selectedDevice!.deviceType;
+
+      // Get raw JSON first to determine parsing strategy
+      final rawData = await ApiService.getDeviceAnalyticsRaw(
         deviceId: selectedDevice!.deviceId,
         startDate: startDate.toIso8601String(),
         endDate: endDate.toIso8601String(),
@@ -1365,7 +1654,20 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       );
 
       setState(() {
-        analyticsData = analytics;
+        // Parse based on device type
+        if (deviceType == 'device2') {
+          device2AnalyticsData = Device2Analytics.fromJson(rawData);
+          analyticsData = null;
+          device3AnalyticsData = null;
+        } else if (deviceType == 'device3') {
+          device3AnalyticsData = Device3Analytics.fromJson(rawData);
+          analyticsData = null;
+          device2AnalyticsData = null;
+        } else {
+          analyticsData = DeviceAnalytics.fromJson(rawData);
+          device2AnalyticsData = null;
+          device3AnalyticsData = null;
+        }
         isLoading = false;
         isInitialLoad = false;
       });
@@ -1437,7 +1739,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           ],
                         ),
                       )
-                    : analyticsData != null
+                    : (analyticsData != null || device2AnalyticsData != null || device3AnalyticsData != null)
                         ? Stack(
                             children: [
                               _buildDashboard(),
@@ -3140,6 +3442,1227 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   }
 
   Widget _buildDashboard() {
+    // Route to device-specific dashboard based on device type
+    final deviceType = selectedDevice?.deviceType ?? 'device1';
+
+    if (deviceType == 'device2') {
+      return _buildDevice2Dashboard();
+    } else if (deviceType == 'device3') {
+      return _buildDevice3Dashboard();
+    } else {
+      return _buildDevice1Dashboard();
+    }
+  }
+
+  // Device 2 Dashboard (Multi-zone temperature monitoring)
+  Widget _buildDevice2Dashboard() {
+    final isMobile = _isMobile(context);
+    final padding = isMobile ? 12.0 : 16.0;
+    final spacing = isMobile ? 8.0 : 12.0;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with health score
+          _buildDevice2Header(),
+          SizedBox(height: spacing),
+
+          // Zone Temperature Grid
+          _buildDevice2ZoneGrid(),
+          SizedBox(height: spacing),
+
+          // All Zones Temperature Trends Chart
+          _buildChart('All Zones Temperature Trends', _buildDevice2AllZonesChart()),
+          SizedBox(height: spacing),
+
+          // Min/Max Temperature Range Chart
+          _buildChart('Temperature Range (Min/Max)', _buildDevice2MinMaxChart()),
+          SizedBox(height: spacing),
+
+          // Zone Comparison Bar Chart
+          _buildChart('Zone Temperature Comparison', _buildDevice2ZoneComparisonChart()),
+          SizedBox(height: spacing),
+
+          // Zone Statistics Summary
+          _buildDevice2ZoneSummary(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice2Header() {
+    final data = device2AnalyticsData;
+    final healthScore = data?.realTimeInsights.deviceHealthScore.overallScore ?? 0.0;
+    final healthGrade = data?.realTimeInsights.deviceHealthScore.healthGrade ?? 'N/A';
+    final totalReadings = data?.zoneSummary.totalReadings ?? 0;
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Multi-Zone Temperature Monitor',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text('Monitoring 8 temperature zones | $totalReadings readings',
+                    style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: _getHealthColor(healthScore).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: _getHealthColor(healthScore).withOpacity(0.3)),
+            ),
+            child: Column(
+              children: [
+                Text('Health', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
+                Text('${healthScore.toStringAsFixed(0)}%',
+                    style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: _getHealthColor(healthScore))),
+                Text(healthGrade, style: GoogleFonts.inter(fontSize: 10, color: _getHealthColor(healthScore))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getHealthColor(double score) {
+    if (score >= 80) return Colors.green;
+    if (score >= 60) return Colors.orange;
+    return Colors.red;
+  }
+
+  Widget _buildDevice2ZoneGrid() {
+    final isMobile = _isMobile(context);
+    final data = device2AnalyticsData;
+
+    List<Map<String, dynamic>> zones = [];
+    if (data != null) {
+      final tempData = data.temperatureAnalytics;
+      for (int i = 1; i <= 8; i++) {
+        final zoneValues = tempData.getZone(i);
+        final currentTemp = zoneValues.isNotEmpty ? zoneValues.last : 0.0;
+        final zoneStat = data.zoneSummary.zones.length >= i ? data.zoneSummary.zones[i - 1] : null;
+        zones.add({
+          'zone': i,
+          'name': 'Zone $i',
+          'current': currentTemp,
+          'avg': zoneStat?.avg ?? 0.0,
+          'min': zoneStat?.min ?? 0.0,
+          'max': zoneStat?.max ?? 0.0,
+          'minTime': zoneStat?.minTime,
+          'maxTime': zoneStat?.maxTime,
+        });
+      }
+    } else {
+      for (int i = 1; i <= 8; i++) {
+        zones.add({'zone': i, 'name': 'Zone $i', 'current': 0.0, 'avg': 0.0, 'min': 0.0, 'max': 0.0, 'minTime': null, 'maxTime': null});
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Current Zone Temperatures', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+          SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isMobile ? 2 : 4,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: isMobile ? 1.0 : 1.1,
+            ),
+            itemCount: 8,
+            itemBuilder: (context, index) => _buildZoneCard(zones[index]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatZoneTimestamp(String? isoTimestamp) {
+    if (isoTimestamp == null) return '--:--';
+    try {
+      final dt = DateTime.parse(isoTimestamp);
+      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return '--:--';
+    }
+  }
+
+  Widget _buildZoneCard(Map<String, dynamic> zone) {
+    final temp = zone['current'] as double;
+    final minTemp = zone['min'] as double;
+    final maxTemp = zone['max'] as double;
+    final minTime = zone['minTime'] as String?;
+    final maxTime = zone['maxTime'] as String?;
+    final isNormal = temp < 5 && temp > -25;
+    final color = isNormal ? Constants.ctaColorLight : Colors.red;
+
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(zone['name'], style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+              Icon(isNormal ? Icons.check_circle : Icons.warning, color: color, size: 12),
+            ],
+          ),
+          SizedBox(height: 2),
+          Text('${temp.toStringAsFixed(1)}°C',
+              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+          SizedBox(height: 4),
+          // Min/Max row with timestamps
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Column(
+                children: [
+                  Text("Min", style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                  Text("${minTemp.toStringAsFixed(1)}°",
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.blue)),
+                  Text(_formatZoneTimestamp(minTime),
+                      style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[400])),
+                ],
+              ),
+              Container(
+                height: 30,
+                width: 1,
+                margin: EdgeInsets.symmetric(horizontal: 8),
+                color: Colors.grey.shade300,
+              ),
+              Column(
+                children: [
+                  Text("Max", style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                  Text("${maxTemp.toStringAsFixed(1)}°",
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.red)),
+                  Text(_formatZoneTimestamp(maxTime),
+                      style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[400])),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice2AllZonesChart() {
+    final data = device2AnalyticsData;
+    if (data == null || data.temperatureAnalytics.labels.isEmpty) {
+      return Container(
+        height: 300,
+        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final tempData = data.temperatureAnalytics;
+    final labels = tempData.labels;
+
+    // Zone colors
+    final zoneColors = [
+      Colors.blue, Colors.green, Colors.orange, Colors.purple,
+      Colors.red, Colors.teal, Colors.pink, Colors.indigo,
+    ];
+
+    List<LineChartBarData> lineBars = [];
+    for (int i = 1; i <= 8; i++) {
+      final zoneValues = tempData.getZone(i);
+      if (zoneValues.isNotEmpty) {
+        lineBars.add(LineChartBarData(
+          spots: List.generate(zoneValues.length, (index) => FlSpot(index.toDouble(), zoneValues[index])),
+          isCurved: true,
+          color: zoneColors[i - 1],
+          barWidth: 2,
+          dotData: FlDotData(show: false),
+          belowBarData: BarAreaData(show: false),
+        ));
+      }
+    }
+
+    return Container(
+      height: 300,
+      padding: EdgeInsets.only(right: 16, top: 16),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 5,
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < labels.length) {
+                    final label = labels[index];
+                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    return Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    );
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
+                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: false),
+          lineBarsData: lineBars,
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (spots) => spots.map((spot) =>
+                LineTooltipItem('Zone ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(1)}°C',
+                    TextStyle(color: zoneColors[spot.barIndex], fontSize: 12))).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevice2MinMaxChart() {
+    final data = device2AnalyticsData;
+    if (data == null || data.temperatureAnalytics.labels.isEmpty) {
+      return Container(
+        height: 250,
+        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final tempData = data.temperatureAnalytics;
+    final labels = tempData.labels;
+    final minTemp = tempData.minTemperature;
+    final maxTemp = tempData.maxTemperature;
+
+    return Container(
+      height: 250,
+      padding: EdgeInsets.only(right: 16, top: 16),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 5,
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < labels.length) {
+                    final label = labels[index];
+                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    return Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    );
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
+                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: false),
+          lineBarsData: [
+            LineChartBarData(
+              spots: List.generate(maxTemp.length, (i) => FlSpot(i.toDouble(), maxTemp[i])),
+              isCurved: true,
+              color: Colors.red,
+              barWidth: 2,
+              dotData: FlDotData(show: false),
+              belowBarData: BarAreaData(show: true, color: Colors.red.withOpacity(0.1)),
+            ),
+            LineChartBarData(
+              spots: List.generate(minTemp.length, (i) => FlSpot(i.toDouble(), minTemp[i])),
+              isCurved: true,
+              color: Colors.blue,
+              barWidth: 2,
+              dotData: FlDotData(show: false),
+              belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.1)),
+            ),
+          ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (spots) => spots.map((spot) =>
+                LineTooltipItem(
+                  spot.barIndex == 0 ? 'Max: ${spot.y.toStringAsFixed(1)}°C' : 'Min: ${spot.y.toStringAsFixed(1)}°C',
+                  TextStyle(color: spot.barIndex == 0 ? Colors.red : Colors.blue, fontSize: 12),
+                )).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevice2ZoneComparisonChart() {
+    final data = device2AnalyticsData;
+    if (data == null || data.zoneSummary.zones.isEmpty) {
+      return Container(
+        height: 250,
+        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final zones = data.zoneSummary.zones;
+    final zoneColors = [
+      Colors.blue, Colors.green, Colors.orange, Colors.purple,
+      Colors.red, Colors.teal, Colors.pink, Colors.indigo,
+    ];
+
+    return Container(
+      height: 250,
+      padding: EdgeInsets.only(right: 16, top: 16, left: 8),
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: zones.map((z) => z.max ?? 0.0).reduce((a, b) => a > b ? a : b) + 5,
+          minY: zones.map((z) => z.min ?? 0.0).reduce((a, b) => a < b ? a : b) - 5,
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                final zone = zones[groupIndex];
+                return BarTooltipItem(
+                  'Zone ${zone.zone}\nAvg: ${zone.avg?.toStringAsFixed(1)}°C\nMin: ${zone.min?.toStringAsFixed(1)}°C\nMax: ${zone.max?.toStringAsFixed(1)}°C',
+                  GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                );
+              },
+            ),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < zones.length) {
+                    return Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text('Z${zones[index].zone}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                    );
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
+                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 5,
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          ),
+          borderData: FlBorderData(show: false),
+          barGroups: List.generate(zones.length, (index) {
+            final zone = zones[index];
+            return BarChartGroupData(
+              x: index,
+              barRods: [
+                BarChartRodData(
+                  toY: zone.avg ?? 0.0,
+                  color: zoneColors[index % zoneColors.length],
+                  width: 20,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                ),
+              ],
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevice2ZoneSummary() {
+    final data = device2AnalyticsData;
+    final isMobile = _isMobile(context);
+
+    if (data == null || data.zoneSummary.zones.isEmpty) {
+      return Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+        ),
+        child: Center(child: Text('No zone statistics available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final zones = data.zoneSummary.zones;
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Zone Statistics', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+              Text('${data.zoneSummary.totalReadings} readings', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
+            ],
+          ),
+          SizedBox(height: 16),
+          // Table header
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                Expanded(flex: 2, child: Text('Zone', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(flex: 2, child: Text('Min', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(flex: 2, child: Text('Max', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(flex: 2, child: Text('Avg', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(flex: 2, child: Text('Status', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+              ],
+            ),
+          ),
+          SizedBox(height: 8),
+          ...zones.map((zone) {
+            final isNormal = (zone.avg ?? 0) < 5 && (zone.avg ?? 0) > -25;
+            return Container(
+              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(flex: 2, child: Text('Zone ${zone.zone}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500))),
+                  Expanded(flex: 2, child: Text('${zone.min?.toStringAsFixed(1) ?? '--'}°C', style: GoogleFonts.inter(fontSize: 12, color: Colors.blue))),
+                  Expanded(flex: 2, child: Text('${zone.max?.toStringAsFixed(1) ?? '--'}°C', style: GoogleFonts.inter(fontSize: 12, color: Colors.red))),
+                  Expanded(flex: 2, child: Text('${zone.avg?.toStringAsFixed(1) ?? '--'}°C', style: GoogleFonts.inter(fontSize: 12))),
+                  Expanded(flex: 2, child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isNormal ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(isNormal ? 'OK' : 'Alert', style: GoogleFonts.inter(fontSize: 10, color: isNormal ? Colors.green : Colors.red, fontWeight: FontWeight.w500)),
+                  )),
+                ],
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  // Device 3 Dashboard (Ice machine monitoring)
+  Widget _buildDevice3Dashboard() {
+    final isMobile = _isMobile(context);
+    final padding = isMobile ? 12.0 : 16.0;
+    final spacing = isMobile ? 8.0 : 12.0;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with health score
+          _buildDevice3Header(),
+          SizedBox(height: spacing),
+
+          // Ice Machine Metrics Grid
+          _buildDevice3MetricsGrid(),
+          SizedBox(height: spacing),
+
+          // All Temperatures Chart
+          _buildChart('Temperature Trends', _buildDevice3TemperatureChart()),
+          SizedBox(height: spacing),
+
+          // High Side vs Low Side Comparison
+          _buildChart('Refrigerant Pressure Temps (HS vs LS)', _buildDevice3PressureTempsChart()),
+          SizedBox(height: spacing),
+
+          // Water Level Chart
+          _buildChart('Water Level Trends', _buildDevice3WaterLevelChart()),
+          SizedBox(height: spacing),
+
+          // Harvest Activity Chart
+          _buildChart('Harvest Cycles', _buildDevice3HarvestChart()),
+          SizedBox(height: spacing),
+
+          // Summary Statistics
+          _buildDevice3SummaryStats(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice3Header() {
+    final data = device3AnalyticsData;
+    final healthScore = data?.realTimeInsights.deviceHealthScore.overallScore ?? 0.0;
+    final healthGrade = data?.realTimeInsights.deviceHealthScore.healthGrade ?? 'N/A';
+    final totalReadings = data?.iceMachineSummary.totalReadings ?? 0;
+    final totalHarvests = data?.iceMachineSummary.totalHarvests ?? 0;
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Ice Machine Monitor',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text('$totalReadings readings | $totalHarvests harvest cycles',
+                    style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: _getHealthColor(healthScore).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: _getHealthColor(healthScore).withOpacity(0.3)),
+            ),
+            child: Column(
+              children: [
+                Text('Health', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
+                Text('${healthScore.toStringAsFixed(0)}%',
+                    style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: _getHealthColor(healthScore))),
+                Text(healthGrade, style: GoogleFonts.inter(fontSize: 10, color: _getHealthColor(healthScore))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice3MetricsGrid() {
+    final isMobile = _isMobile(context);
+    final data = device3AnalyticsData;
+    final summary = data?.iceMachineSummary;
+    final tempData = data?.temperatureAnalytics;
+    final waterData = data?.waterAnalytics;
+
+    // Get current values (last in series)
+    final iceTemp = tempData?.iceTemp.isNotEmpty == true ? tempData!.iceTemp.last : 0.0;
+    final hsTemp = tempData?.hsTemp.isNotEmpty == true ? tempData!.hsTemp.last : 0.0;
+    final lsTemp = tempData?.lsTemp.isNotEmpty == true ? tempData!.lsTemp.last : 0.0;
+    final airTemp = tempData?.airTemp.isNotEmpty == true ? tempData!.airTemp.last : 0.0;
+    final waterLevel = waterData?.waterLevel.isNotEmpty == true ? waterData!.waterLevel.last : 0.0;
+    final totalHarvests = summary?.totalHarvests ?? 0;
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Current Readings', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+          SizedBox(height: 16),
+          GridView.count(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            crossAxisCount: isMobile ? 2 : 3,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.4,
+            children: [
+              _buildDevice3MetricCard('Ice Temp', '${iceTemp.toStringAsFixed(1)}°C', Icons.ac_unit, Colors.blue, summary?.iceTemp),
+              _buildDevice3MetricCard('High Side', '${hsTemp.toStringAsFixed(1)}°C', Icons.arrow_upward, Colors.orange, summary?.highSideTemp),
+              _buildDevice3MetricCard('Low Side', '${lsTemp.toStringAsFixed(1)}°C', Icons.arrow_downward, Colors.cyan, summary?.lowSideTemp),
+              _buildDevice3MetricCard('Air Temp', '${airTemp.toStringAsFixed(1)}°C', Icons.air, Colors.green, summary?.airTemp),
+              _buildDevice3MetricCard('Water Level', '${waterLevel.toStringAsFixed(1)}%', Icons.water_drop, Colors.indigo, summary?.waterLevel),
+              _buildDevice3MetricCard('Harvests', '$totalHarvests', Icons.cyclone, Colors.purple, null),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice3MetricCard(String title, String value, IconData icon, Color color, TempStats? stats) {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: color, size: 20),
+              if (stats != null)
+                Text('Avg: ${stats.avg?.toStringAsFixed(1) ?? '--'}',
+                    style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[600])),
+            ],
+          ),
+          SizedBox(height: 4),
+          Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+          Text(title, style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice3TemperatureChart() {
+    final data = device3AnalyticsData;
+    if (data == null || data.temperatureAnalytics.labels.isEmpty) {
+      return Container(
+        height: 300,
+        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final tempData = data.temperatureAnalytics;
+    final labels = tempData.labels;
+
+    return Container(
+      height: 300,
+      padding: EdgeInsets.only(right: 16, top: 16),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 10,
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < labels.length) {
+                    final label = labels[index];
+                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    return Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    );
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
+                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: false),
+          lineBarsData: [
+            LineChartBarData(
+              spots: List.generate(tempData.hsTemp.length, (i) => FlSpot(i.toDouble(), tempData.hsTemp[i])),
+              isCurved: true,
+              color: Colors.orange,
+              barWidth: 2,
+              dotData: FlDotData(show: false),
+            ),
+            LineChartBarData(
+              spots: List.generate(tempData.lsTemp.length, (i) => FlSpot(i.toDouble(), tempData.lsTemp[i])),
+              isCurved: true,
+              color: Colors.cyan,
+              barWidth: 2,
+              dotData: FlDotData(show: false),
+            ),
+            LineChartBarData(
+              spots: List.generate(tempData.iceTemp.length, (i) => FlSpot(i.toDouble(), tempData.iceTemp[i])),
+              isCurved: true,
+              color: Colors.blue,
+              barWidth: 2,
+              dotData: FlDotData(show: false),
+            ),
+            LineChartBarData(
+              spots: List.generate(tempData.airTemp.length, (i) => FlSpot(i.toDouble(), tempData.airTemp[i])),
+              isCurved: true,
+              color: Colors.green,
+              barWidth: 2,
+              dotData: FlDotData(show: false),
+            ),
+          ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (spots) {
+                final labels = ['High Side', 'Low Side', 'Ice', 'Air'];
+                final colors = [Colors.orange, Colors.cyan, Colors.blue, Colors.green];
+                return spots.map((spot) =>
+                  LineTooltipItem('${labels[spot.barIndex]}: ${spot.y.toStringAsFixed(1)}°C',
+                      TextStyle(color: colors[spot.barIndex], fontSize: 11))).toList();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevice3PressureTempsChart() {
+    final data = device3AnalyticsData;
+    if (data == null || data.temperatureAnalytics.labels.isEmpty) {
+      return Container(
+        height: 250,
+        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final tempData = data.temperatureAnalytics;
+    final labels = tempData.labels;
+
+    return Container(
+      height: 250,
+      padding: EdgeInsets.only(right: 16, top: 16),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 10,
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < labels.length) {
+                    final label = labels[index];
+                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    return Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    );
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
+                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: false),
+          lineBarsData: [
+            LineChartBarData(
+              spots: List.generate(tempData.hsTemp.length, (i) => FlSpot(i.toDouble(), tempData.hsTemp[i])),
+              isCurved: true,
+              color: Colors.orange,
+              barWidth: 3,
+              dotData: FlDotData(show: false),
+              belowBarData: BarAreaData(show: true, color: Colors.orange.withOpacity(0.1)),
+            ),
+            LineChartBarData(
+              spots: List.generate(tempData.lsTemp.length, (i) => FlSpot(i.toDouble(), tempData.lsTemp[i])),
+              isCurved: true,
+              color: Colors.cyan,
+              barWidth: 3,
+              dotData: FlDotData(show: false),
+              belowBarData: BarAreaData(show: true, color: Colors.cyan.withOpacity(0.1)),
+            ),
+          ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (spots) => spots.map((spot) =>
+                LineTooltipItem(
+                  spot.barIndex == 0 ? 'High Side: ${spot.y.toStringAsFixed(1)}°C' : 'Low Side: ${spot.y.toStringAsFixed(1)}°C',
+                  TextStyle(color: spot.barIndex == 0 ? Colors.orange : Colors.cyan, fontSize: 12),
+                )).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevice3WaterLevelChart() {
+    final data = device3AnalyticsData;
+    if (data == null || data.waterAnalytics.labels.isEmpty) {
+      return Container(
+        height: 200,
+        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final waterData = data.waterAnalytics;
+    final labels = waterData.labels;
+    final levels = waterData.waterLevel;
+
+    return Container(
+      height: 200,
+      padding: EdgeInsets.only(right: 16, top: 16),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 20,
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < labels.length) {
+                    final label = labels[index];
+                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    return Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    );
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) => Text('${value.toInt()}%',
+                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: false),
+          minY: 0,
+          maxY: 100,
+          lineBarsData: [
+            LineChartBarData(
+              spots: List.generate(levels.length, (i) => FlSpot(i.toDouble(), levels[i])),
+              isCurved: true,
+              color: Colors.indigo,
+              barWidth: 3,
+              dotData: FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  colors: [Colors.indigo.withOpacity(0.3), Colors.indigo.withOpacity(0.05)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (spots) => spots.map((spot) =>
+                LineTooltipItem('Water Level: ${spot.y.toStringAsFixed(1)}%',
+                    TextStyle(color: Colors.indigo, fontSize: 12))).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevice3HarvestChart() {
+    final data = device3AnalyticsData;
+    if (data == null || data.harvestAnalytics.labels.isEmpty) {
+      return Container(
+        height: 200,
+        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final harvestData = data.harvestAnalytics;
+    final labels = harvestData.labels;
+    final counts = harvestData.harvestCount;
+
+    return Container(
+      height: 200,
+      padding: EdgeInsets.only(right: 16, top: 16, left: 8),
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: (counts.isNotEmpty ? counts.reduce((a, b) => a > b ? a : b).toDouble() : 10) + 2,
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                final label = groupIndex < labels.length ? labels[groupIndex] : '';
+                return BarTooltipItem(
+                  '$label\n${rod.toY.toInt()} harvests',
+                  GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                );
+              },
+            ),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < labels.length) {
+                    final label = labels[index];
+                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    return Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(time, style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[600])),
+                    );
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) => Text('${value.toInt()}',
+                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 2,
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          ),
+          borderData: FlBorderData(show: false),
+          barGroups: List.generate(counts.length, (index) {
+            return BarChartGroupData(
+              x: index,
+              barRods: [
+                BarChartRodData(
+                  toY: counts[index].toDouble(),
+                  color: Colors.purple,
+                  width: labels.length > 24 ? 6 : 12,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                ),
+              ],
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevice3SummaryStats() {
+    final data = device3AnalyticsData;
+    final isMobile = _isMobile(context);
+
+    if (data == null) {
+      return Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+        ),
+        child: Center(child: Text('No summary available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final summary = data.iceMachineSummary;
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Statistics Summary', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+              Text('${summary.totalReadings} readings', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
+            ],
+          ),
+          SizedBox(height: 16),
+          // Table header
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                Expanded(flex: 3, child: Text('Metric', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(flex: 2, child: Text('Min', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(flex: 2, child: Text('Max', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(flex: 2, child: Text('Avg', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+              ],
+            ),
+          ),
+          SizedBox(height: 8),
+          _buildDevice3StatRow('High Side Temp', summary.highSideTemp, Colors.orange),
+          _buildDevice3StatRow('Low Side Temp', summary.lowSideTemp, Colors.cyan),
+          _buildDevice3StatRow('Ice Temp', summary.iceTemp, Colors.blue),
+          _buildDevice3StatRow('Air Temp', summary.airTemp, Colors.green),
+          _buildDevice3StatRow('Water Level', summary.waterLevel, Colors.indigo, unit: '%'),
+          SizedBox(height: 12),
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.purple.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.cyclone, color: Colors.purple, size: 20),
+                SizedBox(width: 8),
+                Text('Total Harvest Cycles: ', style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700])),
+                Text('${summary.totalHarvests}', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.purple)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice3StatRow(String name, TempStats? stats, Color color, {String unit = '°C'}) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: Row(
+        children: [
+          Expanded(flex: 3, child: Row(
+            children: [
+              Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+              SizedBox(width: 8),
+              Text(name, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500)),
+            ],
+          )),
+          Expanded(flex: 2, child: Text('${stats?.min?.toStringAsFixed(1) ?? '--'}$unit', style: GoogleFonts.inter(fontSize: 12, color: Colors.blue))),
+          Expanded(flex: 2, child: Text('${stats?.max?.toStringAsFixed(1) ?? '--'}$unit', style: GoogleFonts.inter(fontSize: 12, color: Colors.red))),
+          Expanded(flex: 2, child: Text('${stats?.avg?.toStringAsFixed(1) ?? '--'}$unit', style: GoogleFonts.inter(fontSize: 12))),
+        ],
+      ),
+    );
+  }
+
+  // Device 1 Dashboard (Original refrigeration unit dashboard)
+  Widget _buildDevice1Dashboard() {
     final isMobile = _isMobile(context);
     final padding = isMobile ? 12.0 : 16.0;
     final spacing = isMobile ? 8.0 : 12.0;

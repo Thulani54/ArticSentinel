@@ -767,88 +767,9 @@ class _ReportsState extends State<Reports> {
     return MediaQuery.of(context).size.width < 768;
   }
 
-  final List<ScheduledReport> scheduledReports = [
-    ScheduledReport(
-      id: '1',
-      name: 'Daily Device Performance',
-      frequency: 'Daily at 8:00 AM',
-      nextRun: 'Tomorrow, 8:00 AM',
-      format: 'PDF',
-      isActive: true,
-      icon: FontAwesomeIcons.chartLine,
-      color: Color(0xFF4A90E2),
-    ),
-    ScheduledReport(
-      id: '2',
-      name: 'Weekly Temperature Summary',
-      frequency: 'Weekly on Monday',
-      nextRun: 'Monday, 8:00 AM',
-      format: 'Excel',
-      isActive: true,
-      icon: FontAwesomeIcons.temperatureHalf,
-      color: Color(0xFFE94B3C),
-    ),
-    ScheduledReport(
-      id: '3',
-      name: 'Monthly Compliance Report',
-      frequency: 'Monthly on 1st',
-      nextRun: 'Jan 1, 2025',
-      format: 'PDF',
-      isActive: true,
-      icon: FontAwesomeIcons.shieldHalved,
-      color: Color(0xFF9B59B6),
-    ),
-    ScheduledReport(
-      id: '4',
-      name: 'Weekly Maintenance Summary',
-      frequency: 'Weekly on Friday',
-      nextRun: 'Friday, 5:00 PM',
-      format: 'PDF',
-      isActive: false,
-      icon: FontAwesomeIcons.screwdriverWrench,
-      color: Color(0xFF7B68EE),
-    ),
-    ScheduledReport(
-      id: '5',
-      name: 'Daily Alerts Report',
-      frequency: 'Daily at 6:00 PM',
-      nextRun: 'Today, 6:00 PM',
-      format: 'Excel',
-      isActive: true,
-      icon: FontAwesomeIcons.bellConcierge,
-      color: Color(0xFFF5A623),
-    ),
-    ScheduledReport(
-      id: '6',
-      name: 'Monthly Energy Report',
-      frequency: 'Monthly on 15th',
-      nextRun: 'Jan 15, 2025',
-      format: 'PDF',
-      isActive: true,
-      icon: FontAwesomeIcons.bolt,
-      color: Color(0xFF50C878),
-    ),
-    ScheduledReport(
-      id: '7',
-      name: 'Bi-Weekly Device Health',
-      frequency: 'Every 2 weeks',
-      nextRun: 'Dec 28, 2024',
-      format: 'Excel',
-      isActive: false,
-      icon: FontAwesomeIcons.heartPulse,
-      color: Color(0xFFFF6B6B),
-    ),
-    ScheduledReport(
-      id: '8',
-      name: 'Quarterly Analytics',
-      frequency: 'Quarterly',
-      nextRun: 'Jan 1, 2025',
-      format: 'PDF',
-      isActive: true,
-      icon: FontAwesomeIcons.chartPie,
-      color: Color(0xFF4ECDC4),
-    ),
-  ];
+  // Scheduled reports - empty list since feature is not yet implemented on backend
+  // Users can create reports manually from the Generate Reports section
+  final List<ScheduledReport> scheduledReports = [];
 
   @override
   void initState() {
@@ -1063,272 +984,12 @@ class _ReportsState extends State<Reports> {
     ),
   ];*/
 
-  final List<GeneratedReport> generatedReports = [
-    GeneratedReport(
-      id: '1',
-      name: 'Device Performance Report',
-      generatedBy: 'System',
-      generatedDate: 'Dec 14, 2024 - 8:00 AM',
-      status: 'Ready',
-      fileSize: '2.4 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.chartLine,
-      color: Color(0xFF4A90E2),
-    ),
-    GeneratedReport(
-      id: '2',
-      name: 'Weekly Temperature Summary',
-      generatedBy: 'John Doe',
-      generatedDate: 'Dec 13, 2024 - 9:30 AM',
-      status: 'Ready',
-      fileSize: '1.7 MB',
-      format: 'Excel',
-      icon: FontAwesomeIcons.temperatureHalf,
-      color: Color(0xFFE94B3C),
-    ),
-    GeneratedReport(
-      id: '3',
-      name: 'Monthly Compliance Report',
-      generatedBy: 'System',
-      generatedDate: 'Dec 12, 2024 - 8:00 AM',
-      status: 'Ready',
-      fileSize: '3.2 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.shieldHalved,
-      color: Color(0xFF9B59B6),
-    ),
-    GeneratedReport(
-      id: '4',
-      name: 'Alerts Summary',
-      generatedBy: 'Jane Smith',
-      generatedDate: 'Dec 11, 2024 - 6:00 PM',
-      status: 'Ready',
-      fileSize: '1.1 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.bellConcierge,
-      color: Color(0xFFF5A623),
-    ),
-    GeneratedReport(
-      id: '5',
-      name: 'Energy Consumption Report',
-      generatedBy: 'Mike Wilson',
-      generatedDate: 'Dec 10, 2024 - 3:15 PM',
-      status: 'Ready',
-      fileSize: '2.0 MB',
-      format: 'Excel',
-      icon: FontAwesomeIcons.bolt,
-      color: Color(0xFF50C878),
-    ),
-    GeneratedReport(
-      id: '6',
-      name: 'Maintenance History',
-      generatedBy: 'Sarah Johnson',
-      generatedDate: 'Dec 9, 2024 - 11:45 AM',
-      status: 'Ready',
-      fileSize: '1.8 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.screwdriverWrench,
-      color: Color(0xFF7B68EE),
-    ),
-    GeneratedReport(
-      id: '7',
-      name: 'Device Performance Report',
-      generatedBy: 'System',
-      generatedDate: 'Dec 8, 2024 - 8:00 AM',
-      status: 'Ready',
-      fileSize: '2.3 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.chartLine,
-      color: Color(0xFF4A90E2),
-    ),
-    GeneratedReport(
-      id: '8',
-      name: 'Temperature Analytics',
-      generatedBy: 'John Doe',
-      generatedDate: 'Dec 7, 2024 - 2:30 PM',
-      status: 'Ready',
-      fileSize: '1.9 MB',
-      format: 'Excel',
-      icon: FontAwesomeIcons.temperatureHalf,
-      color: Color(0xFFE94B3C),
-    ),
-    GeneratedReport(
-      id: '9',
-      name: 'Alerts Summary',
-      generatedBy: 'System',
-      generatedDate: 'Dec 6, 2024 - 6:00 PM',
-      status: 'Ready',
-      fileSize: '1.2 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.bellConcierge,
-      color: Color(0xFFF5A623),
-    ),
-    GeneratedReport(
-      id: '10',
-      name: 'Device Health Report',
-      generatedBy: 'Jane Smith',
-      generatedDate: 'Dec 5, 2024 - 10:00 AM',
-      status: 'Ready',
-      fileSize: '2.5 MB',
-      format: 'Excel',
-      icon: FontAwesomeIcons.heartPulse,
-      color: Color(0xFFFF6B6B),
-    ),
-    GeneratedReport(
-      id: '11',
-      name: 'Energy Consumption Report',
-      generatedBy: 'Mike Wilson',
-      generatedDate: 'Dec 4, 2024 - 1:20 PM',
-      status: 'Ready',
-      fileSize: '2.1 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.bolt,
-      color: Color(0xFF50C878),
-    ),
-    GeneratedReport(
-      id: '12',
-      name: 'Compliance Report',
-      generatedBy: 'System',
-      generatedDate: 'Dec 3, 2024 - 8:00 AM',
-      status: 'Ready',
-      fileSize: '3.0 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.shieldHalved,
-      color: Color(0xFF9B59B6),
-    ),
-    GeneratedReport(
-      id: '13',
-      name: 'Maintenance History',
-      generatedBy: 'Sarah Johnson',
-      generatedDate: 'Dec 2, 2024 - 4:45 PM',
-      status: 'Ready',
-      fileSize: '1.7 MB',
-      format: 'Excel',
-      icon: FontAwesomeIcons.screwdriverWrench,
-      color: Color(0xFF7B68EE),
-    ),
-    GeneratedReport(
-      id: '14',
-      name: 'Device Performance Report',
-      generatedBy: 'System',
-      generatedDate: 'Dec 1, 2024 - 8:00 AM',
-      status: 'Ready',
-      fileSize: '2.4 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.chartLine,
-      color: Color(0xFF4A90E2),
-    ),
-    GeneratedReport(
-      id: '15',
-      name: 'Weekly Temperature Summary',
-      generatedBy: 'John Doe',
-      generatedDate: 'Nov 30, 2024 - 9:15 AM',
-      status: 'Ready',
-      fileSize: '1.6 MB',
-      format: 'Excel',
-      icon: FontAwesomeIcons.temperatureHalf,
-      color: Color(0xFFE94B3C),
-    ),
-    GeneratedReport(
-      id: '16',
-      name: 'Quarterly Analytics',
-      generatedBy: 'Mike Wilson',
-      generatedDate: 'Nov 29, 2024 - 3:00 PM',
-      status: 'Ready',
-      fileSize: '4.2 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.chartPie,
-      color: Color(0xFF4ECDC4),
-    ),
-    GeneratedReport(
-      id: '17',
-      name: 'Alerts Summary',
-      generatedBy: 'System',
-      generatedDate: 'Nov 28, 2024 - 6:00 PM',
-      status: 'Ready',
-      fileSize: '1.3 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.bellConcierge,
-      color: Color(0xFFF5A623),
-    ),
-    GeneratedReport(
-      id: '18',
-      name: 'Energy Consumption Report',
-      generatedBy: 'Jane Smith',
-      generatedDate: 'Nov 27, 2024 - 11:30 AM',
-      status: 'Ready',
-      fileSize: '2.2 MB',
-      format: 'Excel',
-      icon: FontAwesomeIcons.bolt,
-      color: Color(0xFF50C878),
-    ),
-    GeneratedReport(
-      id: '19',
-      name: 'Device Health Report',
-      generatedBy: 'Sarah Johnson',
-      generatedDate: 'Nov 26, 2024 - 2:15 PM',
-      status: 'Processing',
-      fileSize: '-',
-      format: 'PDF',
-      icon: FontAwesomeIcons.heartPulse,
-      color: Color(0xFFFF6B6B),
-    ),
-    GeneratedReport(
-      id: '20',
-      name: 'Maintenance History',
-      generatedBy: 'Mike Wilson',
-      generatedDate: 'Nov 25, 2024 - 10:45 AM',
-      status: 'Ready',
-      fileSize: '1.9 MB',
-      format: 'Excel',
-      icon: FontAwesomeIcons.screwdriverWrench,
-      color: Color(0xFF7B68EE),
-    ),
-    GeneratedReport(
-      id: '21',
-      name: 'Device Performance Report',
-      generatedBy: 'System',
-      generatedDate: 'Nov 24, 2024 - 8:00 AM',
-      status: 'Ready',
-      fileSize: '2.3 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.chartLine,
-      color: Color(0xFF4A90E2),
-    ),
-    GeneratedReport(
-      id: '22',
-      name: 'Temperature Analytics',
-      generatedBy: 'John Doe',
-      generatedDate: 'Nov 23, 2024 - 1:00 PM',
-      status: 'Ready',
-      fileSize: '1.8 MB',
-      format: 'Excel',
-      icon: FontAwesomeIcons.temperatureHalf,
-      color: Color(0xFFE94B3C),
-    ),
-    GeneratedReport(
-      id: '23',
-      name: 'Compliance Report',
-      generatedBy: 'System',
-      generatedDate: 'Nov 22, 2024 - 8:00 AM',
-      status: 'Ready',
-      fileSize: '3.1 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.shieldHalved,
-      color: Color(0xFF9B59B6),
-    ),
-    GeneratedReport(
-      id: '24',
-      name: 'Alerts Summary',
-      generatedBy: 'Jane Smith',
-      generatedDate: 'Nov 21, 2024 - 5:30 PM',
-      status: 'Ready',
-      fileSize: '1.0 MB',
-      format: 'PDF',
-      icon: FontAwesomeIcons.bellConcierge,
-      color: Color(0xFFF5A623),
-    ),
-  ];
+  // Generated reports now come from the API via downloadedReports
+  // This getter provides backward compatibility with existing code
+  List<dynamic> get generatedReports => downloadedReports;
+
+  // Legacy generated reports list removed - now using API data via downloadedReports
+  // The generatedReports getter above provides backward compatibility
 
   final List<ReportType> reportTypes = [
     ReportType(
@@ -4147,13 +3808,52 @@ class _ReportsState extends State<Reports> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          int totalPages = (generatedReports.length / itemsPerPage).ceil();
+          int totalPages = (downloadedReports.length / itemsPerPage).ceil();
           int startIndex = generatedCurrentPage * itemsPerPage;
-          int endIndex = (startIndex + itemsPerPage < generatedReports.length)
+          int endIndex = (startIndex + itemsPerPage < downloadedReports.length)
               ? startIndex + itemsPerPage
-              : generatedReports.length;
-          List<GeneratedReport> currentPageReports =
-              generatedReports.sublist(startIndex, endIndex);
+              : downloadedReports.length;
+          var currentPageReports =
+              downloadedReports.sublist(startIndex, endIndex);
+
+          // Helper function to get icon by report type
+          IconData _getReportIcon(String reportType) {
+            switch (reportType) {
+              case 'device_performance':
+                return FontAwesomeIcons.chartLine;
+              case 'temperature_analysis':
+                return FontAwesomeIcons.temperatureHalf;
+              case 'alerts_summary':
+                return FontAwesomeIcons.bellConcierge;
+              case 'maintenance':
+                return FontAwesomeIcons.screwdriverWrench;
+              case 'energy_consumption':
+                return FontAwesomeIcons.bolt;
+              case 'compliance':
+                return FontAwesomeIcons.shieldHalved;
+              default:
+                return FontAwesomeIcons.fileLines;
+            }
+          }
+
+          Color _getReportColor(String reportType) {
+            switch (reportType) {
+              case 'device_performance':
+                return Color(0xFF4A90E2);
+              case 'temperature_analysis':
+                return Color(0xFFE94B3C);
+              case 'alerts_summary':
+                return Color(0xFFF5A623);
+              case 'maintenance':
+                return Color(0xFF7B68EE);
+              case 'energy_consumption':
+                return Color(0xFF50C878);
+              case 'compliance':
+                return Color(0xFF9B59B6);
+              default:
+                return Colors.grey;
+            }
+          }
 
           return Dialog(
             shape: RoundedRectangleBorder(
@@ -4201,7 +3901,7 @@ class _ReportsState extends State<Reports> {
                                 ),
                               ),
                               Text(
-                                '${generatedReports.length} total reports',
+                                '${downloadedReports.length} total reports',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.black54,
@@ -4221,11 +3921,59 @@ class _ReportsState extends State<Reports> {
 
                   // Report List
                   Expanded(
-                    child: ListView.builder(
+                    child: downloadedReports.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  CupertinoIcons.doc_text,
+                                  size: 64,
+                                  color: Colors.grey.shade300,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No reports generated yet',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Generate a report from the options above',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
                       itemCount: currentPageReports.length,
                       itemBuilder: (context, index) {
                         final report = currentPageReports[index];
-                        final isProcessing = report.status == 'Processing';
+                        final reportType = report['report_type'] ?? '';
+                        final reportName = report['report_name'] ?? 'Unknown Report';
+                        final generatedBy = report['generated_by'] ?? 'System';
+                        final generatedAt = report['generated_at'] ?? '';
+                        final fileSize = report['file_size'] ?? '';
+                        final status = report['status'] ?? 'completed';
+                        final icon = _getReportIcon(reportType);
+                        final color = _getReportColor(reportType);
+                        final isProcessing = status == 'generating';
+
+                        // Format the date
+                        String formattedDate = generatedAt;
+                        try {
+                          final dateTime = DateTime.parse(generatedAt);
+                          formattedDate =
+                              '${dateTime.month}/${dateTime.day}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+                        } catch (e) {
+                          // Use as is if parsing fails
+                        }
 
                         return Container(
                           margin: EdgeInsets.only(bottom: 12),
@@ -4243,12 +3991,12 @@ class _ReportsState extends State<Reports> {
                               Container(
                                 padding: EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: report.color.withValues(alpha: 0.1),
+                                  color: color.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
-                                  report.icon,
-                                  color: report.color,
+                                  icon,
+                                  color: color,
                                   size: 20,
                                 ),
                               ),
@@ -4263,7 +4011,7 @@ class _ReportsState extends State<Reports> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            report.name,
+                                            reportName,
                                             style: GoogleFonts.inter(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
@@ -4303,7 +4051,7 @@ class _ReportsState extends State<Reports> {
                                                   ),
                                                 ),
                                               Text(
-                                                report.status,
+                                                status == 'completed' ? 'Ready' : status,
                                                 style: GoogleFonts.inter(
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.w500,
@@ -4327,7 +4075,7 @@ class _ReportsState extends State<Reports> {
                                         ),
                                         SizedBox(width: 4),
                                         Text(
-                                          report.generatedBy,
+                                          generatedBy,
                                           style: GoogleFonts.inter(
                                             fontSize: 12,
                                             color: Colors.black54,
@@ -8630,822 +8378,939 @@ class _ReportsState extends State<Reports> {
   @override
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
-      color: Colors.white,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFF8FAFC),
+            Color(0xFFEEF2FF),
+            Color(0xFFF8FAFC),
+          ],
+        ),
+      ),
       child: SingleChildScrollView(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Section
-            SizedBox(
+            // Modern Header with Gradient
+            Container(
               width: double.infinity,
-              child: isMobile
-                  ? Column(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF1E3A5F),
+                    Color(0xFF2563EB),
+                    Color(0xFF3B82F6),
+                  ],
+                ),
+              ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  isMobile ? 20 : 32,
+                  isMobile ? 24 : 32,
+                  isMobile ? 20 : 32,
+                  isMobile ? 60 : 80,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Reports",
-                              style: GoogleFonts.inter(
-                                textStyle: TextStyle(
-                                  fontSize: 24,
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              "Generate and download comprehensive system reports",
-                              style: GoogleFonts.inter(
-                                textStyle: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 16),
-                        Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                CupertinoIcons.calendar,
-                                size: 18,
-                                color: Constants.ctaColorLight,
-                              ),
-                              SizedBox(width: 8),
-                              DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: selectedPeriod,
-                                  icon: Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Constants.ctaColorLight,
-                                    size: 20,
-                                  ),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  items: periods.map((String period) {
-                                    return DropdownMenuItem<String>(
-                                      value: period,
-                                      child: Text(period),
-                                    );
-                                  }).toList(),
-                                  onChanged: (String? newValue) {
-                                    if (newValue != null) {
-                                      setState(() {
-                                        selectedPeriod = newValue;
-                                      });
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Reports",
-                              style: GoogleFonts.inter(
-                                textStyle: TextStyle(
-                                  fontSize: 28,
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              "Generate and download comprehensive system reports",
-                              style: GoogleFonts.inter(
-                                textStyle: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        // Period Selector
-                        Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                CupertinoIcons.calendar,
-                                size: 18,
-                                color: Constants.ctaColorLight,
-                              ),
-                              SizedBox(width: 8),
-                              DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: selectedPeriod,
-                                  icon: Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Constants.ctaColorLight,
-                                    size: 20,
-                                  ),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  items: periods.map((String period) {
-                                    return DropdownMenuItem<String>(
-                                      value: period,
-                                      child: Text(period),
-                                    );
-                                  }).toList(),
-                                  onChanged: (String? newValue) {
-                                    if (newValue != null) {
-                                      setState(() {
-                                        selectedPeriod = newValue;
-                                      });
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-            SizedBox(height: 4),
-            Divider(thickness: 0.5, color: Colors.grey),
-            SizedBox(height: 32),
-
-            // Quick Stats Section
-            SizedBox(
-              width: double.infinity,
-              child: isMobile
-                  ? Column(
-                      children: [
-                        CustomCard(
-                          elevation: 2,
-                          color: Colors.white,
-                          surfaceTintColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: InkWell(
-                            onTap: _showGeneratedReportsDialog,
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: EdgeInsets.all(20),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      CupertinoIcons.doc_text,
-                                      color: Colors.blue,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '${generatedReports.length}',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Reports Generated',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    CupertinoIcons.chevron_right,
-                                    color: Colors.black54,
-                                    size: 16,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        CustomCard(
-                          elevation: 2,
-                          color: Colors.white,
-                          surfaceTintColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: InkWell(
-                            onTap: _showDownloadsDialog,
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: EdgeInsets.all(20),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      CupertinoIcons.arrow_down_circle,
-                                      color: Colors.green,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '${downloadedReports.length}',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Downloads This Month',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    CupertinoIcons.chevron_right,
-                                    color: Colors.black54,
-                                    size: 16,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        CustomCard(
-                          elevation: 2,
-                          color: Colors.white,
-                          surfaceTintColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: InkWell(
-                            onTap: _showScheduledReportsDialog,
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: EdgeInsets.all(20),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Colors.purple.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      CupertinoIcons.time,
-                                      color: Colors.purple,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '${scheduledReports.length}',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Scheduled Reports',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    CupertinoIcons.chevron_right,
-                                    color: Colors.black54,
-                                    size: 16,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      children: [
                         Expanded(
-                          child: CustomCard(
-                            elevation: 2,
-                            color: Colors.white,
-                            surfaceTintColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: InkWell(
-                              onTap: _showGeneratedReportsDialog,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: EdgeInsets.all(20),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            Colors.blue.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        CupertinoIcons.doc_text,
-                                        color: Colors.blue,
-                                        size: 24,
-                                      ),
-                                    ),
-                                    SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '${generatedReports.length}',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Reports Generated',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 12,
-                                              color: Colors.black54,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(
-                                      CupertinoIcons.chevron_right,
-                                      color: Colors.black54,
-                                      size: 16,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: CustomCard(
-                            elevation: 2,
-                            color: Colors.white,
-                            surfaceTintColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: InkWell(
-                              onTap: _showDownloadsDialog,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: EdgeInsets.all(20),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            Colors.green.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        CupertinoIcons.arrow_down_circle,
-                                        color: Colors.green,
-                                        size: 24,
-                                      ),
-                                    ),
-                                    SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '${downloadedReports.length}',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Downloads This Month',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 12,
-                                              color: Colors.black54,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(
-                                      CupertinoIcons.chevron_right,
-                                      color: Colors.black54,
-                                      size: 16,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: CustomCard(
-                            elevation: 2,
-                            color: Colors.white,
-                            surfaceTintColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: InkWell(
-                              onTap: _showScheduledReportsDialog,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: EdgeInsets.all(20),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.purple
-                                            .withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        CupertinoIcons.time,
-                                        color: Colors.purple,
-                                        size: 24,
-                                      ),
-                                    ),
-                                    SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '${scheduledReports.length}',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Scheduled Reports',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 12,
-                                              color: Colors.black54,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(
-                                      CupertinoIcons.chevron_right,
-                                      color: Colors.black54,
-                                      size: 16,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-            SizedBox(height: 32),
-
-            // Report Types Section
-            Text(
-              "Report Types",
-              style: GoogleFonts.inter(
-                fontSize: isMobile ? 16 : 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            SizedBox(height: 16),
-
-            // Report Cards Grid
-            GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: isMobile ? 1 : 3,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: isMobile ? 2.5 : 2.0,
-              ),
-              itemCount: reportTypes.length,
-              itemBuilder: (context, index) {
-                final reportType = reportTypes[index];
-                final isGeneratingThis =
-                    isGenerating && selectedReportType == reportType.id;
-
-                return CustomCard(
-                  elevation: 2,
-                  color: Colors.white,
-                  surfaceTintColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: InkWell(
-                    onTap:
-                        isGenerating ? null : () => _generateReport(reportType),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color:
-                                      reportType.color.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  reportType.icon,
-                                  color: reportType.color,
-                                  size: 24,
-                                ),
-                              ),
-                              if (isGeneratingThis)
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: reportType.color,
-                                  ),
-                                ),
-                            ],
-                          ),
-                          Column(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                reportType.name,
+                                "Reports Center",
                                 style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                                  fontSize: isMobile ? 28 : 36,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -1,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              SizedBox(height: 8),
                               Text(
-                                reportType.description,
+                                "Generate, analyze, and export comprehensive system reports",
                                 style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: Colors.black54,
+                                  fontSize: isMobile ? 14 : 16,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.5,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Icon(
-                                CupertinoIcons.arrow_right_circle_fill,
-                                color: reportType.color,
-                                size: 20,
+                        ),
+                        if (!isMobile) ...[
+                          SizedBox(width: 24),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.2),
                               ),
-                            ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  CupertinoIcons.calendar,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                                SizedBox(width: 10),
+                                DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: selectedPeriod,
+                                    icon: Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    dropdownColor: Color(0xFF1E3A5F),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    items: periods.map((String period) {
+                                      return DropdownMenuItem<String>(
+                                        value: period,
+                                        child: Text(period),
+                                      );
+                                    }).toList(),
+                                    onChanged: (String? newValue) {
+                                      if (newValue != null) {
+                                        setState(() {
+                                          selectedPeriod = newValue;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (isMobile) ...[
+                      SizedBox(height: 16),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              CupertinoIcons.calendar,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                            SizedBox(width: 8),
+                            DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: selectedPeriod,
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                dropdownColor: Color(0xFF1E3A5F),
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                items: periods.map((String period) {
+                                  return DropdownMenuItem<String>(
+                                    value: period,
+                                    child: Text(period),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    setState(() {
+                                      selectedPeriod = newValue;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+            // Stats Cards - Floating over header
+            Transform.translate(
+              offset: Offset(0, isMobile ? -40 : -50),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 32),
+                child: isMobile
+                    ? Column(
+                        children: [
+                          _buildModernStatCard(
+                            icon: CupertinoIcons.doc_text_fill,
+                            iconColor: Color(0xFF3B82F6),
+                            bgGradient: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                            value: '${generatedReports.length}',
+                            label: 'Reports Generated',
+                            onTap: _showGeneratedReportsDialog,
+                          ),
+                          SizedBox(height: 12),
+                          _buildModernStatCard(
+                            icon: CupertinoIcons.arrow_down_circle_fill,
+                            iconColor: Color(0xFF10B981),
+                            bgGradient: [Color(0xFF10B981), Color(0xFF059669)],
+                            value: '${downloadedReports.length}',
+                            label: 'Total Downloads',
+                            onTap: _showDownloadsDialog,
+                          ),
+                          SizedBox(height: 12),
+                          _buildModernStatCard(
+                            icon: CupertinoIcons.clock_fill,
+                            iconColor: Color(0xFF8B5CF6),
+                            bgGradient: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                            value: '${scheduledReports.length}',
+                            label: 'Scheduled',
+                            onTap: _showScheduledReportsDialog,
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: _buildModernStatCard(
+                              icon: CupertinoIcons.doc_text_fill,
+                              iconColor: Color(0xFF3B82F6),
+                              bgGradient: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                              value: '${generatedReports.length}',
+                              label: 'Reports Generated',
+                              onTap: _showGeneratedReportsDialog,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: _buildModernStatCard(
+                              icon: CupertinoIcons.arrow_down_circle_fill,
+                              iconColor: Color(0xFF10B981),
+                              bgGradient: [Color(0xFF10B981), Color(0xFF059669)],
+                              value: '${downloadedReports.length}',
+                              label: 'Total Downloads',
+                              onTap: _showDownloadsDialog,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: _buildModernStatCard(
+                              icon: CupertinoIcons.clock_fill,
+                              iconColor: Color(0xFF8B5CF6),
+                              bgGradient: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                              value: '${scheduledReports.length}',
+                              label: 'Scheduled',
+                              onTap: _showScheduledReportsDialog,
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
-            SizedBox(height: 32),
-
-            // Recent Reports Section
-            Text(
-              "Recent Reports",
-              style: GoogleFonts.inter(
-                fontSize: isMobile ? 16 : 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
               ),
             ),
-            SizedBox(height: 16),
 
-            CustomCard(
-              elevation: 2,
-              color: Colors.white,
-              surfaceTintColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            // Main Content
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                isMobile ? 16 : 32,
+                0,
+                isMobile ? 16 : 32,
+                24,
               ),
-              child: Container(
-                padding: EdgeInsets.all(16),
-                child: isLoadingReports
-                    ? Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(20),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    : downloadedReports.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    FontAwesomeIcons.folderOpen,
-                                    size: 48,
-                                    color: Colors.grey[400],
-                                  ),
-                                  SizedBox(height: 12),
-                                  Text(
-                                    'No reports generated yet',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Report Types Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Generate Reports",
+                            style: GoogleFonts.inter(
+                              fontSize: isMobile ? 20 : 24,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                              letterSpacing: -0.5,
                             ),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Report items
-                              ...() {
-                                final startIndex = currentReportPage * reportsPerPage;
-                                final endIndex = (startIndex + reportsPerPage).clamp(0, downloadedReports.length);
-                                final paginatedReports = downloadedReports.sublist(startIndex, endIndex);
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "Select a report type to get started",
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
 
-                                return paginatedReports.asMap().entries.map((entry) {
-                                  final index = entry.key;
-                                  final report = entry.value;
-                                  return Column(
-                                    children: [
-                                      if (index > 0) Divider(height: 24, thickness: 0.5),
-                                      _buildRecentReportItemFromData(report),
-                                    ],
-                                  );
-                                }).toList();
-                              }(),
+                  // Modern Report Type Cards
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: isMobile ? 1 : (screenWidth > 1200 ? 3 : 2),
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: isMobile ? 2.8 : 2.2,
+                    ),
+                    itemCount: reportTypes.length,
+                    itemBuilder: (context, index) {
+                      final reportType = reportTypes[index];
+                      final isGeneratingThis =
+                          isGenerating && selectedReportType == reportType.id;
 
-                              // Pagination controls
-                              if (downloadedReports.length > reportsPerPage) ...[
-                                SizedBox(height: 16),
-                                Divider(height: 1),
-                                SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      return _buildModernReportTypeCard(
+                        reportType: reportType,
+                        isGenerating: isGeneratingThis,
+                        onTap: isGenerating ? null : () => _generateReport(reportType),
+                      );
+                    },
+                  ),
+                  SizedBox(height: 32),
+
+                  // Recent Reports Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Recent Reports",
+                            style: GoogleFonts.inter(
+                              fontSize: isMobile ? 20 : 24,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E293B),
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "Your recently generated reports",
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (downloadedReports.isNotEmpty)
+                        TextButton.icon(
+                          onPressed: _showDownloadsDialog,
+                          icon: Text(
+                            'View All',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF3B82F6),
+                            ),
+                          ),
+                          label: Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 18,
+                            color: Color(0xFF3B82F6),
+                          ),
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+
+                  // Modern Recent Reports Card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xFF1E293B).withValues(alpha: 0.08),
+                          blurRadius: 24,
+                          offset: Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: isLoadingReports
+                          ? Container(
+                              padding: EdgeInsets.all(48),
+                              child: Center(
+                                child: Column(
                                   children: [
-                                    Text(
-                                      'Showing ${currentReportPage * reportsPerPage + 1}-${((currentReportPage + 1) * reportsPerPage).clamp(0, downloadedReports.length)} of ${downloadedReports.length}',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
+                                    SizedBox(
+                                      width: 40,
+                                      height: 40,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 3,
+                                        color: Color(0xFF3B82F6),
                                       ),
                                     ),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: Icon(Icons.chevron_left),
-                                          onPressed: currentReportPage > 0
-                                              ? () {
-                                                  setState(() {
-                                                    currentReportPage--;
-                                                  });
-                                                }
-                                              : null,
-                                          iconSize: 20,
-                                          padding: EdgeInsets.all(4),
-                                          constraints: BoxConstraints(),
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Page ${currentReportPage + 1} of ${(downloadedReports.length / reportsPerPage).ceil()}',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        SizedBox(width: 8),
-                                        IconButton(
-                                          icon: Icon(Icons.chevron_right),
-                                          onPressed: (currentReportPage + 1) * reportsPerPage < downloadedReports.length
-                                              ? () {
-                                                  setState(() {
-                                                    currentReportPage++;
-                                                  });
-                                                }
-                                              : null,
-                                          iconSize: 20,
-                                          padding: EdgeInsets.all(4),
-                                          constraints: BoxConstraints(),
-                                        ),
-                                      ],
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Loading reports...',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        color: Color(0xFF64748B),
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            ],
-                          ),
+                              ),
+                            )
+                          : downloadedReports.isEmpty
+                              ? Container(
+                                  padding: EdgeInsets.all(48),
+                                  child: Center(
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(20),
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFFF1F5F9),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            FontAwesomeIcons.folderOpen,
+                                            size: 32,
+                                            color: Color(0xFF94A3B8),
+                                          ),
+                                        ),
+                                        SizedBox(height: 16),
+                                        Text(
+                                          'No reports yet',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF475569),
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                        Text(
+                                          'Generate your first report using the options above',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            color: Color(0xFF94A3B8),
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              : Column(
+                                  children: [
+                                    // Report items
+                                    ...() {
+                                      final startIndex = currentReportPage * reportsPerPage;
+                                      final endIndex = (startIndex + reportsPerPage).clamp(0, downloadedReports.length);
+                                      final paginatedReports = downloadedReports.sublist(startIndex, endIndex);
+
+                                      return paginatedReports.asMap().entries.map((entry) {
+                                        final index = entry.key;
+                                        final report = entry.value;
+                                        return Column(
+                                          children: [
+                                            _buildModernReportItem(report),
+                                            if (index < paginatedReports.length - 1)
+                                              Divider(height: 1, color: Color(0xFFE2E8F0)),
+                                          ],
+                                        );
+                                      }).toList();
+                                    }(),
+
+                                    // Pagination controls
+                                    if (downloadedReports.length > reportsPerPage) ...[
+                                      Container(
+                                        padding: EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Color(0xFFF8FAFC),
+                                          border: Border(
+                                            top: BorderSide(color: Color(0xFFE2E8F0)),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'Showing ${currentReportPage * reportsPerPage + 1}-${((currentReportPage + 1) * reportsPerPage).clamp(0, downloadedReports.length)} of ${downloadedReports.length}',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 13,
+                                                color: Color(0xFF64748B),
+                                              ),
+                                            ),
+                                            Row(
+                                              children: [
+                                                _buildPaginationButton(
+                                                  icon: Icons.chevron_left_rounded,
+                                                  enabled: currentReportPage > 0,
+                                                  onTap: () {
+                                                    setState(() {
+                                                      currentReportPage--;
+                                                    });
+                                                  },
+                                                ),
+                                                SizedBox(width: 8),
+                                                Container(
+                                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                  decoration: BoxDecoration(
+                                                    color: Color(0xFF3B82F6).withValues(alpha: 0.1),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text(
+                                                    '${currentReportPage + 1} / ${(downloadedReports.length / reportsPerPage).ceil()}',
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 13,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Color(0xFF3B82F6),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(width: 8),
+                                                _buildPaginationButton(
+                                                  icon: Icons.chevron_right_rounded,
+                                                  enabled: (currentReportPage + 1) * reportsPerPage < downloadedReports.length,
+                                                  onTap: () {
+                                                    setState(() {
+                                                      currentReportPage++;
+                                                    });
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                ],
               ),
             ),
-            SizedBox(height: 24),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernStatCard({
+    required IconData icon,
+    required Color iconColor,
+    required List<Color> bgGradient,
+    required String value,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0xFF1E293B).withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: bgGradient,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      value,
+                      style: GoogleFonts.inter(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1E293B),
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      label,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Color(0xFFCBD5E1),
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernReportTypeCard({
+    required ReportType reportType,
+    required bool isGenerating,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Color(0xFFE2E8F0),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0xFF1E293B).withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: reportType.color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      reportType.icon,
+                      color: reportType.color,
+                      size: 22,
+                    ),
+                  ),
+                  if (isGenerating)
+                    SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: reportType.color,
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Color(0xFF64748B),
+                        size: 16,
+                      ),
+                    ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    reportType.name,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    reportType.description,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: Color(0xFF64748B),
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernReportItem(dynamic report) {
+    final reportTypeConfig = {
+      'device_performance': {
+        'icon': FontAwesomeIcons.chartLine,
+        'color': Color(0xFF3B82F6),
+        'bgColor': Color(0xFFEFF6FF),
+      },
+      'temperature_analysis': {
+        'icon': FontAwesomeIcons.temperatureHalf,
+        'color': Color(0xFFEF4444),
+        'bgColor': Color(0xFFFEF2F2),
+      },
+      'alerts_summary': {
+        'icon': FontAwesomeIcons.bellConcierge,
+        'color': Color(0xFFF59E0B),
+        'bgColor': Color(0xFFFFFBEB),
+      },
+      'maintenance_report': {
+        'icon': FontAwesomeIcons.wrench,
+        'color': Color(0xFF8B5CF6),
+        'bgColor': Color(0xFFF5F3FF),
+      },
+      'energy_consumption': {
+        'icon': FontAwesomeIcons.bolt,
+        'color': Color(0xFF10B981),
+        'bgColor': Color(0xFFECFDF5),
+      },
+      'compliance_report': {
+        'icon': FontAwesomeIcons.clipboardCheck,
+        'color': Color(0xFF06B6D4),
+        'bgColor': Color(0xFFECFEFF),
+      },
+    };
+
+    final config = reportTypeConfig[report['report_type']] ?? {
+      'icon': FontAwesomeIcons.chartLine,
+      'color': Color(0xFF3B82F6),
+      'bgColor': Color(0xFFEFF6FF),
+    };
+
+    String formattedDate = 'Unknown date';
+    String timeAgo = '';
+    try {
+      final generatedAt = DateTime.parse(report['generated_at']);
+      formattedDate = DateFormat('MMM dd, yyyy').format(generatedAt);
+      final difference = DateTime.now().difference(generatedAt);
+      if (difference.inDays > 0) {
+        timeAgo = '${difference.inDays}d ago';
+      } else if (difference.inHours > 0) {
+        timeAgo = '${difference.inHours}h ago';
+      } else {
+        timeAgo = '${difference.inMinutes}m ago';
+      }
+    } catch (e) {
+      print('Error parsing date: $e');
+    }
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: config['bgColor'] as Color,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              config['icon'] as IconData,
+              color: config['color'] as Color,
+              size: 20,
+            ),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  report['report_name'] ?? 'Untitled Report',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      formattedDate,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                    if (timeAgo.isNotEmpty) ...[
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 8),
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Color(0xFFCBD5E1),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Text(
+                        timeAgo,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildActionButton(
+                icon: CupertinoIcons.eye,
+                tooltip: 'View',
+                onTap: () => _viewReport(report),
+              ),
+              SizedBox(width: 8),
+              _buildActionButton(
+                icon: CupertinoIcons.cloud_download,
+                tooltip: 'Download',
+                color: Color(0xFF3B82F6),
+                onTap: () => _downloadReport(report),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Tooltip(
+          message: tooltip,
+          child: Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (color ?? Color(0xFF64748B)).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: color ?? Color(0xFF64748B),
+              size: 18,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaginationButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: enabled ? Color(0xFFF1F5F9) : Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: enabled ? Color(0xFFE2E8F0) : Color(0xFFF1F5F9),
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: enabled ? Color(0xFF475569) : Color(0xFFCBD5E1),
+            size: 20,
+          ),
         ),
       ),
     );
@@ -9707,9 +9572,30 @@ class _ReportsState extends State<Reports> {
   }
 
   Future<void> _showBasicReportDetails(dynamic report) async {
+    if (report == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Report data not available'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    // Safely extract values with null checks
+    final reportName = report['report_name']?.toString() ?? 'Report Details';
+    final reportType = report['report_type']?.toString();
+    final generatedBy = report['generated_by']?.toString() ?? 'Unknown';
+    final generatedAt = report['generated_at']?.toString();
+    final period = report['period']?.toString() ?? 'N/A';
+    final startDate = report['start_date']?.toString();
+    final endDate = report['end_date']?.toString();
+    final pageCount = report['page_count'] ?? 0;
+    final fileSize = report['file_size']?.toString() ?? 'N/A';
+    final downloadCount = report['download_count'] ?? 0;
+    final deviceIds = report['device_ids'];
+    final deviceCount = (deviceIds is List) ? deviceIds.length : 0;
+
     return showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Row(
             children: [
@@ -9717,7 +9603,7 @@ class _ReportsState extends State<Reports> {
               SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  report['report_name'] ?? 'Report Details',
+                  reportName,
                   style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -9728,28 +9614,28 @@ class _ReportsState extends State<Reports> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildReportDetailRow('Report Type', _formatReportType(report['report_type'])),
-                _buildReportDetailRow('Generated By', report['generated_by'] ?? 'Unknown'),
-                _buildReportDetailRow('Generated At', _formatDateTime(report['generated_at'])),
-                _buildReportDetailRow('Period', report['period'] ?? 'N/A'),
-                _buildReportDetailRow('Start Date', _formatDate(report['start_date'])),
-                _buildReportDetailRow('End Date', _formatDate(report['end_date'])),
-                _buildReportDetailRow('Page Count', '${report['page_count'] ?? 0} pages'),
-                _buildReportDetailRow('File Size', report['file_size'] ?? 'N/A'),
-                _buildReportDetailRow('Download Count', '${report['download_count'] ?? 0} times'),
-                if (report['device_ids'] != null && report['device_ids'].isNotEmpty)
-                  _buildReportDetailRow('Devices', '${report['device_ids'].length} device(s)'),
+                _buildReportDetailRow('Report Type', _formatReportType(reportType)),
+                _buildReportDetailRow('Generated By', generatedBy),
+                _buildReportDetailRow('Generated At', _formatDateTime(generatedAt)),
+                _buildReportDetailRow('Period', period),
+                _buildReportDetailRow('Start Date', _formatDate(startDate)),
+                _buildReportDetailRow('End Date', _formatDate(endDate)),
+                _buildReportDetailRow('Page Count', '$pageCount pages'),
+                _buildReportDetailRow('File Size', fileSize),
+                _buildReportDetailRow('Download Count', '$downloadCount times'),
+                if (deviceCount > 0)
+                  _buildReportDetailRow('Devices', '$deviceCount device(s)'),
               ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text('Close', style: GoogleFonts.inter(color: Colors.grey[600])),
             ),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 _downloadReport(report);
               },
               icon: Icon(Icons.download, size: 16),
@@ -9797,8 +9683,12 @@ class _ReportsState extends State<Reports> {
   }
 
   String _formatReportType(String? type) {
-    if (type == null) return 'Unknown';
-    return type.split('_').map((word) => word[0].toUpperCase() + word.substring(1)).join(' ');
+    if (type == null || type.isEmpty) return 'Unknown';
+    try {
+      return type.split('_').where((word) => word.isNotEmpty).map((word) => word[0].toUpperCase() + word.substring(1)).join(' ');
+    } catch (e) {
+      return type;
+    }
   }
 
   String _formatDateTime(String? dateStr) {
