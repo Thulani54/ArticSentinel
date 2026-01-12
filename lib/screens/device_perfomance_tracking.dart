@@ -3446,10 +3446,46 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final deviceType = selectedDevice?.deviceType ?? 'device1';
 
     if (deviceType == 'device2') {
+      if (device2AnalyticsData == null) {
+        return Center(
+          child: isLoading
+              ? CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
+                )
+              : Text(
+                  'No data available for this device',
+                  style: GoogleFonts.inter(color: Colors.grey[600]),
+                ),
+        );
+      }
       return _buildDevice2Dashboard();
     } else if (deviceType == 'device3') {
+      if (device3AnalyticsData == null) {
+        return Center(
+          child: isLoading
+              ? CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
+                )
+              : Text(
+                  'No data available for this device',
+                  style: GoogleFonts.inter(color: Colors.grey[600]),
+                ),
+        );
+      }
       return _buildDevice3Dashboard();
     } else {
+      if (analyticsData == null) {
+        return Center(
+          child: isLoading
+              ? CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
+                )
+              : Text(
+                  'No data available for this device',
+                  style: GoogleFonts.inter(color: Colors.grey[600]),
+                ),
+        );
+      }
       return _buildDevice1Dashboard();
     }
   }
