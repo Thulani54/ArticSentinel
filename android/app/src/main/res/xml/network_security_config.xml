@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">169.255.58.111</domain>
+        <domain includeSubdomains="true">articsentinel.com</domain>
+        <domain includeSubdomains="true">www.articsentinel.com</domain>
+    </domain-config>
+</network-security-config>

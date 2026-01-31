@@ -12,6 +12,7 @@ import 'authentication/signup.dart';
 // Main screens
 import 'screens/alert.dart';
 import 'screens/communication.dart';
+import 'screens/control.dart';
 import 'screens/dashboard_home.dart';
 import 'screens/device_management.dart';
 import 'screens/device_perfomance_tracking.dart';
@@ -172,6 +173,14 @@ class MyApp extends StatelessWidget {
             name: 'maintenance',
             builder: (BuildContext context, GoRouterState state) =>
                 MaintenanceDashboard(),
+          ),
+
+          // Control route (relay control, schedules)
+          GoRoute(
+            path: '/control',
+            name: 'control',
+            builder: (BuildContext context, GoRouterState state) =>
+                const ControlScreen(),
           ),
 
           // Reports route

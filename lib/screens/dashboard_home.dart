@@ -941,8 +941,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     final latestData = selectedDeviceId != null
         ? latestDeviceDataList.where((d) => d.deviceId == selectedDeviceId).firstOrNull ?? latestDeviceDataList.first
         : latestDeviceDataList.first;
-    final dailyData =
-        dailyAggregatesList.isNotEmpty ? dailyAggregatesList.first : null;
+    // Filter daily aggregates by selected device ID and get today's data
+    final dailyData = dailyAggregatesList
+        .where((d) => d.deviceId == selectedDeviceId)
+        .firstOrNull;
 
     currentPerformanceMetrics = PerformanceMetrics(
       performanceScore: latestData.performanceScore ?? 0,
@@ -991,8 +993,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return;
     }
 
-    final dailyData =
-        dailyAggregatesList.isNotEmpty ? dailyAggregatesList.first : null;
+    // Filter daily aggregates by selected device ID
+    final dailyData = dailyAggregatesList
+        .where((d) => d.deviceId == selectedDeviceId)
+        .firstOrNull;
     final selectedDevice = latestDeviceDataList
         .where((device) => device.deviceId == selectedDeviceId)
         .firstOrNull;
@@ -1001,6 +1005,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     print('_buildTemperatureRanges called:');
     print('  dailyAggregatesList.length: ${dailyAggregatesList.length}');
     print('  selectedDeviceId: $selectedDeviceId');
+    print('  Matching daily aggregates: ${dailyAggregatesList.where((d) => d.deviceId == selectedDeviceId).length}');
     if (dailyData != null) {
       print('  dailyData found:');
       print(
