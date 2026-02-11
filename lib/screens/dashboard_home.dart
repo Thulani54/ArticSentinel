@@ -1107,6 +1107,32 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           status: _getTemperatureStatus(selectedDevice.iceTemp, -25, 50),
         ),
       ];
+    } else if (deviceType == 'device4') {
+      // Device4: multi-compressor amp - show first 3 compressor averages as ranges
+      final comp1Avg = _compressorAvg(selectedDevice.comp1ph1, selectedDevice.comp1ph2, selectedDevice.comp1ph3);
+      final comp2Avg = _compressorAvg(selectedDevice.comp2ph1, selectedDevice.comp2ph2, selectedDevice.comp2ph3);
+      final comp3Avg = _compressorAvg(selectedDevice.comp3ph1, selectedDevice.comp3ph2, selectedDevice.comp3ph3);
+      temperatureRanges = [
+        TemperatureRange(sensor: 'Compressor 1 Avg', current: comp1Avg, min: null, max: null, avg: null, status: comp1Avg != null ? 'Active' : 'No Data'),
+        TemperatureRange(sensor: 'Compressor 2 Avg', current: comp2Avg, min: null, max: null, avg: null, status: comp2Avg != null ? 'Active' : 'No Data'),
+        TemperatureRange(sensor: 'Compressor 3 Avg', current: comp3Avg, min: null, max: null, avg: null, status: comp3Avg != null ? 'Active' : 'No Data'),
+      ];
+    } else if (deviceType == 'device5') {
+      // Device5: relay controller - show relay status summary
+      final onCount = selectedDevice.relaysOnCount ?? 0;
+      final offCount = selectedDevice.relaysOffCount ?? 0;
+      temperatureRanges = [
+        TemperatureRange(sensor: 'Relays ON', current: onCount.toDouble(), min: null, max: null, avg: null, status: 'Active'),
+        TemperatureRange(sensor: 'Relays OFF', current: offCount.toDouble(), min: null, max: null, avg: null, status: 'Inactive'),
+        TemperatureRange(sensor: 'Total Relays', current: 16, min: null, max: null, avg: null, status: 'Monitored'),
+      ];
+    } else if (deviceType == 'device6') {
+      // Device6: pressure monitoring - show first 3 pressure sensors
+      temperatureRanges = [
+        TemperatureRange(sensor: 'Pressure 1', current: selectedDevice.prs1, min: selectedDevice.prs1Min, max: selectedDevice.prs1Max, avg: null, status: selectedDevice.prs1 != null ? 'Active' : 'No Data'),
+        TemperatureRange(sensor: 'Pressure 2', current: selectedDevice.prs2, min: selectedDevice.prs2Min, max: selectedDevice.prs2Max, avg: null, status: selectedDevice.prs2 != null ? 'Active' : 'No Data'),
+        TemperatureRange(sensor: 'Pressure 3', current: selectedDevice.prs3, min: selectedDevice.prs3Min, max: selectedDevice.prs3Max, avg: null, status: selectedDevice.prs3 != null ? 'Active' : 'No Data'),
+      ];
     } else {
       // Device1: refrigeration (default)
       temperatureRanges = [
@@ -1339,6 +1365,15 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     } else if (deviceType == 'device3') {
       // Device 3: Ice machine monitoring
       enhancedSummaryCards = _buildDevice3SummaryCards(selectedDevice);
+    } else if (deviceType == 'device4') {
+      // Device 4: Multi-compressor amp monitoring
+      enhancedSummaryCards = _buildDevice4SummaryCards(selectedDevice);
+    } else if (deviceType == 'device5') {
+      // Device 5: Relay controller
+      enhancedSummaryCards = _buildDevice5SummaryCards(selectedDevice);
+    } else if (deviceType == 'device6') {
+      // Device 6: Pressure monitoring
+      enhancedSummaryCards = _buildDevice6SummaryCards(selectedDevice);
     } else {
       // Device 1: Refrigeration unit (default)
       enhancedSummaryCards = _buildDevice1SummaryCards(selectedDevice, dailyData);
@@ -1546,6 +1581,193 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         cardColor: const Color(0XccF4F4F4),
         accentColor: selectedDevice.wtrlvl != null && selectedDevice.wtrlvl! > 20 ? Constants.ctaColorLight : Colors.orange,
         icon: FontAwesomeIcons.water,
+      ),
+    ];
+  }
+
+  // Helper to compute compressor phase average
+  double? _compressorAvg(double? ph1, double? ph2, double? ph3) {
+    final valid = [ph1, ph2, ph3].whereType<double>().toList();
+    if (valid.isEmpty) return null;
+    return valid.reduce((a, b) => a + b) / valid.length;
+  }
+
+  // Device 4 Summary Cards (Multi-Compressor Amp Monitoring)
+  List<EnhancedSummaryCard> _buildDevice4SummaryCards(LatestDeviceData selectedDevice) {
+    final compAvgs = <double>[];
+    for (int c = 1; c <= 8; c++) {
+      final ph1 = _getCompPhase(selectedDevice, c, 1);
+      final ph2 = _getCompPhase(selectedDevice, c, 2);
+      final ph3 = _getCompPhase(selectedDevice, c, 3);
+      final avg = _compressorAvg(ph1, ph2, ph3);
+      if (avg != null) compAvgs.add(avg);
+    }
+    final overallAvg = compAvgs.isNotEmpty ? compAvgs.reduce((a, b) => a + b) / compAvgs.length : null;
+    final maxAmp = compAvgs.isNotEmpty ? compAvgs.reduce((a, b) => a > b ? a : b) : null;
+    final activeCount = compAvgs.where((v) => v > 0.5).length;
+
+    return [
+      EnhancedSummaryCard(
+        title: 'Overall Avg Amp',
+        value: overallAvg?.toStringAsFixed(1) ?? '--',
+        unit: 'A',
+        subtitle: '${activeCount}/8 compressors active',
+        trend: activeCount == 8 ? 'All Running' : '$activeCount Active',
+        trendDirection: 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: Constants.ctaColorLight,
+        icon: FontAwesomeIcons.bolt,
+        alerts: [],
+      ),
+      EnhancedSummaryCard(
+        title: 'Peak Amp',
+        value: maxAmp?.toStringAsFixed(1) ?? '--',
+        unit: 'A',
+        subtitle: 'Highest compressor average',
+        trend: maxAmp != null && maxAmp > 20 ? 'High Load' : 'Normal',
+        trendDirection: maxAmp != null && maxAmp > 20 ? 'up' : 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: maxAmp != null && maxAmp > 20 ? Colors.orange : Constants.ctaColorLight,
+        icon: FontAwesomeIcons.chartBar,
+      ),
+      EnhancedSummaryCard(
+        title: 'Active Compressors',
+        value: '$activeCount',
+        unit: '/8',
+        subtitle: 'Compressors drawing current',
+        trend: activeCount == 8 ? 'Full capacity' : '${8 - activeCount} idle',
+        trendDirection: 'stable',
+        cardColor: const Color(0XccF4F4F4),
+        accentColor: activeCount == 8 ? Constants.ctaColorLight : Colors.orange,
+        icon: FontAwesomeIcons.cogs,
+      ),
+    ];
+  }
+
+  // Helper to get compressor phase value from LatestDeviceData
+  double? _getCompPhase(LatestDeviceData d, int comp, int phase) {
+    switch (comp * 10 + phase) {
+      case 11: return d.comp1ph1;
+      case 12: return d.comp1ph2;
+      case 13: return d.comp1ph3;
+      case 21: return d.comp2ph1;
+      case 22: return d.comp2ph2;
+      case 23: return d.comp2ph3;
+      case 31: return d.comp3ph1;
+      case 32: return d.comp3ph2;
+      case 33: return d.comp3ph3;
+      case 41: return d.comp4ph1;
+      case 42: return d.comp4ph2;
+      case 43: return d.comp4ph3;
+      case 51: return d.comp5ph1;
+      case 52: return d.comp5ph2;
+      case 53: return d.comp5ph3;
+      case 61: return d.comp6ph1;
+      case 62: return d.comp6ph2;
+      case 63: return d.comp6ph3;
+      case 71: return d.comp7ph1;
+      case 72: return d.comp7ph2;
+      case 73: return d.comp7ph3;
+      case 81: return d.comp8ph1;
+      case 82: return d.comp8ph2;
+      case 83: return d.comp8ph3;
+      default: return null;
+    }
+  }
+
+  // Device 5 Summary Cards (Relay Controller)
+  List<EnhancedSummaryCard> _buildDevice5SummaryCards(LatestDeviceData selectedDevice) {
+    final relays = <bool?>[
+      selectedDevice.relay1, selectedDevice.relay2, selectedDevice.relay3, selectedDevice.relay4,
+      selectedDevice.relay5, selectedDevice.relay6, selectedDevice.relay7, selectedDevice.relay8,
+      selectedDevice.relay9, selectedDevice.relay10, selectedDevice.relay11, selectedDevice.relay12,
+      selectedDevice.relay13, selectedDevice.relay14, selectedDevice.relay15, selectedDevice.relay16,
+    ];
+    final onCount = relays.where((r) => r == true).length;
+    final offCount = relays.where((r) => r == false).length;
+
+    return [
+      EnhancedSummaryCard(
+        title: 'Relays ON',
+        value: '$onCount',
+        unit: '/16',
+        subtitle: 'Currently energized relays',
+        trend: onCount > 0 ? 'Active' : 'All OFF',
+        trendDirection: 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: onCount > 0 ? Constants.ctaColorLight : Colors.grey,
+        icon: FontAwesomeIcons.toggleOn,
+        alerts: [],
+      ),
+      EnhancedSummaryCard(
+        title: 'Relays OFF',
+        value: '$offCount',
+        unit: '/16',
+        subtitle: 'Currently de-energized relays',
+        trend: offCount == 16 ? 'All Idle' : '$offCount Idle',
+        trendDirection: 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: Colors.grey,
+        icon: FontAwesomeIcons.toggleOff,
+      ),
+      EnhancedSummaryCard(
+        title: 'Duty Overview',
+        value: '${(onCount / 16 * 100).toStringAsFixed(0)}',
+        unit: '%',
+        subtitle: 'Relay utilization rate',
+        trend: onCount > 8 ? 'High Load' : 'Normal',
+        trendDirection: onCount > 12 ? 'up' : 'stable',
+        cardColor: const Color(0XccF4F4F4),
+        accentColor: onCount > 12 ? Colors.orange : Constants.ctaColorLight,
+        icon: FontAwesomeIcons.chartPie,
+      ),
+    ];
+  }
+
+  // Device 6 Summary Cards (Pressure Monitoring)
+  List<EnhancedSummaryCard> _buildDevice6SummaryCards(LatestDeviceData selectedDevice) {
+    final pressures = [
+      selectedDevice.prs1, selectedDevice.prs2, selectedDevice.prs3, selectedDevice.prs4,
+      selectedDevice.prs5, selectedDevice.prs6, selectedDevice.prs7, selectedDevice.prs8,
+    ].whereType<double>().toList();
+    final avgPrs = pressures.isNotEmpty ? pressures.reduce((a, b) => a + b) / pressures.length : null;
+    final maxPrs = pressures.isNotEmpty ? pressures.reduce((a, b) => a > b ? a : b) : null;
+    final minPrs = pressures.isNotEmpty ? pressures.reduce((a, b) => a < b ? a : b) : null;
+
+    return [
+      EnhancedSummaryCard(
+        title: 'Avg Pressure',
+        value: avgPrs?.toStringAsFixed(2) ?? '--',
+        unit: 'bar',
+        subtitle: '${pressures.length}/8 sensors active',
+        trend: avgPrs != null ? 'Monitoring' : 'No Data',
+        trendDirection: 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: Constants.ctaColorLight,
+        icon: FontAwesomeIcons.tachometerAlt,
+        alerts: [],
+      ),
+      EnhancedSummaryCard(
+        title: 'Peak Pressure',
+        value: maxPrs?.toStringAsFixed(2) ?? '--',
+        unit: 'bar',
+        subtitle: 'Highest sensor reading',
+        trend: maxPrs != null && maxPrs > 5 ? 'High' : 'Normal',
+        trendDirection: maxPrs != null && maxPrs > 5 ? 'up' : 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: maxPrs != null && maxPrs > 5 ? Colors.orange : Constants.ctaColorLight,
+        icon: FontAwesomeIcons.arrowUp,
+      ),
+      EnhancedSummaryCard(
+        title: 'Min Pressure',
+        value: minPrs?.toStringAsFixed(2) ?? '--',
+        unit: 'bar',
+        subtitle: 'Lowest sensor reading',
+        trend: minPrs != null && minPrs < 1 ? 'Low' : 'Normal',
+        trendDirection: minPrs != null && minPrs < 1 ? 'down' : 'stable',
+        cardColor: const Color(0XccF4F4F4),
+        accentColor: minPrs != null && minPrs < 1 ? Colors.red : Constants.ctaColorLight,
+        icon: FontAwesomeIcons.arrowDown,
       ),
     ];
   }
@@ -5460,6 +5682,38 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             (deviceToDisplay.iceTemp ?? 0) < -5,
           ),
         ];
+      } else if (deviceType == 'device4') {
+        // Device 4: Multi-compressor amp monitoring
+        final comp1Avg = _compressorAvg(deviceToDisplay.comp1ph1, deviceToDisplay.comp1ph2, deviceToDisplay.comp1ph3);
+        final comp2Avg = _compressorAvg(deviceToDisplay.comp2ph1, deviceToDisplay.comp2ph2, deviceToDisplay.comp2ph3);
+        final comp3Avg = _compressorAvg(deviceToDisplay.comp3ph1, deviceToDisplay.comp3ph2, deviceToDisplay.comp3ph3);
+        final comp4Avg = _compressorAvg(deviceToDisplay.comp4ph1, deviceToDisplay.comp4ph2, deviceToDisplay.comp4ph3);
+        dailySummaryList = [
+          DailySummaryRecords(comp1Avg?.toInt() ?? 0, 0, "Compressor 1 Avg (A)", FontAwesomeIcons.bolt, const Color(0XFFF4F4F4)),
+          DailySummaryRecords(comp2Avg?.toInt() ?? 0, 0, "Compressor 2 Avg (A)", FontAwesomeIcons.bolt, const Color(0Xcc3C514933)),
+          DailySummaryRecords(comp3Avg?.toInt() ?? 0, 0, "Compressor 3 Avg (A)", FontAwesomeIcons.bolt, const Color(0XccF4F4F4)),
+          DailySummaryRecords(comp4Avg?.toInt() ?? 0, 0, "Compressor 4 Avg (A)", FontAwesomeIcons.bolt, const Color(0Xcc3C514914)),
+        ];
+        dailySummaryList2 = [];
+      } else if (deviceType == 'device5') {
+        // Device 5: Relay controller
+        final onCount = deviceToDisplay.relaysOnCount ?? 0;
+        final offCount = deviceToDisplay.relaysOffCount ?? 0;
+        dailySummaryList = [
+          DailySummaryRecords(onCount, 0, "Relays ON", FontAwesomeIcons.toggleOn, const Color(0XFFF4F4F4)),
+          DailySummaryRecords(offCount, 0, "Relays OFF", FontAwesomeIcons.toggleOff, const Color(0Xcc3C514933)),
+          DailySummaryRecords(16, 0, "Total Relays", FontAwesomeIcons.microchip, const Color(0XccF4F4F4)),
+        ];
+        dailySummaryList2 = [];
+      } else if (deviceType == 'device6') {
+        // Device 6: Pressure monitoring
+        dailySummaryList = [
+          DailySummaryRecords(deviceToDisplay.prs1?.toInt() ?? 0, 0, "Pressure 1 (bar)", FontAwesomeIcons.tachometerAlt, const Color(0XFFF4F4F4)),
+          DailySummaryRecords(deviceToDisplay.prs2?.toInt() ?? 0, 0, "Pressure 2 (bar)", FontAwesomeIcons.tachometerAlt, const Color(0Xcc3C514933)),
+          DailySummaryRecords(deviceToDisplay.prs3?.toInt() ?? 0, 0, "Pressure 3 (bar)", FontAwesomeIcons.tachometerAlt, const Color(0XccF4F4F4)),
+          DailySummaryRecords(deviceToDisplay.prs4?.toInt() ?? 0, 0, "Pressure 4 (bar)", FontAwesomeIcons.tachometerAlt, const Color(0Xcc3C514914)),
+        ];
+        dailySummaryList2 = [];
       } else {
         // Device 1: Refrigeration unit (default)
         dailySummaryList = [
@@ -5573,14 +5827,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   Future<void> fetchDashboardData() async {
     try {
+      // Fetch ALL dashboard data without device filter
+      // Filtering by device is done client-side to ensure we always have data for all devices
       String url =
           '${Constants.articBaseUrl2}dashboard-data/?business_uid=${Constants.myBusiness.businessUid}';
-      print("Fetching dashboard data from: $url $selectedDeviceId");
-
-      // Add device filter if specific device is selected
-      if (selectedDeviceId != null && selectedDeviceId!.isNotEmpty) {
-        url += '&device_id=$selectedDeviceId';
-      }
+      print("Fetching dashboard data from: $url (selectedDeviceId: $selectedDeviceId)");
 
       final response = await http.get(
         Uri.parse(url),
@@ -5590,23 +5841,51 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
 
-        // Update data without triggering setState - let the caller handle final setState
-        // This prevents race conditions during concurrent updates
-        // Parse the comprehensive dashboard data
-        dashboardData = DashboardData.fromJson(data);
+        // Parse each section independently so one failure doesn't prevent others
+        // This prevents a parsing error in e.g. hourly_aggregates from blocking daily_aggregates
 
-        // Update individual lists for backwards compatibility
-        // Note: Don't filter by selectedDeviceId here as it may change during refresh
-        // Store all data and let the UI filter as needed
-        latestDeviceDataList = dashboardData!.currentData;
+        // Parse daily aggregates (critical for temperature ranges)
+        try {
+          final dailyList = (data['daily_aggregates'] as List? ?? [])
+              .map((item) => DailyAggregate.fromJson(item as Map<String, dynamic>))
+              .toList();
+          dailyAggregatesList = dailyList;
+          print('Parsed daily aggregates: ${dailyAggregatesList.length}');
+        } catch (e) {
+          print('Error parsing daily_aggregates: $e');
+        }
 
-        dailyAggregatesList = dashboardData!.dailyAggregates;
+        // Parse hourly aggregates
+        try {
+          final hourlyList = (data['hourly_aggregates'] as List? ?? [])
+              .map((item) => HourlyAggregate.fromJson(item as Map<String, dynamic>))
+              .toList();
+          hourlyAggregatesList = hourlyList;
+          print('Parsed hourly aggregates: ${hourlyAggregatesList.length}');
+        } catch (e) {
+          print('Error parsing hourly_aggregates: $e');
+        }
 
-        hourlyAggregatesList = dashboardData!.hourlyAggregates;
-        activeAlerts = dashboardData!.alerts;
+        // Parse alerts
+        try {
+          final alertList = (data['alerts'] as List? ?? [])
+              .map((item) => DeviceAlert.fromJson(item as Map<String, dynamic>))
+              .toList();
+          activeAlerts = alertList;
+          print('Parsed alerts: ${activeAlerts.length}');
+        } catch (e) {
+          print('Error parsing alerts: $e');
+        }
+
+        // Parse full dashboard data (for backwards compatibility)
+        // Note: Don't overwrite latestDeviceDataList here - fetchLatestDeviceData() handles it
+        try {
+          dashboardData = DashboardData.fromJson(data);
+        } catch (e) {
+          print('Error parsing full DashboardData: $e');
+        }
 
         print('Successfully fetched dashboard data');
-        print('Current devices: ${latestDeviceDataList.length}');
         print('Daily aggregates: ${dailyAggregatesList.length}');
         print('Hourly aggregates: ${hourlyAggregatesList.length}');
         print('Active alerts: ${activeAlerts.length}');
@@ -5623,23 +5902,15 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               '  Coil - min: ${firstDaily.minTempCoil}, max: ${firstDaily.maxTempCoil}, avg: ${firstDaily.avgTempCoil}');
           print(
               '  Drain - min: ${firstDaily.minTempDrain}, max: ${firstDaily.maxTempDrain}, avg: ${firstDaily.avgTempDrain}');
-          print(
-              '  Compressor Runtime %: ${firstDaily.compressorRuntimePercentage}');
-          print('  Compressor On Count: ${firstDaily.compressorOnCount}');
-          print(
-              '  Data Transmission %: ${firstDaily.dataTransmissionPercentage}');
-          print('  Device Uptime %: ${firstDaily.deviceUptimePercentage}');
-          print('Raw daily_aggregates JSON: ${data['daily_aggregates']}');
         }
 
         // Note: _processDashboardData() is called in _loadAllData after all futures complete
       } else {
         print('Failed to fetch dashboard data: ${response.statusCode}');
-        //  _showError('Failed to load dashboard data');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Error fetching dashboard data: $e');
-      // _showErrorSnackBar('Error loading dashboard: $e');
+      print('Stack trace: $stackTrace');
     }
   }
 

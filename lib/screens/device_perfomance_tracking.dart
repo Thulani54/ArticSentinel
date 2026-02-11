@@ -1449,6 +1449,92 @@ class TempStats {
   }
 }
 
+// ==============================================================================
+// DEVICE TYPE 4 - Multi-Compressor Amp Monitoring Analytics
+// ==============================================================================
+
+class Device4Analytics {
+  final String deviceType;
+  final Map<String, dynamic> overallStatistics;
+  final List<Map<String, dynamic>> dailyData;
+
+  Device4Analytics({
+    required this.deviceType,
+    required this.overallStatistics,
+    required this.dailyData,
+  });
+
+  factory Device4Analytics.fromJson(Map<String, dynamic> json) {
+    return Device4Analytics(
+      deviceType: json['device_type'] ?? 'device4',
+      overallStatistics: Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
+      dailyData: (json['daily_data'] as List?)
+          ?.map((e) => Map<String, dynamic>.from(e))
+          .toList() ?? [],
+    );
+  }
+}
+
+// ==============================================================================
+// DEVICE TYPE 5 - Relay Controller Analytics
+// ==============================================================================
+
+class Device5Analytics {
+  final String deviceType;
+  final Map<String, dynamic> overallStatistics;
+  final List<Map<String, dynamic>> dailyData;
+  final List<Map<String, dynamic>> hourlyRelayDistribution;
+
+  Device5Analytics({
+    required this.deviceType,
+    required this.overallStatistics,
+    required this.dailyData,
+    required this.hourlyRelayDistribution,
+  });
+
+  factory Device5Analytics.fromJson(Map<String, dynamic> json) {
+    return Device5Analytics(
+      deviceType: json['device_type'] ?? 'device5',
+      overallStatistics: Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
+      dailyData: (json['daily_data'] as List?)
+          ?.map((e) => Map<String, dynamic>.from(e))
+          .toList() ?? [],
+      hourlyRelayDistribution: (json['hourly_relay_distribution'] as List?)
+          ?.map((e) => Map<String, dynamic>.from(e))
+          .toList() ?? [],
+    );
+  }
+}
+
+// ==============================================================================
+// DEVICE TYPE 6 - Pressure Monitoring Analytics
+// ==============================================================================
+
+class Device6Analytics {
+  final String deviceType;
+  final Map<String, dynamic> overallStatistics;
+  final Map<String, dynamic> sensorRanges;
+  final List<Map<String, dynamic>> dailyData;
+
+  Device6Analytics({
+    required this.deviceType,
+    required this.overallStatistics,
+    required this.sensorRanges,
+    required this.dailyData,
+  });
+
+  factory Device6Analytics.fromJson(Map<String, dynamic> json) {
+    return Device6Analytics(
+      deviceType: json['device_type'] ?? 'device6',
+      overallStatistics: Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
+      sensorRanges: Map<String, dynamic>.from(json['sensor_ranges'] ?? {}),
+      dailyData: (json['daily_data'] as List?)
+          ?.map((e) => Map<String, dynamic>.from(e))
+          .toList() ?? [],
+    );
+  }
+}
+
 class Device {
   final int id;
   final String deviceId;
@@ -1583,6 +1669,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   DeviceAnalytics? analyticsData;
   Device2Analytics? device2AnalyticsData;
   Device3Analytics? device3AnalyticsData;
+  Device4Analytics? device4AnalyticsData;
+  Device5Analytics? device5AnalyticsData;
+  Device6Analytics? device6AnalyticsData;
   bool isLoading = false;
   bool isInitialLoad = true;
   String? errorMessage;
@@ -1654,19 +1743,27 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       );
 
       setState(() {
+        // Clear all analytics data first
+        analyticsData = null;
+        device2AnalyticsData = null;
+        device3AnalyticsData = null;
+        device4AnalyticsData = null;
+        device5AnalyticsData = null;
+        device6AnalyticsData = null;
+
         // Parse based on device type
         if (deviceType == 'device2') {
           device2AnalyticsData = Device2Analytics.fromJson(rawData);
-          analyticsData = null;
-          device3AnalyticsData = null;
         } else if (deviceType == 'device3') {
           device3AnalyticsData = Device3Analytics.fromJson(rawData);
-          analyticsData = null;
-          device2AnalyticsData = null;
+        } else if (deviceType == 'device4') {
+          device4AnalyticsData = Device4Analytics.fromJson(rawData);
+        } else if (deviceType == 'device5') {
+          device5AnalyticsData = Device5Analytics.fromJson(rawData);
+        } else if (deviceType == 'device6') {
+          device6AnalyticsData = Device6Analytics.fromJson(rawData);
         } else {
           analyticsData = DeviceAnalytics.fromJson(rawData);
-          device2AnalyticsData = null;
-          device3AnalyticsData = null;
         }
         isLoading = false;
         isInitialLoad = false;
@@ -1739,7 +1836,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           ],
                         ),
                       )
-                    : (analyticsData != null || device2AnalyticsData != null || device3AnalyticsData != null)
+                    : (analyticsData != null || device2AnalyticsData != null || device3AnalyticsData != null || device4AnalyticsData != null || device5AnalyticsData != null || device6AnalyticsData != null)
                         ? Stack(
                             children: [
                               _buildDashboard(),
@@ -3445,47 +3542,34 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     // Route to device-specific dashboard based on device type
     final deviceType = selectedDevice?.deviceType ?? 'device1';
 
+    Widget _noDataWidget() => Center(
+      child: isLoading
+          ? CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
+            )
+          : Text(
+              'No data available for this device',
+              style: GoogleFonts.inter(color: Colors.grey[600]),
+            ),
+    );
+
     if (deviceType == 'device2') {
-      if (device2AnalyticsData == null) {
-        return Center(
-          child: isLoading
-              ? CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
-                )
-              : Text(
-                  'No data available for this device',
-                  style: GoogleFonts.inter(color: Colors.grey[600]),
-                ),
-        );
-      }
+      if (device2AnalyticsData == null) return _noDataWidget();
       return _buildDevice2Dashboard();
     } else if (deviceType == 'device3') {
-      if (device3AnalyticsData == null) {
-        return Center(
-          child: isLoading
-              ? CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
-                )
-              : Text(
-                  'No data available for this device',
-                  style: GoogleFonts.inter(color: Colors.grey[600]),
-                ),
-        );
-      }
+      if (device3AnalyticsData == null) return _noDataWidget();
       return _buildDevice3Dashboard();
+    } else if (deviceType == 'device4') {
+      if (device4AnalyticsData == null) return _noDataWidget();
+      return _buildDevice4Dashboard();
+    } else if (deviceType == 'device5') {
+      if (device5AnalyticsData == null) return _noDataWidget();
+      return _buildDevice5Dashboard();
+    } else if (deviceType == 'device6') {
+      if (device6AnalyticsData == null) return _noDataWidget();
+      return _buildDevice6Dashboard();
     } else {
-      if (analyticsData == null) {
-        return Center(
-          child: isLoading
-              ? CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
-                )
-              : Text(
-                  'No data available for this device',
-                  style: GoogleFonts.inter(color: Colors.grey[600]),
-                ),
-        );
-      }
+      if (analyticsData == null) return _noDataWidget();
       return _buildDevice1Dashboard();
     }
   }
@@ -4693,6 +4777,470 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Expanded(flex: 2, child: Text('${stats?.max?.toStringAsFixed(1) ?? '--'}$unit', style: GoogleFonts.inter(fontSize: 12, color: Colors.red))),
           Expanded(flex: 2, child: Text('${stats?.avg?.toStringAsFixed(1) ?? '--'}$unit', style: GoogleFonts.inter(fontSize: 12))),
         ],
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // Device 4 Dashboard (Multi-Compressor Amp Monitoring)
+  // ===========================================================================
+  Widget _buildDevice4Dashboard() {
+    final isMobile = _isMobile(context);
+    final padding = isMobile ? 12.0 : 16.0;
+    final spacing = isMobile ? 8.0 : 12.0;
+    final data = device4AnalyticsData!;
+    final stats = data.overallStatistics;
+    final compressors = stats['compressors'] as Map<String, dynamic>? ?? {};
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Constants.ctaColorLight, Constants.ctaColorLight.withOpacity(0.7)]),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.electric_bolt, color: Colors.white, size: 28),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Multi-Compressor Amp Monitor', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                      Text('${stats['total_readings'] ?? 0} readings | ${compressors.length} compressors', style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: spacing),
+
+          // Compressor Grid
+          Text('Compressor Overview', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          SizedBox(height: 8),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isMobile ? 2 : 4,
+              childAspectRatio: isMobile ? 1.3 : 1.5,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            itemCount: 8,
+            itemBuilder: (context, index) {
+              final compKey = 'compressor${index + 1}';
+              final compData = compressors[compKey] as Map<String, dynamic>? ?? {};
+              final avgAmp = (compData['average_amp'] ?? 0.0).toDouble();
+              final phases = compData['phases'] as Map<String, dynamic>? ?? {};
+
+              return Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: avgAmp > 0.5 ? Constants.ctaColorLight.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: Offset(0, 2))],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.electric_bolt, size: 16, color: avgAmp > 0.5 ? Constants.ctaColorLight : Colors.grey),
+                        SizedBox(width: 4),
+                        Text('Comp ${index + 1}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                    SizedBox(height: 6),
+                    Text('${avgAmp.toStringAsFixed(1)} A', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: avgAmp > 0.5 ? Colors.black87 : Colors.grey)),
+                    SizedBox(height: 4),
+                    ...phases.entries.take(3).map((e) {
+                      final phaseData = e.value as Map<String, dynamic>? ?? {};
+                      return Text('${e.key}: ${(phaseData['avg'] ?? 0.0).toStringAsFixed(1)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600]));
+                    }),
+                  ],
+                ),
+              );
+            },
+          ),
+          SizedBox(height: spacing),
+
+          // Daily Data Chart
+          if (data.dailyData.isNotEmpty)
+            _buildChart('Daily Compressor Averages', _buildDevice4DailyChart()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice4DailyChart() {
+    final data = device4AnalyticsData!.dailyData;
+    if (data.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No daily data')));
+
+    final spots = <int, List<FlSpot>>{};
+    for (int c = 1; c <= 8; c++) {
+      spots[c] = [];
+    }
+
+    for (int i = 0; i < data.length; i++) {
+      for (int c = 1; c <= 8; c++) {
+        final val = (data[i]['compressor${c}_avg'] ?? 0.0).toDouble();
+        spots[c]!.add(FlSpot(i.toDouble(), val));
+      }
+    }
+
+    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
+
+    return SizedBox(
+      height: 250,
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(show: true, drawVerticalLine: false),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) {
+                  final idx = value.toInt();
+                  if (idx >= 0 && idx < data.length) {
+                    final date = data[idx]['date'] ?? '';
+                    return Text(date.toString().substring(5), style: TextStyle(fontSize: 9));
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: false),
+          lineBarsData: List.generate(8, (c) => LineChartBarData(
+            spots: spots[c + 1]!,
+            isCurved: true,
+            color: colors[c],
+            barWidth: 2,
+            dotData: FlDotData(show: false),
+          )),
+        ),
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // Device 5 Dashboard (Relay Controller)
+  // ===========================================================================
+  Widget _buildDevice5Dashboard() {
+    final isMobile = _isMobile(context);
+    final padding = isMobile ? 12.0 : 16.0;
+    final spacing = isMobile ? 8.0 : 12.0;
+    final data = device5AnalyticsData!;
+    final stats = data.overallStatistics;
+    final relays = stats['relays'] as Map<String, dynamic>? ?? {};
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Colors.indigo, Colors.indigo.withOpacity(0.7)]),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.toggle_on, color: Colors.white, size: 28),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Relay Controller', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                      Text('${stats['total_readings'] ?? 0} readings | 16 relays', style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: spacing),
+
+          // Relay Duty Cycle Grid
+          Text('Relay Duty Cycles', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          SizedBox(height: 8),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isMobile ? 2 : 4,
+              childAspectRatio: isMobile ? 1.8 : 2.2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            itemCount: 16,
+            itemBuilder: (context, index) {
+              final relayKey = 'relay${index + 1}';
+              final relayData = relays[relayKey] as Map<String, dynamic>? ?? {};
+              final dutyCycle = (relayData['duty_cycle_pct'] ?? 0.0).toDouble();
+              final isActive = dutyCycle > 50;
+
+              return Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: isActive ? Colors.green.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: Offset(0, 2))],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(isActive ? Icons.toggle_on : Icons.toggle_off, size: 18, color: isActive ? Colors.green : Colors.grey),
+                        SizedBox(width: 4),
+                        Text('Relay ${index + 1}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Text('${dutyCycle.toStringAsFixed(1)}%', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: isActive ? Colors.green[700] : Colors.grey)),
+                    Text('duty cycle', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[500])),
+                  ],
+                ),
+              );
+            },
+          ),
+          SizedBox(height: spacing),
+
+          // Daily Duty Cycle Chart
+          if (data.dailyData.isNotEmpty)
+            _buildChart('Daily Relay Duty Cycles', _buildDevice5DailyChart()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice5DailyChart() {
+    final data = device5AnalyticsData!.dailyData;
+    if (data.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No daily data')));
+
+    // Show first 4 relays for readability
+    final spots = <int, List<FlSpot>>{};
+    for (int r = 1; r <= 4; r++) {
+      spots[r] = [];
+    }
+
+    for (int i = 0; i < data.length; i++) {
+      for (int r = 1; r <= 4; r++) {
+        final val = (data[i]['relay${r}_duty_cycle'] ?? 0.0).toDouble();
+        spots[r]!.add(FlSpot(i.toDouble(), val));
+      }
+    }
+
+    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange];
+
+    return SizedBox(
+      height: 250,
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(show: true, drawVerticalLine: false),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) {
+                  final idx = value.toInt();
+                  if (idx >= 0 && idx < data.length) {
+                    final date = data[idx]['date'] ?? '';
+                    return Text(date.toString().substring(5), style: TextStyle(fontSize: 9));
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: false),
+          lineBarsData: List.generate(4, (r) => LineChartBarData(
+            spots: spots[r + 1]!,
+            isCurved: true,
+            color: colors[r],
+            barWidth: 2,
+            dotData: FlDotData(show: false),
+          )),
+        ),
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // Device 6 Dashboard (Pressure Monitoring)
+  // ===========================================================================
+  Widget _buildDevice6Dashboard() {
+    final isMobile = _isMobile(context);
+    final padding = isMobile ? 12.0 : 16.0;
+    final spacing = isMobile ? 8.0 : 12.0;
+    final data = device6AnalyticsData!;
+    final stats = data.overallStatistics;
+    final sensors = stats['sensors'] as Map<String, dynamic>? ?? {};
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [Colors.teal, Colors.teal.withOpacity(0.7)]),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.speed, color: Colors.white, size: 28),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Pressure Monitor', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                      Text('${stats['total_readings'] ?? 0} readings | 8 sensors', style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
+                      Text('Range: ${stats['min_overall'] ?? 0} - ${stats['max_overall'] ?? 0} bar', style: GoogleFonts.inter(fontSize: 12, color: Colors.white60)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: spacing),
+
+          // Sensor Grid
+          Text('Pressure Sensors', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          SizedBox(height: 8),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isMobile ? 2 : 4,
+              childAspectRatio: isMobile ? 1.3 : 1.5,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            itemCount: 8,
+            itemBuilder: (context, index) {
+              final sensorKey = 'sensor${index + 1}';
+              final sensorData = sensors[sensorKey] as Map<String, dynamic>? ?? {};
+              final avg = (sensorData['avg'] ?? 0.0).toDouble();
+              final min = (sensorData['min'] ?? 0.0).toDouble();
+              final max = (sensorData['max'] ?? 0.0).toDouble();
+
+              return Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.teal.withOpacity(0.2)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: Offset(0, 2))],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.speed, size: 16, color: Colors.teal),
+                        SizedBox(width: 4),
+                        Text('Sensor ${index + 1}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                    SizedBox(height: 6),
+                    Text('${avg.toStringAsFixed(2)} bar', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    SizedBox(height: 4),
+                    Text('Min: ${min.toStringAsFixed(2)} | Max: ${max.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                  ],
+                ),
+              );
+            },
+          ),
+          SizedBox(height: spacing),
+
+          // Daily Pressure Chart
+          if (data.dailyData.isNotEmpty)
+            _buildChart('Daily Pressure Trends', _buildDevice6DailyChart()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice6DailyChart() {
+    final data = device6AnalyticsData!.dailyData;
+    if (data.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No daily data')));
+
+    final spots = <int, List<FlSpot>>{};
+    for (int s = 1; s <= 8; s++) {
+      spots[s] = [];
+    }
+
+    for (int i = 0; i < data.length; i++) {
+      for (int s = 1; s <= 8; s++) {
+        final val = (data[i]['sensor$s'] ?? 0.0).toDouble();
+        spots[s]!.add(FlSpot(i.toDouble(), val));
+      }
+    }
+
+    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
+
+    return SizedBox(
+      height: 250,
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(show: true, drawVerticalLine: false),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) {
+                  final idx = value.toInt();
+                  if (idx >= 0 && idx < data.length) {
+                    final date = data[idx]['date'] ?? '';
+                    return Text(date.toString().substring(5), style: TextStyle(fontSize: 9));
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: false),
+          lineBarsData: List.generate(8, (s) => LineChartBarData(
+            spots: spots[s + 1]!,
+            isCurved: true,
+            color: colors[s],
+            barWidth: 2,
+            dotData: FlDotData(show: false),
+          )),
+        ),
       ),
     );
   }

@@ -274,6 +274,15 @@ class DailyAggregate {
   final String? deviceStatus;
   final String? unitStatus;
 
+  // Device 4 aggregate fields (compressor amp averages)
+  final Map<String, dynamic>? device4Aggregates;
+
+  // Device 5 aggregate fields (relay duty cycle percentages)
+  final Map<String, dynamic>? device5Aggregates;
+
+  // Device 6 aggregate fields (pressure avg/min/max)
+  final Map<String, dynamic>? device6Aggregates;
+
   DailyAggregate({
     this.dayBucket,
     this.deviceId,
@@ -334,6 +343,10 @@ class DailyAggregate {
     this.dataQualityPercentage,
     this.deviceStatus,
     this.unitStatus,
+    // Device 4/5/6 aggregates
+    this.device4Aggregates,
+    this.device5Aggregates,
+    this.device6Aggregates,
   });
 
   factory DailyAggregate.fromJson(Map<String, dynamic> json) {
@@ -371,6 +384,8 @@ class DailyAggregate {
       minTempDrain = _toDoubleOrNull(json['min_ice_temp']);
       maxTempDrain = _toDoubleOrNull(json['max_ice_temp']);
       // Device3 daily aggregates don't include timestamps
+    } else if (deviceType == 'device4' || deviceType == 'device5' || deviceType == 'device6') {
+      // Device4/5/6: raw aggregates stored in dedicated map fields, no temp normalization
     } else {
       // Device1: refrigeration (temp_air, temp_coil, temp_drain)
       avgTempAir = _toDoubleOrNull(json['avg_temp_air']);
@@ -495,6 +510,12 @@ class DailyAggregate {
       dataQualityPercentage: _toDoubleOrNull(json['data_quality_percentage']),
       deviceStatus: json['device_status'],
       unitStatus: json['unit_status'],
+      // Device 4 aggregates: extract all avg/min/max amp fields
+      device4Aggregates: deviceType == 'device4' ? Map<String, dynamic>.from(json) : null,
+      // Device 5 aggregates: extract all relay duty cycle percentages
+      device5Aggregates: deviceType == 'device5' ? Map<String, dynamic>.from(json) : null,
+      // Device 6 aggregates: extract all avg/min/max pressure fields
+      device6Aggregates: deviceType == 'device6' ? Map<String, dynamic>.from(json) : null,
     );
   }
 
@@ -726,6 +747,79 @@ class LatestDeviceData {
   // Device 3 harvest count (last 24 hours)
   final int? harvestCount;
 
+  // Device 4 specific fields (Multi-Compressor Amp Monitoring - 8 compressors x 3 phases)
+  final double? comp1ph1;
+  final double? comp1ph2;
+  final double? comp1ph3;
+  final double? comp2ph1;
+  final double? comp2ph2;
+  final double? comp2ph3;
+  final double? comp3ph1;
+  final double? comp3ph2;
+  final double? comp3ph3;
+  final double? comp4ph1;
+  final double? comp4ph2;
+  final double? comp4ph3;
+  final double? comp5ph1;
+  final double? comp5ph2;
+  final double? comp5ph3;
+  final double? comp6ph1;
+  final double? comp6ph2;
+  final double? comp6ph3;
+  final double? comp7ph1;
+  final double? comp7ph2;
+  final double? comp7ph3;
+  final double? comp8ph1;
+  final double? comp8ph2;
+  final double? comp8ph3;
+
+  // Device 5 specific fields (Relay Controller - 16 relays)
+  final bool? relay1;
+  final bool? relay2;
+  final bool? relay3;
+  final bool? relay4;
+  final bool? relay5;
+  final bool? relay6;
+  final bool? relay7;
+  final bool? relay8;
+  final bool? relay9;
+  final bool? relay10;
+  final bool? relay11;
+  final bool? relay12;
+  final bool? relay13;
+  final bool? relay14;
+  final bool? relay15;
+  final bool? relay16;
+  final int? relaysOnCount;
+  final int? relaysOffCount;
+
+  // Device 6 specific fields (Pressure Monitoring - 8 sensors)
+  final double? prs1;
+  final double? prs2;
+  final double? prs3;
+  final double? prs4;
+  final double? prs5;
+  final double? prs6;
+  final double? prs7;
+  final double? prs8;
+  final double? prs1Min;
+  final double? prs1Max;
+  final double? prs2Min;
+  final double? prs2Max;
+  final double? prs3Min;
+  final double? prs3Max;
+  final double? prs4Min;
+  final double? prs4Max;
+  final double? prs5Min;
+  final double? prs5Max;
+  final double? prs6Min;
+  final double? prs6Max;
+  final double? prs7Min;
+  final double? prs7Max;
+  final double? prs8Min;
+  final double? prs8Max;
+  final double? avgPressure;
+
   // Enhanced calculated metrics
   final double? avgCompAmp;
   final double? maxCompAmp;
@@ -834,6 +928,76 @@ class LatestDeviceData {
     // Device 3 last harvest
     this.lastHarvestTime,
     this.harvestCount,
+    // Device 4 fields
+    this.comp1ph1,
+    this.comp1ph2,
+    this.comp1ph3,
+    this.comp2ph1,
+    this.comp2ph2,
+    this.comp2ph3,
+    this.comp3ph1,
+    this.comp3ph2,
+    this.comp3ph3,
+    this.comp4ph1,
+    this.comp4ph2,
+    this.comp4ph3,
+    this.comp5ph1,
+    this.comp5ph2,
+    this.comp5ph3,
+    this.comp6ph1,
+    this.comp6ph2,
+    this.comp6ph3,
+    this.comp7ph1,
+    this.comp7ph2,
+    this.comp7ph3,
+    this.comp8ph1,
+    this.comp8ph2,
+    this.comp8ph3,
+    // Device 5 fields
+    this.relay1,
+    this.relay2,
+    this.relay3,
+    this.relay4,
+    this.relay5,
+    this.relay6,
+    this.relay7,
+    this.relay8,
+    this.relay9,
+    this.relay10,
+    this.relay11,
+    this.relay12,
+    this.relay13,
+    this.relay14,
+    this.relay15,
+    this.relay16,
+    this.relaysOnCount,
+    this.relaysOffCount,
+    // Device 6 fields
+    this.prs1,
+    this.prs2,
+    this.prs3,
+    this.prs4,
+    this.prs5,
+    this.prs6,
+    this.prs7,
+    this.prs8,
+    this.prs1Min,
+    this.prs1Max,
+    this.prs2Min,
+    this.prs2Max,
+    this.prs3Min,
+    this.prs3Max,
+    this.prs4Min,
+    this.prs4Max,
+    this.prs5Min,
+    this.prs5Max,
+    this.prs6Min,
+    this.prs6Max,
+    this.prs7Min,
+    this.prs7Max,
+    this.prs8Min,
+    this.prs8Max,
+    this.avgPressure,
     // Calculated metrics
     this.avgCompAmp,
     this.maxCompAmp,
@@ -854,6 +1018,9 @@ class LatestDeviceData {
   String get resolvedDeviceType {
     if (deviceType != null && deviceType!.isNotEmpty) return deviceType!;
     // Infer device type from available fields
+    if (comp1ph1 != null) return 'device4';
+    if (relay1 != null) return 'device5';
+    if (prs1 != null) return 'device6';
     if (temp1 != null || temp2 != null) return 'device2';
     if (hsTemp != null || lsTemp != null || iceTemp != null) return 'device3';
     return 'device1';
@@ -960,6 +1127,76 @@ class LatestDeviceData {
       // Device 3 last harvest
       lastHarvestTime: json['last_harvest_time'],
       harvestCount: json['harvest_count'],
+      // Device 4 fields (multi-compressor amp)
+      comp1ph1: json['1comph1']?.toDouble(),
+      comp1ph2: json['1comph2']?.toDouble(),
+      comp1ph3: json['1comph3']?.toDouble(),
+      comp2ph1: json['2comph1']?.toDouble(),
+      comp2ph2: json['2comph2']?.toDouble(),
+      comp2ph3: json['2comph3']?.toDouble(),
+      comp3ph1: json['3comph1']?.toDouble(),
+      comp3ph2: json['3comph2']?.toDouble(),
+      comp3ph3: json['3comph3']?.toDouble(),
+      comp4ph1: json['4comph1']?.toDouble(),
+      comp4ph2: json['4comph2']?.toDouble(),
+      comp4ph3: json['4comph3']?.toDouble(),
+      comp5ph1: json['5comph1']?.toDouble(),
+      comp5ph2: json['5comph2']?.toDouble(),
+      comp5ph3: json['5comph3']?.toDouble(),
+      comp6ph1: json['6comph1']?.toDouble(),
+      comp6ph2: json['6comph2']?.toDouble(),
+      comp6ph3: json['6comph3']?.toDouble(),
+      comp7ph1: json['7comph1']?.toDouble(),
+      comp7ph2: json['7comph2']?.toDouble(),
+      comp7ph3: json['7comph3']?.toDouble(),
+      comp8ph1: json['8comph1']?.toDouble(),
+      comp8ph2: json['8comph2']?.toDouble(),
+      comp8ph3: json['8comph3']?.toDouble(),
+      // Device 5 fields (relay controller)
+      relay1: json['relay1'],
+      relay2: json['relay2'],
+      relay3: json['relay3'],
+      relay4: json['relay4'],
+      relay5: json['relay5'],
+      relay6: json['relay6'],
+      relay7: json['relay7'],
+      relay8: json['relay8'],
+      relay9: json['relay9'],
+      relay10: json['relay10'],
+      relay11: json['relay11'],
+      relay12: json['relay12'],
+      relay13: json['relay13'],
+      relay14: json['relay14'],
+      relay15: json['relay15'],
+      relay16: json['relay16'],
+      relaysOnCount: json['relaysOnCount'],
+      relaysOffCount: json['relaysOffCount'],
+      // Device 6 fields (pressure monitoring)
+      prs1: json['prs1']?.toDouble(),
+      prs2: json['prs2']?.toDouble(),
+      prs3: json['prs3']?.toDouble(),
+      prs4: json['prs4']?.toDouble(),
+      prs5: json['prs5']?.toDouble(),
+      prs6: json['prs6']?.toDouble(),
+      prs7: json['prs7']?.toDouble(),
+      prs8: json['prs8']?.toDouble(),
+      prs1Min: json['prs1_min']?.toDouble(),
+      prs1Max: json['prs1_max']?.toDouble(),
+      prs2Min: json['prs2_min']?.toDouble(),
+      prs2Max: json['prs2_max']?.toDouble(),
+      prs3Min: json['prs3_min']?.toDouble(),
+      prs3Max: json['prs3_max']?.toDouble(),
+      prs4Min: json['prs4_min']?.toDouble(),
+      prs4Max: json['prs4_max']?.toDouble(),
+      prs5Min: json['prs5_min']?.toDouble(),
+      prs5Max: json['prs5_max']?.toDouble(),
+      prs6Min: json['prs6_min']?.toDouble(),
+      prs6Max: json['prs6_max']?.toDouble(),
+      prs7Min: json['prs7_min']?.toDouble(),
+      prs7Max: json['prs7_max']?.toDouble(),
+      prs8Min: json['prs8_min']?.toDouble(),
+      prs8Max: json['prs8_max']?.toDouble(),
+      avgPressure: json['avgPressure']?.toDouble(),
       // Calculated metrics
       avgCompAmp: json['avgCompAmp']?.toDouble(),
       maxCompAmp: json['maxCompAmp']?.toDouble(),
