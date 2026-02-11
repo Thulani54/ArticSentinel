@@ -4874,11 +4874,207 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ),
           SizedBox(height: spacing),
 
-          // Daily Data Chart
+          // Compressor Load Comparison Bar Chart
+          _buildChart('Compressor Load Comparison (Avg Amps)', _buildDevice4CompressorBarChart()),
+          SizedBox(height: spacing),
+
+          // Phase Balance Analysis Bar Chart
+          _buildChart('Phase Balance Analysis', _buildDevice4PhaseBalanceChart()),
+          SizedBox(height: spacing),
+
+          // Daily Compressor Trends Line Chart
           if (data.dailyData.isNotEmpty)
-            _buildChart('Daily Compressor Averages', _buildDevice4DailyChart()),
+            _buildChart('Daily Compressor Trends', _buildDevice4DailyChart()),
+          if (data.dailyData.isNotEmpty)
+            SizedBox(height: spacing),
+
+          // Phase Current Detail Line Chart
+          if (data.dailyData.isNotEmpty)
+            _buildChart('Daily Phase Current Detail', _buildDevice4PhaseDetailChart()),
         ],
       ),
+    );
+  }
+
+  Widget _buildDevice4CompressorBarChart() {
+    final stats = device4AnalyticsData!.overallStatistics;
+    final compressors = stats['compressors'] as Map<String, dynamic>? ?? {};
+    if (compressors.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+
+    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
+
+    // Compute min/max for y-axis
+    double minVal = double.infinity, maxVal = 0;
+    for (int c = 1; c <= 8; c++) {
+      final d = compressors['compressor$c'] as Map<String, dynamic>? ?? {};
+      final phases = d['phases'] as Map<String, dynamic>? ?? {};
+      for (final p in phases.values) {
+        final pm = p as Map<String, dynamic>? ?? {};
+        final mn = (pm['min'] ?? 0.0).toDouble();
+        final mx = (pm['max'] ?? 0.0).toDouble();
+        if (mn < minVal && mn > 0) minVal = mn;
+        if (mx > maxVal) maxVal = mx;
+      }
+    }
+    if (minVal == double.infinity) minVal = 0;
+
+    return Column(
+      children: [
+        Wrap(
+          spacing: 12, runSpacing: 4,
+          children: List.generate(8, (i) => _buildLegendItem(colors[i], 'Comp ${i + 1}')),
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: maxVal + 2,
+              minY: (minVal - 2).clamp(0, double.infinity),
+              barTouchData: BarTouchData(
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    final compData = compressors['compressor${groupIndex + 1}'] as Map<String, dynamic>? ?? {};
+                    final phases = compData['phases'] as Map<String, dynamic>? ?? {};
+                    final avg = (compData['average_amp'] ?? 0.0).toDouble();
+                    String tip = 'Comp ${groupIndex + 1}\nAvg: ${avg.toStringAsFixed(1)}A';
+                    phases.forEach((k, v) {
+                      final pd = v as Map<String, dynamic>? ?? {};
+                      tip += '\n$k: ${(pd['min'] ?? 0).toStringAsFixed(1)}-${(pd['max'] ?? 0).toStringAsFixed(1)}A';
+                    });
+                    return BarTooltipItem(tip, GoogleFonts.inter(color: Colors.white, fontSize: 11));
+                  },
+                ),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) => Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('C${value.toInt() + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                  ),
+                )),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(0)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 2, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              borderData: FlBorderData(show: false),
+              barGroups: List.generate(8, (c) {
+                final compData = compressors['compressor${c + 1}'] as Map<String, dynamic>? ?? {};
+                final avg = (compData['average_amp'] ?? 0.0).toDouble();
+                return BarChartGroupData(
+                  x: c,
+                  barRods: [
+                    BarChartRodData(
+                      toY: avg,
+                      color: colors[c],
+                      width: 22,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                      backDrawRodData: BackgroundBarChartRodData(
+                        show: true,
+                        toY: maxVal + 2,
+                        color: colors[c].withOpacity(0.05),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDevice4PhaseBalanceChart() {
+    final stats = device4AnalyticsData!.overallStatistics;
+    final compressors = stats['compressors'] as Map<String, dynamic>? ?? {};
+    if (compressors.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+
+    final phaseColors = [Colors.blue.shade600, Colors.amber.shade600, Colors.red.shade500];
+
+    double maxVal = 0;
+    for (int c = 1; c <= 8; c++) {
+      final d = compressors['compressor$c'] as Map<String, dynamic>? ?? {};
+      final phases = d['phases'] as Map<String, dynamic>? ?? {};
+      for (final p in phases.values) {
+        final pm = p as Map<String, dynamic>? ?? {};
+        final v = (pm['avg'] ?? 0.0).toDouble();
+        if (v > maxVal) maxVal = v;
+      }
+    }
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(phaseColors[0], 'Phase 1'),
+            SizedBox(width: 16),
+            _buildLegendItem(phaseColors[1], 'Phase 2'),
+            SizedBox(width: 16),
+            _buildLegendItem(phaseColors[2], 'Phase 3'),
+          ],
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: maxVal + 3,
+              barTouchData: BarTouchData(
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    return BarTooltipItem(
+                      'Comp ${groupIndex + 1}\nPhase ${rodIndex + 1}: ${rod.toY.toStringAsFixed(1)}A',
+                      GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                    );
+                  },
+                ),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) => Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('C${value.toInt() + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                  ),
+                )),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(0)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 2, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              borderData: FlBorderData(show: false),
+              barGroups: List.generate(8, (c) {
+                final compData = compressors['compressor${c + 1}'] as Map<String, dynamic>? ?? {};
+                final phases = compData['phases'] as Map<String, dynamic>? ?? {};
+                final p1 = ((phases['phase1'] as Map<String, dynamic>?)?['avg'] ?? 0.0).toDouble();
+                final p2 = ((phases['phase2'] as Map<String, dynamic>?)?['avg'] ?? 0.0).toDouble();
+                final p3 = ((phases['phase3'] as Map<String, dynamic>?)?['avg'] ?? 0.0).toDouble();
+                return BarChartGroupData(
+                  x: c,
+                  barsSpace: 2,
+                  barRods: [
+                    BarChartRodData(toY: p1, color: phaseColors[0], width: 8, borderRadius: BorderRadius.vertical(top: Radius.circular(3))),
+                    BarChartRodData(toY: p2, color: phaseColors[1], width: 8, borderRadius: BorderRadius.vertical(top: Radius.circular(3))),
+                    BarChartRodData(toY: p3, color: phaseColors[2], width: 8, borderRadius: BorderRadius.vertical(top: Radius.circular(3))),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -4900,40 +5096,157 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
 
-    return SizedBox(
-      height: 250,
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(show: true, drawVerticalLine: false),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  final idx = value.toInt();
-                  if (idx >= 0 && idx < data.length) {
-                    final date = data[idx]['date'] ?? '';
-                    return Text(date.toString().substring(5), style: TextStyle(fontSize: 9));
-                  }
-                  return Text('');
-                },
+    return Column(
+      children: [
+        Wrap(
+          spacing: 12, runSpacing: 4,
+          children: List.generate(8, (i) => _buildLegendItem(colors[i], 'Comp ${i + 1}')),
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 2, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: data.length > 12 ? (data.length / 6).ceil().toDouble() : 1,
+                    getTitlesWidget: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx >= 0 && idx < data.length) {
+                        return Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text((data[idx]['date'] ?? '').toString().substring(5), style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                        );
+                      }
+                      return Text('');
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(0)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: List.generate(8, (c) => LineChartBarData(
+                spots: spots[c + 1]!,
+                isCurved: true,
+                color: colors[c],
+                barWidth: 2,
+                dotData: FlDotData(show: false),
+              )),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (spots) => spots.map((spot) =>
+                    LineTooltipItem('Comp ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(1)}A',
+                        TextStyle(color: colors[spot.barIndex], fontSize: 11))).toList(),
+                ),
               ),
             ),
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
-          borderData: FlBorderData(show: false),
-          lineBarsData: List.generate(8, (c) => LineChartBarData(
-            spots: spots[c + 1]!,
-            isCurved: true,
-            color: colors[c],
-            barWidth: 2,
-            dotData: FlDotData(show: false),
-          )),
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildDevice4PhaseDetailChart() {
+    final data = device4AnalyticsData!.dailyData;
+    if (data.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No daily data')));
+
+    final phaseColors = [Colors.blue.shade600, Colors.amber.shade600, Colors.red.shade500];
+
+    // Aggregate all compressor phase averages per day
+    final p1Spots = <FlSpot>[];
+    final p2Spots = <FlSpot>[];
+    final p3Spots = <FlSpot>[];
+
+    for (int i = 0; i < data.length; i++) {
+      double sum1 = 0, sum2 = 0, sum3 = 0;
+      int count = 0;
+      for (int c = 1; c <= 8; c++) {
+        final v1 = (data[i]['comp${c}_phase1'] ?? 0.0).toDouble();
+        final v2 = (data[i]['comp${c}_phase2'] ?? 0.0).toDouble();
+        final v3 = (data[i]['comp${c}_phase3'] ?? 0.0).toDouble();
+        if (v1 > 0 || v2 > 0 || v3 > 0) {
+          sum1 += v1; sum2 += v2; sum3 += v3;
+          count++;
+        }
+      }
+      if (count > 0) {
+        p1Spots.add(FlSpot(i.toDouble(), sum1 / count));
+        p2Spots.add(FlSpot(i.toDouble(), sum2 / count));
+        p3Spots.add(FlSpot(i.toDouble(), sum3 / count));
+      }
+    }
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(phaseColors[0], 'Phase 1 Avg'),
+            SizedBox(width: 16),
+            _buildLegendItem(phaseColors[1], 'Phase 2 Avg'),
+            SizedBox(width: 16),
+            _buildLegendItem(phaseColors[2], 'Phase 3 Avg'),
+          ],
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 2, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: data.length > 12 ? (data.length / 6).ceil().toDouble() : 1,
+                    getTitlesWidget: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx >= 0 && idx < data.length) {
+                        return Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text((data[idx]['date'] ?? '').toString().substring(5), style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                        );
+                      }
+                      return Text('');
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(0)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                LineChartBarData(spots: p1Spots, isCurved: true, color: phaseColors[0], barWidth: 2.5, dotData: FlDotData(show: false), belowBarData: BarAreaData(show: true, color: phaseColors[0].withOpacity(0.08))),
+                LineChartBarData(spots: p2Spots, isCurved: true, color: phaseColors[1], barWidth: 2.5, dotData: FlDotData(show: false), belowBarData: BarAreaData(show: true, color: phaseColors[1].withOpacity(0.08))),
+                LineChartBarData(spots: p3Spots, isCurved: true, color: phaseColors[2], barWidth: 2.5, dotData: FlDotData(show: false), belowBarData: BarAreaData(show: true, color: phaseColors[2].withOpacity(0.08))),
+              ],
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (spots) => spots.map((spot) {
+                    final names = ['Phase 1', 'Phase 2', 'Phase 3'];
+                    return LineTooltipItem('${names[spot.barIndex]}: ${spot.y.toStringAsFixed(1)}A',
+                        TextStyle(color: phaseColors[spot.barIndex], fontSize: 11));
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -5026,67 +5339,270 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ),
           SizedBox(height: spacing),
 
-          // Daily Duty Cycle Chart
+          // All Relays Duty Cycle Bar Chart
+          _buildChart('Relay Duty Cycle Overview', _buildDevice5DutyCycleBarChart()),
+          SizedBox(height: spacing),
+
+          // Hourly Activity Heatmap-style Bar Chart
+          if (data.hourlyRelayDistribution.isNotEmpty)
+            _buildChart('Hourly Relay Activity', _buildDevice5HourlyChart()),
+          if (data.hourlyRelayDistribution.isNotEmpty)
+            SizedBox(height: spacing),
+
+          // Daily Duty Cycle Trends (Relays 1-8)
           if (data.dailyData.isNotEmpty)
-            _buildChart('Daily Relay Duty Cycles', _buildDevice5DailyChart()),
+            _buildChart('Daily Duty Trends (Relays 1-8)', _buildDevice5DailyChart(1, 8)),
+          if (data.dailyData.isNotEmpty)
+            SizedBox(height: spacing),
+
+          // Daily Duty Cycle Trends (Relays 9-16)
+          if (data.dailyData.isNotEmpty)
+            _buildChart('Daily Duty Trends (Relays 9-16)', _buildDevice5DailyChart(9, 16)),
         ],
       ),
     );
   }
 
-  Widget _buildDevice5DailyChart() {
+  Widget _buildDevice5DutyCycleBarChart() {
+    final stats = device5AnalyticsData!.overallStatistics;
+    final relays = stats['relays'] as Map<String, dynamic>? ?? {};
+    if (relays.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(Colors.green.shade600, 'High Duty (>50%)'),
+            SizedBox(width: 16),
+            _buildLegendItem(Colors.orange, 'Low Duty (\u226450%)'),
+          ],
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 300,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: 105,
+              barTouchData: BarTouchData(
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    return BarTooltipItem(
+                      'Relay ${groupIndex + 1}\n${rod.toY.toStringAsFixed(1)}% ON',
+                      GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                    );
+                  },
+                ),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) => Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('R${value.toInt() + 1}', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w500)),
+                  ),
+                )),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text('${value.toInt()}%', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: FlGridData(
+                show: true, drawVerticalLine: false,
+                horizontalInterval: 25,
+                getDrawingHorizontalLine: (value) => FlLine(color: value == 50 ? Colors.grey.shade400 : Colors.grey.shade200, strokeWidth: value == 50 ? 1.5 : 1, dashArray: value == 50 ? [5, 5] : null),
+              ),
+              borderData: FlBorderData(show: false),
+              barGroups: List.generate(16, (i) {
+                final relayData = relays['relay${i + 1}'] as Map<String, dynamic>? ?? {};
+                final duty = (relayData['duty_cycle_pct'] ?? 0.0).toDouble();
+                final isHigh = duty > 50;
+                return BarChartGroupData(
+                  x: i,
+                  barRods: [
+                    BarChartRodData(
+                      toY: duty,
+                      color: isHigh ? Colors.green.shade600 : Colors.orange,
+                      width: 14,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
+                      backDrawRodData: BackgroundBarChartRodData(show: true, toY: 100, color: Colors.grey.shade100),
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDevice5HourlyChart() {
+    final hourlyData = device5AnalyticsData!.hourlyRelayDistribution;
+    if (hourlyData.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No hourly data')));
+
+    // Average all relay duty cycles per hour to get overall activity level
+    final hourSpots = <FlSpot>[];
+    final highRelaySpots = <FlSpot>[];
+
+    for (int i = 0; i < hourlyData.length; i++) {
+      final entry = hourlyData[i];
+      double totalDuty = 0;
+      double maxDuty = 0;
+      for (int r = 1; r <= 16; r++) {
+        final val = (entry['relay${r}_on_pct'] ?? 0.0).toDouble();
+        totalDuty += val;
+        if (val > maxDuty) maxDuty = val;
+      }
+      final hour = (entry['hour'] ?? i).toDouble();
+      hourSpots.add(FlSpot(hour, totalDuty / 16));
+      highRelaySpots.add(FlSpot(hour, maxDuty));
+    }
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(Colors.indigo, 'Avg Relay Activity'),
+            SizedBox(width: 16),
+            _buildLegendItem(Colors.red.shade400, 'Peak Relay Activity'),
+          ],
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: LineChart(
+            LineChartData(
+              maxY: 105,
+              minY: 0,
+              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 25, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 30,
+                  interval: 2,
+                  getTitlesWidget: (value, meta) => Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('${value.toInt()}h', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                  ),
+                )),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text('${value.toInt()}%', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: highRelaySpots, isCurved: true, color: Colors.red.shade400, barWidth: 2,
+                  dotData: FlDotData(show: false),
+                  belowBarData: BarAreaData(show: true, color: Colors.red.withOpacity(0.06)),
+                ),
+                LineChartBarData(
+                  spots: hourSpots, isCurved: true, color: Colors.indigo, barWidth: 2.5,
+                  dotData: FlDotData(show: false),
+                  belowBarData: BarAreaData(show: true, color: Colors.indigo.withOpacity(0.1)),
+                ),
+              ],
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (spots) => spots.map((spot) {
+                    final labels = ['Peak', 'Avg'];
+                    final colors = [Colors.red.shade400, Colors.indigo];
+                    return LineTooltipItem('${labels[spot.barIndex]}: ${spot.y.toStringAsFixed(1)}%',
+                        TextStyle(color: colors[spot.barIndex], fontSize: 11));
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDevice5DailyChart(int fromRelay, int toRelay) {
     final data = device5AnalyticsData!.dailyData;
     if (data.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No daily data')));
 
-    // Show first 4 relays for readability
+    final relayCount = toRelay - fromRelay + 1;
     final spots = <int, List<FlSpot>>{};
-    for (int r = 1; r <= 4; r++) {
+    for (int r = fromRelay; r <= toRelay; r++) {
       spots[r] = [];
     }
 
     for (int i = 0; i < data.length; i++) {
-      for (int r = 1; r <= 4; r++) {
+      for (int r = fromRelay; r <= toRelay; r++) {
         final val = (data[i]['relay${r}_duty_cycle'] ?? 0.0).toDouble();
         spots[r]!.add(FlSpot(i.toDouble(), val));
       }
     }
 
-    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange];
+    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
 
-    return SizedBox(
-      height: 250,
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(show: true, drawVerticalLine: false),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  final idx = value.toInt();
-                  if (idx >= 0 && idx < data.length) {
-                    final date = data[idx]['date'] ?? '';
-                    return Text(date.toString().substring(5), style: TextStyle(fontSize: 9));
-                  }
-                  return Text('');
-                },
+    return Column(
+      children: [
+        Wrap(
+          spacing: 12, runSpacing: 4,
+          children: List.generate(relayCount, (i) => _buildLegendItem(colors[i % colors.length], 'R${fromRelay + i}')),
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: LineChart(
+            LineChartData(
+              maxY: 105,
+              minY: 0,
+              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 25, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: data.length > 12 ? (data.length / 6).ceil().toDouble() : 1,
+                    getTitlesWidget: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx >= 0 && idx < data.length) {
+                        return Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text((data[idx]['date'] ?? '').toString().substring(5), style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                        );
+                      }
+                      return Text('');
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text('${value.toInt()}%', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: List.generate(relayCount, (i) => LineChartBarData(
+                spots: spots[fromRelay + i]!,
+                isCurved: true,
+                color: colors[i % colors.length],
+                barWidth: 2,
+                dotData: FlDotData(show: false),
+              )),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (touchedSpots) => touchedSpots.map((spot) =>
+                    LineTooltipItem('R${fromRelay + spot.barIndex}: ${spot.y.toStringAsFixed(1)}%',
+                        TextStyle(color: colors[spot.barIndex % colors.length], fontSize: 11))).toList(),
+                ),
               ),
             ),
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
-          borderData: FlBorderData(show: false),
-          lineBarsData: List.generate(4, (r) => LineChartBarData(
-            spots: spots[r + 1]!,
-            isCurved: true,
-            color: colors[r],
-            barWidth: 2,
-            dotData: FlDotData(show: false),
-          )),
         ),
-      ),
+      ],
     );
   }
 
@@ -5182,11 +5698,193 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ),
           SizedBox(height: spacing),
 
-          // Daily Pressure Chart
+          // Sensor Comparison Bar Chart (avg/min/max)
+          _buildChart('Sensor Pressure Comparison', _buildDevice6SensorBarChart()),
+          SizedBox(height: spacing),
+
+          // Pressure Range Envelope (min/max with area fill)
+          _buildChart('Pressure Range Envelope', _buildDevice6RangeChart()),
+          SizedBox(height: spacing),
+
+          // All Sensors Daily Trend
           if (data.dailyData.isNotEmpty)
             _buildChart('Daily Pressure Trends', _buildDevice6DailyChart()),
+          if (data.dailyData.isNotEmpty)
+            SizedBox(height: spacing),
+
+          // Pressure Stability (spread per sensor)
+          _buildChart('Pressure Stability (Range per Sensor)', _buildDevice6StabilityChart()),
         ],
       ),
+    );
+  }
+
+  Widget _buildDevice6SensorBarChart() {
+    final stats = device6AnalyticsData!.overallStatistics;
+    final sensors = stats['sensors'] as Map<String, dynamic>? ?? {};
+    if (sensors.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+
+    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
+
+    double maxVal = 0;
+    for (int s = 1; s <= 8; s++) {
+      final d = sensors['sensor$s'] as Map<String, dynamic>? ?? {};
+      final mx = (d['max'] ?? 0.0).toDouble();
+      if (mx > maxVal) maxVal = mx;
+    }
+
+    return Column(
+      children: [
+        Wrap(
+          spacing: 12, runSpacing: 4,
+          children: List.generate(8, (i) => _buildLegendItem(colors[i], 'Sensor ${i + 1}')),
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: maxVal + 1,
+              barTouchData: BarTouchData(
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    final sensorData = sensors['sensor${groupIndex + 1}'] as Map<String, dynamic>? ?? {};
+                    return BarTooltipItem(
+                      'Sensor ${groupIndex + 1}\nAvg: ${(sensorData['avg'] ?? 0).toStringAsFixed(2)} bar\nMin: ${(sensorData['min'] ?? 0).toStringAsFixed(2)} bar\nMax: ${(sensorData['max'] ?? 0).toStringAsFixed(2)} bar',
+                      GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                    );
+                  },
+                ),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) => Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('S${value.toInt() + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                  ),
+                )),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 45,
+                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(1)}', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 1, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              borderData: FlBorderData(show: false),
+              barGroups: List.generate(8, (i) {
+                final sensorData = sensors['sensor${i + 1}'] as Map<String, dynamic>? ?? {};
+                final avg = (sensorData['avg'] ?? 0.0).toDouble();
+                return BarChartGroupData(
+                  x: i,
+                  barRods: [
+                    BarChartRodData(
+                      toY: avg,
+                      color: colors[i],
+                      width: 24,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                      backDrawRodData: BackgroundBarChartRodData(show: true, toY: maxVal + 1, color: colors[i].withOpacity(0.05)),
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDevice6RangeChart() {
+    final sensorRanges = device6AnalyticsData!.sensorRanges;
+    final stats = device6AnalyticsData!.overallStatistics;
+    final sensors = stats['sensors'] as Map<String, dynamic>? ?? {};
+    if (sensors.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+
+    // Build spots for min, avg, and max lines across 8 sensors
+    final minSpots = <FlSpot>[];
+    final avgSpots = <FlSpot>[];
+    final maxSpots = <FlSpot>[];
+
+    for (int s = 1; s <= 8; s++) {
+      final sData = sensors['sensor$s'] as Map<String, dynamic>? ?? {};
+      minSpots.add(FlSpot((s - 1).toDouble(), (sData['min'] ?? 0.0).toDouble()));
+      avgSpots.add(FlSpot((s - 1).toDouble(), (sData['avg'] ?? 0.0).toDouble()));
+      maxSpots.add(FlSpot((s - 1).toDouble(), (sData['max'] ?? 0.0).toDouble()));
+    }
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(Colors.red, 'Max'),
+            SizedBox(width: 16),
+            _buildLegendItem(Colors.teal, 'Average'),
+            SizedBox(width: 16),
+            _buildLegendItem(Colors.blue, 'Min'),
+          ],
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 0.5, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 30,
+                  getTitlesWidget: (value, meta) {
+                    final idx = value.toInt();
+                    if (idx >= 0 && idx < 8) {
+                      return Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text('S${idx + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                      );
+                    }
+                    return Text('');
+                  },
+                )),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 45,
+                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(1)}', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: maxSpots, isCurved: true, color: Colors.red, barWidth: 2,
+                  dotData: FlDotData(show: true),
+                  belowBarData: BarAreaData(show: true, color: Colors.red.withOpacity(0.08)),
+                ),
+                LineChartBarData(
+                  spots: avgSpots, isCurved: true, color: Colors.teal, barWidth: 2.5,
+                  dotData: FlDotData(show: true),
+                ),
+                LineChartBarData(
+                  spots: minSpots, isCurved: true, color: Colors.blue, barWidth: 2,
+                  dotData: FlDotData(show: true),
+                  belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.08)),
+                ),
+              ],
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (spots) => spots.map((spot) {
+                    final names = ['Max', 'Avg', 'Min'];
+                    final clrs = [Colors.red, Colors.teal, Colors.blue];
+                    return LineTooltipItem('${names[spot.barIndex]}: ${spot.y.toStringAsFixed(2)} bar',
+                        TextStyle(color: clrs[spot.barIndex], fontSize: 11));
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -5208,40 +5906,145 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
 
-    return SizedBox(
-      height: 250,
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(show: true, drawVerticalLine: false),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  final idx = value.toInt();
-                  if (idx >= 0 && idx < data.length) {
-                    final date = data[idx]['date'] ?? '';
-                    return Text(date.toString().substring(5), style: TextStyle(fontSize: 9));
-                  }
-                  return Text('');
-                },
+    return Column(
+      children: [
+        Wrap(
+          spacing: 12, runSpacing: 4,
+          children: List.generate(8, (i) => _buildLegendItem(colors[i], 'Sensor ${i + 1}')),
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 0.5, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    interval: data.length > 12 ? (data.length / 6).ceil().toDouble() : 1,
+                    getTitlesWidget: (value, meta) {
+                      final idx = value.toInt();
+                      if (idx >= 0 && idx < data.length) {
+                        return Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text((data[idx]['date'] ?? '').toString().substring(5), style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                        );
+                      }
+                      return Text('');
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 45,
+                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(1)}', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: List.generate(8, (s) => LineChartBarData(
+                spots: spots[s + 1]!,
+                isCurved: true,
+                color: colors[s],
+                barWidth: 2,
+                dotData: FlDotData(show: false),
+              )),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipItems: (touchedSpots) => touchedSpots.map((spot) =>
+                    LineTooltipItem('Sensor ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(2)} bar',
+                        TextStyle(color: colors[spot.barIndex], fontSize: 11))).toList(),
+                ),
               ),
             ),
-            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           ),
-          borderData: FlBorderData(show: false),
-          lineBarsData: List.generate(8, (s) => LineChartBarData(
-            spots: spots[s + 1]!,
-            isCurved: true,
-            color: colors[s],
-            barWidth: 2,
-            dotData: FlDotData(show: false),
-          )),
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildDevice6StabilityChart() {
+    final stats = device6AnalyticsData!.overallStatistics;
+    final sensors = stats['sensors'] as Map<String, dynamic>? ?? {};
+    if (sensors.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+
+    // Range = max - min per sensor (lower = more stable)
+    final ranges = <double>[];
+    for (int s = 1; s <= 8; s++) {
+      final sData = sensors['sensor$s'] as Map<String, dynamic>? ?? {};
+      final mn = (sData['min'] ?? 0.0).toDouble();
+      final mx = (sData['max'] ?? 0.0).toDouble();
+      ranges.add(mx - mn);
+    }
+    final maxRange = ranges.reduce((a, b) => a > b ? a : b);
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(Colors.green, 'Stable (low range)'),
+            SizedBox(width: 16),
+            _buildLegendItem(Colors.orange, 'Unstable (high range)'),
+          ],
+        ),
+        SizedBox(height: 12),
+        SizedBox(
+          height: 280,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: maxRange > 0 ? maxRange + 0.1 : 1,
+              barTouchData: BarTouchData(
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    final sData = sensors['sensor${groupIndex + 1}'] as Map<String, dynamic>? ?? {};
+                    return BarTooltipItem(
+                      'Sensor ${groupIndex + 1}\nRange: ${rod.toY.toStringAsFixed(3)} bar\nMin: ${(sData['min'] ?? 0).toStringAsFixed(2)}\nMax: ${(sData['max'] ?? 0).toStringAsFixed(2)}',
+                      GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                    );
+                  },
+                ),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) => Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('S${value.toInt() + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                  ),
+                )),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 45,
+                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              borderData: FlBorderData(show: false),
+              barGroups: List.generate(8, (i) {
+                final range = ranges[i];
+                final avgRange = ranges.reduce((a, b) => a + b) / 8;
+                final isStable = range <= avgRange;
+                return BarChartGroupData(
+                  x: i,
+                  barRods: [
+                    BarChartRodData(
+                      toY: range,
+                      color: isStable ? Colors.green : Colors.orange,
+                      width: 24,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
