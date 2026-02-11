@@ -48,6 +48,10 @@ class _ControlScreenState extends State<ControlScreen>
   // Device 1 automation rules
   List<AutomationRule> _automationRules = [];
 
+  // Device 5 relay states (16 relays)
+  Map<int, bool> _device5RelayStates = {};
+  List<Map<String, dynamic>> _device5History = [];
+
   // Schedule form
   String _scheduleType = 'once';
   DateTime _scheduledDateTime = DateTime.now().add(const Duration(hours: 1));
@@ -89,6 +93,12 @@ class _ControlScreenState extends State<ControlScreen>
             _loadDefrostSchedules(),
             _loadAutomationRules(),
           ]);
+        } else if (_selectedDevice!.deviceType == 'device5') {
+          // Load device5 specific data
+          await Future.wait([
+            _loadDevice5RelayStatus(),
+            _loadDevice5History(),
+          ]);
         } else if (_selectedDevice!.deviceType == 'device3') {
           // Load device3 specific data
           await Future.wait([
@@ -126,7 +136,7 @@ class _ControlScreenState extends State<ControlScreen>
         if (data['success'] == true) {
           // Include both device1 and device3
           final devices = (data['devices'] as List)
-              .where((d) => d['device_type'] == 'device3' || d['device_type'] == 'device1')
+              .where((d) => d['device_type'] == 'device3' || d['device_type'] == 'device1' || d['device_type'] == 'device5')
               .map((d) => DeviceInfo.fromJson(d))
               .toList();
 
@@ -591,6 +601,136 @@ class _ControlScreenState extends State<ControlScreen>
     }
   }
 
+  // ============================================
+  // DEVICE 5 METHODS
+  // ============================================
+
+  Future<void> _loadDevice5RelayStatus() async {
+    if (_selectedDevice == null) return;
+
+    try {
+      final response = await http.post(
+        Uri.parse('${Constants.articBaseUrl2}api/devices/device5-relay-status/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'business_id': Constants.myBusiness.businessUid,
+          'device_id': _selectedDevice!.id,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          final states = data['relay_states'] as Map<String, dynamic>;
+          setState(() {
+            _device5RelayStates = {};
+            states.forEach((key, value) {
+              _device5RelayStates[int.parse(key)] = value ?? false;
+            });
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading device5 relay status: $e');
+    }
+  }
+
+  Future<void> _loadDevice5History() async {
+    if (_selectedDevice == null) return;
+
+    try {
+      final response = await http.post(
+        Uri.parse('${Constants.articBaseUrl2}api/devices/device5-relay-history/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'business_id': Constants.myBusiness.businessUid,
+          'device_id': _selectedDevice!.id,
+          'limit': 50,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          setState(() {
+            _device5History = List<Map<String, dynamic>>.from(data['history'] ?? []);
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading device5 history: $e');
+    }
+  }
+
+  Future<void> _toggleDevice5Relay(int relayNumber, bool newStatus) async {
+    if (_selectedDevice == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await http.post(
+        Uri.parse('${Constants.articBaseUrl2}api/devices/device5-relay-toggle/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'business_id': Constants.myBusiness.businessUid,
+          'device_id': _selectedDevice!.id,
+          'relay_number': relayNumber,
+          'relay_status': newStatus,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          _showSuccessSnackBar(data['message'] ?? 'Relay $relayNumber toggled');
+          await Future.wait([_loadDevice5RelayStatus(), _loadDevice5History()]);
+        } else {
+          _showErrorSnackBar(data['error'] ?? 'Failed to toggle relay');
+        }
+      } else {
+        _showErrorSnackBar('Failed to toggle relay');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _toggleDevice5AllRelays(bool status) async {
+    if (_selectedDevice == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await http.post(
+        Uri.parse('${Constants.articBaseUrl2}api/devices/device5-relay-toggle-all/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'business_id': Constants.myBusiness.businessUid,
+          'device_id': _selectedDevice!.id,
+          'relay_status': status,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          _showSuccessSnackBar(data['message'] ?? 'All relays toggled');
+          await Future.wait([_loadDevice5RelayStatus(), _loadDevice5History()]);
+        } else {
+          _showErrorSnackBar(data['error'] ?? 'Failed to toggle all relays');
+        }
+      } else {
+        _showErrorSnackBar('Failed to toggle all relays');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _setHarvestTurnoff(bool enabled, {int? harvestCount}) async {
     if (_selectedDevice == null) return;
 
@@ -793,7 +933,9 @@ class _ControlScreenState extends State<ControlScreen>
                             title: "Control",
                             description: _selectedDevice?.deviceType == 'device1'
                                 ? "Monitor control switches for Device 1"
-                                : "Manage relay control for ice machines",
+                                : _selectedDevice?.deviceType == 'device5'
+                                    ? "16-Relay Controller"
+                                    : "Manage relay control for ice machines",
                             icon: CupertinoIcons.power,
                           ),
                           const SizedBox(height: 24),
@@ -807,6 +949,10 @@ class _ControlScreenState extends State<ControlScreen>
                             _buildAutomationRulesSection(),
                             const SizedBox(height: 24),
                             _buildDevice1HistorySection(),
+                          ] else if (_selectedDevice?.deviceType == 'device5') ...[
+                            _buildDevice5ControlCard(),
+                            const SizedBox(height: 24),
+                            _buildDevice5HistorySection(),
                           ] else ...[
                             _buildStatusCard(),
                             const SizedBox(height: 24),
@@ -839,7 +985,7 @@ class _ControlScreenState extends State<ControlScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Control is available for Device 1 and Device 3 (ice machines)',
+            'Control is available for Device 1, Device 3, and Device 5',
             style: GoogleFonts.inter(
               fontSize: 14,
               color: Colors.grey[500],
@@ -911,15 +1057,17 @@ class _ControlScreenState extends State<ControlScreen>
                       decoration: BoxDecoration(
                         color: device.deviceType == 'device1'
                             ? Colors.blue.withOpacity(0.1)
-                            : Colors.teal.withOpacity(0.1),
+                            : device.deviceType == 'device5'
+                                ? Colors.indigo.withOpacity(0.1)
+                                : Colors.teal.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        device.deviceType == 'device1' ? 'D1' : 'D3',
+                        device.deviceType == 'device1' ? 'D1' : device.deviceType == 'device5' ? 'D5' : 'D3',
                         style: GoogleFonts.inter(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: device.deviceType == 'device1' ? Colors.blue : Colors.teal,
+                          color: device.deviceType == 'device1' ? Colors.blue : device.deviceType == 'device5' ? Colors.indigo : Colors.teal,
                         ),
                       ),
                     ),
@@ -2574,6 +2722,277 @@ class _ControlScreenState extends State<ControlScreen>
               color: isOn ? activeColor : Colors.grey[600],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================
+  // DEVICE 5 WIDGETS
+  // ============================================
+
+  Widget _buildDevice5ControlCard() {
+    if (_selectedDevice == null) return const SizedBox.shrink();
+
+    final onCount = _device5RelayStates.values.where((v) => v).length;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with gradient
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.indigo.shade400, Colors.indigo.shade700],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(CupertinoIcons.slider_horizontal_3, color: Colors.white, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _selectedDevice!.name,
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        'Relay Controller - $onCount/16 ON',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  onPressed: _isLoading ? null : () => _loadData(),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // All ON / All OFF buttons
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : () => _toggleDevice5AllRelays(true),
+                  icon: const Icon(Icons.flash_on, size: 18),
+                  label: const Text('All ON'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : () => _toggleDevice5AllRelays(false),
+                  icon: const Icon(Icons.flash_off, size: 18),
+                  label: const Text('All OFF'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade400,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // 4-column grid of 16 relay toggle cards
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 0.85,
+            ),
+            itemCount: 16,
+            itemBuilder: (context, index) {
+              final relayNum = index + 1;
+              final isOn = _device5RelayStates[relayNum] ?? false;
+              return _buildDevice5RelayTile(relayNum, isOn);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice5RelayTile(int relayNumber, bool isOn) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isOn ? Colors.indigo.withOpacity(0.1) : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isOn ? Colors.indigo.withOpacity(0.4) : Colors.grey.shade200,
+          width: isOn ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'R$relayNumber',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: isOn ? Colors.indigo : Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            isOn ? 'ON' : 'OFF',
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: isOn ? Colors.green : Colors.red.shade300,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Transform.scale(
+            scale: 0.7,
+            child: Switch(
+              value: isOn,
+              onChanged: _isLoading ? null : (val) => _toggleDevice5Relay(relayNumber, val),
+              activeColor: Colors.indigo,
+              activeTrackColor: Colors.indigo.withOpacity(0.3),
+              inactiveThumbColor: Colors.grey.shade400,
+              inactiveTrackColor: Colors.grey.shade200,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice5HistorySection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(CupertinoIcons.clock, color: Colors.grey[600], size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Relay History',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          if (_device5History.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(CupertinoIcons.clock, size: 48, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No History Yet',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _device5History.length > 20 ? 20 : _device5History.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final item = _device5History[index];
+                final isOn = item['action'] == 'relay_on';
+                return ListTile(
+                  leading: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isOn ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      isOn ? Icons.flash_on : Icons.flash_off,
+                      color: isOn ? Colors.green : Colors.red,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    item['reason'] ?? (isOn ? 'Relay ON' : 'Relay OFF'),
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    item['performed_by'] ?? 'System',
+                    style: GoogleFonts.inter(fontSize: 11, color: Colors.grey),
+                  ),
+                  trailing: Text(
+                    _formatDateTime(item['timestamp']),
+                    style: GoogleFonts.inter(fontSize: 11, color: Colors.grey),
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );
