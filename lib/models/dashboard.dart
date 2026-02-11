@@ -125,7 +125,7 @@ class DailyAggregate2 {
   factory DailyAggregate2.fromJson(Map<String, dynamic> json) {
     return DailyAggregate2(
       dayBucket: json['day_bucket'],
-      deviceId: json['device_id'],
+      deviceId: json['device_id']?.toString(),
       avgTempAir: json['avg_temp_air']?.toDouble(),
       minTempAir: json['min_temp_air']?.toDouble(),
       maxTempAir: json['max_temp_air']?.toDouble(),
@@ -176,7 +176,7 @@ class HourlyData {
   factory HourlyData.fromJson(Map<String, dynamic> json) {
     return HourlyData(
       hourBucket: json['hour_bucket'],
-      deviceId: json['device_id'],
+      deviceId: json['device_id']?.toString(),
       avgTempAir: json['avg_temp_air'],
       avgTempCoil: json['avg_temp_coil'],
       avgTempDrain: json['avg_temp_drain'],
@@ -192,6 +192,7 @@ class HourlyData {
 class DailyAggregate {
   final String? dayBucket;
   final String? deviceId;
+  final String? deviceType;
 
   // Temperature Air metrics with timestamps
   final double? avgTempAir;
@@ -276,6 +277,7 @@ class DailyAggregate {
   DailyAggregate({
     this.dayBucket,
     this.deviceId,
+    this.deviceType,
     this.avgTempAir,
     this.minTempAir,
     this.maxTempAir,
@@ -335,45 +337,95 @@ class DailyAggregate {
   });
 
   factory DailyAggregate.fromJson(Map<String, dynamic> json) {
+    final deviceType = json['device_type']?.toString();
+
+    // Normalize temperature fields based on device type
+    double? avgTempAir, minTempAir, maxTempAir;
+    double? avgTempCoil, minTempCoil, maxTempCoil;
+    double? avgTempDrain, minTempDrain, maxTempDrain;
+    DateTime? minTempAirTimestamp, maxTempAirTimestamp;
+    DateTime? minTempCoilTimestamp, maxTempCoilTimestamp;
+    DateTime? minTempDrainTimestamp, maxTempDrainTimestamp;
+
+    if (deviceType == 'device2') {
+      // Device2: multi-sensor (temp1-temp8), map first 3 to standard fields
+      avgTempAir = _toDoubleOrNull(json['avg_temp1']);
+      minTempAir = _toDoubleOrNull(json['min_temp1']);
+      maxTempAir = _toDoubleOrNull(json['max_temp1']);
+      avgTempCoil = _toDoubleOrNull(json['avg_temp2']);
+      minTempCoil = _toDoubleOrNull(json['min_temp2']);
+      maxTempCoil = _toDoubleOrNull(json['max_temp2']);
+      avgTempDrain = _toDoubleOrNull(json['avg_temp3']);
+      minTempDrain = _toDoubleOrNull(json['min_temp3']);
+      maxTempDrain = _toDoubleOrNull(json['max_temp3']);
+      // Device2 daily aggregates don't include timestamps
+    } else if (deviceType == 'device3') {
+      // Device3: ice machine (air_temp, hs_temp, ls_temp, ice_temp)
+      avgTempAir = _toDoubleOrNull(json['avg_air_temp']);
+      minTempAir = _toDoubleOrNull(json['min_air_temp']);
+      maxTempAir = _toDoubleOrNull(json['max_air_temp']);
+      avgTempCoil = _toDoubleOrNull(json['avg_hs_temp']);
+      minTempCoil = _toDoubleOrNull(json['min_hs_temp']);
+      maxTempCoil = _toDoubleOrNull(json['max_hs_temp']);
+      avgTempDrain = _toDoubleOrNull(json['avg_ice_temp']);
+      minTempDrain = _toDoubleOrNull(json['min_ice_temp']);
+      maxTempDrain = _toDoubleOrNull(json['max_ice_temp']);
+      // Device3 daily aggregates don't include timestamps
+    } else {
+      // Device1: refrigeration (temp_air, temp_coil, temp_drain)
+      avgTempAir = _toDoubleOrNull(json['avg_temp_air']);
+      minTempAir = _toDoubleOrNull(json['min_temp_air']);
+      maxTempAir = _toDoubleOrNull(json['max_temp_air']);
+      minTempAirTimestamp = json['min_temp_air_timestamp'] != null
+          ? DateTime.parse(json['min_temp_air_timestamp'])
+          : null;
+      maxTempAirTimestamp = json['max_temp_air_timestamp'] != null
+          ? DateTime.parse(json['max_temp_air_timestamp'])
+          : null;
+      avgTempCoil = _toDoubleOrNull(json['avg_temp_coil']);
+      minTempCoil = _toDoubleOrNull(json['min_temp_coil']);
+      maxTempCoil = _toDoubleOrNull(json['max_temp_coil']);
+      minTempCoilTimestamp = json['min_temp_coil_timestamp'] != null
+          ? DateTime.parse(json['min_temp_coil_timestamp'])
+          : null;
+      maxTempCoilTimestamp = json['max_temp_coil_timestamp'] != null
+          ? DateTime.parse(json['max_temp_coil_timestamp'])
+          : null;
+      avgTempDrain = _toDoubleOrNull(json['avg_temp_drain']);
+      minTempDrain = _toDoubleOrNull(json['min_temp_drain']);
+      maxTempDrain = _toDoubleOrNull(json['max_temp_drain']);
+      minTempDrainTimestamp = json['min_temp_drain_timestamp'] != null
+          ? DateTime.parse(json['min_temp_drain_timestamp'])
+          : null;
+      maxTempDrainTimestamp = json['max_temp_drain_timestamp'] != null
+          ? DateTime.parse(json['max_temp_drain_timestamp'])
+          : null;
+    }
+
     return DailyAggregate(
       dayBucket: json['day_bucket'],
-      deviceId: json['device_id'],
+      deviceId: json['device_id']?.toString(),
+      deviceType: deviceType,
 
-      // Temperature Air with timestamps
-      avgTempAir: _toDoubleOrNull(json['avg_temp_air']),
-      minTempAir: _toDoubleOrNull(json['min_temp_air']),
-      maxTempAir: _toDoubleOrNull(json['max_temp_air']),
-      minTempAirTimestamp: json['min_temp_air_timestamp'] != null
-          ? DateTime.parse(json['min_temp_air_timestamp'])
-          : null,
-      maxTempAirTimestamp: json['max_temp_air_timestamp'] != null
-          ? DateTime.parse(json['max_temp_air_timestamp'])
-          : null,
-
-      // Temperature Coil with timestamps
-      avgTempCoil: _toDoubleOrNull(json['avg_temp_coil']),
-      minTempCoil: _toDoubleOrNull(json['min_temp_coil']),
-      maxTempCoil: _toDoubleOrNull(json['max_temp_coil']),
-      minTempCoilTimestamp: json['min_temp_coil_timestamp'] != null
-          ? DateTime.parse(json['min_temp_coil_timestamp'])
-          : null,
-      maxTempCoilTimestamp: json['max_temp_coil_timestamp'] != null
-          ? DateTime.parse(json['max_temp_coil_timestamp'])
-          : null,
-
-      // Temperature Drain with timestamps
-      avgTempDrain: _toDoubleOrNull(json['avg_temp_drain']),
-      minTempDrain: _toDoubleOrNull(json['min_temp_drain']),
-      maxTempDrain: _toDoubleOrNull(json['max_temp_drain']),
-      minTempDrainTimestamp: json['min_temp_drain_timestamp'] != null
-          ? DateTime.parse(json['min_temp_drain_timestamp'])
-          : null,
-      maxTempDrainTimestamp: json['max_temp_drain_timestamp'] != null
-          ? DateTime.parse(json['max_temp_drain_timestamp'])
-          : null,
+      // Normalized temperature fields
+      avgTempAir: avgTempAir,
+      minTempAir: minTempAir,
+      maxTempAir: maxTempAir,
+      minTempAirTimestamp: minTempAirTimestamp,
+      maxTempAirTimestamp: maxTempAirTimestamp,
+      avgTempCoil: avgTempCoil,
+      minTempCoil: minTempCoil,
+      maxTempCoil: maxTempCoil,
+      minTempCoilTimestamp: minTempCoilTimestamp,
+      maxTempCoilTimestamp: maxTempCoilTimestamp,
+      avgTempDrain: avgTempDrain,
+      minTempDrain: minTempDrain,
+      maxTempDrain: maxTempDrain,
+      minTempDrainTimestamp: minTempDrainTimestamp,
+      maxTempDrainTimestamp: maxTempDrainTimestamp,
 
       // General temperature
-      avgTemp: _toDoubleOrNull(json['avg_temp']),
+      avgTemp: _toDoubleOrNull(json['avg_temp'] ?? json['avg_temp_overall']),
       minTemp: _toDoubleOrNull(json['min_temp']),
       maxTemp: _toDoubleOrNull(json['max_temp']),
 
@@ -386,7 +438,7 @@ class DailyAggregate {
       totalDoorOpenMinutes: _toDoubleOrNull(json['total_door_open_minutes']),
       doorStabilityStatus: json['door_stability_status'],
 
-      // Compressor - Note: these fields are missing from the JSON response
+      // Compressor
       avgCompAmp: _toDoubleOrNull(json['avg_comp_amp']),
       maxCompAmp: _toDoubleOrNull(json['max_comp_amp']),
       avgCompAmpPh1: _toDoubleOrNull(json['avg_comp_amp_ph1']),
@@ -418,20 +470,20 @@ class DailyAggregate {
               ? DateTime.parse(json['max_high_side_pressure_timestamp'])
               : null,
 
-      // Runtime - Note: compressor_on_count is missing from JSON response
+      // Runtime
       compressorOnCount: json['compressor_on_count'],
       compressorOffCount: json['compressor_off_count'],
       compressorRuntimePercentage:
           _toDoubleOrNull(json['compressor_runtime_percentage']),
 
-      // Data quality - Note: these fields are missing from JSON response
+      // Data quality
       totalReadings: json['total_readings'],
       validTempAirReadings: json['valid_temp_air_readings'],
       validPressureReadings: json['valid_pressure_readings'],
       firstReadingTime: json['first_reading_time'],
       lastReadingTime: json['last_reading_time'],
 
-      // NEW: Uptime Analysis
+      // Uptime Analysis
       deviceUptimePercentage: _toDoubleOrNull(json['device_uptime_percentage']),
       unitOperationalPercentage:
           _toDoubleOrNull(json['unit_operational_percentage']),
@@ -819,7 +871,7 @@ class LatestDeviceData {
   factory LatestDeviceData.fromJson(Map<String, dynamic> json) {
     print("LatestDeviceData.fromJson: ${json}");
     return LatestDeviceData(
-      deviceId: json['device_id'],
+      deviceId: json['device_id']?.toString(),
       time: json['time'],
       deviceType: json['device_type'],
       temperature: json['temperature']?.toDouble(),
@@ -950,7 +1002,7 @@ class DeviceStatus {
   // Factory method to create an instance from JSON
   factory DeviceStatus.fromJson(Map<String, dynamic> json) {
     return DeviceStatus(
-      deviceId: json['device_id'] as String,
+      deviceId: json['device_id']?.toString() ?? '',
       currentStatus: json['current_status'] as String,
       latitude: json['latitude'] as String,
       longitude: json['longitude'] as String,
@@ -1007,8 +1059,8 @@ class AlertData {
 
   factory AlertData.fromJson(Map<String, dynamic> json) {
     return AlertData(
-      id: json['id'],
-      deviceId: json['device_id'],
+      id: json['id']?.toString(),
+      deviceId: json['device_id']?.toString(),
       deviceName: json['device_name'],
       deviceLocation: json['device_location'],
       deviceType: json['device_type'],

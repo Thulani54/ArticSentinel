@@ -1048,38 +1048,100 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return;
     }
 
-    temperatureRanges = [
-      TemperatureRange(
-        sensor: 'Air Temperature',
-        current: selectedDevice.temperatureAir,
-        min: dailyData?.minTempAir,
-        max: dailyData?.maxTempAir,
-        avg: dailyData?.avgTempAir,
-        status: _getTemperatureStatus(selectedDevice.temperatureAir, -25, 5),
-        minTimestamp: dailyData?.minTempAirTimestamp,
-        maxTimestamp: dailyData?.maxTempAirTimestamp,
-      ),
-      TemperatureRange(
-        sensor: 'Coil Temperature',
-        current: selectedDevice.temperatureCoil,
-        min: dailyData?.minTempCoil,
-        max: dailyData?.maxTempCoil,
-        avg: dailyData?.avgTempCoil,
-        status: _getTemperatureStatus(selectedDevice.temperatureCoil, -30, 10),
-        minTimestamp: dailyData?.minTempCoilTimestamp,
-        maxTimestamp: dailyData?.maxTempCoilTimestamp,
-      ),
-      TemperatureRange(
-        sensor: 'Drain Temperature',
-        current: selectedDevice.temperatureDrain,
-        min: dailyData?.minTempDrain,
-        max: dailyData?.maxTempDrain,
-        avg: dailyData?.avgTempDrain,
-        status: _getTemperatureStatus(selectedDevice.temperatureDrain, -20, 15),
-        minTimestamp: dailyData?.minTempDrainTimestamp,
-        maxTimestamp: dailyData?.maxTempDrainTimestamp,
-      ),
-    ];
+    // Build temperature ranges based on device type
+    final deviceType = selectedDevice.resolvedDeviceType;
+
+    if (deviceType == 'device2') {
+      // Device2: multi-sensor (temp1-temp8)
+      temperatureRanges = [
+        TemperatureRange(
+          sensor: 'Sensor 1',
+          current: selectedDevice.temp1,
+          min: dailyData?.minTempAir,
+          max: dailyData?.maxTempAir,
+          avg: dailyData?.avgTempAir,
+          status: _getTemperatureStatus(selectedDevice.temp1, -25, 50),
+        ),
+        TemperatureRange(
+          sensor: 'Sensor 2',
+          current: selectedDevice.temp2,
+          min: dailyData?.minTempCoil,
+          max: dailyData?.maxTempCoil,
+          avg: dailyData?.avgTempCoil,
+          status: _getTemperatureStatus(selectedDevice.temp2, -25, 50),
+        ),
+        TemperatureRange(
+          sensor: 'Sensor 3',
+          current: selectedDevice.temp3,
+          min: dailyData?.minTempDrain,
+          max: dailyData?.maxTempDrain,
+          avg: dailyData?.avgTempDrain,
+          status: _getTemperatureStatus(selectedDevice.temp3, -25, 50),
+        ),
+      ];
+    } else if (deviceType == 'device3') {
+      // Device3: ice machine
+      temperatureRanges = [
+        TemperatureRange(
+          sensor: 'Air Temperature',
+          current: selectedDevice.airTemp,
+          min: dailyData?.minTempAir,
+          max: dailyData?.maxTempAir,
+          avg: dailyData?.avgTempAir,
+          status: _getTemperatureStatus(selectedDevice.airTemp, -25, 50),
+        ),
+        TemperatureRange(
+          sensor: 'Hot Side',
+          current: selectedDevice.hsTemp,
+          min: dailyData?.minTempCoil,
+          max: dailyData?.maxTempCoil,
+          avg: dailyData?.avgTempCoil,
+          status: _getTemperatureStatus(selectedDevice.hsTemp, -25, 70),
+        ),
+        TemperatureRange(
+          sensor: 'Ice Temperature',
+          current: selectedDevice.iceTemp,
+          min: dailyData?.minTempDrain,
+          max: dailyData?.maxTempDrain,
+          avg: dailyData?.avgTempDrain,
+          status: _getTemperatureStatus(selectedDevice.iceTemp, -25, 50),
+        ),
+      ];
+    } else {
+      // Device1: refrigeration (default)
+      temperatureRanges = [
+        TemperatureRange(
+          sensor: 'Air Temperature',
+          current: selectedDevice.temperatureAir,
+          min: dailyData?.minTempAir,
+          max: dailyData?.maxTempAir,
+          avg: dailyData?.avgTempAir,
+          status: _getTemperatureStatus(selectedDevice.temperatureAir, -25, 5),
+          minTimestamp: dailyData?.minTempAirTimestamp,
+          maxTimestamp: dailyData?.maxTempAirTimestamp,
+        ),
+        TemperatureRange(
+          sensor: 'Coil Temperature',
+          current: selectedDevice.temperatureCoil,
+          min: dailyData?.minTempCoil,
+          max: dailyData?.maxTempCoil,
+          avg: dailyData?.avgTempCoil,
+          status: _getTemperatureStatus(selectedDevice.temperatureCoil, -30, 10),
+          minTimestamp: dailyData?.minTempCoilTimestamp,
+          maxTimestamp: dailyData?.maxTempCoilTimestamp,
+        ),
+        TemperatureRange(
+          sensor: 'Drain Temperature',
+          current: selectedDevice.temperatureDrain,
+          min: dailyData?.minTempDrain,
+          max: dailyData?.maxTempDrain,
+          avg: dailyData?.avgTempDrain,
+          status: _getTemperatureStatus(selectedDevice.temperatureDrain, -20, 15),
+          minTimestamp: dailyData?.minTempDrainTimestamp,
+          maxTimestamp: dailyData?.maxTempDrainTimestamp,
+        ),
+      ];
+    }
   }
 
   void _buildPressureMetrics() {
@@ -1958,10 +2020,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               SizedBox(width: 12),
               Expanded(
                 child: _buildTemperatureExtremeCard(
-                  'Highest1',
+                  'Highest',
                   range.max,
-                  range
-                      .maxTimestamp, // Add this field to your TemperatureRange model
+                  range.maxTimestamp,
                   Constants.ctaColorLight,
                   Icons.trending_up,
                 ),

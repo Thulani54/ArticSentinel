@@ -72,7 +72,7 @@ class LatestDeviceData {
 
   factory LatestDeviceData.fromJson(Map<String, dynamic> json) {
     return LatestDeviceData(
-      deviceId: json['device_id'],
+      deviceId: json['device_id']?.toString(),
       time: json['time'],
       temperature: json['temperature']?.toDouble(),
       temperatureAir: json['temperatureAir']?.toDouble(),
@@ -137,8 +137,8 @@ class AlertData {
 
   factory AlertData.fromJson(Map<String, dynamic> json) {
     return AlertData(
-      id: json['id'],
-      deviceId: json['device_id'],
+      id: json['id']?.toString(),
+      deviceId: json['device_id']?.toString(),
       timestamp: json['timestamp'],
       alertType: json['alert_type'],
       message: json['message'],

@@ -61,7 +61,7 @@ class DeviceModel {
   factory DeviceModel.fromJson(Map<String, dynamic> json) {
     return DeviceModel(
       id: json['id'] ?? 0,
-      deviceId: json['device_id'] ?? '',
+      deviceId: json['device_id']?.toString() ?? '',
       deviceStatus: json['deviceStatus'] ?? '',
       client: Client.fromJson(json['client'] ?? {}),
       created_by: User.fromJson(json['created_by'] ?? {}),
@@ -278,7 +278,7 @@ class DeviceModel3 {
   factory DeviceModel3.fromJson(Map<String, dynamic> json) {
     return DeviceModel3(
       id: json['id'],
-      deviceId: json['device_id'],
+      deviceId: json['device_id']?.toString() ?? '',
       name: json['name'],
       productId: json['product_id'],
       location: json['location'],

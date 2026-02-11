@@ -3083,7 +3083,7 @@ class DeviceInfo {
   factory DeviceInfo.fromJson(Map<String, dynamic> json) {
     return DeviceInfo(
       id: json['id'],
-      deviceId: json['device_id'] ?? '',
+      deviceId: json['device_id']?.toString() ?? '',
       name: json['name'] ?? 'Unknown Device',
       deviceType: json['device_type'] ?? '',
       isOnline: json['is_online'] ?? false,

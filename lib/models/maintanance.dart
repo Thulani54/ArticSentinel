@@ -132,7 +132,7 @@ class Device {
     return Device(
       id: json['id'],
       name: json['name'],
-      deviceId: json['device_id'],
+      deviceId: json['device_id']?.toString() ?? '',
     );
   }
 }
