@@ -900,8 +900,16 @@ class _ControlScreenState extends State<ControlScreen>
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -909,8 +917,16 @@ class _ControlScreenState extends State<ControlScreen>
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: const Color(0xFFEF4444),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -919,13 +935,18 @@ class _ControlScreenState extends State<ControlScreen>
   Widget build(BuildContext context) {
     return SafeArea(
       child: _isLoading && _devices.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: const Color(0xFF3B82F6)))
           : _error.isNotEmpty
-              ? Center(child: Text(_error))
+              ? Center(
+                  child: Text(
+                    _error,
+                    style: GoogleFonts.inter(color: const Color(0xFFEF4444)),
+                  ),
+                )
               : _devices.isEmpty
                   ? _buildEmptyState()
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -969,18 +990,25 @@ class _ControlScreenState extends State<ControlScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            CupertinoIcons.power,
-            size: 64,
-            color: Colors.grey[400],
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              CupertinoIcons.power,
+              size: 48,
+              color: Color(0xFF3B82F6),
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
             'No Control Devices Found',
             style: GoogleFonts.inter(
               fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF1E293B),
             ),
           ),
           const SizedBox(height: 8),
@@ -988,7 +1016,7 @@ class _ControlScreenState extends State<ControlScreen>
             'Control is available for Device 1, Device 3, and Device 5',
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: const Color(0xFF64748B),
             ),
             textAlign: TextAlign.center,
           ),
@@ -999,14 +1027,14 @@ class _ControlScreenState extends State<ControlScreen>
 
   Widget _buildDeviceSelector() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -1014,22 +1042,50 @@ class _ControlScreenState extends State<ControlScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Select Device',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.devices_rounded,
+                  size: 20,
+                  color: Color(0xFF3B82F6),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Select Device',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           DropdownButtonFormField<DeviceInfo>(
             value: _selectedDevice,
             decoration: InputDecoration(
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+              ),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             items: _devices.map((device) {
               return DropdownMenuItem(
@@ -1037,37 +1093,45 @@ class _ControlScreenState extends State<ControlScreen>
                 child: Row(
                   children: [
                     Container(
-                      width: 8,
-                      height: 8,
+                      width: 10,
+                      height: 10,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: device.isOnline ? Colors.green : Colors.grey,
+                        color: device.isOnline ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         device.name,
                         overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF1E293B),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: device.deviceType == 'device1'
-                            ? Colors.blue.withOpacity(0.1)
+                            ? const Color(0xFF3B82F6).withOpacity(0.1)
                             : device.deviceType == 'device5'
-                                ? Colors.indigo.withOpacity(0.1)
-                                : Colors.teal.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
+                                ? const Color(0xFF8B5CF6).withOpacity(0.1)
+                                : const Color(0xFF06B6D4).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         device.deviceType == 'device1' ? 'D1' : device.deviceType == 'device5' ? 'D5' : 'D3',
                         style: GoogleFonts.inter(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: device.deviceType == 'device1' ? Colors.blue : device.deviceType == 'device5' ? Colors.indigo : Colors.teal,
+                          color: device.deviceType == 'device1'
+                              ? const Color(0xFF3B82F6)
+                              : device.deviceType == 'device5'
+                                  ? const Color(0xFF8B5CF6)
+                                  : const Color(0xFF06B6D4),
                         ),
                       ),
                     ),
@@ -1090,22 +1154,19 @@ class _ControlScreenState extends State<ControlScreen>
   Widget _buildStatusCard() {
     if (_selectedDevice == null) return const SizedBox.shrink();
 
+    final statusColor = _relayStatus ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: _relayStatus
-              ? [Colors.green.shade400, Colors.green.shade600]
-              : [Colors.red.shade400, Colors.red.shade600],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: statusColor.withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
-            color: (_relayStatus ? Colors.green : Colors.red).withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1114,24 +1175,55 @@ class _ControlScreenState extends State<ControlScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
-                  Text(
-                    _selectedDevice!.name,
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      _relayStatus ? Icons.power_rounded : Icons.power_off_rounded,
+                      color: statusColor,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _relayStatus ? 'Machine is ON' : 'Machine is OFF',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _selectedDevice!.name,
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: statusColor,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _relayStatus ? 'Machine is ON' : 'Machine is OFF',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1140,16 +1232,16 @@ class _ControlScreenState extends State<ControlScreen>
                 child: Switch(
                   value: _relayStatus,
                   onChanged: _isLoading ? null : (value) => _toggleRelay(value),
-                  activeColor: Colors.white,
-                  activeTrackColor: Colors.white30,
-                  inactiveThumbColor: Colors.white,
-                  inactiveTrackColor: Colors.white30,
+                  activeColor: const Color(0xFF10B981),
+                  activeTrackColor: const Color(0xFF10B981).withOpacity(0.3),
+                  inactiveThumbColor: const Color(0xFF9CA3AF),
+                  inactiveTrackColor: const Color(0xFFE5E7EB),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Divider(color: Colors.white24),
+          Divider(color: const Color(0xFFE5E7EB)),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1184,7 +1276,8 @@ class _ControlScreenState extends State<ControlScreen>
           label,
           style: GoogleFonts.inter(
             fontSize: 11,
-            color: Colors.white70,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF9CA3AF),
           ),
         ),
         const SizedBox(height: 4),
@@ -1193,7 +1286,7 @@ class _ControlScreenState extends State<ControlScreen>
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: const Color(0xFF1E293B),
           ),
         ),
       ],
@@ -1214,11 +1307,11 @@ class _ControlScreenState extends State<ControlScreen>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -1227,9 +1320,11 @@ class _ControlScreenState extends State<ControlScreen>
         children: [
           TabBar(
             controller: _tabController,
-            labelColor: Constants.ctaColorLight,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Constants.ctaColorLight,
+            labelColor: const Color(0xFF3B82F6),
+            unselectedLabelColor: const Color(0xFF9CA3AF),
+            indicatorColor: const Color(0xFF3B82F6),
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500),
             tabs: const [
               Tab(text: 'Quick Actions'),
               Tab(text: 'Schedules'),
@@ -1258,12 +1353,26 @@ class _ControlScreenState extends State<ControlScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Quick Actions',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.flash_on_rounded, size: 20, color: Color(0xFFF59E0B)),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Quick Actions',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           _buildActionCard(
@@ -1271,7 +1380,7 @@ class _ControlScreenState extends State<ControlScreen>
             title: 'Turn OFF Indefinitely',
             subtitle: 'Machine stays off until manually turned on',
             onTap: () => _toggleRelay(false),
-            color: Colors.red,
+            color: const Color(0xFFEF4444),
           ),
           const SizedBox(height: 12),
           _buildActionCard(
@@ -1279,7 +1388,7 @@ class _ControlScreenState extends State<ControlScreen>
             title: 'Turn OFF for Duration',
             subtitle: 'Auto-turns on after specified time',
             onTap: () => _showDurationDialog(),
-            color: Colors.orange,
+            color: const Color(0xFFF59E0B),
           ),
           const SizedBox(height: 12),
           _buildActionCard(
@@ -1287,7 +1396,7 @@ class _ControlScreenState extends State<ControlScreen>
             title: 'Schedule ON/OFF',
             subtitle: 'Set specific date and time',
             onTap: () => _showScheduleDialog(),
-            color: Colors.blue,
+            color: const Color(0xFF3B82F6),
           ),
           const SizedBox(height: 12),
           _buildActionCard(
@@ -1295,7 +1404,7 @@ class _ControlScreenState extends State<ControlScreen>
             title: 'Create Recurring Schedule',
             subtitle: 'Daily or weekly automation',
             onTap: () => _showRecurringDialog(),
-            color: Colors.purple,
+            color: const Color(0xFF8B5CF6),
           ),
           const SizedBox(height: 12),
           _buildHarvestTurnoffCard(),
@@ -1315,11 +1424,11 @@ class _ControlScreenState extends State<ControlScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border.all(
-          color: isEnabled ? Colors.teal.shade300 : Colors.grey.shade200,
+          color: isEnabled ? const Color(0xFF06B6D4).withOpacity(0.3) : const Color(0xFFE5E7EB),
           width: isEnabled ? 2 : 1,
         ),
         borderRadius: BorderRadius.circular(12),
-        color: isEnabled ? Colors.teal.shade50 : null,
+        color: isEnabled ? const Color(0xFF06B6D4).withOpacity(0.05) : const Color(0xFFF9FAFB),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1329,10 +1438,10 @@ class _ControlScreenState extends State<ControlScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.teal.withOpacity(0.1),
+                  color: const Color(0xFF06B6D4).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(CupertinoIcons.snow, color: Colors.teal, size: 24),
+                child: const Icon(CupertinoIcons.snow, color: Color(0xFF06B6D4), size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -1344,6 +1453,7 @@ class _ControlScreenState extends State<ControlScreen>
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
                     Text(
@@ -1352,7 +1462,7 @@ class _ControlScreenState extends State<ControlScreen>
                           : 'Auto-turn off after set number of harvests',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: const Color(0xFF64748B),
                       ),
                     ),
                   ],
@@ -1360,13 +1470,13 @@ class _ControlScreenState extends State<ControlScreen>
               ),
               if (isEnabled)
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
+                  icon: const Icon(Icons.close_rounded, color: Color(0xFFEF4444)),
                   onPressed: _isLoading ? null : () => _setHarvestTurnoff(false),
                   tooltip: 'Disable',
                 )
               else
                 IconButton(
-                  icon: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                  icon: const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
                   onPressed: _isLoading ? null : () => _showHarvestTurnoffDialog(),
                 ),
             ],
@@ -1374,12 +1484,12 @@ class _ControlScreenState extends State<ControlScreen>
           if (isEnabled && threshold != null) ...[
             const SizedBox(height: 12),
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(6),
               child: LinearProgressIndicator(
                 value: progressPercent / 100,
-                backgroundColor: Colors.grey.shade200,
+                backgroundColor: const Color(0xFFE5E7EB),
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  progressPercent > 80 ? Colors.orange : Colors.teal,
+                  progressPercent > 80 ? const Color(0xFFF59E0B) : const Color(0xFF06B6D4),
                 ),
                 minHeight: 8,
               ),
@@ -1392,7 +1502,7 @@ class _ControlScreenState extends State<ControlScreen>
                   '$harvestsSinceEnable / $threshold harvests',
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: Colors.grey[600],
+                    color: const Color(0xFF64748B),
                   ),
                 ),
                 Text(
@@ -1400,7 +1510,7 @@ class _ControlScreenState extends State<ControlScreen>
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: progressPercent > 80 ? Colors.orange : Colors.teal,
+                    color: progressPercent > 80 ? const Color(0xFFF59E0B) : const Color(0xFF06B6D4),
                   ),
                 ),
               ],
@@ -1524,9 +1634,9 @@ class _ControlScreenState extends State<ControlScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1538,10 +1648,10 @@ class _ControlScreenState extends State<ControlScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(CupertinoIcons.slider_horizontal_3, color: Colors.blue, size: 24),
+                child: const Icon(CupertinoIcons.slider_horizontal_3, color: Color(0xFF3B82F6), size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -1552,21 +1662,22 @@ class _ControlScreenState extends State<ControlScreen>
                       _selectedDevice!.name,
                       style: GoogleFonts.inter(
                         fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
                     Text(
                       'Control Switches',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: const Color(0xFF64748B),
                       ),
                     ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.blue),
+                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF3B82F6)),
                 onPressed: _isLoading ? null : () => _loadData(),
               ),
             ],
@@ -1579,7 +1690,7 @@ class _ControlScreenState extends State<ControlScreen>
             subtitle: defrostSwitch ? 'Active - Defrost cycle running' : 'Inactive - Tap to activate',
             isOn: defrostSwitch,
             icon: CupertinoIcons.snow,
-            activeColor: Colors.cyan,
+            activeColor: const Color(0xFF06B6D4),
             onToggle: (value) => _toggleDevice1Defrost(value),
           ),
 
@@ -1591,24 +1702,24 @@ class _ControlScreenState extends State<ControlScreen>
             subtitle: compSwitch ? 'Running' : 'Stopped - Tap to start',
             isOn: compSwitch,
             icon: CupertinoIcons.gear_alt,
-            activeColor: Colors.green,
+            activeColor: const Color(0xFF10B981),
             onToggle: (value) => _toggleDevice1Compressor(value),
           ),
 
           if (lastUpdated != null) ...[
             const SizedBox(height: 16),
-            Divider(color: Colors.grey.shade200),
+            const Divider(color: Color(0xFFE5E7EB)),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                const Icon(Icons.access_time, size: 14, color: Color(0xFF9CA3AF)),
                 const SizedBox(width: 4),
                 Text(
                   'Last updated: ${_formatDateTime(lastUpdated)}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: Colors.grey[500],
+                    color: const Color(0xFF9CA3AF),
                   ),
                 ),
               ],
@@ -1630,10 +1741,10 @@ class _ControlScreenState extends State<ControlScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isOn ? activeColor.withOpacity(0.1) : Colors.grey.shade50,
+        color: isOn ? activeColor.withOpacity(0.05) : const Color(0xFFF9FAFB),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isOn ? activeColor.withOpacity(0.3) : Colors.grey.shade200,
+          color: isOn ? activeColor.withOpacity(0.3) : const Color(0xFFE5E7EB),
           width: isOn ? 2 : 1,
         ),
       ),
@@ -1642,12 +1753,12 @@ class _ControlScreenState extends State<ControlScreen>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isOn ? activeColor.withOpacity(0.2) : Colors.grey.shade100,
+              color: isOn ? activeColor.withOpacity(0.1) : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               icon,
-              color: isOn ? activeColor : Colors.grey,
+              color: isOn ? activeColor : const Color(0xFF9CA3AF),
               size: 24,
             ),
           ),
@@ -1661,14 +1772,14 @@ class _ControlScreenState extends State<ControlScreen>
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: isOn ? activeColor : Colors.grey[700],
+                    color: isOn ? activeColor : const Color(0xFF1E293B),
                   ),
                 ),
                 Text(
                   subtitle,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: isOn ? activeColor.withOpacity(0.8) : Colors.grey[500],
+                    color: isOn ? activeColor.withOpacity(0.8) : const Color(0xFF64748B),
                   ),
                 ),
               ],
@@ -1681,8 +1792,8 @@ class _ControlScreenState extends State<ControlScreen>
               onChanged: _isLoading ? null : onToggle,
               activeColor: activeColor,
               activeTrackColor: activeColor.withOpacity(0.3),
-              inactiveThumbColor: Colors.grey.shade400,
-              inactiveTrackColor: Colors.grey.shade200,
+              inactiveThumbColor: const Color(0xFF9CA3AF),
+              inactiveTrackColor: const Color(0xFFE5E7EB),
             ),
           ),
         ],
@@ -1694,11 +1805,11 @@ class _ControlScreenState extends State<ControlScreen>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -1710,40 +1821,58 @@ class _ControlScreenState extends State<ControlScreen>
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(CupertinoIcons.clock, color: Colors.cyan, size: 20),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF06B6D4).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(CupertinoIcons.snow, color: Color(0xFF06B6D4), size: 20),
+                ),
+                const SizedBox(width: 12),
                 Text(
                   'Defrost Schedules',
                   style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.cyan),
+                  icon: const Icon(Icons.add_circle_rounded, color: Color(0xFF06B6D4)),
                   onPressed: () => _showAddDefrostScheduleDialog(),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
           if (_defrostSchedules.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24),
               child: Center(
                 child: Column(
                   children: [
-                    Icon(CupertinoIcons.snow, size: 40, color: Colors.grey[400]),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF06B6D4).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(CupertinoIcons.snow, size: 32, color: Color(0xFF06B6D4)),
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'No defrost schedules',
-                      style: GoogleFonts.inter(color: Colors.grey[600]),
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E293B),
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       'Tap + to add a schedule',
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500]),
+                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -1802,11 +1931,11 @@ class _ControlScreenState extends State<ControlScreen>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -1818,40 +1947,58 @@ class _ControlScreenState extends State<ControlScreen>
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(CupertinoIcons.bolt, color: Colors.orange, size: 20),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(CupertinoIcons.bolt, color: Color(0xFFF59E0B), size: 20),
+                ),
+                const SizedBox(width: 12),
                 Text(
                   'Automation Rules',
                   style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.orange),
+                  icon: const Icon(Icons.add_circle_rounded, color: Color(0xFFF59E0B)),
                   onPressed: () => _showAddAutomationRuleDialog(),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
           if (_automationRules.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24),
               child: Center(
                 child: Column(
                   children: [
-                    Icon(CupertinoIcons.bolt, size: 40, color: Colors.grey[400]),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(CupertinoIcons.bolt, size: 32, color: Color(0xFFF59E0B)),
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'No automation rules',
-                      style: GoogleFonts.inter(color: Colors.grey[600]),
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E293B),
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       'Add rules to auto-control compressor',
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500]),
+                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -2594,11 +2741,11 @@ class _ControlScreenState extends State<ControlScreen>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -2610,32 +2757,48 @@ class _ControlScreenState extends State<ControlScreen>
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(CupertinoIcons.clock, color: Colors.grey[600], size: 20),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF64748B).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(CupertinoIcons.clock, color: Color(0xFF64748B), size: 20),
+                ),
+                const SizedBox(width: 12),
                 Text(
                   'Control History',
                   style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
           if (_device1ControlHistory.isEmpty)
             Padding(
               padding: const EdgeInsets.all(32),
               child: Center(
                 child: Column(
                   children: [
-                    Icon(CupertinoIcons.clock, size: 48, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF64748B).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(CupertinoIcons.clock, size: 32, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 12),
                     Text(
                       'No History Yet',
                       style: GoogleFonts.inter(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
                   ],
@@ -2696,10 +2859,10 @@ class _ControlScreenState extends State<ControlScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isOn ? activeColor.withOpacity(0.1) : Colors.grey.shade100,
+        color: isOn ? activeColor.withOpacity(0.1) : const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isOn ? activeColor.withOpacity(0.3) : Colors.grey.shade300,
+          color: isOn ? activeColor.withOpacity(0.3) : const Color(0xFFE5E7EB),
         ),
       ),
       child: Row(
@@ -2710,7 +2873,7 @@ class _ControlScreenState extends State<ControlScreen>
             height: 6,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isOn ? activeColor : Colors.grey,
+              color: isOn ? activeColor : const Color(0xFF9CA3AF),
             ),
           ),
           const SizedBox(width: 4),
@@ -2719,7 +2882,7 @@ class _ControlScreenState extends State<ControlScreen>
             style: GoogleFonts.inter(
               fontSize: 10,
               fontWeight: FontWeight.w500,
-              color: isOn ? activeColor : Colors.grey[600],
+              color: isOn ? activeColor : const Color(0xFF64748B),
             ),
           ),
         ],
@@ -2743,60 +2906,76 @@ class _ControlScreenState extends State<ControlScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with gradient
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.indigo.shade400, Colors.indigo.shade700],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(CupertinoIcons.slider_horizontal_3, color: Color(0xFF8B5CF6), size: 24),
               ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(CupertinoIcons.slider_horizontal_3, color: Colors.white, size: 28),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _selectedDevice!.name,
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _selectedDevice!.name,
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E293B),
                       ),
-                      Text(
-                        'Relay Controller - $onCount/16 ON',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: Colors.white70,
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          'Relay Controller',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: const Color(0xFF64748B),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$onCount/16 ON',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF8B5CF6),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
-                  onPressed: _isLoading ? null : () => _loadData(),
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF8B5CF6)),
+                onPressed: _isLoading ? null : () => _loadData(),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // All ON / All OFF buttons
           Row(
@@ -2804,13 +2983,14 @@ class _ControlScreenState extends State<ControlScreen>
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _isLoading ? null : () => _toggleDevice5AllRelays(true),
-                  icon: const Icon(Icons.flash_on, size: 18),
-                  label: const Text('All ON'),
+                  icon: const Icon(Icons.flash_on_rounded, size: 18),
+                  label: Text('All ON', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
                   ),
                 ),
               ),
@@ -2818,13 +2998,14 @@ class _ControlScreenState extends State<ControlScreen>
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _isLoading ? null : () => _toggleDevice5AllRelays(false),
-                  icon: const Icon(Icons.flash_off, size: 18),
-                  label: const Text('All OFF'),
+                  icon: const Icon(Icons.flash_off_rounded, size: 18),
+                  label: Text('All OFF', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade400,
+                    backgroundColor: const Color(0xFFEF4444),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
                   ),
                 ),
               ),
@@ -2857,10 +3038,10 @@ class _ControlScreenState extends State<ControlScreen>
   Widget _buildDevice5RelayTile(int relayNumber, bool isOn) {
     return Container(
       decoration: BoxDecoration(
-        color: isOn ? Colors.indigo.withOpacity(0.1) : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(10),
+        color: isOn ? const Color(0xFF8B5CF6).withOpacity(0.05) : const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isOn ? Colors.indigo.withOpacity(0.4) : Colors.grey.shade200,
+          color: isOn ? const Color(0xFF8B5CF6).withOpacity(0.3) : const Color(0xFFE5E7EB),
           width: isOn ? 2 : 1,
         ),
       ),
@@ -2872,7 +3053,7 @@ class _ControlScreenState extends State<ControlScreen>
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: isOn ? Colors.indigo : Colors.grey[600],
+              color: isOn ? const Color(0xFF8B5CF6) : const Color(0xFF64748B),
             ),
           ),
           const SizedBox(height: 2),
@@ -2880,8 +3061,8 @@ class _ControlScreenState extends State<ControlScreen>
             isOn ? 'ON' : 'OFF',
             style: GoogleFonts.inter(
               fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: isOn ? Colors.green : Colors.red.shade300,
+              fontWeight: FontWeight.w600,
+              color: isOn ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
             ),
           ),
           const SizedBox(height: 4),
@@ -2890,10 +3071,10 @@ class _ControlScreenState extends State<ControlScreen>
             child: Switch(
               value: isOn,
               onChanged: _isLoading ? null : (val) => _toggleDevice5Relay(relayNumber, val),
-              activeColor: Colors.indigo,
-              activeTrackColor: Colors.indigo.withOpacity(0.3),
-              inactiveThumbColor: Colors.grey.shade400,
-              inactiveTrackColor: Colors.grey.shade200,
+              activeColor: const Color(0xFF8B5CF6),
+              activeTrackColor: const Color(0xFF8B5CF6).withOpacity(0.3),
+              inactiveThumbColor: const Color(0xFF9CA3AF),
+              inactiveTrackColor: const Color(0xFFE5E7EB),
             ),
           ),
         ],
@@ -2905,11 +3086,11 @@ class _ControlScreenState extends State<ControlScreen>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -2921,32 +3102,48 @@ class _ControlScreenState extends State<ControlScreen>
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(CupertinoIcons.clock, color: Colors.grey[600], size: 20),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF64748B).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(CupertinoIcons.clock, color: Color(0xFF64748B), size: 20),
+                ),
+                const SizedBox(width: 12),
                 Text(
                   'Relay History',
                   style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
           if (_device5History.isEmpty)
             Padding(
               padding: const EdgeInsets.all(32),
               child: Center(
                 child: Column(
                   children: [
-                    Icon(CupertinoIcons.clock, size: 48, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF64748B).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(CupertinoIcons.clock, size: 32, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 12),
                     Text(
                       'No History Yet',
                       style: GoogleFonts.inter(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
                   ],
@@ -2958,7 +3155,7 @@ class _ControlScreenState extends State<ControlScreen>
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _device5History.length > 20 ? 20 : _device5History.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
+              separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
               itemBuilder: (context, index) {
                 final item = _device5History[index];
                 final isOn = item['action'] == 'relay_on';
@@ -2967,28 +3164,28 @@ class _ControlScreenState extends State<ControlScreen>
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: isOn ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                      color: isOn ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFEF4444).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      isOn ? Icons.flash_on : Icons.flash_off,
-                      color: isOn ? Colors.green : Colors.red,
+                      isOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                      color: isOn ? const Color(0xFF10B981) : const Color(0xFFEF4444),
                       size: 20,
                     ),
                   ),
                   title: Text(
                     item['reason'] ?? (isOn ? 'Relay ON' : 'Relay OFF'),
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: const Color(0xFF1E293B)),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
                     item['performed_by'] ?? 'System',
-                    style: GoogleFonts.inter(fontSize: 11, color: Colors.grey),
+                    style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF9CA3AF)),
                   ),
                   trailing: Text(
                     _formatDateTime(item['timestamp']),
-                    style: GoogleFonts.inter(fontSize: 11, color: Colors.grey),
+                    style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF9CA3AF)),
                   ),
                 );
               },
@@ -3011,7 +3208,8 @@ class _ControlScreenState extends State<ControlScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
+          color: const Color(0xFFF9FAFB),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -3034,19 +3232,20 @@ class _ControlScreenState extends State<ControlScreen>
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1E293B),
                     ),
                   ),
                   Text(
                     subtitle,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: const Color(0xFF64748B),
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey[400]),
+            const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
           ],
         ),
       ),
@@ -3367,17 +3566,25 @@ class _ControlScreenState extends State<ControlScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              CupertinoIcons.calendar_badge_plus,
-              size: 48,
-              color: Colors.grey[400],
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                CupertinoIcons.calendar_badge_plus,
+                size: 32,
+                color: Color(0xFF3B82F6),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               'No Active Schedules',
               style: GoogleFonts.inter(
                 fontSize: 16,
-                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1E293B),
               ),
             ),
           ],
@@ -3390,26 +3597,37 @@ class _ControlScreenState extends State<ControlScreen>
       itemCount: _schedules.length,
       itemBuilder: (context, index) {
         final schedule = _schedules[index];
-        return Card(
+        return Container(
           margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
           child: ListTile(
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: schedule.relayStatus
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
+                    ? const Color(0xFF10B981).withOpacity(0.1)
+                    : const Color(0xFFEF4444).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                schedule.relayStatus ? Icons.power : Icons.power_off,
-                color: schedule.relayStatus ? Colors.green : Colors.red,
+                schedule.relayStatus ? Icons.power_rounded : Icons.power_off_rounded,
+                color: schedule.relayStatus ? const Color(0xFF10B981) : const Color(0xFFEF4444),
               ),
             ),
-            title: Text(schedule.scheduleTypeDisplay),
-            subtitle: Text(_formatScheduleDetails(schedule)),
+            title: Text(
+              schedule.scheduleTypeDisplay,
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+            ),
+            subtitle: Text(
+              _formatScheduleDetails(schedule),
+              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+            ),
             trailing: IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
               onPressed: () => _deleteSchedule(schedule.id),
             ),
           ),
@@ -3438,17 +3656,25 @@ class _ControlScreenState extends State<ControlScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              CupertinoIcons.clock,
-              size: 48,
-              color: Colors.grey[400],
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF64748B).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                CupertinoIcons.clock,
+                size: 32,
+                color: Color(0xFF64748B),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               'No History Yet',
               style: GoogleFonts.inter(
                 fontSize: 16,
-                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1E293B),
               ),
             ),
           ],
@@ -3461,18 +3687,37 @@ class _ControlScreenState extends State<ControlScreen>
       itemCount: _history.length,
       itemBuilder: (context, index) {
         final item = _history[index];
-        return Card(
+        final isOn = item.actionDisplay == 'ON';
+        return Container(
           margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
           child: ListTile(
-            leading: Icon(
-              item.actionDisplay == 'ON' ? Icons.power : Icons.power_off,
-              color: item.actionDisplay == 'ON' ? Colors.green : Colors.red,
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isOn ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFEF4444).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                isOn ? Icons.power_rounded : Icons.power_off_rounded,
+                color: isOn ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+              ),
             ),
-            title: Text('Turned ${item.actionDisplay}'),
-            subtitle: Text('${item.performedBy} - ${item.reason ?? ''}'),
+            title: Text(
+              'Turned ${item.actionDisplay}',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+            ),
+            subtitle: Text(
+              '${item.performedBy} - ${item.reason ?? ''}',
+              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+            ),
             trailing: Text(
               _formatDateTime(item.timestamp),
-              style: GoogleFonts.inter(fontSize: 12, color: Colors.grey),
+              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF9CA3AF)),
             ),
           ),
         );
