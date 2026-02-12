@@ -4619,430 +4619,120 @@ class _ReportsState extends State<Reports> {
   }
 
   void _showPDFPreviewDialog(String reportName, [String? reportType]) {
-    int currentPage = 1;
-    int totalPages = reportType == 'alerts_summary'
-        ? 5
-        : (reportType == 'temperature_analysis'
-            ? 8
-            : (reportType == 'maintenance_report' ? 8 : 10));
-    double zoomLevel = 1.0;
+    // Build the actual PDF document based on report type
+    final pw.Document pdfDoc = _buildPDFDocumentForType(reportType ?? 'device_performance');
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: Colors.white,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.9,
+            decoration: BoxDecoration(
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
             ),
-            backgroundColor: Colors.white,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.9,
-              height: MediaQuery.of(context).size.height * 0.9,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  // Header
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
-                      ),
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.grey.withValues(alpha: 0.2),
-                        ),
-                      ),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          CupertinoIcons.doc_text_fill,
-                          color: Constants.ctaColorLight,
-                          size: 24,
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                reportName,
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              Text(
-                                'PDF Preview',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(CupertinoIcons.xmark, size: 20),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Toolbar
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.05),
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.grey.withValues(alpha: 0.2),
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        // Zoom Out
-                        IconButton(
-                          icon: Icon(CupertinoIcons.minus_circle, size: 20),
-                          onPressed: zoomLevel > 0.5
-                              ? () {
-                                  setDialogState(() {
-                                    zoomLevel -= 0.25;
-                                  });
-                                }
-                              : null,
-                          tooltip: 'Zoom Out',
-                        ),
-                        // Zoom Level
-                        Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: Colors.grey.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Text(
-                            '${(zoomLevel * 100).toInt()}%',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        // Zoom In
-                        IconButton(
-                          icon: Icon(CupertinoIcons.plus_circle, size: 20),
-                          onPressed: zoomLevel < 2.0
-                              ? () {
-                                  setDialogState(() {
-                                    zoomLevel += 0.25;
-                                  });
-                                }
-                              : null,
-                          tooltip: 'Zoom In',
-                        ),
-                        SizedBox(width: 16),
-                        // Fit to Width
-                        TextButton.icon(
-                          icon: Icon(CupertinoIcons.arrow_left_right, size: 16),
-                          label: Text('Fit Width'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.black87,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                          ),
-                          onPressed: () {
-                            setDialogState(() {
-                              zoomLevel = 1.0;
-                            });
-                          },
-                        ),
-                        SizedBox(width: 8),
-                        // Fit to Page
-                        TextButton.icon(
-                          icon: Icon(CupertinoIcons.arrow_up_down, size: 16),
-                          label: Text('Fit Page'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.black87,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                          ),
-                          onPressed: () {
-                            setDialogState(() {
-                              zoomLevel = 0.75;
-                            });
-                          },
-                        ),
-                        Spacer(),
-                        // Page Navigation
-                        IconButton(
-                          icon: Icon(CupertinoIcons.chevron_left, size: 20),
-                          onPressed: currentPage > 1
-                              ? () {
-                                  setDialogState(() {
-                                    currentPage--;
-                                  });
-                                }
-                              : null,
-                          tooltip: 'Previous Page',
-                        ),
-                        Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: Colors.grey.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Text(
-                            '$currentPage / $totalPages',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(CupertinoIcons.chevron_right, size: 20),
-                          onPressed: currentPage < totalPages
-                              ? () {
-                                  setDialogState(() {
-                                    currentPage++;
-                                  });
-                                }
-                              : null,
-                          tooltip: 'Next Page',
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // PDF Preview Area
-                  Expanded(
-                    child: Container(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      child: Center(
-                        child: SingleChildScrollView(
-                          child: Container(
-                            width: 600 * zoomLevel,
-                            margin: EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 10,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: AspectRatio(
-                              aspectRatio: 8.5 / 11,
-                              child: Container(
-                                padding: EdgeInsets.all(40 * zoomLevel),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Header
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Artic Sentinel',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 20 * zoomLevel,
-                                                fontWeight: FontWeight.w700,
-                                                color: Constants.ctaColorLight,
-                                              ),
-                                            ),
-                                            SizedBox(height: 4 * zoomLevel),
-                                            Text(
-                                              'Device Monitoring System',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 10 * zoomLevel,
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Text(
-                                          'Page $currentPage',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 10 * zoomLevel,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 20 * zoomLevel),
-                                    Divider(
-                                        thickness: 1,
-                                        color:
-                                            Colors.grey.withValues(alpha: 0.3)),
-                                    SizedBox(height: 20 * zoomLevel),
-                                    // Report Title
-                                    Text(
-                                      reportName,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 18 * zoomLevel,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8 * zoomLevel),
-                                    Text(
-                                      'Generated on: ${DateTime.now().toString().substring(0, 16)}',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 10 * zoomLevel,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                    if (lastGeneratedReportStartDate != null &&
-                                        lastGeneratedReportEndDate != null) ...[
-                                      SizedBox(height: 4 * zoomLevel),
-                                      Text(
-                                        'Report Period: ${lastGeneratedReportStartDate} to ${lastGeneratedReportEndDate}',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 10 * zoomLevel,
-                                          color: Colors.black54,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                    if (lastGeneratedReportPeriod != null) ...[
-                                      SizedBox(height: 2 * zoomLevel),
-                                      Text(
-                                        'Time Range: $lastGeneratedReportPeriod',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 9 * zoomLevel,
-                                          color: Colors.black45,
-                                        ),
-                                      ),
-                                    ],
-                                    SizedBox(height: 20 * zoomLevel),
-
-                                    // Page-specific content
-                                    Expanded(
-                                      child: SingleChildScrollView(
-                                        child: _buildPageContent(currentPage,
-                                            zoomLevel, reportName, reportType),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.grey.withValues(alpha: 0.2),
                       ),
                     ),
                   ),
-
-                  // Footer
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(16),
-                        bottomRight: Radius.circular(16),
+                  child: Row(
+                    children: [
+                      Icon(
+                        CupertinoIcons.doc_text_fill,
+                        color: Constants.ctaColorLight,
+                        size: 24,
                       ),
-                      border: Border(
-                        top: BorderSide(
-                          color: Colors.grey.withValues(alpha: 0.2),
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor:
-                                  Colors.grey.withValues(alpha: 0.1),
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                            child: Text(
-                              'Close',
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              reportName,
                               style: GoogleFonts.inter(
-                                fontSize: 14,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
                                 color: Colors.black87,
-                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              backgroundColor: Constants.ctaColorLight,
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                            Text(
+                              'PDF Preview',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: Colors.black54,
                               ),
                             ),
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _showDownloadDialog(
-                                reportName,
-                                onGenerate: () => _generateAndSavePDF('alerts_summary'),
-                              );
-                            },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  CupertinoIcons.cloud_download,
-                                  size: 16,
-                                  color: Colors.white,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Download',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          ],
+                        ),
+                      ),
+                      // Download button
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: Constants.ctaColorLight,
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                      ],
-                    ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showDownloadDialog(
+                            reportName,
+                            onGenerate: () => _generateAndSavePDF(reportType ?? 'device_performance'),
+                          );
+                        },
+                        icon: Icon(CupertinoIcons.cloud_download, size: 16, color: Colors.white),
+                        label: Text(
+                          'Download',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      IconButton(
+                        icon: Icon(CupertinoIcons.xmark, size: 20),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                // Real PDF Preview using printing package
+                Expanded(
+                  child: PdfPreview(
+                    build: (format) => pdfDoc.save(),
+                    canChangeOrientation: false,
+                    canChangePageFormat: false,
+                    canDebug: false,
+                    pdfFileName: '${reportType ?? "report"}_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+                  ),
+                ),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -7877,71 +7567,14 @@ class _ReportsState extends State<Reports> {
   }
 
   Future<String> _generateAndSavePDF(String reportType) async {
-    // This method generates a PDF from the last generated report data and saves it
-    // Returns the file path where the PDF was saved
-
     final now = DateTime.now();
     String filename = '${reportType}_${DateFormat('yyyyMMdd_HHmmss').format(now)}.pdf';
 
-    // Create PDF document
-    final pdf = pw.Document();
-
-    // Generate PDF content based on report type with actual data
-    if (reportType == 'temperature_analysis' && lastGeneratedTempReportData != null) {
-      // Add temperature analysis pages
-      pdf.addPage(pw.Page(
-        build: (context) => _buildTemperaturePDFContent(),
-      ));
-    } else if (reportType == 'alerts_summary' && lastGeneratedAlertsReportData != null) {
-      // Add alerts summary pages
-      pdf.addPage(pw.Page(
-        build: (context) => _buildAlertsPDFContent(),
-      ));
-    } else if (reportType == 'maintenance_report' && lastGeneratedMaintenanceReportData != null) {
-      // Add maintenance report pages
-      pdf.addPage(pw.Page(
-        build: (context) => _buildMaintenancePDFContent(),
-      ));
-    } else {
-      // Fallback: create simple report if data not available
-      pdf.addPage(
-        pw.Page(
-          build: (context) {
-            return pw.Center(
-              child: pw.Column(
-                mainAxisAlignment: pw.MainAxisAlignment.center,
-                children: [
-                  pw.Text(
-                    'Report: ${reportType.split('_').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ')}',
-                    style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
-                  ),
-                  pw.SizedBox(height: 20),
-                  pw.Text(
-                    'Generated: ${DateFormat('yyyy-MM-dd HH:mm').format(now)}',
-                    style: pw.TextStyle(fontSize: 14),
-                  ),
-                  pw.SizedBox(height: 40),
-                  pw.Text(
-                    'Report data not available in session.',
-                    style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
-                  ),
-                  pw.Text(
-                    'Please regenerate the report to download with full data.',
-                    style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      );
-    }
+    // Build the full PDF document
+    final pdf = _buildPDFDocumentForType(reportType);
 
     // Generate PDF bytes
     final bytes = await pdf.save();
-
-    // Save or download the bytes
-    final savedBytes = bytes;
 
     if (kIsWeb) {
       // Web: trigger download
@@ -7956,9 +7589,8 @@ class _ReportsState extends State<Reports> {
       html.document.body?.children.remove(anchor);
       html.Url.revokeObjectUrl(url);
 
-      return 'Downloads/$filename'; // Return virtual path for web
+      return 'Downloads/$filename';
     } else {
-      // Desktop/Mobile: save to file system
       Directory? directory;
       if (Platform.isAndroid) {
         directory = await getExternalStorageDirectory();
@@ -7971,7 +7603,7 @@ class _ReportsState extends State<Reports> {
       if (directory != null) {
         final String path = '${directory.path}/$filename';
         final File file = File(path);
-        await file.writeAsBytes(savedBytes);
+        await file.writeAsBytes(bytes);
         return path;
       } else {
         throw Exception('Could not determine download directory');
@@ -7979,174 +7611,861 @@ class _ReportsState extends State<Reports> {
     }
   }
 
-  // PDF Content Builders for each report type
-  pw.Widget _buildTemperaturePDFContent() {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'Temperature Analysis Report',
-          style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
-        ),
-        pw.SizedBox(height: 10),
-        pw.Text(
-          'Period: ${lastGeneratedTempReportPeriod ?? "N/A"}',
-          style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
-        ),
-        pw.Text(
-          'Generated: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}',
-          style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
-        ),
-        pw.SizedBox(height: 20),
-        pw.Text(
-          'Summary',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-        ),
-        pw.SizedBox(height: 10),
-        if (lastGeneratedTempReportData != null) ...[
-          pw.Text('Total Devices: ${lastGeneratedTempReportData!.length}'),
-          pw.SizedBox(height: 10),
-          pw.Table(
-            border: pw.TableBorder.all(color: PdfColors.grey400),
+  // ============================================================================
+  // PDF DOCUMENT BUILDER - Routes to correct report type
+  // ============================================================================
+
+  pw.Document _buildPDFDocumentForType(String reportType) {
+    switch (reportType) {
+      case 'alerts_summary':
+        return _buildAlertsReportPDF();
+      case 'maintenance_report':
+        return _buildMaintenanceReportPDF();
+      case 'temperature_analysis':
+        return _buildDailyDataPDF();
+      case 'device_performance':
+      default:
+        return _buildDailyDataPDF();
+    }
+  }
+
+  // ============================================================================
+  // DAILY DATA REPORT PDF (Temperature, Pressure, Door, Energy, Compressor)
+  // ============================================================================
+
+  pw.Document _buildDailyDataPDF() {
+    final pdf = pw.Document();
+    final now = DateTime.now();
+    final dateFormat = DateFormat('MMMM dd, yyyy');
+    final headerStyle = pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800);
+    final sectionStyle = pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900);
+    final subStyle = pw.TextStyle(fontSize: 10, color: PdfColors.grey700);
+
+    // Use device performance data if available, else temperature data
+    final hasDevicePerf = lastGeneratedReportData != null && lastGeneratedReportData!.isNotEmpty;
+    final hasTempData = lastGeneratedTempReportData != null && lastGeneratedTempReportData!.isNotEmpty;
+
+    final startDate = lastGeneratedReportStartDate ?? lastGeneratedTempReportStartDate ?? 'N/A';
+    final endDate = lastGeneratedReportEndDate ?? lastGeneratedTempReportEndDate ?? 'N/A';
+    final period = lastGeneratedReportPeriod ?? lastGeneratedTempReportPeriod ?? 'N/A';
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: pw.EdgeInsets.all(32),
+        header: (context) => pw.Container(
+          padding: pw.EdgeInsets.only(bottom: 12),
+          decoration: pw.BoxDecoration(
+            border: pw.Border(bottom: pw.BorderSide(width: 2, color: PdfColors.blue800)),
+          ),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.TableRow(
-                decoration: pw.BoxDecoration(color: PdfColors.grey300),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  _buildPdfTableHeader('Device'),
-                  _buildPdfTableHeader('Avg Temp'),
-                  _buildPdfTableHeader('Min Temp'),
-                  _buildPdfTableHeader('Max Temp'),
+                  pw.Text('Artic Sentinel', style: headerStyle),
+                  pw.SizedBox(height: 4),
+                  pw.Text('Daily Data Report', style: subStyle),
                 ],
               ),
-              ...lastGeneratedTempReportData!.take(20).map((device) => pw.TableRow(
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
-                  _buildPdfTableCell(device.deviceName),
-                  _buildPdfTableCell('${device.avgTemperature.toStringAsFixed(1)}°C'),
-                  _buildPdfTableCell('${device.minTemperature.toStringAsFixed(1)}°C'),
-                  _buildPdfTableCell('${device.maxTemperature.toStringAsFixed(1)}°C'),
+                  pw.Text('Generated: ${dateFormat.format(now)}', style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Period: $startDate to $endDate', style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Range: $period', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
                 ],
-              )),
+              ),
             ],
           ),
-        ],
+        ),
+        footer: (context) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          margin: pw.EdgeInsets.only(top: 8),
+          child: pw.Text('Page ${context.pageNumber} of ${context.pagesCount}',
+            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+        ),
+        build: (context) {
+          List<pw.Widget> content = [];
+
+          if (hasDevicePerf) {
+            for (var device in lastGeneratedReportData!) {
+              // Device header
+              content.add(pw.Container(
+                padding: pw.EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                margin: pw.EdgeInsets.only(bottom: 8),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.blue50,
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+                child: pw.Text('Device: ${device.deviceName} (${device.deviceId})',
+                  style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+              ));
+
+              // Temperature Section
+              content.add(pw.Text('Temperature', style: sectionStyle));
+              content.add(pw.SizedBox(height: 6));
+              content.add(pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                columnWidths: {
+                  0: pw.FlexColumnWidth(2),
+                  1: pw.FlexColumnWidth(1.5),
+                },
+                children: [
+                  _pdfMetricRow('Average Temperature', '${device.avgTemperature.toStringAsFixed(1)}°C'),
+                  _pdfMetricRow('Minimum Temperature', '${device.minTemperature.toStringAsFixed(1)}°C'),
+                  _pdfMetricRow('Maximum Temperature', '${device.maxTemperature.toStringAsFixed(1)}°C'),
+                ],
+              ));
+              content.add(pw.SizedBox(height: 6));
+
+              // Daily temperature table
+              if (device.dailyTemperatureData != null && device.dailyTemperatureData!.isNotEmpty) {
+                content.add(pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey300),
+                  children: [
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: PdfColors.grey200),
+                      children: [
+                        _buildPdfTableHeader('Date'),
+                        _buildPdfTableHeader('Avg (°C)'),
+                        _buildPdfTableHeader('Min (°C)'),
+                        _buildPdfTableHeader('Max (°C)'),
+                      ],
+                    ),
+                    ...device.dailyTemperatureData!.take(31).map((d) => pw.TableRow(
+                      children: [
+                        _buildPdfTableCell('${d['date'] ?? ''}'),
+                        _buildPdfTableCell('${(d['avg_temperature'] ?? 0).toStringAsFixed(1)}'),
+                        _buildPdfTableCell('${(d['min_temperature'] ?? 0).toStringAsFixed(1)}'),
+                        _buildPdfTableCell('${(d['max_temperature'] ?? 0).toStringAsFixed(1)}'),
+                      ],
+                    )),
+                  ],
+                ));
+              }
+              content.add(pw.SizedBox(height: 12));
+
+              // Pressure Section
+              content.add(pw.Text('Pressure', style: sectionStyle));
+              content.add(pw.SizedBox(height: 6));
+              content.add(pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                columnWidths: {
+                  0: pw.FlexColumnWidth(2),
+                  1: pw.FlexColumnWidth(1.5),
+                },
+                children: [
+                  _pdfMetricRow('Average Pressure', '${device.avgPressure.toStringAsFixed(1)} PSI'),
+                ],
+              ));
+              if (device.dailyPressureData != null && device.dailyPressureData!.isNotEmpty) {
+                content.add(pw.SizedBox(height: 6));
+                content.add(pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey300),
+                  children: [
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: PdfColors.grey200),
+                      children: [
+                        _buildPdfTableHeader('Date'),
+                        _buildPdfTableHeader('Avg (PSI)'),
+                        _buildPdfTableHeader('Min (PSI)'),
+                        _buildPdfTableHeader('Max (PSI)'),
+                      ],
+                    ),
+                    ...device.dailyPressureData!.take(31).map((d) => pw.TableRow(
+                      children: [
+                        _buildPdfTableCell('${d['date'] ?? ''}'),
+                        _buildPdfTableCell('${(d['avg_pressure'] ?? 0).toStringAsFixed(1)}'),
+                        _buildPdfTableCell('${(d['min_pressure'] ?? 0).toStringAsFixed(1)}'),
+                        _buildPdfTableCell('${(d['max_pressure'] ?? 0).toStringAsFixed(1)}'),
+                      ],
+                    )),
+                  ],
+                ));
+              }
+              content.add(pw.SizedBox(height: 12));
+
+              // Door Opens Section
+              content.add(pw.Text('Door Opens', style: sectionStyle));
+              content.add(pw.SizedBox(height: 6));
+              content.add(pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                columnWidths: { 0: pw.FlexColumnWidth(2), 1: pw.FlexColumnWidth(1.5) },
+                children: [
+                  _pdfMetricRow('Total Door Opens', '${device.doorOpenCount}'),
+                ],
+              ));
+              if (device.dailyDoorData != null && device.dailyDoorData!.isNotEmpty) {
+                content.add(pw.SizedBox(height: 6));
+                content.add(pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey300),
+                  children: [
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: PdfColors.grey200),
+                      children: [
+                        _buildPdfTableHeader('Date'),
+                        _buildPdfTableHeader('Open Count'),
+                      ],
+                    ),
+                    ...device.dailyDoorData!.take(31).map((d) => pw.TableRow(
+                      children: [
+                        _buildPdfTableCell('${d['date'] ?? ''}'),
+                        _buildPdfTableCell('${d['open_count'] ?? 0}'),
+                      ],
+                    )),
+                  ],
+                ));
+              }
+              content.add(pw.SizedBox(height: 12));
+
+              // Energy Consumption Section
+              content.add(pw.Text('Energy Consumption', style: sectionStyle));
+              content.add(pw.SizedBox(height: 6));
+              content.add(pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                columnWidths: { 0: pw.FlexColumnWidth(2), 1: pw.FlexColumnWidth(1.5) },
+                children: [
+                  _pdfMetricRow('Avg Total Power', '${device.powerConsumption.toStringAsFixed(2)} kW'),
+                ],
+              ));
+              if (device.dailyPowerData != null && device.dailyPowerData!.isNotEmpty) {
+                content.add(pw.SizedBox(height: 6));
+                content.add(pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey300),
+                  children: [
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: PdfColors.grey200),
+                      children: [
+                        _buildPdfTableHeader('Date'),
+                        _buildPdfTableHeader('Phase 1'),
+                        _buildPdfTableHeader('Phase 2'),
+                        _buildPdfTableHeader('Phase 3'),
+                        _buildPdfTableHeader('Total (kW)'),
+                      ],
+                    ),
+                    ...device.dailyPowerData!.take(31).map((d) => pw.TableRow(
+                      children: [
+                        _buildPdfTableCell('${d['date'] ?? ''}'),
+                        _buildPdfTableCell('${(d['phase1_power'] ?? 0).toStringAsFixed(1)}'),
+                        _buildPdfTableCell('${(d['phase2_power'] ?? 0).toStringAsFixed(1)}'),
+                        _buildPdfTableCell('${(d['phase3_power'] ?? 0).toStringAsFixed(1)}'),
+                        _buildPdfTableCell('${(d['total_power'] ?? 0).toStringAsFixed(1)}'),
+                      ],
+                    )),
+                  ],
+                ));
+              }
+              content.add(pw.SizedBox(height: 12));
+
+              // Compressor Uptime Section
+              content.add(pw.Text('Compressor Uptime', style: sectionStyle));
+              content.add(pw.SizedBox(height: 6));
+              content.add(pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                columnWidths: { 0: pw.FlexColumnWidth(2), 1: pw.FlexColumnWidth(1.5) },
+                children: [
+                  _pdfMetricRow('Overall Uptime', '${device.uptime.toStringAsFixed(1)}%'),
+                  _pdfMetricRow('Health Grade', device.healthGrade),
+                ],
+              ));
+              if (device.dailyUptimeData != null && device.dailyUptimeData!.isNotEmpty) {
+                content.add(pw.SizedBox(height: 6));
+                content.add(pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey300),
+                  children: [
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: PdfColors.grey200),
+                      children: [
+                        _buildPdfTableHeader('Date'),
+                        _buildPdfTableHeader('Uptime %'),
+                        _buildPdfTableHeader('ON Count'),
+                        _buildPdfTableHeader('Total Readings'),
+                      ],
+                    ),
+                    ...device.dailyUptimeData!.take(31).map((d) => pw.TableRow(
+                      children: [
+                        _buildPdfTableCell('${d['date'] ?? ''}'),
+                        _buildPdfTableCell('${(d['uptime_percentage'] ?? 0).toStringAsFixed(1)}%'),
+                        _buildPdfTableCell('${d['compressor_on_count'] ?? 0}'),
+                        _buildPdfTableCell('${d['total_readings'] ?? 0}'),
+                      ],
+                    )),
+                  ],
+                ));
+              }
+              content.add(pw.SizedBox(height: 20));
+              content.add(pw.Divider());
+              content.add(pw.SizedBox(height: 12));
+            }
+          } else if (hasTempData) {
+            // Fallback to temperature-only report
+            content.add(pw.Text('Temperature Analysis', style: sectionStyle));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Text('Devices Analyzed: ${lastGeneratedTempReportData!.length}', style: subStyle));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.grey200),
+                  children: [
+                    _buildPdfTableHeader('Device'),
+                    _buildPdfTableHeader('Avg (°C)'),
+                    _buildPdfTableHeader('Min (°C)'),
+                    _buildPdfTableHeader('Max (°C)'),
+                    _buildPdfTableHeader('Readings'),
+                  ],
+                ),
+                ...lastGeneratedTempReportData!.take(30).map((d) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell(d.deviceName),
+                    _buildPdfTableCell('${d.avgTemperature.toStringAsFixed(1)}'),
+                    _buildPdfTableCell('${d.minTemperature.toStringAsFixed(1)}'),
+                    _buildPdfTableCell('${d.maxTemperature.toStringAsFixed(1)}'),
+                    _buildPdfTableCell('${d.totalReadings}'),
+                  ],
+                )),
+              ],
+            ));
+          } else {
+            content.add(pw.Center(
+              child: pw.Text('No report data available. Please generate a report first.',
+                style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600)),
+            ));
+          }
+
+          return content;
+        },
+      ),
+    );
+    return pdf;
+  }
+
+  pw.TableRow _pdfMetricRow(String label, String value) {
+    return pw.TableRow(
+      children: [
+        pw.Container(
+          padding: pw.EdgeInsets.all(6),
+          child: pw.Text(label, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+        ),
+        pw.Container(
+          padding: pw.EdgeInsets.all(6),
+          child: pw.Text(value, style: pw.TextStyle(fontSize: 9)),
+        ),
       ],
     );
   }
 
-  pw.Widget _buildAlertsPDFContent() {
-    final data = lastGeneratedAlertsReportData!;
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'Alerts Summary Report',
-          style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+  // ============================================================================
+  // ALERTS REPORT PDF
+  // ============================================================================
+
+  pw.Document _buildAlertsReportPDF() {
+    final pdf = pw.Document();
+    final now = DateTime.now();
+    final dateFormat = DateFormat('MMMM dd, yyyy');
+    final data = lastGeneratedAlertsReportData;
+
+    final startDate = lastGeneratedAlertsReportStartDate ?? 'N/A';
+    final endDate = lastGeneratedAlertsReportEndDate ?? 'N/A';
+    final period = lastGeneratedAlertsReportPeriod ?? 'N/A';
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: pw.EdgeInsets.all(32),
+        header: (context) => pw.Container(
+          padding: pw.EdgeInsets.only(bottom: 12),
+          decoration: pw.BoxDecoration(
+            border: pw.Border(bottom: pw.BorderSide(width: 2, color: PdfColors.orange800)),
+          ),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('Artic Sentinel', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.orange800)),
+                  pw.SizedBox(height: 4),
+                  pw.Text('Alerts Summary Report', style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                ],
+              ),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Text('Generated: ${dateFormat.format(now)}', style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Period: $startDate to $endDate', style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Range: $period', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                ],
+              ),
+            ],
+          ),
         ),
-        pw.SizedBox(height: 10),
-        pw.Text(
-          'Period: ${lastGeneratedAlertsReportPeriod ?? "N/A"}',
-          style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
+        footer: (context) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          margin: pw.EdgeInsets.only(top: 8),
+          child: pw.Text('Page ${context.pageNumber} of ${context.pagesCount}',
+            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
         ),
-        pw.Text(
-          'Generated: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}',
-          style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
-        ),
-        pw.SizedBox(height: 20),
-        pw.Text(
-          'Summary Statistics',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-        ),
-        pw.SizedBox(height: 10),
-        pw.Table(
-          border: pw.TableBorder.all(color: PdfColors.grey400),
-          children: [
-            pw.TableRow(
-              decoration: pw.BoxDecoration(color: PdfColors.grey300),
+        build: (context) {
+          List<pw.Widget> content = [];
+
+          if (data == null) {
+            content.add(pw.Center(
+              child: pw.Text('No alerts data available. Please generate the report first.',
+                style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600)),
+            ));
+            return content;
+          }
+
+          final stats = data.overallStats;
+
+          // Summary Statistics
+          content.add(pw.Text('Summary Statistics',
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.orange900)));
+          content.add(pw.SizedBox(height: 8));
+          content.add(pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300),
+            columnWidths: { 0: pw.FlexColumnWidth(2.5), 1: pw.FlexColumnWidth(1.5) },
+            children: [
+              pw.TableRow(
+                decoration: pw.BoxDecoration(color: PdfColors.orange50),
+                children: [
+                  _buildPdfTableHeader('Metric'),
+                  _buildPdfTableHeader('Value'),
+                ],
+              ),
+              _pdfMetricRow('Total Alerts', '${stats['total_alerts'] ?? 0}'),
+              _pdfMetricRow('Active Alerts', '${stats['active_alerts'] ?? 0}'),
+              _pdfMetricRow('Resolved Alerts', '${stats['resolved_alerts'] ?? 0}'),
+              _pdfMetricRow('Acknowledged Alerts', '${stats['acknowledged_alerts'] ?? 0}'),
+              _pdfMetricRow('Critical Count', '${stats['critical_count'] ?? 0}'),
+              _pdfMetricRow('High Count', '${stats['high_count'] ?? 0}'),
+              _pdfMetricRow('Avg Resolution Time', '${(stats['avg_resolution_time_minutes'] ?? 0).toStringAsFixed(1)} min'),
+              _pdfMetricRow('Affected Devices', '${stats['affected_devices'] ?? 0}'),
+            ],
+          ));
+          content.add(pw.SizedBox(height: 16));
+
+          // Alerts by Severity
+          if (data.alertsBySeverity.isNotEmpty) {
+            content.add(pw.Text('Alerts by Severity',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.orange900)));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
               children: [
-                _buildPdfTableHeader('Metric'),
-                _buildPdfTableHeader('Value'),
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.orange50),
+                  children: [
+                    _buildPdfTableHeader('Severity'),
+                    _buildPdfTableHeader('Count'),
+                    _buildPdfTableHeader('Resolved'),
+                    _buildPdfTableHeader('Active'),
+                    _buildPdfTableHeader('Avg Resolution (min)'),
+                  ],
+                ),
+                ...data.alertsBySeverity.map((s) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell('${s['severity'] ?? ''}'),
+                    _buildPdfTableCell('${s['count'] ?? 0}'),
+                    _buildPdfTableCell('${s['resolved_count'] ?? 0}'),
+                    _buildPdfTableCell('${s['active_count'] ?? 0}'),
+                    _buildPdfTableCell('${(s['avg_resolution_time_minutes'] ?? 0).toStringAsFixed(1)}'),
+                  ],
+                )),
               ],
-            ),
-            pw.TableRow(children: [
-              _buildPdfTableCell('Total Alerts'),
-              _buildPdfTableCell('${data.overallStats['total_alerts'] ?? 0}'),
-            ]),
-            pw.TableRow(children: [
-              _buildPdfTableCell('Critical Alerts'),
-              _buildPdfTableCell('${data.overallStats['critical_alerts'] ?? 0}'),
-            ]),
-            pw.TableRow(children: [
-              _buildPdfTableCell('Warning Alerts'),
-              _buildPdfTableCell('${data.overallStats['warning_alerts'] ?? 0}'),
-            ]),
-            pw.TableRow(children: [
-              _buildPdfTableCell('Resolved Alerts'),
-              _buildPdfTableCell('${data.overallStats['resolved_alerts'] ?? 0}'),
-            ]),
-            pw.TableRow(children: [
-              _buildPdfTableCell('Pending Alerts'),
-              _buildPdfTableCell('${data.overallStats['pending_alerts'] ?? 0}'),
-            ]),
-          ],
-        ),
-      ],
+            ));
+            content.add(pw.SizedBox(height: 16));
+          }
+
+          // Alerts by Device
+          if (data.alertsByDevice.isNotEmpty) {
+            content.add(pw.Text('Alerts by Device',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.orange900)));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.orange50),
+                  children: [
+                    _buildPdfTableHeader('Device'),
+                    _buildPdfTableHeader('Total'),
+                    _buildPdfTableHeader('Critical'),
+                    _buildPdfTableHeader('High'),
+                    _buildPdfTableHeader('Active'),
+                  ],
+                ),
+                ...data.alertsByDevice.take(20).map((d) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell('${d['device_name'] ?? d['device_id'] ?? ''}'),
+                    _buildPdfTableCell('${d['total_alerts'] ?? 0}'),
+                    _buildPdfTableCell('${d['critical_alerts'] ?? 0}'),
+                    _buildPdfTableCell('${d['high_alerts'] ?? 0}'),
+                    _buildPdfTableCell('${d['active_alerts'] ?? 0}'),
+                  ],
+                )),
+              ],
+            ));
+            content.add(pw.SizedBox(height: 16));
+          }
+
+          // Daily Trend
+          if (data.dailyTrend.isNotEmpty) {
+            content.add(pw.Text('Daily Alert Trend',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.orange900)));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.orange50),
+                  children: [
+                    _buildPdfTableHeader('Date'),
+                    _buildPdfTableHeader('Total'),
+                    _buildPdfTableHeader('Critical'),
+                    _buildPdfTableHeader('High'),
+                    _buildPdfTableHeader('Resolved'),
+                  ],
+                ),
+                ...data.dailyTrend.take(31).map((d) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell('${d['date'] ?? ''}'),
+                    _buildPdfTableCell('${d['total_alerts'] ?? 0}'),
+                    _buildPdfTableCell('${d['critical_alerts'] ?? 0}'),
+                    _buildPdfTableCell('${d['high_alerts'] ?? 0}'),
+                    _buildPdfTableCell('${d['resolved_alerts'] ?? 0}'),
+                  ],
+                )),
+              ],
+            ));
+            content.add(pw.SizedBox(height: 16));
+          }
+
+          // Recent Active Alerts
+          if (data.recentActiveAlerts.isNotEmpty) {
+            content.add(pw.Text('Recent Active Alerts',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.orange900)));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.orange50),
+                  children: [
+                    _buildPdfTableHeader('Alert Type'),
+                    _buildPdfTableHeader('Severity'),
+                    _buildPdfTableHeader('Triggered At'),
+                    _buildPdfTableHeader('Status'),
+                  ],
+                ),
+                ...data.recentActiveAlerts.take(10).map((a) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell('${a['alert_type'] ?? ''}'),
+                    _buildPdfTableCell('${a['severity'] ?? ''}'),
+                    _buildPdfTableCell('${a['triggered_at'] ?? a['created_at'] ?? ''}'),
+                    _buildPdfTableCell('${a['status'] ?? ''}'),
+                  ],
+                )),
+              ],
+            ));
+          }
+
+          return content;
+        },
+      ),
     );
+    return pdf;
   }
 
-  pw.Widget _buildMaintenancePDFContent() {
-    final data = lastGeneratedMaintenanceReportData!;
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'Maintenance Report',
-          style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+  // ============================================================================
+  // MAINTENANCE REPORT PDF
+  // ============================================================================
+
+  pw.Document _buildMaintenanceReportPDF() {
+    final pdf = pw.Document();
+    final now = DateTime.now();
+    final dateFormat = DateFormat('MMMM dd, yyyy');
+    final data = lastGeneratedMaintenanceReportData;
+
+    final startDate = lastGeneratedMaintenanceReportStartDate ?? 'N/A';
+    final endDate = lastGeneratedMaintenanceReportEndDate ?? 'N/A';
+    final period = lastGeneratedMaintenanceReportPeriod ?? 'N/A';
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: pw.EdgeInsets.all(32),
+        header: (context) => pw.Container(
+          padding: pw.EdgeInsets.only(bottom: 12),
+          decoration: pw.BoxDecoration(
+            border: pw.Border(bottom: pw.BorderSide(width: 2, color: PdfColors.purple800)),
+          ),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('Artic Sentinel', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.purple800)),
+                  pw.SizedBox(height: 4),
+                  pw.Text('Maintenance Report', style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                ],
+              ),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Text('Generated: ${dateFormat.format(now)}', style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Period: $startDate to $endDate', style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Range: $period', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                ],
+              ),
+            ],
+          ),
         ),
-        pw.SizedBox(height: 10),
-        pw.Text(
-          'Period: ${lastGeneratedMaintenanceReportPeriod ?? "N/A"}',
-          style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
+        footer: (context) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          margin: pw.EdgeInsets.only(top: 8),
+          child: pw.Text('Page ${context.pageNumber} of ${context.pagesCount}',
+            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
         ),
-        pw.Text(
-          'Generated: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}',
-          style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
-        ),
-        pw.SizedBox(height: 20),
-        pw.Text(
-          'Summary Statistics',
-          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-        ),
-        pw.SizedBox(height: 10),
-        pw.Table(
-          border: pw.TableBorder.all(color: PdfColors.grey400),
-          children: [
-            pw.TableRow(
-              decoration: pw.BoxDecoration(color: PdfColors.grey300),
+        build: (context) {
+          List<pw.Widget> content = [];
+
+          if (data == null) {
+            content.add(pw.Center(
+              child: pw.Text('No maintenance data available. Please generate the report first.',
+                style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600)),
+            ));
+            return content;
+          }
+
+          final stats = data.overallStats;
+
+          // Summary Statistics
+          content.add(pw.Text('Summary Statistics',
+            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+          content.add(pw.SizedBox(height: 8));
+          content.add(pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300),
+            columnWidths: { 0: pw.FlexColumnWidth(2.5), 1: pw.FlexColumnWidth(1.5) },
+            children: [
+              pw.TableRow(
+                decoration: pw.BoxDecoration(color: PdfColors.purple50),
+                children: [
+                  _buildPdfTableHeader('Metric'),
+                  _buildPdfTableHeader('Value'),
+                ],
+              ),
+              _pdfMetricRow('Total Maintenance', '${stats['total_maintenance'] ?? 0}'),
+              _pdfMetricRow('Completed', '${stats['completed_count'] ?? 0}'),
+              _pdfMetricRow('In Progress', '${stats['in_progress_count'] ?? 0}'),
+              _pdfMetricRow('Scheduled', '${stats['scheduled_count'] ?? 0}'),
+              _pdfMetricRow('Overdue', '${stats['overdue_count'] ?? 0}'),
+              _pdfMetricRow('Cancelled', '${stats['cancelled_count'] ?? 0}'),
+              _pdfMetricRow('Completion Rate', '${stats['completion_rate'] ?? 0}%'),
+              _pdfMetricRow('Avg Duration', '${stats['avg_duration_hours'] ?? 0} hrs'),
+              _pdfMetricRow('Total Cost', '\$${stats['total_cost'] ?? 0}'),
+              _pdfMetricRow('Devices Serviced', '${stats['devices_serviced'] ?? 0}'),
+            ],
+          ));
+          content.add(pw.SizedBox(height: 16));
+
+          // Maintenance by Type
+          if (data.maintenanceByType.isNotEmpty) {
+            content.add(pw.Text('Maintenance by Type',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
               children: [
-                _buildPdfTableHeader('Metric'),
-                _buildPdfTableHeader('Value'),
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.purple50),
+                  children: [
+                    _buildPdfTableHeader('Type'),
+                    _buildPdfTableHeader('Category'),
+                    _buildPdfTableHeader('Count'),
+                    _buildPdfTableHeader('Completed'),
+                    _buildPdfTableHeader('Overdue'),
+                  ],
+                ),
+                ...data.maintenanceByType.map((t) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell('${t['maintenance_type'] ?? ''}'),
+                    _buildPdfTableCell('${t['category'] ?? ''}'),
+                    _buildPdfTableCell('${t['count'] ?? 0}'),
+                    _buildPdfTableCell('${t['completed'] ?? 0}'),
+                    _buildPdfTableCell('${t['overdue'] ?? 0}'),
+                  ],
+                )),
               ],
-            ),
-            pw.TableRow(children: [
-              _buildPdfTableCell('Total Maintenance Tasks'),
-              _buildPdfTableCell('${data.overallStats['total_maintenance'] ?? 0}'),
-            ]),
-            pw.TableRow(children: [
-              _buildPdfTableCell('Completed Tasks'),
-              _buildPdfTableCell('${data.overallStats['completed_maintenance'] ?? 0}'),
-            ]),
-            pw.TableRow(children: [
-              _buildPdfTableCell('Pending Tasks'),
-              _buildPdfTableCell('${data.overallStats['pending_maintenance'] ?? 0}'),
-            ]),
-            pw.TableRow(children: [
-              _buildPdfTableCell('Overdue Tasks'),
-              _buildPdfTableCell('${data.overallStats['overdue_maintenance'] ?? 0}'),
-            ]),
-          ],
-        ),
-      ],
+            ));
+            content.add(pw.SizedBox(height: 16));
+          }
+
+          // Maintenance by Device
+          if (data.maintenanceByDevice.isNotEmpty) {
+            content.add(pw.Text('Maintenance by Device',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.purple50),
+                  children: [
+                    _buildPdfTableHeader('Device'),
+                    _buildPdfTableHeader('Count'),
+                    _buildPdfTableHeader('Completed'),
+                    _buildPdfTableHeader('Overdue'),
+                    _buildPdfTableHeader('Avg Cost'),
+                  ],
+                ),
+                ...data.maintenanceByDevice.take(20).map((d) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell('${d['device_name'] ?? ''}'),
+                    _buildPdfTableCell('${d['maintenance_count'] ?? 0}'),
+                    _buildPdfTableCell('${d['completed_count'] ?? 0}'),
+                    _buildPdfTableCell('${d['overdue_count'] ?? 0}'),
+                    _buildPdfTableCell('\$${d['avg_cost'] ?? 0}'),
+                  ],
+                )),
+              ],
+            ));
+            content.add(pw.SizedBox(height: 16));
+          }
+
+          // Maintenance by Priority
+          if (data.maintenanceByPriority.isNotEmpty) {
+            content.add(pw.Text('Maintenance by Priority',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.purple50),
+                  children: [
+                    _buildPdfTableHeader('Priority'),
+                    _buildPdfTableHeader('Count'),
+                    _buildPdfTableHeader('Completed'),
+                    _buildPdfTableHeader('Avg Duration (hrs)'),
+                  ],
+                ),
+                ...data.maintenanceByPriority.map((p) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell('${p['priority'] ?? ''}'),
+                    _buildPdfTableCell('${p['count'] ?? 0}'),
+                    _buildPdfTableCell('${p['completed'] ?? 0}'),
+                    _buildPdfTableCell('${p['avg_duration'] ?? 0}'),
+                  ],
+                )),
+              ],
+            ));
+            content.add(pw.SizedBox(height: 16));
+          }
+
+          // Upcoming Maintenance
+          if (data.upcomingMaintenance.isNotEmpty) {
+            content.add(pw.Text('Upcoming Scheduled Maintenance',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.purple50),
+                  children: [
+                    _buildPdfTableHeader('Device'),
+                    _buildPdfTableHeader('Type'),
+                    _buildPdfTableHeader('Scheduled Date'),
+                    _buildPdfTableHeader('Priority'),
+                  ],
+                ),
+                ...data.upcomingMaintenance.take(10).map((m) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell('${m['device_name'] ?? ''}'),
+                    _buildPdfTableCell('${m['maintenance_type'] ?? ''}'),
+                    _buildPdfTableCell('${m['scheduled_date'] ?? ''}'),
+                    _buildPdfTableCell('${m['priority'] ?? ''}'),
+                  ],
+                )),
+              ],
+            ));
+            content.add(pw.SizedBox(height: 16));
+          }
+
+          // Overdue Maintenance
+          if (data.overdueMaintenance.isNotEmpty) {
+            content.add(pw.Text('Overdue Maintenance',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.red900)));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.red50),
+                  children: [
+                    _buildPdfTableHeader('Device'),
+                    _buildPdfTableHeader('Type'),
+                    _buildPdfTableHeader('Scheduled Date'),
+                    _buildPdfTableHeader('Priority'),
+                    _buildPdfTableHeader('Days Overdue'),
+                  ],
+                ),
+                ...data.overdueMaintenance.take(10).map((m) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell('${m['device_name'] ?? ''}'),
+                    _buildPdfTableCell('${m['maintenance_type'] ?? ''}'),
+                    _buildPdfTableCell('${m['scheduled_date'] ?? ''}'),
+                    _buildPdfTableCell('${m['priority'] ?? ''}'),
+                    _buildPdfTableCell('${m['days_overdue'] ?? ''}'),
+                  ],
+                )),
+              ],
+            ));
+            content.add(pw.SizedBox(height: 16));
+          }
+
+          // Recent Completed
+          if (data.recentCompleted.isNotEmpty) {
+            content.add(pw.Text('Recently Completed Maintenance',
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+            content.add(pw.SizedBox(height: 8));
+            content.add(pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              children: [
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.purple50),
+                  children: [
+                    _buildPdfTableHeader('Device'),
+                    _buildPdfTableHeader('Type'),
+                    _buildPdfTableHeader('Priority'),
+                    _buildPdfTableHeader('Outcome'),
+                    _buildPdfTableHeader('Cost'),
+                  ],
+                ),
+                ...data.recentCompleted.take(10).map((m) => pw.TableRow(
+                  children: [
+                    _buildPdfTableCell('${m['device_name'] ?? ''}'),
+                    _buildPdfTableCell('${m['maintenance_type'] ?? ''}'),
+                    _buildPdfTableCell('${m['priority'] ?? ''}'),
+                    _buildPdfTableCell('${m['outcome'] ?? ''}'),
+                    _buildPdfTableCell('\$${m['actual_cost'] ?? 'N/A'}'),
+                  ],
+                )),
+              ],
+            ));
+          }
+
+          return content;
+        },
+      ),
     );
+    return pdf;
   }
 
   void _showDownloadDialog(String reportName, {String? filePath, Future<String>? Function()? onGenerate}) {
@@ -9958,20 +10277,15 @@ class _ReportsState extends State<Reports> {
   // ============================================================================
 
   Future<void> _viewTemperatureReport(dynamic reportData) async {
-    // For temperature reports, regenerate and view using stored data
-    // TODO: This could be enhanced to show full preview with charts
-    // For now, trigger the generation dialog with pre-filled data
-    await _showBasicReportDetails(reportData);
+    _showPDFPreviewDialog('Temperature Analysis Report', 'temperature_analysis');
   }
 
   Future<void> _viewAlertsReport(dynamic reportData) async {
-    // For alerts reports, show summary details
-    await _showBasicReportDetails(reportData);
+    _showPDFPreviewDialog('Alerts Summary Report', 'alerts_summary');
   }
 
   Future<void> _viewMaintenanceReport(dynamic reportData) async {
-    // For maintenance reports, show summary details
-    await _showBasicReportDetails(reportData);
+    _showPDFPreviewDialog('Maintenance Report', 'maintenance_report');
   }
 
   // ============================================================================
@@ -9980,38 +10294,10 @@ class _ReportsState extends State<Reports> {
 
   Future<void> _downloadTemperatureReportPDF(dynamic reportData) async {
     try {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Generating Temperature Analysis PDF...'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-
-      // Parse the saved report data
-      final tempData = reportData['report_data'];
-
-      // TODO: Implement actual PDF download
-      // This would regenerate the PDF from the saved data
-      // For now, inform user that download will trigger report regeneration
-
-      await Future.delayed(Duration(milliseconds: 500));
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Temperature report ready. Click "Generate Report" to download PDF.'),
-            backgroundColor: Colors.blue,
-            duration: Duration(seconds: 3),
-            action: SnackBarAction(
-              label: 'View Details',
-              textColor: Colors.white,
-              onPressed: () => _viewTemperatureReport(reportData),
-            ),
-          ),
-        );
-      }
+      _showDownloadDialog(
+        'Temperature Analysis Report',
+        onGenerate: () => _generateAndSavePDF('temperature_analysis'),
+      );
     } catch (e) {
       print('Error in _downloadTemperatureReportPDF: $e');
     }
@@ -10019,20 +10305,10 @@ class _ReportsState extends State<Reports> {
 
   Future<void> _downloadAlertsReportPDF(dynamic reportData) async {
     try {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Alerts Summary report ready. Click "Generate Report" to download PDF.'),
-            backgroundColor: Colors.blue,
-            duration: Duration(seconds: 3),
-            action: SnackBarAction(
-              label: 'View Details',
-              textColor: Colors.white,
-              onPressed: () => _viewAlertsReport(reportData),
-            ),
-          ),
-        );
-      }
+      _showDownloadDialog(
+        'Alerts Summary Report',
+        onGenerate: () => _generateAndSavePDF('alerts_summary'),
+      );
     } catch (e) {
       print('Error in _downloadAlertsReportPDF: $e');
     }
@@ -10040,20 +10316,10 @@ class _ReportsState extends State<Reports> {
 
   Future<void> _downloadMaintenanceReportPDF(dynamic reportData) async {
     try {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Maintenance report ready. Click "Generate Report" to download PDF.'),
-            backgroundColor: Colors.blue,
-            duration: Duration(seconds: 3),
-            action: SnackBarAction(
-              label: 'View Details',
-              textColor: Colors.white,
-              onPressed: () => _viewMaintenanceReport(reportData),
-            ),
-          ),
-        );
-      }
+      _showDownloadDialog(
+        'Maintenance Report',
+        onGenerate: () => _generateAndSavePDF('maintenance_report'),
+      );
     } catch (e) {
       print('Error in _downloadMaintenanceReportPDF: $e');
     }

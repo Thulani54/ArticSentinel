@@ -532,34 +532,26 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
               child: _buildSidebarContent(isMobileDrawer: true),
             )
           : null,
-      body: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            // Desktop Sidebar (hidden on mobile)
-            if (!isMobile)
-              AnimatedBuilder(
-                animation: _sidebarAnimation,
-                builder: (context, child) {
-                  return Container(
-                    height: MediaQuery.of(context).size.height,
-                    width: _sidebarAnimation.value,
-                    child: _buildSidebarContent(isMobileDrawer: false),
-                  );
-                },
-              ),
-            // Main content
-            Expanded(
-              child: Container(
-                constraints: BoxConstraints(maxWidth: 1200),
-                child: widget.child,
-              ),
-            )
-          ],
-        ),
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          // Desktop Sidebar (hidden on mobile)
+          if (!isMobile)
+            AnimatedBuilder(
+              animation: _sidebarAnimation,
+              builder: (context, child) {
+                return SizedBox(
+                  width: _sidebarAnimation.value,
+                  child: _buildSidebarContent(isMobileDrawer: false),
+                );
+              },
+            ),
+          // Main content
+          Expanded(
+            child: widget.child,
+          )
+        ],
       ),
     );
   }
