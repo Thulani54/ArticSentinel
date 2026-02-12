@@ -532,27 +532,25 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
               child: _buildSidebarContent(isMobileDrawer: true),
             )
           : null,
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          // Desktop Sidebar (hidden on mobile)
-          if (!isMobile)
-            AnimatedBuilder(
-              animation: _sidebarAnimation,
-              builder: (context, child) {
-                return SizedBox(
-                  width: _sidebarAnimation.value,
-                  child: _buildSidebarContent(isMobileDrawer: false),
-                );
-              },
+      body: isMobile
+          ? widget.child
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedBuilder(
+                  animation: _sidebarAnimation,
+                  builder: (context, child) {
+                    return SizedBox(
+                      width: _sidebarAnimation.value,
+                      child: _buildSidebarContent(isMobileDrawer: false),
+                    );
+                  },
+                ),
+                Expanded(
+                  child: widget.child,
+                ),
+              ],
             ),
-          // Main content
-          Expanded(
-            child: widget.child,
-          )
-        ],
-      ),
     );
   }
 }
