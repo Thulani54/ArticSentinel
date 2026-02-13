@@ -546,6 +546,7 @@ class DailyAggregate {
 }
 
 class HourlyAggregate {
+  final String? deviceId;
   final String? hourBucket;
 
   // Temperature metrics
@@ -589,6 +590,7 @@ class HourlyAggregate {
   final double? energyEfficiencyRatio;
 
   HourlyAggregate({
+    this.deviceId,
     this.hourBucket,
     this.avgTempAir,
     this.minTempAir,
@@ -620,6 +622,7 @@ class HourlyAggregate {
 
   factory HourlyAggregate.fromJson(Map<String, dynamic> json) {
     return HourlyAggregate(
+      deviceId: json['device_id']?.toString(),
       hourBucket: json['hour_bucket'],
       avgTempAir: _toDoubleOrNull(json['avg_temp_air']),
       minTempAir: _toDoubleOrNull(json['min_temp_air']),

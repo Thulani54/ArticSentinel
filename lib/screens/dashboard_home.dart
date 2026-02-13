@@ -427,7 +427,11 @@ Widget _buildDailySummaryChart() {
 }
 
 Widget _buildPerformanceChart() {
-  if (dailyAggregatesList.isEmpty) {
+  final dailyData = dailyAggregatesList
+      .where((d) => d.deviceId == selectedDeviceId)
+      .firstOrNull;
+
+  if (dailyData == null) {
     return Center(
         child: Text("No performance data available",
             style: GoogleFonts.inter(color: Colors.grey)));
@@ -450,12 +454,10 @@ Widget _buildPerformanceChart() {
                   PieChartData(
                     sections: [
                       PieChartSectionData(
-                        value: dailyAggregatesList
-                                .first.compressorRuntimePercentage ??
-                            0,
+                        value: dailyData.compressorRuntimePercentage ?? 0,
                         color: Constants.ctaColorLight,
                         title:
-                            '${(dailyAggregatesList.first.compressorRuntimePercentage ?? 0).toStringAsFixed(1)}%',
+                            '${(dailyData.compressorRuntimePercentage ?? 0).toStringAsFixed(1)}%',
                         radius: 50,
                         titleStyle: GoogleFonts.inter(
                             fontSize: 12,
@@ -464,9 +466,7 @@ Widget _buildPerformanceChart() {
                       ),
                       PieChartSectionData(
                         value: 100 -
-                            (dailyAggregatesList
-                                    .first.compressorRuntimePercentage ??
-                                0),
+                            (dailyData.compressorRuntimePercentage ?? 0),
                         color: Colors.grey.shade300,
                         title: 'Idle',
                         radius: 50,
@@ -487,15 +487,15 @@ Widget _buildPerformanceChart() {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildPerformanceMetricRow("Runtime Today",
-                        "${dailyAggregatesList.first.compressorRuntimePercentage?.toStringAsFixed(1) ?? '--'}%"),
+                        "${dailyData.compressorRuntimePercentage?.toStringAsFixed(1) ?? '--'}%"),
                     _buildPerformanceMetricRow("Cycles",
-                        "${dailyAggregatesList.first.compressorOnCount ?? '--'}"),
+                        "${dailyData.compressorOnCount ?? '--'}"),
                     _buildPerformanceMetricRow("Door Opens",
-                        "${dailyAggregatesList.first.doorOpenCount ?? '--'}"),
+                        "${dailyData.doorOpenCount ?? '--'}"),
                     _buildPerformanceMetricRow("Ice Events",
-                        "${dailyAggregatesList.first.iceEvents ?? '--'}"),
+                        "${dailyData.iceEvents ?? '--'}"),
                     _buildPerformanceMetricRow("Total Readings",
-                        "${dailyAggregatesList.first.totalReadings ?? '--'}"),
+                        "${dailyData.totalReadings ?? '--'}"),
                   ],
                 ),
               ),
@@ -1259,8 +1259,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return;
     }
 
-    final dailyData =
-        dailyAggregatesList.isNotEmpty ? dailyAggregatesList.first : null;
+    final dailyData = dailyAggregatesList
+        .where((d) => d.deviceId == selectedDeviceId)
+        .firstOrNull;
 
     // Find the selected device safely
     final selectedDevice = latestDeviceDataList
@@ -1353,8 +1354,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return;
     }
 
-    final dailyData =
-        dailyAggregatesList.isNotEmpty ? dailyAggregatesList.first : null;
+    final dailyData = dailyAggregatesList
+        .where((d) => d.deviceId == selectedDeviceId)
+        .firstOrNull;
 
     // Get device type and build appropriate cards
     final deviceType = selectedDevice.resolvedDeviceType;
@@ -2864,8 +2866,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   }
 
   Widget _buildDesktopDoorMetrics() {
-    final dailyData =
-        dailyAggregatesList.isNotEmpty ? dailyAggregatesList.first : null;
+    final dailyData = dailyAggregatesList
+        .where((d) => d.deviceId == selectedDeviceId)
+        .firstOrNull;
     final selectedDevice = latestDeviceDataList
         .where((device) => device.deviceId == selectedDeviceId)
         .firstOrNull;
@@ -3674,33 +3677,24 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 strokeWidth: 1.5,
               )),
             )
-          : Row(
-              children: [
-                // Main content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(padding),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildWelcomeHeader(),
-                        SizedBox(height: isMobile ? 16 : 24),
-                        _buildPerformanceOverview(),
-                        SizedBox(height: isMobile ? 16 : 24),
-                        _buildEnhancedSummaryCards2(),
-                        SizedBox(height: isMobile ? 16 : 24),
-                        _buildMetricsTabView(),
-                        SizedBox(height: isMobile ? 16 : 24),
-                        //_buildChartsTabView(),
-                        SizedBox(height: isMobile ? 16 : 24),
-                        _buildAlertsSection(),
-                        SizedBox(height: isMobile ? 16 : 24),
-                        _buildDeviceMapSection(),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(padding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildWelcomeHeader(),
+                  SizedBox(height: isMobile ? 16 : 24),
+                  _buildPerformanceOverview(),
+                  SizedBox(height: isMobile ? 16 : 24),
+                  _buildEnhancedSummaryCards2(),
+                  SizedBox(height: isMobile ? 16 : 24),
+                  _buildMetricsTabView(),
+                  SizedBox(height: isMobile ? 16 : 24),
+                  _buildAlertsSection(),
+                  SizedBox(height: isMobile ? 16 : 24),
+                  _buildDeviceMapSection(),
+                ],
+              ),
             ),
     );
   }
@@ -3964,9 +3958,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       SizedBox(height: 8),
                       _buildPerformanceMetric(
                         "Uptime Today",
-                        dailyAggregatesList.isEmpty
+                        dailyAggregatesList.where((d) => d.deviceId == selectedDeviceId).firstOrNull == null
                             ? "-"
-                            : "${dailyAggregatesList.first.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
+                            : "${dailyAggregatesList.where((d) => d.deviceId == selectedDeviceId).first.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
                         Constants.ctaColorLight,
                         Icons.timer,
                       ),
@@ -4100,7 +4094,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       children: [
         Text("Key Metrics",
             style: GoogleFonts.inter(
-                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
+                fontSize: isMobile ? 16 : 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1E293B))),
         SizedBox(height: 16),
         isMobile
             ? Column(
@@ -4151,7 +4147,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                           Text("${card.value}${card.unit}",
                                               style: GoogleFonts.inter(
                                                   fontSize: 18,
-                                                  fontWeight: FontWeight.bold)),
+                                                  fontWeight: FontWeight.bold,
+                                                  color: const Color(0xFF1E293B))),
                                           if (card.trendDirection != 'stable')
                                             Icon(
                                               card.trendDirection == 'up'
@@ -4358,7 +4355,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       children: [
         Text("Detailed Metrics - Refrigeration Unit",
             style: GoogleFonts.inter(
-                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
+                fontSize: isMobile ? 16 : 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1E293B))),
         SizedBox(height: 16),
         isMobile
             ? Column(
@@ -5845,36 +5844,45 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         // This prevents a parsing error in e.g. hourly_aggregates from blocking daily_aggregates
 
         // Parse daily aggregates (critical for temperature ranges)
-        try {
-          final dailyList = (data['daily_aggregates'] as List? ?? [])
-              .map((item) => DailyAggregate.fromJson(item as Map<String, dynamic>))
-              .toList();
+        {
+          final dailyList = <DailyAggregate>[];
+          for (final item in (data['daily_aggregates'] as List? ?? [])) {
+            try {
+              dailyList.add(DailyAggregate.fromJson(item as Map<String, dynamic>));
+            } catch (e) {
+              print('Error parsing daily aggregate item: $e');
+            }
+          }
           dailyAggregatesList = dailyList;
           print('Parsed daily aggregates: ${dailyAggregatesList.length}');
-        } catch (e) {
-          print('Error parsing daily_aggregates: $e');
         }
 
         // Parse hourly aggregates
-        try {
-          final hourlyList = (data['hourly_aggregates'] as List? ?? [])
-              .map((item) => HourlyAggregate.fromJson(item as Map<String, dynamic>))
-              .toList();
+        {
+          final hourlyList = <HourlyAggregate>[];
+          for (final item in (data['hourly_aggregates'] as List? ?? [])) {
+            try {
+              hourlyList.add(HourlyAggregate.fromJson(item as Map<String, dynamic>));
+            } catch (e) {
+              print('Error parsing hourly aggregate item: $e');
+            }
+          }
           hourlyAggregatesList = hourlyList;
           print('Parsed hourly aggregates: ${hourlyAggregatesList.length}');
-        } catch (e) {
-          print('Error parsing hourly_aggregates: $e');
         }
 
         // Parse alerts
-        try {
-          final alertList = (data['alerts'] as List? ?? [])
-              .map((item) => DeviceAlert.fromJson(item as Map<String, dynamic>))
-              .toList();
+        {
+          final alertList = <DeviceAlert>[];
+          for (final item in (data['alerts'] as List? ?? [])) {
+            try {
+              alertList.add(DeviceAlert.fromJson(item as Map<String, dynamic>));
+            } catch (e) {
+              print('Error parsing alert item: $e');
+            }
+          }
           activeAlerts = alertList;
           print('Parsed alerts: ${activeAlerts.length}');
-        } catch (e) {
-          print('Error parsing alerts: $e');
         }
 
         // Parse full dashboard data (for backwards compatibility)
