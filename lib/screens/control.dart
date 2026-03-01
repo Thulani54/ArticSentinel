@@ -933,7 +933,8 @@ class _ControlScreenState extends State<ControlScreen>
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return Container(
+      color: Colors.white,
       child: _isLoading && _devices.isEmpty
           ? Center(child: CircularProgressIndicator(color: const Color(0xFF3B82F6)))
           : _error.isNotEmpty

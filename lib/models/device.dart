@@ -28,6 +28,8 @@ class Device {
   final String? capacity;
   final double? targetTempMin;
   final double? targetTempMax;
+  final double? electricityRate;
+  final double? voltage;
   final String? installationDate;
   final String? warrantyExpiry;
   final String? lastServiceDate;
@@ -60,6 +62,8 @@ class Device {
     this.capacity,
     this.targetTempMin,
     this.targetTempMax,
+    this.electricityRate,
+    this.voltage,
     this.installationDate,
     this.warrantyExpiry,
     this.lastServiceDate,
@@ -103,6 +107,8 @@ class Device {
       capacity: json['capacity'] as String?,
       targetTempMin: _parseDouble(json['target_temp_min']),
       targetTempMax: _parseDouble(json['target_temp_max']),
+      electricityRate: _parseDouble(json['electricity_rate']),
+      voltage: _parseDouble(json['voltage']),
       installationDate: json['installation_date'] as String?,
       warrantyExpiry: json['warranty_expiry'] as String?,
       lastServiceDate: json['last_service_date'] as String?,
@@ -135,6 +141,8 @@ class Device {
       'capacity': capacity,
       'target_temp_min': targetTempMin,
       'target_temp_max': targetTempMax,
+      'electricity_rate': electricityRate,
+      'voltage': voltage,
       'installation_date': installationDate,
       'warranty_expiry': warrantyExpiry,
       'last_service_date': lastServiceDate,
@@ -180,6 +188,8 @@ class Device {
       if (capacity != null) 'capacity': capacity,
       if (targetTempMin != null) 'target_temp_min': targetTempMin,
       if (targetTempMax != null) 'target_temp_max': targetTempMax,
+      if (electricityRate != null) 'electricity_rate': electricityRate,
+      if (voltage != null) 'voltage': voltage,
       if (installationDate != null) 'installation_date': installationDate,
       if (warrantyExpiry != null) 'warranty_expiry': warrantyExpiry,
       if (lastServiceDate != null) 'last_service_date': lastServiceDate,
@@ -213,6 +223,8 @@ class Device {
       if (capacity != null && capacity!.isNotEmpty) 'capacity': capacity,
       if (targetTempMin != null) 'target_temp_min': targetTempMin,
       if (targetTempMax != null) 'target_temp_max': targetTempMax,
+      if (electricityRate != null) 'electricity_rate': electricityRate,
+      if (voltage != null) 'voltage': voltage,
       if (installationDate != null && installationDate!.isNotEmpty)
         'installation_date': installationDate,
       if (warrantyExpiry != null && warrantyExpiry!.isNotEmpty)
@@ -244,6 +256,8 @@ class Device {
     String? capacity,
     double? targetTempMin,
     double? targetTempMax,
+    double? electricityRate,
+    double? voltage,
     String? installationDate,
     String? warrantyExpiry,
     String? lastServiceDate,
@@ -272,6 +286,8 @@ class Device {
       capacity: capacity ?? this.capacity,
       targetTempMin: targetTempMin ?? this.targetTempMin,
       targetTempMax: targetTempMax ?? this.targetTempMax,
+      electricityRate: electricityRate ?? this.electricityRate,
+      voltage: voltage ?? this.voltage,
       installationDate: installationDate ?? this.installationDate,
       warrantyExpiry: warrantyExpiry ?? this.warrantyExpiry,
       lastServiceDate: lastServiceDate ?? this.lastServiceDate,

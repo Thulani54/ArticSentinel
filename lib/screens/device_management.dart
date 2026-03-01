@@ -3509,6 +3509,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   late TextEditingController _capacityController;
   late TextEditingController _targetTempMinController;
   late TextEditingController _targetTempMaxController;
+  late TextEditingController _electricityRateController;
 
   // Optional fields - Service Info
   late TextEditingController _installationDateController;
@@ -3552,6 +3553,8 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
         text: widget.device.targetTempMin?.toString() ?? '');
     _targetTempMaxController = TextEditingController(
         text: widget.device.targetTempMax?.toString() ?? '');
+    _electricityRateController = TextEditingController(
+        text: widget.device.electricityRate?.toString() ?? '2.50');
 
     // Service info
     _installationDateController =
@@ -3877,6 +3880,9 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
               : null,
           targetTempMax: _targetTempMaxController.text.isNotEmpty
               ? double.tryParse(_targetTempMaxController.text)
+              : null,
+          electricityRate: _electricityRateController.text.isNotEmpty
+              ? double.tryParse(_electricityRateController.text)
               : null,
           installationDate: _installationDateController.text.isNotEmpty
               ? _installationDateController.text
@@ -4268,6 +4274,24 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 20),
+        TextFormField(
+          controller: _electricityRateController,
+          decoration: _buildInputDecoration(
+              'Electricity Rate (R/kWh)', Icons.bolt),
+          style: GoogleFonts.inter(
+              fontSize: 14, fontWeight: FontWeight.w500),
+          keyboardType:
+              const TextInputType.numberWithOptions(decimal: true),
+          validator: (value) {
+            if (value != null && value.isNotEmpty) {
+              if (double.tryParse(value) == null) {
+                return 'Enter a valid number';
+              }
+            }
+            return null;
+          },
         ),
       ],
     );

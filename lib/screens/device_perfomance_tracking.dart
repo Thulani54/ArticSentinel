@@ -529,6 +529,8 @@ class EfficiencyRating {
   final double avgDutyCycle;
   final double avgPowerPerDegree;
   final double annualCostEstimate;
+  final double kwhPerHarvest;
+  final double costPerHarvest;
 
   EfficiencyRating({
     required this.efficiencyScore,
@@ -536,6 +538,8 @@ class EfficiencyRating {
     required this.avgDutyCycle,
     required this.avgPowerPerDegree,
     required this.annualCostEstimate,
+    this.kwhPerHarvest = 0.0,
+    this.costPerHarvest = 0.0,
   });
 
   factory EfficiencyRating.fromJson(Map<String, dynamic> json) {
@@ -545,6 +549,8 @@ class EfficiencyRating {
       avgDutyCycle: (json['avg_duty_cycle'] ?? 0.0).toDouble(),
       avgPowerPerDegree: (json['avg_power_per_degree'] ?? 0.0).toDouble(),
       annualCostEstimate: (json['annual_cost_estimate'] ?? 0.0).toDouble(),
+      kwhPerHarvest: (json['kwh_per_harvest'] ?? 0.0).toDouble(),
+      costPerHarvest: (json['cost_per_harvest'] ?? 0.0).toDouble(),
     );
   }
 }
@@ -583,6 +589,8 @@ class EnergyCostEstimate {
   final double monthlyCostUsd;
   final double annualCostUsd;
   final double costPerKwh;
+  final double kwhPerHarvest;
+  final double costPerHarvest;
 
   EnergyCostEstimate({
     required this.currentPowerKw,
@@ -592,6 +600,8 @@ class EnergyCostEstimate {
     required this.monthlyCostUsd,
     required this.annualCostUsd,
     required this.costPerKwh,
+    this.kwhPerHarvest = 0.0,
+    this.costPerHarvest = 0.0,
   });
 
   factory EnergyCostEstimate.fromJson(Map<String, dynamic> json) {
@@ -603,6 +613,8 @@ class EnergyCostEstimate {
       monthlyCostUsd: (json['monthly_cost_usd'] ?? 0.0).toDouble(),
       annualCostUsd: (json['annual_cost_usd'] ?? 0.0).toDouble(),
       costPerKwh: (json['cost_per_kwh'] ?? 0.0).toDouble(),
+      kwhPerHarvest: (json['kwh_per_harvest'] ?? 0.0).toDouble(),
+      costPerHarvest: (json['cost_per_harvest'] ?? 0.0).toDouble(),
     );
   }
 }
@@ -1321,6 +1333,7 @@ class Device3Analytics {
   final Device3TemperatureAnalytics temperatureAnalytics;
   final Device3WaterAnalytics waterAnalytics;
   final Device3HarvestAnalytics harvestAnalytics;
+  final Device3AmpsAnalytics ampsAnalytics;
   final Device3Summary iceMachineSummary;
   final RealTimeInsights realTimeInsights;
 
@@ -1329,6 +1342,7 @@ class Device3Analytics {
     required this.temperatureAnalytics,
     required this.waterAnalytics,
     required this.harvestAnalytics,
+    required this.ampsAnalytics,
     required this.iceMachineSummary,
     required this.realTimeInsights,
   });
@@ -1339,6 +1353,7 @@ class Device3Analytics {
       temperatureAnalytics: Device3TemperatureAnalytics.fromJson(json['temperature_analytics'] ?? {}),
       waterAnalytics: Device3WaterAnalytics.fromJson(json['water_analytics'] ?? {}),
       harvestAnalytics: Device3HarvestAnalytics.fromJson(json['harvest_analytics'] ?? {}),
+      ampsAnalytics: Device3AmpsAnalytics.fromJson(json['amps_analytics'] ?? {}),
       iceMachineSummary: Device3Summary.fromJson(json['ice_machine_summary'] ?? {}),
       realTimeInsights: RealTimeInsights.fromJson(json['real_time_insights'] ?? {}),
     );
@@ -1401,12 +1416,27 @@ class Device3HarvestAnalytics {
   }
 }
 
+class Device3AmpsAnalytics {
+  final List<String> labels;
+  final List<double> amps;
+
+  Device3AmpsAnalytics({required this.labels, required this.amps});
+
+  factory Device3AmpsAnalytics.fromJson(Map<String, dynamic> json) {
+    return Device3AmpsAnalytics(
+      labels: _fromDynamicList(json['labels'], (e) => e.toString()),
+      amps: _fromDynamicList(json['amps'], (e) => (e ?? 0.0).toDouble()),
+    );
+  }
+}
+
 class Device3Summary {
   final TempStats? highSideTemp;
   final TempStats? lowSideTemp;
   final TempStats? iceTemp;
   final TempStats? airTemp;
   final TempStats? waterLevel;
+  final TempStats? amps;
   final int totalHarvests;
   final int totalReadings;
 
@@ -1416,6 +1446,7 @@ class Device3Summary {
     this.iceTemp,
     this.airTemp,
     this.waterLevel,
+    this.amps,
     required this.totalHarvests,
     required this.totalReadings,
   });
@@ -1427,6 +1458,7 @@ class Device3Summary {
       iceTemp: json['ice_temp'] != null ? TempStats.fromJson(json['ice_temp']) : null,
       airTemp: json['air_temp'] != null ? TempStats.fromJson(json['air_temp']) : null,
       waterLevel: json['water_level'] != null ? TempStats.fromJson(json['water_level']) : null,
+      amps: json['amps'] != null ? TempStats.fromJson(json['amps']) : null,
       totalHarvests: json['total_harvests'] ?? 0,
       totalReadings: json['total_readings'] ?? 0,
     );
@@ -3745,9 +3777,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(
+          color: isNormal ? const Color(0xFFF1F5F9) : Colors.red,
+          width: isNormal ? 1 : 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -4179,8 +4221,20 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           _buildChart('Water Level Trends', _buildDevice3WaterLevelChart()),
           SizedBox(height: spacing),
 
+          // Amps Trend Chart
+          _buildChart('Compressor Amps', _buildDevice3AmpsChart()),
+          SizedBox(height: spacing),
+
+          // Power Consumption Chart (derived from amps)
+          _buildChart('Power Consumption (kW)', _buildDevice3PowerChart()),
+          SizedBox(height: spacing),
+
           // Harvest Activity Chart
           _buildChart('Harvest Cycles', _buildDevice3HarvestChart()),
+          SizedBox(height: spacing),
+
+          // Real-Time Insights (Health, Efficiency, Cost)
+          _buildDevice3InsightsSection(),
           SizedBox(height: spacing),
 
           // Summary Statistics
@@ -4252,6 +4306,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final lsTemp = tempData?.lsTemp.isNotEmpty == true ? tempData!.lsTemp.last : 0.0;
     final airTemp = tempData?.airTemp.isNotEmpty == true ? tempData!.airTemp.last : 0.0;
     final waterLevel = waterData?.waterLevel.isNotEmpty == true ? waterData!.waterLevel.last : 0.0;
+    final ampsData = data?.ampsAnalytics;
+    final currentAmps = ampsData?.amps.isNotEmpty == true ? ampsData!.amps.last : 0.0;
     final totalHarvests = summary?.totalHarvests ?? 0;
 
     return Container(
@@ -4279,6 +4335,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               _buildDevice3MetricCard('Low Side', '${lsTemp.toStringAsFixed(1)}°C', Icons.arrow_downward, Colors.cyan, summary?.lowSideTemp),
               _buildDevice3MetricCard('Air Temp', '${airTemp.toStringAsFixed(1)}°C', Icons.air, Colors.green, summary?.airTemp),
               _buildDevice3MetricCard('Water Level', '${waterLevel.toStringAsFixed(1)}%', Icons.water_drop, Colors.indigo, summary?.waterLevel),
+              _buildDevice3MetricCard('Amps', '${currentAmps.toStringAsFixed(1)}A', Icons.bolt, Colors.amber, summary?.amps),
               _buildDevice3MetricCard('Harvests', '$totalHarvests', Icons.cyclone, Colors.purple, null),
             ],
           ),
@@ -4291,9 +4348,16 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -4590,6 +4654,94 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     );
   }
 
+  Widget _buildDevice3AmpsChart() {
+    final data = device3AnalyticsData;
+    if (data == null || data.ampsAnalytics.labels.isEmpty) {
+      return Container(
+        height: 200,
+        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final ampsData = data.ampsAnalytics;
+    final labels = ampsData.labels;
+    final amps = ampsData.amps;
+
+    final maxAmps = amps.isEmpty ? 10.0 : (amps.reduce((a, b) => a > b ? a : b) * 1.2).clamp(1.0, 100.0);
+
+    return Container(
+      height: 200,
+      padding: EdgeInsets.only(right: 16, top: 16),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < labels.length) {
+                    final label = labels[index];
+                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    return Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    );
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(1)}A',
+                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: false),
+          minY: 0,
+          maxY: maxAmps,
+          lineBarsData: [
+            LineChartBarData(
+              spots: List.generate(amps.length, (i) => FlSpot(i.toDouble(), amps[i])),
+              isCurved: true,
+              color: Colors.amber,
+              barWidth: 3,
+              dotData: FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  colors: [Colors.amber.withOpacity(0.3), Colors.amber.withOpacity(0.05)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (spots) => spots.map((spot) =>
+                LineTooltipItem('Amps: ${spot.y.toStringAsFixed(1)}A',
+                    TextStyle(color: Colors.amber.shade800, fontSize: 12))).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDevice3HarvestChart() {
     final data = device3AnalyticsData;
     if (data == null || data.harvestAnalytics.labels.isEmpty) {
@@ -4678,6 +4830,318 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     );
   }
 
+  Widget _buildDevice3PowerChart() {
+    final data = device3AnalyticsData;
+    if (data == null || data.ampsAnalytics.labels.isEmpty) {
+      return Container(
+        height: 200,
+        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final ampsData = data.ampsAnalytics;
+    final labels = ampsData.labels;
+    // Derive kW from amps: P = amps * 220 / 1000
+    final powerKw = ampsData.amps.map((a) => (a * 220) / 1000).toList();
+
+    final maxPower = powerKw.isEmpty ? 5.0 : (powerKw.reduce((a, b) => a > b ? a : b) * 1.2).clamp(0.5, 50.0);
+
+    return Container(
+      height: 200,
+      padding: EdgeInsets.only(right: 16, top: 16),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          ),
+          titlesData: FlTitlesData(
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < labels.length) {
+                    final label = labels[index];
+                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    return Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    );
+                  }
+                  return Text('');
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 45,
+                getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(2)}',
+                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+              ),
+            ),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          borderData: FlBorderData(show: false),
+          minY: 0,
+          maxY: maxPower,
+          lineBarsData: [
+            LineChartBarData(
+              spots: List.generate(powerKw.length, (i) => FlSpot(i.toDouble(), powerKw[i])),
+              isCurved: true,
+              color: Colors.green,
+              barWidth: 3,
+              dotData: FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  colors: [Colors.green.withOpacity(0.3), Colors.green.withOpacity(0.05)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (spots) => spots.map((spot) =>
+                LineTooltipItem('${spot.y.toStringAsFixed(3)} kW',
+                    TextStyle(color: Colors.green.shade800, fontSize: 12))).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevice3InsightsSection() {
+    final data = device3AnalyticsData;
+    if (data == null) {
+      return Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+        ),
+        child: Center(child: Text('No insights available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+      );
+    }
+
+    final isMobile = _isMobile(context);
+    final insights = data.realTimeInsights;
+    final energy = insights.energyCostEstimate;
+    final efficiency = insights.efficiencyRating;
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Real-Time Insights', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+          SizedBox(height: 16),
+
+          // Row 1: Health Score, Efficiency, Maintenance, Annual Cost
+          SizedBox(
+            width: double.infinity,
+            child: isMobile
+                ? Column(
+                    children: [
+                      _buildInsightMetricCard(
+                        'Health Score',
+                        '${insights.deviceHealthScore.overallScore.toStringAsFixed(0)}/100',
+                        insights.deviceHealthScore.healthGrade,
+                        Icons.favorite_rounded,
+                        _isHealthCritical(insights.deviceHealthScore.healthGrade),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInsightMetricCard(
+                        'Efficiency',
+                        '${insights.efficiencyRating.efficiencyScore.toStringAsFixed(0)}/100',
+                        insights.efficiencyRating.efficiencyGrade,
+                        Icons.eco_rounded,
+                        _isEfficiencyCritical(insights.efficiencyRating.efficiencyGrade),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInsightMetricCard(
+                        'Maintenance',
+                        '${insights.maintenanceUrgency.totalAlerts} alerts',
+                        insights.maintenanceUrgency.urgencyLevel,
+                        Icons.build_rounded,
+                        _isMaintenanceCritical(insights.maintenanceUrgency.urgencyLevel),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInsightMetricCard(
+                        'Annual Cost',
+                        'R${energy.annualCostUsd.toStringAsFixed(0)}',
+                        'Estimated',
+                        Icons.attach_money_rounded,
+                        false,
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      _buildInsightMetricCard(
+                        'Health Score',
+                        '${insights.deviceHealthScore.overallScore.toStringAsFixed(0)}/100',
+                        insights.deviceHealthScore.healthGrade,
+                        Icons.favorite_rounded,
+                        _isHealthCritical(insights.deviceHealthScore.healthGrade),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildInsightMetricCard(
+                        'Efficiency',
+                        '${insights.efficiencyRating.efficiencyScore.toStringAsFixed(0)}/100',
+                        insights.efficiencyRating.efficiencyGrade,
+                        Icons.eco_rounded,
+                        _isEfficiencyCritical(insights.efficiencyRating.efficiencyGrade),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildInsightMetricCard(
+                        'Maintenance',
+                        '${insights.maintenanceUrgency.totalAlerts} alerts',
+                        insights.maintenanceUrgency.urgencyLevel,
+                        Icons.build_rounded,
+                        _isMaintenanceCritical(insights.maintenanceUrgency.urgencyLevel),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildInsightMetricCard(
+                        'Annual Cost',
+                        'R${energy.annualCostUsd.toStringAsFixed(0)}',
+                        'Estimated',
+                        Icons.attach_money_rounded,
+                        false,
+                      ),
+                    ],
+                  ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Row 2: Per-harvest metrics
+          SizedBox(
+            width: double.infinity,
+            child: isMobile
+                ? Column(
+                    children: [
+                      _buildInsightMetricCard(
+                        'kWh / Harvest',
+                        efficiency.kwhPerHarvest > 0
+                            ? efficiency.kwhPerHarvest.toStringAsFixed(3)
+                            : '--',
+                        'Electrical consumption',
+                        Icons.electrical_services_rounded,
+                        false,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInsightMetricCard(
+                        'Cost / Harvest',
+                        efficiency.costPerHarvest > 0
+                            ? 'R${efficiency.costPerHarvest.toStringAsFixed(2)}'
+                            : '--',
+                        'Per harvest cost',
+                        Icons.receipt_long_rounded,
+                        false,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInsightMetricCard(
+                        'Avg Power',
+                        '${energy.avgPowerKw.toStringAsFixed(3)} kW',
+                        'Average draw',
+                        Icons.speed_rounded,
+                        false,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInsightMetricCard(
+                        'Daily Cost',
+                        'R${energy.dailyCostUsd.toStringAsFixed(2)}',
+                        'Estimated',
+                        Icons.today_rounded,
+                        false,
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      _buildInsightMetricCard(
+                        'kWh / Harvest',
+                        efficiency.kwhPerHarvest > 0
+                            ? efficiency.kwhPerHarvest.toStringAsFixed(3)
+                            : '--',
+                        'Electrical consumption',
+                        Icons.electrical_services_rounded,
+                        false,
+                      ),
+                      const SizedBox(width: 12),
+                      _buildInsightMetricCard(
+                        'Cost / Harvest',
+                        efficiency.costPerHarvest > 0
+                            ? 'R${efficiency.costPerHarvest.toStringAsFixed(2)}'
+                            : '--',
+                        'Per harvest cost',
+                        Icons.receipt_long_rounded,
+                        false,
+                      ),
+                      const SizedBox(width: 12),
+                      _buildInsightMetricCard(
+                        'Avg Power',
+                        '${energy.avgPowerKw.toStringAsFixed(3)} kW',
+                        'Average draw',
+                        Icons.speed_rounded,
+                        false,
+                      ),
+                      const SizedBox(width: 12),
+                      _buildInsightMetricCard(
+                        'Daily Cost',
+                        'R${energy.dailyCostUsd.toStringAsFixed(2)}',
+                        'Estimated',
+                        Icons.today_rounded,
+                        false,
+                      ),
+                    ],
+                  ),
+          ),
+
+          // Recommendation
+          if (insights.deviceHealthScore.recommendation.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAFAFA),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb_outline, color: Colors.amber, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      insights.deviceHealthScore.recommendation,
+                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildDevice3SummaryStats() {
     final data = device3AnalyticsData;
     final isMobile = _isMobile(context);
@@ -4736,12 +5200,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           _buildDevice3StatRow('Ice Temp', summary.iceTemp, Colors.blue),
           _buildDevice3StatRow('Air Temp', summary.airTemp, Colors.green),
           _buildDevice3StatRow('Water Level', summary.waterLevel, Colors.indigo, unit: '%'),
+          _buildDevice3StatRow('Amps', summary.amps, Colors.amber, unit: 'A'),
           SizedBox(height: 12),
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.purple.withOpacity(0.1),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.purple.withOpacity(0.3)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -4792,6 +5258,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final stats = data.overallStatistics;
     final compressors = stats['compressors'] as Map<String, dynamic>? ?? {};
 
+    String _fmtTime(String? iso) {
+      if (iso == null) return '--';
+      try {
+        final dt = DateTime.parse(iso);
+        return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (_) { return '--'; }
+    }
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(padding),
       child: Column(
@@ -4801,24 +5275,69 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Container(
             padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Constants.ctaColorLight, Constants.ctaColorLight.withOpacity(0.7)]),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4))],
             ),
             child: Row(
               children: [
-                Icon(Icons.electric_bolt, color: Colors.white, size: 28),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Constants.ctaColorLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.electric_bolt, color: Colors.white, size: 20),
+                ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Multi-Compressor Amp Monitor', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                      Text('${stats['total_readings'] ?? 0} readings | ${compressors.length} compressors', style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
+                      Text('Multi-Compressor Amp Monitor', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
+                      Text('${stats['total_readings'] ?? 0} readings | ${compressors.length} compressors', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[600])),
                     ],
                   ),
                 ),
               ],
             ),
+          ),
+          SizedBox(height: spacing),
+
+          // Summary Stats Row
+          GridView.count(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            crossAxisCount: isMobile ? 2 : 4,
+            childAspectRatio: isMobile ? 2.2 : 2.5,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            children: [
+              _buildSummaryStatCard('Active Compressors', '${stats['active_compressors'] ?? 0} / 8', Icons.electric_bolt, Constants.ctaColorLight),
+              _buildSummaryStatCard('Avg Load', '${(stats['overall_avg_load'] ?? 0).toStringAsFixed(1)} A', Icons.speed, Colors.blue),
+              _buildSummaryStatCard('Max Load', '${(stats['overall_max_load'] ?? 0).toStringAsFixed(1)} A', Icons.arrow_upward, Colors.orange),
+              _buildSummaryStatCard('Min Load', '${(stats['overall_min_load'] ?? 0).toStringAsFixed(1)} A', Icons.arrow_downward, Colors.teal),
+            ],
+          ),
+          SizedBox(height: spacing),
+
+          // Power Consumption Section
+          Text('Power Consumption', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          SizedBox(height: 8),
+          GridView.count(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            crossAxisCount: isMobile ? 2 : 4,
+            childAspectRatio: isMobile ? 2.2 : 2.5,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            children: [
+              _buildSummaryStatCard('Total Power', '${(stats['total_power_kw'] ?? 0).toStringAsFixed(1)} kW', Icons.power, Colors.deepOrange),
+              _buildSummaryStatCard('Daily Energy', '${(stats['daily_energy_estimate_kwh'] ?? 0).toStringAsFixed(1)} kWh', Icons.battery_charging_full, Colors.amber),
+              _buildSummaryStatCard('Daily Cost', 'R${(stats['daily_cost_estimate'] ?? 0).toStringAsFixed(0)}', Icons.attach_money, Colors.green),
+              _buildSummaryStatCard('Power Factor', '${stats['power_factor'] ?? 0.85}', Icons.electric_meter, Colors.purple),
+            ],
           ),
           SizedBox(height: spacing),
 
@@ -4830,7 +5349,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: isMobile ? 2 : 4,
-              childAspectRatio: isMobile ? 1.3 : 1.5,
+              childAspectRatio: isMobile ? 0.72 : 0.82,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
             ),
@@ -4840,6 +5359,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               final compData = compressors[compKey] as Map<String, dynamic>? ?? {};
               final avgAmp = (compData['average_amp'] ?? 0.0).toDouble();
               final phases = compData['phases'] as Map<String, dynamic>? ?? {};
+              final minTime = compData['min_amp_time'] as String?;
+              final maxTime = compData['max_amp_time'] as String?;
+              final phaseImbalance = (compData['phase_imbalance_pct'] ?? 0.0).toDouble();
+              // Compute min/max from phases
+              double minAmp = double.infinity, maxAmp = 0;
+              phases.forEach((_, v) {
+                final pd = v as Map<String, dynamic>? ?? {};
+                final mn = (pd['min'] ?? 0.0).toDouble();
+                final mx = (pd['max'] ?? 0.0).toDouble();
+                if (mn < minAmp && mn > 0) minAmp = mn;
+                if (mx > maxAmp) maxAmp = mx;
+              });
+              if (minAmp == double.infinity) minAmp = 0;
 
               return Container(
                 padding: EdgeInsets.all(10),
@@ -4851,7 +5383,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -4860,13 +5392,47 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         Text('Comp ${index + 1}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
                       ],
                     ),
-                    SizedBox(height: 6),
+                    SizedBox(height: 4),
                     Text('${avgAmp.toStringAsFixed(1)} A', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: avgAmp > 0.5 ? Colors.black87 : Colors.grey)),
                     SizedBox(height: 4),
                     ...phases.entries.take(3).map((e) {
                       final phaseData = e.value as Map<String, dynamic>? ?? {};
                       return Text('${e.key}: ${(phaseData['avg'] ?? 0.0).toStringAsFixed(1)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600]));
                     }),
+                    if (phases.isNotEmpty) ...[
+                      Divider(height: 8, thickness: 0.5),
+                      Row(
+                        children: [
+                          Icon(Icons.arrow_downward, size: 10, color: Colors.blue),
+                          SizedBox(width: 2),
+                          Expanded(child: Text('${minAmp.toStringAsFixed(1)}A', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.blue))),
+                          Icon(Icons.arrow_upward, size: 10, color: Colors.red),
+                          SizedBox(width: 2),
+                          Text('${maxAmp.toStringAsFixed(1)}A', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.red)),
+                        ],
+                      ),
+                      SizedBox(height: 2),
+                      if (minTime != null) Text('Min: ${_fmtTime(minTime)}', style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[500])),
+                      if (maxTime != null) Text('Max: ${_fmtTime(maxTime)}', style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[500])),
+                    ],
+                    if (phaseImbalance > 10) ...[
+                      SizedBox(height: 4),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.warning_amber, size: 10, color: Colors.orange),
+                            SizedBox(width: 3),
+                            Text('${phaseImbalance.toStringAsFixed(1)}% imbalance', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: Colors.orange)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               );
@@ -5270,19 +5836,28 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Container(
             padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.indigo, Colors.indigo.withOpacity(0.7)]),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4))],
             ),
             child: Row(
               children: [
-                Icon(Icons.toggle_on, color: Colors.white, size: 28),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.toggle_on, color: Colors.white, size: 20),
+                ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Relay Controller', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                      Text('${stats['total_readings'] ?? 0} readings | 16 relays', style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
+                      Text('Relay Controller', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
+                      Text('${stats['total_readings'] ?? 0} readings | 16 relays', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[600])),
                     ],
                   ),
                 ),
@@ -5291,15 +5866,51 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ),
           SizedBox(height: spacing),
 
+          // Summary Stats Row
+          GridView.count(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            crossAxisCount: isMobile ? 2 : 4,
+            childAspectRatio: isMobile ? 2.2 : 2.5,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            children: [
+              _buildSummaryStatCard('Relays ON', '${stats['relays_on'] ?? 0}', Icons.toggle_on, Colors.green),
+              _buildSummaryStatCard('Relays OFF', '${stats['relays_off'] ?? 0}', Icons.toggle_off, Colors.grey),
+              _buildSummaryStatCard('Avg Duty Cycle', '${(stats['avg_duty_cycle'] ?? 0).toStringAsFixed(1)}%', Icons.speed, Colors.indigo),
+              _buildSummaryStatCard('State Changes', '${stats['total_state_changes'] ?? 0}', Icons.swap_vert, Colors.orange),
+            ],
+          ),
+          SizedBox(height: spacing),
+
+          // Runtime Overview Section
+          Text('Runtime Overview', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          SizedBox(height: 8),
+          GridView.count(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            crossAxisCount: isMobile ? 2 : 4,
+            childAspectRatio: isMobile ? 2.2 : 2.5,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            children: [
+              _buildSummaryStatCard('Active Relays', '${stats['active_relay_count'] ?? 0}', Icons.power, Colors.green),
+              _buildSummaryStatCard('Total Runtime', '${(stats['total_runtime_hours'] ?? 0).toStringAsFixed(1)} hrs', Icons.timer, Colors.blue),
+              _buildSummaryStatCard('Most Active', 'Relay ${stats['most_active_relay'] ?? '-'}', Icons.star, Colors.amber),
+              _buildSummaryStatCard('Least Active', 'Relay ${stats['least_active_relay'] ?? '-'}', Icons.star_border, Colors.grey),
+            ],
+          ),
+          SizedBox(height: spacing),
+
           // Relay Duty Cycle Grid
-          Text('Relay Duty Cycles', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          Text('Relay Duty Cycles & Status', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
           SizedBox(height: 8),
           GridView.builder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: isMobile ? 2 : 4,
-              childAspectRatio: isMobile ? 1.8 : 2.2,
+              childAspectRatio: isMobile ? 1.3 : 1.5,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
             ),
@@ -5308,6 +5919,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               final relayKey = 'relay${index + 1}';
               final relayData = relays[relayKey] as Map<String, dynamic>? ?? {};
               final dutyCycle = (relayData['duty_cycle_pct'] ?? 0.0).toDouble();
+              final currentState = relayData['current_state'] == true;
+              final stateChanges = relayData['state_changes'] ?? 0;
+              final runtimeHours = (relayData['runtime_hours'] ?? 0.0).toDouble();
               final isActive = dutyCycle > 50;
 
               return Container(
@@ -5315,7 +5929,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: isActive ? Colors.green.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
+                  border: Border.all(color: currentState ? Colors.green.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: Offset(0, 2))],
                 ),
                 child: Column(
@@ -5324,14 +5938,39 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   children: [
                     Row(
                       children: [
-                        Icon(isActive ? Icons.toggle_on : Icons.toggle_off, size: 18, color: isActive ? Colors.green : Colors.grey),
-                        SizedBox(width: 4),
+                        Container(
+                          width: 8, height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: currentState ? Colors.green : Colors.grey.shade400,
+                          ),
+                        ),
+                        SizedBox(width: 6),
                         Text('Relay ${index + 1}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                        Spacer(),
+                        Text(currentState ? 'ON' : 'OFF', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: currentState ? Colors.green : Colors.grey)),
                       ],
                     ),
-                    SizedBox(height: 4),
-                    Text('${dutyCycle.toStringAsFixed(1)}%', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: isActive ? Colors.green[700] : Colors.grey)),
+                    SizedBox(height: 6),
+                    Text('${dutyCycle.toStringAsFixed(1)}%', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: isActive ? Colors.green[700] : Colors.grey)),
                     Text('duty cycle', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[500])),
+                    SizedBox(height: 4),
+                    // Progress bar
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(
+                        value: dutyCycle / 100,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation<Color>(isActive ? Colors.green : Colors.orange),
+                        minHeight: 4,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text('$stateChanges transitions', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                    if (runtimeHours > 0) ...[
+                      SizedBox(height: 2),
+                      Text('${runtimeHours.toStringAsFixed(1)} hrs runtime', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w500, color: Colors.indigo)),
+                    ],
                   ],
                 ),
               );
@@ -5617,6 +6256,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final stats = data.overallStatistics;
     final sensors = stats['sensors'] as Map<String, dynamic>? ?? {};
 
+    String _fmtTime(String? iso) {
+      if (iso == null) return '--';
+      try {
+        final dt = DateTime.parse(iso);
+        return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (_) { return '--'; }
+    }
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(padding),
       child: Column(
@@ -5626,25 +6273,70 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Container(
             padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.teal, Colors.teal.withOpacity(0.7)]),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4))],
             ),
             child: Row(
               children: [
-                Icon(Icons.speed, color: Colors.white, size: 28),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.teal,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.speed, color: Colors.white, size: 20),
+                ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Pressure Monitor', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                      Text('${stats['total_readings'] ?? 0} readings | 8 sensors', style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
-                      Text('Range: ${stats['min_overall'] ?? 0} - ${stats['max_overall'] ?? 0} bar', style: GoogleFonts.inter(fontSize: 12, color: Colors.white60)),
+                      Text('Pressure Monitor', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
+                      Text('${stats['total_readings'] ?? 0} readings | 8 sensors', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[600])),
+                      Text('Range: ${stats['min_overall'] ?? 0} - ${stats['max_overall'] ?? 0} psi', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500])),
                     ],
                   ),
                 ),
               ],
             ),
+          ),
+          SizedBox(height: spacing),
+
+          // Summary Stats Row
+          GridView.count(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            crossAxisCount: isMobile ? 2 : 4,
+            childAspectRatio: isMobile ? 2.2 : 2.5,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            children: [
+              _buildSummaryStatCard('Avg Pressure', '${(stats['avg_overall'] ?? 0).toStringAsFixed(2)} psi', Icons.speed, Colors.teal),
+              _buildSummaryStatCard('Min Overall', '${(stats['min_overall'] ?? 0).toStringAsFixed(2)} psi', Icons.arrow_downward, Colors.blue),
+              _buildSummaryStatCard('Max Overall', '${(stats['max_overall'] ?? 0).toStringAsFixed(2)} psi', Icons.arrow_upward, Colors.red),
+              _buildSummaryStatCard('Most Stable', 'Sensor ${stats['most_stable_sensor'] ?? '-'}', Icons.check_circle, Colors.green),
+            ],
+          ),
+          SizedBox(height: spacing),
+
+          // Stability Analysis Section
+          Text('Stability Analysis', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          SizedBox(height: 8),
+          GridView.count(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            crossAxisCount: isMobile ? 2 : 4,
+            childAspectRatio: isMobile ? 2.2 : 2.5,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            children: [
+              _buildSummaryStatCard('Stability Score', '${(stats['avg_stability_score'] ?? 0).toStringAsFixed(1)}%', Icons.verified, Colors.teal),
+              _buildSummaryStatCard('Most Stable', 'Sensor ${stats['most_stable_sensor'] ?? '-'}', Icons.check_circle, Colors.green),
+              _buildSummaryStatCard('Least Stable', 'Sensor ${stats['least_stable_sensor'] ?? '-'}', Icons.warning, Colors.orange),
+              _buildSummaryStatCard('Avg Pressure', '${(stats['avg_overall'] ?? 0).toStringAsFixed(2)} psi', Icons.speed, Colors.blue),
+            ],
           ),
           SizedBox(height: spacing),
 
@@ -5656,7 +6348,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: isMobile ? 2 : 4,
-              childAspectRatio: isMobile ? 1.3 : 1.5,
+              childAspectRatio: isMobile ? 0.8 : 0.9,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
             ),
@@ -5667,6 +6359,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               final avg = (sensorData['avg'] ?? 0.0).toDouble();
               final min = (sensorData['min'] ?? 0.0).toDouble();
               final max = (sensorData['max'] ?? 0.0).toDouble();
+              final minTime = sensorData['min_time'] as String?;
+              final maxTime = sensorData['max_time'] as String?;
+              final stabilityScore = (sensorData['stability_score'] ?? 0.0).toDouble();
+              final range = max - min;
 
               return Container(
                 padding: EdgeInsets.all(10),
@@ -5678,7 +6374,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -5687,10 +6383,45 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         Text('Sensor ${index + 1}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
                       ],
                     ),
-                    SizedBox(height: 6),
-                    Text('${avg.toStringAsFixed(2)} bar', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
                     SizedBox(height: 4),
-                    Text('Min: ${min.toStringAsFixed(2)} | Max: ${max.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    Text('${avg.toStringAsFixed(2)} psi', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    Text('average', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                    Divider(height: 10, thickness: 0.5),
+                    Row(
+                      children: [
+                        Icon(Icons.arrow_downward, size: 10, color: Colors.blue),
+                        SizedBox(width: 2),
+                        Expanded(child: Text('${min.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.blue))),
+                        Icon(Icons.arrow_upward, size: 10, color: Colors.red),
+                        SizedBox(width: 2),
+                        Text('${max.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.red)),
+                      ],
+                    ),
+                    SizedBox(height: 2),
+                    if (minTime != null) Text('Min: ${_fmtTime(minTime)}', style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[500])),
+                    if (maxTime != null) Text('Max: ${_fmtTime(maxTime)}', style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[500])),
+                    SizedBox(height: 4),
+                    Text('Range: ${range.toStringAsFixed(3)} psi', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[600])),
+                    SizedBox(height: 4),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: stabilityScore >= 80 ? Colors.green.withOpacity(0.1) : stabilityScore >= 50 ? Colors.orange.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            stabilityScore >= 80 ? Icons.check_circle : stabilityScore >= 50 ? Icons.warning_amber : Icons.error,
+                            size: 10,
+                            color: stabilityScore >= 80 ? Colors.green : stabilityScore >= 50 ? Colors.orange : Colors.red,
+                          ),
+                          SizedBox(width: 3),
+                          Text('${stabilityScore.toStringAsFixed(0)}% stable', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: stabilityScore >= 80 ? Colors.green : stabilityScore >= 50 ? Colors.orange : Colors.red)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -5751,7 +6482,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     final sensorData = sensors['sensor${groupIndex + 1}'] as Map<String, dynamic>? ?? {};
                     return BarTooltipItem(
-                      'Sensor ${groupIndex + 1}\nAvg: ${(sensorData['avg'] ?? 0).toStringAsFixed(2)} bar\nMin: ${(sensorData['min'] ?? 0).toStringAsFixed(2)} bar\nMax: ${(sensorData['max'] ?? 0).toStringAsFixed(2)} bar',
+                      'Sensor ${groupIndex + 1}\nAvg: ${(sensorData['avg'] ?? 0).toStringAsFixed(2)} psi\nMin: ${(sensorData['min'] ?? 0).toStringAsFixed(2)} psi\nMax: ${(sensorData['max'] ?? 0).toStringAsFixed(2)} psi',
                       GoogleFonts.inter(color: Colors.white, fontSize: 11),
                     );
                   },
@@ -5876,7 +6607,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTooltipItems: (spots) => spots.map((spot) {
                     final names = ['Max', 'Avg', 'Min'];
                     final clrs = [Colors.red, Colors.teal, Colors.blue];
-                    return LineTooltipItem('${names[spot.barIndex]}: ${spot.y.toStringAsFixed(2)} bar',
+                    return LineTooltipItem('${names[spot.barIndex]}: ${spot.y.toStringAsFixed(2)} psi',
                         TextStyle(color: clrs[spot.barIndex], fontSize: 11));
                   }).toList(),
                 ),
@@ -5954,7 +6685,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
                   getTooltipItems: (touchedSpots) => touchedSpots.map((spot) =>
-                    LineTooltipItem('Sensor ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(2)} bar',
+                    LineTooltipItem('Sensor ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(2)} psi',
                         TextStyle(color: colors[spot.barIndex], fontSize: 11))).toList(),
                 ),
               ),
@@ -6002,7 +6733,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     final sData = sensors['sensor${groupIndex + 1}'] as Map<String, dynamic>? ?? {};
                     return BarTooltipItem(
-                      'Sensor ${groupIndex + 1}\nRange: ${rod.toY.toStringAsFixed(3)} bar\nMin: ${(sData['min'] ?? 0).toStringAsFixed(2)}\nMax: ${(sData['max'] ?? 0).toStringAsFixed(2)}',
+                      'Sensor ${groupIndex + 1}\nRange: ${rod.toY.toStringAsFixed(3)} psi\nMin: ${(sData['min'] ?? 0).toStringAsFixed(2)}\nMax: ${(sData['max'] ?? 0).toStringAsFixed(2)}',
                       GoogleFonts.inter(color: Colors.white, fontSize: 11),
                     );
                   },
@@ -7450,6 +8181,35 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSummaryStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.2)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 22, color: color),
+          SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(title, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                SizedBox(height: 2),
+                Text(value, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -725,6 +725,7 @@ class LatestDeviceData {
   final double? airTemp; // Air temperature
   final bool? harvsw;    // Harvest switch
   final double? wtrlvl;  // Water level
+  final double? amps;    // Compressor amps
   final String? wtrlvlLastEmpty;  // Last time water level was 0%
   final String? wtrlvlLastFull;   // Last time water level was 100%
   // Device 3 min/max values (24-hour)
@@ -749,6 +750,16 @@ class LatestDeviceData {
   final String? lastHarvestTime;
   // Device 3 harvest count (last 24 hours)
   final int? harvestCount;
+  // Device 3 power & cost fields
+  final double? powerKw;
+  final double? dailyCostEstimate;
+  final double? electricityRate;
+  // Device 3 energy consumption (24h)
+  final double? energyConsumed24h;
+  // Device 3 actual energy cost (24h)
+  final double? energyCost24h;
+  // Device 3 individual harvest timestamps (last 24h)
+  final List<String>? harvestTimes;
 
   // Device 4 specific fields (Multi-Compressor Amp Monitoring - 8 compressors x 3 phases)
   final double? comp1ph1;
@@ -775,6 +786,68 @@ class LatestDeviceData {
   final double? comp8ph1;
   final double? comp8ph2;
   final double? comp8ph3;
+  // Device 4 per-compressor analytics (min/max/avg + timestamps)
+  final double? comp1AvgMin;
+  final double? comp1AvgMax;
+  final double? comp1AvgAvg;
+  final String? comp1AvgMinTime;
+  final String? comp1AvgMaxTime;
+  final double? comp2AvgMin;
+  final double? comp2AvgMax;
+  final double? comp2AvgAvg;
+  final String? comp2AvgMinTime;
+  final String? comp2AvgMaxTime;
+  final double? comp3AvgMin;
+  final double? comp3AvgMax;
+  final double? comp3AvgAvg;
+  final String? comp3AvgMinTime;
+  final String? comp3AvgMaxTime;
+  final double? comp4AvgMin;
+  final double? comp4AvgMax;
+  final double? comp4AvgAvg;
+  final String? comp4AvgMinTime;
+  final String? comp4AvgMaxTime;
+  final double? comp5AvgMin;
+  final double? comp5AvgMax;
+  final double? comp5AvgAvg;
+  final String? comp5AvgMinTime;
+  final String? comp5AvgMaxTime;
+  final double? comp6AvgMin;
+  final double? comp6AvgMax;
+  final double? comp6AvgAvg;
+  final String? comp6AvgMinTime;
+  final String? comp6AvgMaxTime;
+  final double? comp7AvgMin;
+  final double? comp7AvgMax;
+  final double? comp7AvgAvg;
+  final String? comp7AvgMinTime;
+  final String? comp7AvgMaxTime;
+  final double? comp8AvgMin;
+  final double? comp8AvgMax;
+  final double? comp8AvgAvg;
+  final String? comp8AvgMinTime;
+  final String? comp8AvgMaxTime;
+
+  // Device 4 power & phase imbalance fields
+  final double? totalPowerKw;
+  final double? dailyEnergyEstimateKwh;
+  final double? dailyCostEstimateD4;
+  final double? comp1PowerKw;
+  final double? comp2PowerKw;
+  final double? comp3PowerKw;
+  final double? comp4PowerKw;
+  final double? comp5PowerKw;
+  final double? comp6PowerKw;
+  final double? comp7PowerKw;
+  final double? comp8PowerKw;
+  final double? comp1PhaseImbalancePct;
+  final double? comp2PhaseImbalancePct;
+  final double? comp3PhaseImbalancePct;
+  final double? comp4PhaseImbalancePct;
+  final double? comp5PhaseImbalancePct;
+  final double? comp6PhaseImbalancePct;
+  final double? comp7PhaseImbalancePct;
+  final double? comp8PhaseImbalancePct;
 
   // Device 5 specific fields (Relay Controller - 16 relays)
   final bool? relay1;
@@ -795,6 +868,24 @@ class LatestDeviceData {
   final bool? relay16;
   final int? relaysOnCount;
   final int? relaysOffCount;
+  // Device 5 duty cycle percentages
+  final double? relay1OnPct;
+  final double? relay2OnPct;
+  final double? relay3OnPct;
+  final double? relay4OnPct;
+  final double? relay5OnPct;
+  final double? relay6OnPct;
+  final double? relay7OnPct;
+  final double? relay8OnPct;
+  final double? relay9OnPct;
+  final double? relay10OnPct;
+  final double? relay11OnPct;
+  final double? relay12OnPct;
+  final double? relay13OnPct;
+  final double? relay14OnPct;
+  final double? relay15OnPct;
+  final double? relay16OnPct;
+  final int? totalReadingsToday;
 
   // Device 6 specific fields (Pressure Monitoring - 8 sensors)
   final double? prs1;
@@ -822,6 +913,31 @@ class LatestDeviceData {
   final double? prs8Min;
   final double? prs8Max;
   final double? avgPressure;
+  // Device 6 per-sensor timestamps + averages
+  final String? prs1MinTime;
+  final String? prs1MaxTime;
+  final double? prs1Avg;
+  final String? prs2MinTime;
+  final String? prs2MaxTime;
+  final double? prs2Avg;
+  final String? prs3MinTime;
+  final String? prs3MaxTime;
+  final double? prs3Avg;
+  final String? prs4MinTime;
+  final String? prs4MaxTime;
+  final double? prs4Avg;
+  final String? prs5MinTime;
+  final String? prs5MaxTime;
+  final double? prs5Avg;
+  final String? prs6MinTime;
+  final String? prs6MaxTime;
+  final double? prs6Avg;
+  final String? prs7MinTime;
+  final String? prs7MaxTime;
+  final double? prs7Avg;
+  final String? prs8MinTime;
+  final String? prs8MaxTime;
+  final double? prs8Avg;
 
   // Enhanced calculated metrics
   final double? avgCompAmp;
@@ -841,6 +957,9 @@ class LatestDeviceData {
   // New door analysis fields
   final DateTime? lastDoorOpenTimestamp;
   final DateTime? lastDoorCloseTimestamp;
+
+  // Custom labels for zones/compressors
+  final Map<String, String>? customLabels;
 
   LatestDeviceData({
     this.deviceId,
@@ -908,6 +1027,7 @@ class LatestDeviceData {
     this.airTemp,
     this.harvsw,
     this.wtrlvl,
+    this.amps,
     this.wtrlvlLastEmpty,
     this.wtrlvlLastFull,
     // Device 3 min/max
@@ -931,6 +1051,13 @@ class LatestDeviceData {
     // Device 3 last harvest
     this.lastHarvestTime,
     this.harvestCount,
+    // Device 3 power & cost
+    this.powerKw,
+    this.dailyCostEstimate,
+    this.electricityRate,
+    this.energyConsumed24h,
+    this.energyCost24h,
+    this.harvestTimes,
     // Device 4 fields
     this.comp1ph1,
     this.comp1ph2,
@@ -956,6 +1083,67 @@ class LatestDeviceData {
     this.comp8ph1,
     this.comp8ph2,
     this.comp8ph3,
+    // Device 4 per-compressor analytics
+    this.comp1AvgMin,
+    this.comp1AvgMax,
+    this.comp1AvgAvg,
+    this.comp1AvgMinTime,
+    this.comp1AvgMaxTime,
+    this.comp2AvgMin,
+    this.comp2AvgMax,
+    this.comp2AvgAvg,
+    this.comp2AvgMinTime,
+    this.comp2AvgMaxTime,
+    this.comp3AvgMin,
+    this.comp3AvgMax,
+    this.comp3AvgAvg,
+    this.comp3AvgMinTime,
+    this.comp3AvgMaxTime,
+    this.comp4AvgMin,
+    this.comp4AvgMax,
+    this.comp4AvgAvg,
+    this.comp4AvgMinTime,
+    this.comp4AvgMaxTime,
+    this.comp5AvgMin,
+    this.comp5AvgMax,
+    this.comp5AvgAvg,
+    this.comp5AvgMinTime,
+    this.comp5AvgMaxTime,
+    this.comp6AvgMin,
+    this.comp6AvgMax,
+    this.comp6AvgAvg,
+    this.comp6AvgMinTime,
+    this.comp6AvgMaxTime,
+    this.comp7AvgMin,
+    this.comp7AvgMax,
+    this.comp7AvgAvg,
+    this.comp7AvgMinTime,
+    this.comp7AvgMaxTime,
+    this.comp8AvgMin,
+    this.comp8AvgMax,
+    this.comp8AvgAvg,
+    this.comp8AvgMinTime,
+    this.comp8AvgMaxTime,
+    // Device 4 power & phase imbalance
+    this.totalPowerKw,
+    this.dailyEnergyEstimateKwh,
+    this.dailyCostEstimateD4,
+    this.comp1PowerKw,
+    this.comp2PowerKw,
+    this.comp3PowerKw,
+    this.comp4PowerKw,
+    this.comp5PowerKw,
+    this.comp6PowerKw,
+    this.comp7PowerKw,
+    this.comp8PowerKw,
+    this.comp1PhaseImbalancePct,
+    this.comp2PhaseImbalancePct,
+    this.comp3PhaseImbalancePct,
+    this.comp4PhaseImbalancePct,
+    this.comp5PhaseImbalancePct,
+    this.comp6PhaseImbalancePct,
+    this.comp7PhaseImbalancePct,
+    this.comp8PhaseImbalancePct,
     // Device 5 fields
     this.relay1,
     this.relay2,
@@ -975,6 +1163,24 @@ class LatestDeviceData {
     this.relay16,
     this.relaysOnCount,
     this.relaysOffCount,
+    // Device 5 duty cycle
+    this.relay1OnPct,
+    this.relay2OnPct,
+    this.relay3OnPct,
+    this.relay4OnPct,
+    this.relay5OnPct,
+    this.relay6OnPct,
+    this.relay7OnPct,
+    this.relay8OnPct,
+    this.relay9OnPct,
+    this.relay10OnPct,
+    this.relay11OnPct,
+    this.relay12OnPct,
+    this.relay13OnPct,
+    this.relay14OnPct,
+    this.relay15OnPct,
+    this.relay16OnPct,
+    this.totalReadingsToday,
     // Device 6 fields
     this.prs1,
     this.prs2,
@@ -1001,6 +1207,31 @@ class LatestDeviceData {
     this.prs8Min,
     this.prs8Max,
     this.avgPressure,
+    // Device 6 per-sensor timestamps + averages
+    this.prs1MinTime,
+    this.prs1MaxTime,
+    this.prs1Avg,
+    this.prs2MinTime,
+    this.prs2MaxTime,
+    this.prs2Avg,
+    this.prs3MinTime,
+    this.prs3MaxTime,
+    this.prs3Avg,
+    this.prs4MinTime,
+    this.prs4MaxTime,
+    this.prs4Avg,
+    this.prs5MinTime,
+    this.prs5MaxTime,
+    this.prs5Avg,
+    this.prs6MinTime,
+    this.prs6MaxTime,
+    this.prs6Avg,
+    this.prs7MinTime,
+    this.prs7MaxTime,
+    this.prs7Avg,
+    this.prs8MinTime,
+    this.prs8MaxTime,
+    this.prs8Avg,
     // Calculated metrics
     this.avgCompAmp,
     this.maxCompAmp,
@@ -1015,6 +1246,7 @@ class LatestDeviceData {
     this.lastOffTimestamp,
     this.lastDoorOpenTimestamp,
     this.lastDoorCloseTimestamp,
+    this.customLabels,
   });
 
   // Helper method to get device type
@@ -1107,6 +1339,7 @@ class LatestDeviceData {
       airTemp: json['air_temp']?.toDouble(),
       harvsw: json['harvsw'],
       wtrlvl: json['wtrlvl']?.toDouble(),
+      amps: json['amps']?.toDouble(),
       wtrlvlLastEmpty: json['wtrlvlLastEmpty'],
       wtrlvlLastFull: json['wtrlvlLastFull'],
       // Device 3 min/max
@@ -1130,6 +1363,15 @@ class LatestDeviceData {
       // Device 3 last harvest
       lastHarvestTime: json['last_harvest_time'],
       harvestCount: json['harvest_count'],
+      // Device 3 power & cost
+      powerKw: json['power_kw']?.toDouble(),
+      dailyCostEstimate: json['daily_cost_estimate']?.toDouble(),
+      electricityRate: json['electricity_rate']?.toDouble(),
+      energyConsumed24h: json['energy_consumed_24h']?.toDouble(),
+      energyCost24h: json['energy_cost_24h']?.toDouble(),
+      harvestTimes: json['harvest_times'] != null
+          ? List<String>.from(json['harvest_times'])
+          : null,
       // Device 4 fields (multi-compressor amp)
       comp1ph1: json['1comph1']?.toDouble(),
       comp1ph2: json['1comph2']?.toDouble(),
@@ -1155,6 +1397,67 @@ class LatestDeviceData {
       comp8ph1: json['8comph1']?.toDouble(),
       comp8ph2: json['8comph2']?.toDouble(),
       comp8ph3: json['8comph3']?.toDouble(),
+      // Device 4 per-compressor analytics
+      comp1AvgMin: json['comp1_avg_min']?.toDouble(),
+      comp1AvgMax: json['comp1_avg_max']?.toDouble(),
+      comp1AvgAvg: json['comp1_avg_avg']?.toDouble(),
+      comp1AvgMinTime: json['comp1_avg_min_time'],
+      comp1AvgMaxTime: json['comp1_avg_max_time'],
+      comp2AvgMin: json['comp2_avg_min']?.toDouble(),
+      comp2AvgMax: json['comp2_avg_max']?.toDouble(),
+      comp2AvgAvg: json['comp2_avg_avg']?.toDouble(),
+      comp2AvgMinTime: json['comp2_avg_min_time'],
+      comp2AvgMaxTime: json['comp2_avg_max_time'],
+      comp3AvgMin: json['comp3_avg_min']?.toDouble(),
+      comp3AvgMax: json['comp3_avg_max']?.toDouble(),
+      comp3AvgAvg: json['comp3_avg_avg']?.toDouble(),
+      comp3AvgMinTime: json['comp3_avg_min_time'],
+      comp3AvgMaxTime: json['comp3_avg_max_time'],
+      comp4AvgMin: json['comp4_avg_min']?.toDouble(),
+      comp4AvgMax: json['comp4_avg_max']?.toDouble(),
+      comp4AvgAvg: json['comp4_avg_avg']?.toDouble(),
+      comp4AvgMinTime: json['comp4_avg_min_time'],
+      comp4AvgMaxTime: json['comp4_avg_max_time'],
+      comp5AvgMin: json['comp5_avg_min']?.toDouble(),
+      comp5AvgMax: json['comp5_avg_max']?.toDouble(),
+      comp5AvgAvg: json['comp5_avg_avg']?.toDouble(),
+      comp5AvgMinTime: json['comp5_avg_min_time'],
+      comp5AvgMaxTime: json['comp5_avg_max_time'],
+      comp6AvgMin: json['comp6_avg_min']?.toDouble(),
+      comp6AvgMax: json['comp6_avg_max']?.toDouble(),
+      comp6AvgAvg: json['comp6_avg_avg']?.toDouble(),
+      comp6AvgMinTime: json['comp6_avg_min_time'],
+      comp6AvgMaxTime: json['comp6_avg_max_time'],
+      comp7AvgMin: json['comp7_avg_min']?.toDouble(),
+      comp7AvgMax: json['comp7_avg_max']?.toDouble(),
+      comp7AvgAvg: json['comp7_avg_avg']?.toDouble(),
+      comp7AvgMinTime: json['comp7_avg_min_time'],
+      comp7AvgMaxTime: json['comp7_avg_max_time'],
+      comp8AvgMin: json['comp8_avg_min']?.toDouble(),
+      comp8AvgMax: json['comp8_avg_max']?.toDouble(),
+      comp8AvgAvg: json['comp8_avg_avg']?.toDouble(),
+      comp8AvgMinTime: json['comp8_avg_min_time'],
+      comp8AvgMaxTime: json['comp8_avg_max_time'],
+      // Device 4 power & phase imbalance
+      totalPowerKw: json['total_power_kw']?.toDouble(),
+      dailyEnergyEstimateKwh: json['daily_energy_estimate_kwh']?.toDouble(),
+      dailyCostEstimateD4: json['daily_cost_estimate_d4']?.toDouble(),
+      comp1PowerKw: json['comp1_power_kw']?.toDouble(),
+      comp2PowerKw: json['comp2_power_kw']?.toDouble(),
+      comp3PowerKw: json['comp3_power_kw']?.toDouble(),
+      comp4PowerKw: json['comp4_power_kw']?.toDouble(),
+      comp5PowerKw: json['comp5_power_kw']?.toDouble(),
+      comp6PowerKw: json['comp6_power_kw']?.toDouble(),
+      comp7PowerKw: json['comp7_power_kw']?.toDouble(),
+      comp8PowerKw: json['comp8_power_kw']?.toDouble(),
+      comp1PhaseImbalancePct: json['comp1_phase_imbalance_pct']?.toDouble(),
+      comp2PhaseImbalancePct: json['comp2_phase_imbalance_pct']?.toDouble(),
+      comp3PhaseImbalancePct: json['comp3_phase_imbalance_pct']?.toDouble(),
+      comp4PhaseImbalancePct: json['comp4_phase_imbalance_pct']?.toDouble(),
+      comp5PhaseImbalancePct: json['comp5_phase_imbalance_pct']?.toDouble(),
+      comp6PhaseImbalancePct: json['comp6_phase_imbalance_pct']?.toDouble(),
+      comp7PhaseImbalancePct: json['comp7_phase_imbalance_pct']?.toDouble(),
+      comp8PhaseImbalancePct: json['comp8_phase_imbalance_pct']?.toDouble(),
       // Device 5 fields (relay controller)
       relay1: json['relay1'],
       relay2: json['relay2'],
@@ -1174,6 +1477,24 @@ class LatestDeviceData {
       relay16: json['relay16'],
       relaysOnCount: json['relaysOnCount'],
       relaysOffCount: json['relaysOffCount'],
+      // Device 5 duty cycle
+      relay1OnPct: json['relay1_on_pct']?.toDouble(),
+      relay2OnPct: json['relay2_on_pct']?.toDouble(),
+      relay3OnPct: json['relay3_on_pct']?.toDouble(),
+      relay4OnPct: json['relay4_on_pct']?.toDouble(),
+      relay5OnPct: json['relay5_on_pct']?.toDouble(),
+      relay6OnPct: json['relay6_on_pct']?.toDouble(),
+      relay7OnPct: json['relay7_on_pct']?.toDouble(),
+      relay8OnPct: json['relay8_on_pct']?.toDouble(),
+      relay9OnPct: json['relay9_on_pct']?.toDouble(),
+      relay10OnPct: json['relay10_on_pct']?.toDouble(),
+      relay11OnPct: json['relay11_on_pct']?.toDouble(),
+      relay12OnPct: json['relay12_on_pct']?.toDouble(),
+      relay13OnPct: json['relay13_on_pct']?.toDouble(),
+      relay14OnPct: json['relay14_on_pct']?.toDouble(),
+      relay15OnPct: json['relay15_on_pct']?.toDouble(),
+      relay16OnPct: json['relay16_on_pct']?.toDouble(),
+      totalReadingsToday: json['totalReadingsToday'],
       // Device 6 fields (pressure monitoring)
       prs1: json['prs1']?.toDouble(),
       prs2: json['prs2']?.toDouble(),
@@ -1200,6 +1521,31 @@ class LatestDeviceData {
       prs8Min: json['prs8_min']?.toDouble(),
       prs8Max: json['prs8_max']?.toDouble(),
       avgPressure: json['avgPressure']?.toDouble(),
+      // Device 6 per-sensor timestamps + averages
+      prs1MinTime: json['prs1_min_time'],
+      prs1MaxTime: json['prs1_max_time'],
+      prs1Avg: json['prs1_avg']?.toDouble(),
+      prs2MinTime: json['prs2_min_time'],
+      prs2MaxTime: json['prs2_max_time'],
+      prs2Avg: json['prs2_avg']?.toDouble(),
+      prs3MinTime: json['prs3_min_time'],
+      prs3MaxTime: json['prs3_max_time'],
+      prs3Avg: json['prs3_avg']?.toDouble(),
+      prs4MinTime: json['prs4_min_time'],
+      prs4MaxTime: json['prs4_max_time'],
+      prs4Avg: json['prs4_avg']?.toDouble(),
+      prs5MinTime: json['prs5_min_time'],
+      prs5MaxTime: json['prs5_max_time'],
+      prs5Avg: json['prs5_avg']?.toDouble(),
+      prs6MinTime: json['prs6_min_time'],
+      prs6MaxTime: json['prs6_max_time'],
+      prs6Avg: json['prs6_avg']?.toDouble(),
+      prs7MinTime: json['prs7_min_time'],
+      prs7MaxTime: json['prs7_max_time'],
+      prs7Avg: json['prs7_avg']?.toDouble(),
+      prs8MinTime: json['prs8_min_time'],
+      prs8MaxTime: json['prs8_max_time'],
+      prs8Avg: json['prs8_avg']?.toDouble(),
       // Calculated metrics
       avgCompAmp: json['avgCompAmp']?.toDouble(),
       maxCompAmp: json['maxCompAmp']?.toDouble(),
@@ -1219,6 +1565,9 @@ class LatestDeviceData {
           : null,
       lastDoorCloseTimestamp: json['lastDoorCloseTimestamp'] != null
           ? DateTime.parse(json['lastDoorCloseTimestamp'])
+          : null,
+      customLabels: json['custom_labels'] != null
+          ? Map<String, String>.from(json['custom_labels'])
           : null,
     );
   }
@@ -1422,6 +1771,7 @@ class TemperatureRange {
   final double? max;
   final double? avg;
   final String? status;
+  final String? unit;
   DateTime? minTimestamp;
   DateTime? maxTimestamp; // 'normal', 'warning', 'critical'
 
@@ -1432,6 +1782,7 @@ class TemperatureRange {
     this.max,
     this.avg,
     this.status,
+    this.unit,
     this.minTimestamp,
     this.maxTimestamp,
   });

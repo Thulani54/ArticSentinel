@@ -866,6 +866,63 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   );
   MapType mapType = MapType.normal;
 
+  /// Get custom label for a zone/compressor key, falling back to default name.
+  String _getLabel(LatestDeviceData? device, String key, String fallback) {
+    return device?.customLabels?[key] ?? fallback;
+  }
+
+  /// Show rename dialog for a zone/compressor label.
+  Future<void> _showRenameLabelDialog(String labelKey, String currentName, String deviceId) async {
+    final controller = TextEditingController(text: currentName);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Rename', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: 'Enter new name',
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (val) => Navigator.of(ctx).pop(val.trim()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (result != null && result.isNotEmpty && result != currentName) {
+      await _updateDeviceLabel(deviceId, {labelKey: result});
+    }
+  }
+
+  /// Call API to update device labels, then refresh dashboard data.
+  Future<void> _updateDeviceLabel(String deviceId, Map<String, String> labels) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${Constants.articBaseUrl2}api/devices/update-labels/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'device_id': deviceId,
+          'business_id': Constants.myBusiness.businessUid,
+          'labels': labels,
+        }),
+      );
+      if (response.statusCode == 200) {
+        // Re-fetch device data to pick up updated labels
+        await fetchLatestDeviceData();
+        if (mounted) setState(() {});
+      }
+    } catch (e) {
+      debugPrint('Error updating label: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1108,31 +1165,77 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         ),
       ];
     } else if (deviceType == 'device4') {
-      // Device4: multi-compressor amp - show first 3 compressor averages as ranges
-      final comp1Avg = _compressorAvg(selectedDevice.comp1ph1, selectedDevice.comp1ph2, selectedDevice.comp1ph3);
-      final comp2Avg = _compressorAvg(selectedDevice.comp2ph1, selectedDevice.comp2ph2, selectedDevice.comp2ph3);
-      final comp3Avg = _compressorAvg(selectedDevice.comp3ph1, selectedDevice.comp3ph2, selectedDevice.comp3ph3);
-      temperatureRanges = [
-        TemperatureRange(sensor: 'Compressor 1 Avg', current: comp1Avg, min: null, max: null, avg: null, status: comp1Avg != null ? 'Active' : 'No Data'),
-        TemperatureRange(sensor: 'Compressor 2 Avg', current: comp2Avg, min: null, max: null, avg: null, status: comp2Avg != null ? 'Active' : 'No Data'),
-        TemperatureRange(sensor: 'Compressor 3 Avg', current: comp3Avg, min: null, max: null, avg: null, status: comp3Avg != null ? 'Active' : 'No Data'),
-      ];
+      // Device4: multi-compressor amp - all 8 compressors with min/max/avg/timestamps
+      List<double?> avgMins = [selectedDevice.comp1AvgMin, selectedDevice.comp2AvgMin, selectedDevice.comp3AvgMin, selectedDevice.comp4AvgMin, selectedDevice.comp5AvgMin, selectedDevice.comp6AvgMin, selectedDevice.comp7AvgMin, selectedDevice.comp8AvgMin];
+      List<double?> avgMaxs = [selectedDevice.comp1AvgMax, selectedDevice.comp2AvgMax, selectedDevice.comp3AvgMax, selectedDevice.comp4AvgMax, selectedDevice.comp5AvgMax, selectedDevice.comp6AvgMax, selectedDevice.comp7AvgMax, selectedDevice.comp8AvgMax];
+      List<double?> avgAvgs = [selectedDevice.comp1AvgAvg, selectedDevice.comp2AvgAvg, selectedDevice.comp3AvgAvg, selectedDevice.comp4AvgAvg, selectedDevice.comp5AvgAvg, selectedDevice.comp6AvgAvg, selectedDevice.comp7AvgAvg, selectedDevice.comp8AvgAvg];
+      List<String?> minTimes = [selectedDevice.comp1AvgMinTime, selectedDevice.comp2AvgMinTime, selectedDevice.comp3AvgMinTime, selectedDevice.comp4AvgMinTime, selectedDevice.comp5AvgMinTime, selectedDevice.comp6AvgMinTime, selectedDevice.comp7AvgMinTime, selectedDevice.comp8AvgMinTime];
+      List<String?> maxTimes = [selectedDevice.comp1AvgMaxTime, selectedDevice.comp2AvgMaxTime, selectedDevice.comp3AvgMaxTime, selectedDevice.comp4AvgMaxTime, selectedDevice.comp5AvgMaxTime, selectedDevice.comp6AvgMaxTime, selectedDevice.comp7AvgMaxTime, selectedDevice.comp8AvgMaxTime];
+      List<List<double?>> phases = [];
+      for (int c = 1; c <= 8; c++) {
+        phases.add([_getCompPhase(selectedDevice, c, 1), _getCompPhase(selectedDevice, c, 2), _getCompPhase(selectedDevice, c, 3)]);
+      }
+      temperatureRanges = List.generate(8, (i) {
+        final avg = _compressorAvg(phases[i][0], phases[i][1], phases[i][2]);
+        final isOn = avg != null && avg > 0.5;
+        return TemperatureRange(
+          sensor: '${_getLabel(selectedDevice, "comp_${i + 1}", "Compressor ${i + 1}")} Avg',
+          current: avg,
+          min: avgMins[i],
+          max: avgMaxs[i],
+          avg: avgAvgs[i],
+          unit: 'A',
+          status: isOn ? 'ON' : (avg != null ? 'OFF' : 'No Data'),
+          minTimestamp: minTimes[i] != null ? DateTime.tryParse(minTimes[i]!) : null,
+          maxTimestamp: maxTimes[i] != null ? DateTime.tryParse(maxTimes[i]!) : null,
+        );
+      });
     } else if (deviceType == 'device5') {
-      // Device5: relay controller - show relay status summary
-      final onCount = selectedDevice.relaysOnCount ?? 0;
-      final offCount = selectedDevice.relaysOffCount ?? 0;
-      temperatureRanges = [
-        TemperatureRange(sensor: 'Relays ON', current: onCount.toDouble(), min: null, max: null, avg: null, status: 'Active'),
-        TemperatureRange(sensor: 'Relays OFF', current: offCount.toDouble(), min: null, max: null, avg: null, status: 'Inactive'),
-        TemperatureRange(sensor: 'Total Relays', current: 16, min: null, max: null, avg: null, status: 'Monitored'),
+      // Device5: relay controller - show all 16 relays with duty cycle
+      List<double?> pcts = [
+        selectedDevice.relay1OnPct, selectedDevice.relay2OnPct, selectedDevice.relay3OnPct, selectedDevice.relay4OnPct,
+        selectedDevice.relay5OnPct, selectedDevice.relay6OnPct, selectedDevice.relay7OnPct, selectedDevice.relay8OnPct,
+        selectedDevice.relay9OnPct, selectedDevice.relay10OnPct, selectedDevice.relay11OnPct, selectedDevice.relay12OnPct,
+        selectedDevice.relay13OnPct, selectedDevice.relay14OnPct, selectedDevice.relay15OnPct, selectedDevice.relay16OnPct,
       ];
+      List<bool?> states = [
+        selectedDevice.relay1, selectedDevice.relay2, selectedDevice.relay3, selectedDevice.relay4,
+        selectedDevice.relay5, selectedDevice.relay6, selectedDevice.relay7, selectedDevice.relay8,
+        selectedDevice.relay9, selectedDevice.relay10, selectedDevice.relay11, selectedDevice.relay12,
+        selectedDevice.relay13, selectedDevice.relay14, selectedDevice.relay15, selectedDevice.relay16,
+      ];
+      temperatureRanges = List.generate(16, (i) {
+        return TemperatureRange(
+          sensor: 'Relay ${i + 1}',
+          current: pcts[i],
+          min: null,
+          max: null,
+          avg: null,
+          unit: '%',
+          status: states[i] == true ? 'Active' : 'Inactive',
+        );
+      });
     } else if (deviceType == 'device6') {
-      // Device6: pressure monitoring - show first 3 pressure sensors
-      temperatureRanges = [
-        TemperatureRange(sensor: 'Pressure 1', current: selectedDevice.prs1, min: selectedDevice.prs1Min, max: selectedDevice.prs1Max, avg: null, status: selectedDevice.prs1 != null ? 'Active' : 'No Data'),
-        TemperatureRange(sensor: 'Pressure 2', current: selectedDevice.prs2, min: selectedDevice.prs2Min, max: selectedDevice.prs2Max, avg: null, status: selectedDevice.prs2 != null ? 'Active' : 'No Data'),
-        TemperatureRange(sensor: 'Pressure 3', current: selectedDevice.prs3, min: selectedDevice.prs3Min, max: selectedDevice.prs3Max, avg: null, status: selectedDevice.prs3 != null ? 'Active' : 'No Data'),
-      ];
+      // Device6: pressure monitoring - all 8 sensors with min/max/timestamps/averages
+      List<double?> vals = [selectedDevice.prs1, selectedDevice.prs2, selectedDevice.prs3, selectedDevice.prs4, selectedDevice.prs5, selectedDevice.prs6, selectedDevice.prs7, selectedDevice.prs8];
+      List<double?> mins = [selectedDevice.prs1Min, selectedDevice.prs2Min, selectedDevice.prs3Min, selectedDevice.prs4Min, selectedDevice.prs5Min, selectedDevice.prs6Min, selectedDevice.prs7Min, selectedDevice.prs8Min];
+      List<double?> maxs = [selectedDevice.prs1Max, selectedDevice.prs2Max, selectedDevice.prs3Max, selectedDevice.prs4Max, selectedDevice.prs5Max, selectedDevice.prs6Max, selectedDevice.prs7Max, selectedDevice.prs8Max];
+      List<double?> avgs = [selectedDevice.prs1Avg, selectedDevice.prs2Avg, selectedDevice.prs3Avg, selectedDevice.prs4Avg, selectedDevice.prs5Avg, selectedDevice.prs6Avg, selectedDevice.prs7Avg, selectedDevice.prs8Avg];
+      List<String?> minTs = [selectedDevice.prs1MinTime, selectedDevice.prs2MinTime, selectedDevice.prs3MinTime, selectedDevice.prs4MinTime, selectedDevice.prs5MinTime, selectedDevice.prs6MinTime, selectedDevice.prs7MinTime, selectedDevice.prs8MinTime];
+      List<String?> maxTs = [selectedDevice.prs1MaxTime, selectedDevice.prs2MaxTime, selectedDevice.prs3MaxTime, selectedDevice.prs4MaxTime, selectedDevice.prs5MaxTime, selectedDevice.prs6MaxTime, selectedDevice.prs7MaxTime, selectedDevice.prs8MaxTime];
+      temperatureRanges = List.generate(8, (i) {
+        return TemperatureRange(
+          sensor: 'Pressure ${i + 1}',
+          current: vals[i],
+          min: mins[i],
+          max: maxs[i],
+          avg: avgs[i],
+          unit: 'psi',
+          status: vals[i] != null ? 'Active' : 'No Data',
+          minTimestamp: minTs[i] != null ? DateTime.tryParse(minTs[i]!) : null,
+          maxTimestamp: maxTs[i] != null ? DateTime.tryParse(maxTs[i]!) : null,
+        );
+      });
     } else {
       // Device1: refrigeration (default)
       temperatureRanges = [
@@ -1584,6 +1687,30 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         accentColor: selectedDevice.wtrlvl != null && selectedDevice.wtrlvl! > 20 ? Constants.ctaColorLight : Colors.orange,
         icon: FontAwesomeIcons.water,
       ),
+      EnhancedSummaryCard(
+        title: 'Amps',
+        value: '${selectedDevice.amps?.toStringAsFixed(1) ?? '--'}',
+        unit: 'A',
+        subtitle: 'Compressor current draw',
+        trend: selectedDevice.amps != null && selectedDevice.amps! < 10 ? 'Normal' : 'High',
+        trendDirection: selectedDevice.amps != null && selectedDevice.amps! < 10 ? 'stable' : 'up',
+        cardColor: const Color(0XccF4F4F4),
+        accentColor: selectedDevice.amps != null && selectedDevice.amps! < 10 ? Constants.ctaColorLight : Colors.orange,
+        icon: FontAwesomeIcons.bolt,
+      ),
+      EnhancedSummaryCard(
+        title: 'Power Usage',
+        value: '${selectedDevice.powerKw?.toStringAsFixed(2) ?? '--'}',
+        unit: 'kW',
+        subtitle: selectedDevice.dailyCostEstimate != null
+            ? 'R${selectedDevice.dailyCostEstimate!.toStringAsFixed(2)}/day est.'
+            : 'Cost unavailable',
+        trend: selectedDevice.powerKw != null && selectedDevice.powerKw! < 2.0 ? 'Normal' : 'High',
+        trendDirection: selectedDevice.powerKw != null && selectedDevice.powerKw! < 2.0 ? 'stable' : 'up',
+        cardColor: const Color(0XccF4F4F4),
+        accentColor: selectedDevice.powerKw != null && selectedDevice.powerKw! < 2.0 ? Constants.ctaColorLight : Colors.orange,
+        icon: FontAwesomeIcons.plug,
+      ),
     ];
   }
 
@@ -1643,6 +1770,41 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         accentColor: activeCount == 8 ? Constants.ctaColorLight : Colors.orange,
         icon: FontAwesomeIcons.cogs,
       ),
+      EnhancedSummaryCard(
+        title: 'Total Power',
+        value: selectedDevice.totalPowerKw?.toStringAsFixed(1) ?? '--',
+        unit: 'kW',
+        subtitle: selectedDevice.dailyCostEstimateD4 != null ? 'Est. R${selectedDevice.dailyCostEstimateD4!.toStringAsFixed(0)}/day' : '',
+        trend: selectedDevice.totalPowerKw != null && selectedDevice.totalPowerKw! > 0 ? 'Drawing power' : 'No load',
+        trendDirection: 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: Constants.ctaColorLight,
+        icon: FontAwesomeIcons.plug,
+      ),
+      () {
+        final imbalances = <double>[
+          if (selectedDevice.comp1PhaseImbalancePct != null) selectedDevice.comp1PhaseImbalancePct!,
+          if (selectedDevice.comp2PhaseImbalancePct != null) selectedDevice.comp2PhaseImbalancePct!,
+          if (selectedDevice.comp3PhaseImbalancePct != null) selectedDevice.comp3PhaseImbalancePct!,
+          if (selectedDevice.comp4PhaseImbalancePct != null) selectedDevice.comp4PhaseImbalancePct!,
+          if (selectedDevice.comp5PhaseImbalancePct != null) selectedDevice.comp5PhaseImbalancePct!,
+          if (selectedDevice.comp6PhaseImbalancePct != null) selectedDevice.comp6PhaseImbalancePct!,
+          if (selectedDevice.comp7PhaseImbalancePct != null) selectedDevice.comp7PhaseImbalancePct!,
+          if (selectedDevice.comp8PhaseImbalancePct != null) selectedDevice.comp8PhaseImbalancePct!,
+        ];
+        final worst = imbalances.isNotEmpty ? imbalances.reduce((a, b) => a > b ? a : b) : null;
+        return EnhancedSummaryCard(
+          title: 'Phase Balance',
+          value: worst?.toStringAsFixed(1) ?? '--',
+          unit: '%',
+          subtitle: 'Worst phase imbalance',
+          trend: worst != null && worst > 10 ? 'Warning' : 'Balanced',
+          trendDirection: worst != null && worst > 10 ? 'up' : 'stable',
+          cardColor: const Color(0XccF4F4F4),
+          accentColor: worst != null && worst > 10 ? Colors.orange : Constants.ctaColorLight,
+          icon: FontAwesomeIcons.balanceScale,
+        );
+      }(),
     ];
   }
 
@@ -1723,6 +1885,55 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         accentColor: onCount > 12 ? Colors.orange : Constants.ctaColorLight,
         icon: FontAwesomeIcons.chartPie,
       ),
+      () {
+        // Most Active Relay - find relay with highest duty cycle
+        final dutyCycles = [
+          selectedDevice.relay1OnPct, selectedDevice.relay2OnPct, selectedDevice.relay3OnPct, selectedDevice.relay4OnPct,
+          selectedDevice.relay5OnPct, selectedDevice.relay6OnPct, selectedDevice.relay7OnPct, selectedDevice.relay8OnPct,
+          selectedDevice.relay9OnPct, selectedDevice.relay10OnPct, selectedDevice.relay11OnPct, selectedDevice.relay12OnPct,
+          selectedDevice.relay13OnPct, selectedDevice.relay14OnPct, selectedDevice.relay15OnPct, selectedDevice.relay16OnPct,
+        ];
+        double maxDuty = 0;
+        int maxIdx = 0;
+        for (int i = 0; i < dutyCycles.length; i++) {
+          if ((dutyCycles[i] ?? 0) > maxDuty) {
+            maxDuty = dutyCycles[i]!;
+            maxIdx = i + 1;
+          }
+        }
+        return EnhancedSummaryCard(
+          title: 'Most Active Relay',
+          value: maxDuty > 0 ? 'Relay $maxIdx' : '--',
+          unit: '',
+          subtitle: maxDuty > 0 ? '${maxDuty.toStringAsFixed(1)}% duty cycle' : 'No activity',
+          trend: maxDuty > 80 ? 'Heavy use' : 'Normal',
+          trendDirection: maxDuty > 80 ? 'up' : 'stable',
+          cardColor: const Color(0XFFF4F4F4),
+          accentColor: maxDuty > 80 ? Colors.orange : Constants.ctaColorLight,
+          icon: FontAwesomeIcons.star,
+        );
+      }(),
+      () {
+        // Avg Duty Cycle across all relays
+        final dutyCycles = [
+          selectedDevice.relay1OnPct, selectedDevice.relay2OnPct, selectedDevice.relay3OnPct, selectedDevice.relay4OnPct,
+          selectedDevice.relay5OnPct, selectedDevice.relay6OnPct, selectedDevice.relay7OnPct, selectedDevice.relay8OnPct,
+          selectedDevice.relay9OnPct, selectedDevice.relay10OnPct, selectedDevice.relay11OnPct, selectedDevice.relay12OnPct,
+          selectedDevice.relay13OnPct, selectedDevice.relay14OnPct, selectedDevice.relay15OnPct, selectedDevice.relay16OnPct,
+        ].whereType<double>().toList();
+        final avgDuty = dutyCycles.isNotEmpty ? dutyCycles.reduce((a, b) => a + b) / dutyCycles.length : null;
+        return EnhancedSummaryCard(
+          title: 'Avg Duty Cycle',
+          value: avgDuty?.toStringAsFixed(1) ?? '--',
+          unit: '%',
+          subtitle: 'Average relay utilization',
+          trend: avgDuty != null && avgDuty > 50 ? 'High' : 'Normal',
+          trendDirection: avgDuty != null && avgDuty > 50 ? 'up' : 'stable',
+          cardColor: const Color(0XccF4F4F4),
+          accentColor: avgDuty != null && avgDuty > 50 ? Colors.orange : Constants.ctaColorLight,
+          icon: FontAwesomeIcons.percentage,
+        );
+      }(),
     ];
   }
 
@@ -1740,7 +1951,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       EnhancedSummaryCard(
         title: 'Avg Pressure',
         value: avgPrs?.toStringAsFixed(2) ?? '--',
-        unit: 'bar',
+        unit: 'psi',
         subtitle: '${pressures.length}/8 sensors active',
         trend: avgPrs != null ? 'Monitoring' : 'No Data',
         trendDirection: 'stable',
@@ -1752,7 +1963,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       EnhancedSummaryCard(
         title: 'Peak Pressure',
         value: maxPrs?.toStringAsFixed(2) ?? '--',
-        unit: 'bar',
+        unit: 'psi',
         subtitle: 'Highest sensor reading',
         trend: maxPrs != null && maxPrs > 5 ? 'High' : 'Normal',
         trendDirection: maxPrs != null && maxPrs > 5 ? 'up' : 'stable',
@@ -1763,7 +1974,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       EnhancedSummaryCard(
         title: 'Min Pressure',
         value: minPrs?.toStringAsFixed(2) ?? '--',
-        unit: 'bar',
+        unit: 'psi',
         subtitle: 'Lowest sensor reading',
         trend: minPrs != null && minPrs < 1 ? 'Low' : 'Normal',
         trendDirection: minPrs != null && minPrs < 1 ? 'down' : 'stable',
@@ -1771,10 +1982,45 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         accentColor: minPrs != null && minPrs < 1 ? Colors.red : Constants.ctaColorLight,
         icon: FontAwesomeIcons.arrowDown,
       ),
+      () {
+        // Pressure Spread: max - min across all sensors
+        final spread = (maxPrs != null && minPrs != null) ? (maxPrs - minPrs) : null;
+        return EnhancedSummaryCard(
+          title: 'Pressure Spread',
+          value: spread?.toStringAsFixed(2) ?? '--',
+          unit: 'psi',
+          subtitle: 'Max - Min range across sensors',
+          trend: spread != null && spread > 2 ? 'Wide range' : 'Stable',
+          trendDirection: spread != null && spread > 2 ? 'up' : 'stable',
+          cardColor: const Color(0XFFF4F4F4),
+          accentColor: spread != null && spread > 2 ? Colors.orange : Constants.ctaColorLight,
+          icon: FontAwesomeIcons.rulerHorizontal,
+        );
+      }(),
     ];
   }
 
 // Detailed Temperature Metrics with timestamps
+  String _getAnalyticsTitle() {
+    final deviceType = _getSelectedDeviceType();
+    switch (deviceType) {
+      case 'device4': return 'Compressor Amp Analysis';
+      case 'device5': return 'Relay Status & Duty Cycle';
+      case 'device6': return 'Pressure Sensor Analysis';
+      default: return 'Temperature Analytics';
+    }
+  }
+
+  String _getDetailedAnalysisTitle() {
+    final deviceType = _getSelectedDeviceType();
+    switch (deviceType) {
+      case 'device4': return 'Detailed Compressor Amp Analysis';
+      case 'device5': return 'Detailed Relay Analysis';
+      case 'device6': return 'Detailed Pressure Analysis';
+      default: return 'Detailed Temperature Analysis';
+    }
+  }
+
   Widget _buildDetailedTemperatureMetrics() {
     if (temperatureRanges == null || temperatureRanges!.isEmpty) {
       return _buildEmptyDetailedTemperatureView();
@@ -1789,7 +2035,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         children: [
           SizedBox(height: isMobile ? 8 : 16),
           Text(
-            'Detailed Temperature Analysis',
+            _getDetailedAnalysisTitle(),
             style: GoogleFonts.inter(
               fontSize: isMobile ? 16 : 20,
               fontWeight: FontWeight.w600,
@@ -1817,7 +2063,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Temperature Analytics',
+                          _getAnalyticsTitle(),
                           style: GoogleFonts.inter(
                             fontSize: isMobile ? 14 : 18,
                             fontWeight: FontWeight.w600,
@@ -1850,36 +2096,33 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       ]),
                 ),
           SizedBox(height: isMobile ? 12 : 16),
-          isMobile
-              ? Column(
-                  children: [
-                    if (temperatureRanges.length > 0)
-                      _buildDetailedTemperatureCard(temperatureRanges[0]),
-                    if (temperatureRanges.length > 0) SizedBox(height: 12),
-                    if (temperatureRanges.length > 1)
-                      _buildDetailedTemperatureCard(temperatureRanges[1]),
-                    if (temperatureRanges.length > 1) SizedBox(height: 12),
-                    if (temperatureRanges.length > 2)
-                      _buildDetailedTemperatureCard(temperatureRanges[2]),
-                  ],
-                )
-              : Row(
-                  children: [
-                    if (temperatureRanges.length > 0)
-                      Expanded(
-                          child: _buildDetailedTemperatureCard(
-                              temperatureRanges[0])),
-                    SizedBox(width: 16),
-                    if (temperatureRanges.length > 1)
-                      Expanded(
-                          child: _buildDetailedTemperatureCard(
-                              temperatureRanges[1])),
-                    SizedBox(width: 16),
-                    if (temperatureRanges.length > 2)
-                      Expanded(
-                          child: _buildDetailedTemperatureCard(
-                              temperatureRanges[2]))
-                  ],
+          // Dynamic grid layout for temperature/sensor cards (handles 3, 8, or 16 cards)
+          temperatureRanges!.length <= 3
+              ? (isMobile
+                  ? Column(
+                      children: [
+                        for (int i = 0; i < temperatureRanges!.length; i++) ...[
+                          if (i > 0) SizedBox(height: 12),
+                          _buildDetailedTemperatureCard(temperatureRanges![i]),
+                        ],
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        for (int i = 0; i < temperatureRanges!.length; i++) ...[
+                          if (i > 0) SizedBox(width: 16),
+                          Expanded(child: _buildDetailedTemperatureCard(temperatureRanges![i])),
+                        ],
+                      ],
+                    ))
+              : GridView.count(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  crossAxisCount: isMobile ? 1 : (temperatureRanges!.length > 8 ? 4 : 3),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: isMobile ? 2.0 : 0.85,
+                  children: temperatureRanges!.map((r) => _buildDetailedTemperatureCard(r)).toList(),
                 )
         ],
       ),
@@ -2149,7 +2392,18 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     );
   }
 
+  IconData _getUnitIcon(String? unit) {
+    switch (unit) {
+      case 'A': return FontAwesomeIcons.bolt;
+      case 'psi': return FontAwesomeIcons.tachometerAlt;
+      case '%': return FontAwesomeIcons.chartPie;
+      default: return Icons.thermostat;
+    }
+  }
+
   Widget _buildDetailedTemperatureCard(TemperatureRange range) {
+    final unitStr = range.unit ?? '°C';
+    final unitSuffix = unitStr == '°C' ? '°C' : ' $unitStr';
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
@@ -2171,7 +2425,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           Row(
             children: [
               Icon(
-                Icons.thermostat,
+                _getUnitIcon(range.unit),
                 color: _getTemperatureStatusColor(range.status),
                 size: 24,
               ),
@@ -2205,7 +2459,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           ),
           SizedBox(height: 16),
 
-          // Current Temperature (Large display)
+          // Current value (Large display)
           Center(
             child: Column(
               children: [
@@ -2217,7 +2471,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   ),
                 ),
                 Text(
-                  '${range.current?.toStringAsFixed(1) ?? '--'}°C',
+                  '${range.current?.toStringAsFixed(1) ?? '--'}$unitSuffix',
                   style: GoogleFonts.inter(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -2239,6 +2493,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   range.minTimestamp,
                   Constants.ctaColorLight,
                   Icons.trending_down,
+                  unit: unitSuffix,
                 ),
               ),
               SizedBox(width: 12),
@@ -2249,6 +2504,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   range.maxTimestamp,
                   Constants.ctaColorLight,
                   Icons.trending_up,
+                  unit: unitSuffix,
                 ),
               ),
             ],
@@ -2270,7 +2526,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     size: 16, color: Colors.grey.shade600),
                 SizedBox(width: 8),
                 Text(
-                  'Average: ${range.avg?.toStringAsFixed(1) ?? '--'}°C',
+                  'Average: ${range.avg?.toStringAsFixed(1) ?? '--'}$unitSuffix',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -2286,7 +2542,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   }
 
   Widget _buildTemperatureExtremeCard(String label, double? value,
-      DateTime? timestamp, Color color, IconData icon) {
+      DateTime? timestamp, Color color, IconData icon, {String? unit}) {
+    final unitStr = unit ?? '°C';
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -2313,7 +2570,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           ),
           SizedBox(height: 8),
           Text(
-            '${value?.toStringAsFixed(1) ?? '--'}°C',
+            '${value?.toStringAsFixed(1) ?? '--'}$unitStr',
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -4342,6 +4599,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return _buildDevice2MetricsView(isMobile);
     } else if (deviceType == 'device3') {
       return _buildDevice3MetricsView(isMobile);
+    } else if (deviceType == 'device4') {
+      return _buildDevice4MetricsView(isMobile);
+    } else if (deviceType == 'device5') {
+      return _buildDevice5MetricsView(isMobile);
+    } else if (deviceType == 'device6') {
+      return _buildDevice6MetricsView(isMobile);
     }
 
     // Default: Device 1 metrics
@@ -4543,14 +4806,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 crossAxisSpacing: 12,
                 childAspectRatio: isMobile ? 1.1 : 1.3,
                 children: [
-                  _buildZoneTemperatureCard("Zone 1", selectedDevice.temp1, selectedDevice.temp1Min, selectedDevice.temp1Max, selectedDevice.temp1MinTime, selectedDevice.temp1MaxTime, -25, 5),
-                  _buildZoneTemperatureCard("Zone 2", selectedDevice.temp2, selectedDevice.temp2Min, selectedDevice.temp2Max, selectedDevice.temp2MinTime, selectedDevice.temp2MaxTime, -25, 5),
-                  _buildZoneTemperatureCard("Zone 3", selectedDevice.temp3, selectedDevice.temp3Min, selectedDevice.temp3Max, selectedDevice.temp3MinTime, selectedDevice.temp3MaxTime, -25, 5),
-                  _buildZoneTemperatureCard("Zone 4", selectedDevice.temp4, selectedDevice.temp4Min, selectedDevice.temp4Max, selectedDevice.temp4MinTime, selectedDevice.temp4MaxTime, -25, 5),
-                  _buildZoneTemperatureCard("Zone 5", selectedDevice.temp5, selectedDevice.temp5Min, selectedDevice.temp5Max, selectedDevice.temp5MinTime, selectedDevice.temp5MaxTime, -25, 5),
-                  _buildZoneTemperatureCard("Zone 6", selectedDevice.temp6, selectedDevice.temp6Min, selectedDevice.temp6Max, selectedDevice.temp6MinTime, selectedDevice.temp6MaxTime, -25, 5),
-                  _buildZoneTemperatureCard("Zone 7", selectedDevice.temp7, selectedDevice.temp7Min, selectedDevice.temp7Max, selectedDevice.temp7MinTime, selectedDevice.temp7MaxTime, -25, 5),
-                  _buildZoneTemperatureCard("Zone 8", selectedDevice.temp8, selectedDevice.temp8Min, selectedDevice.temp8Max, selectedDevice.temp8MinTime, selectedDevice.temp8MaxTime, -25, 5),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_1", "Zone 1"), selectedDevice.temp1, selectedDevice.temp1Min, selectedDevice.temp1Max, selectedDevice.temp1MinTime, selectedDevice.temp1MaxTime, -25, 5, labelKey: "zone_1", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_2", "Zone 2"), selectedDevice.temp2, selectedDevice.temp2Min, selectedDevice.temp2Max, selectedDevice.temp2MinTime, selectedDevice.temp2MaxTime, -25, 5, labelKey: "zone_2", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_3", "Zone 3"), selectedDevice.temp3, selectedDevice.temp3Min, selectedDevice.temp3Max, selectedDevice.temp3MinTime, selectedDevice.temp3MaxTime, -25, 5, labelKey: "zone_3", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_4", "Zone 4"), selectedDevice.temp4, selectedDevice.temp4Min, selectedDevice.temp4Max, selectedDevice.temp4MinTime, selectedDevice.temp4MaxTime, -25, 5, labelKey: "zone_4", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_5", "Zone 5"), selectedDevice.temp5, selectedDevice.temp5Min, selectedDevice.temp5Max, selectedDevice.temp5MinTime, selectedDevice.temp5MaxTime, -25, 5, labelKey: "zone_5", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_6", "Zone 6"), selectedDevice.temp6, selectedDevice.temp6Min, selectedDevice.temp6Max, selectedDevice.temp6MinTime, selectedDevice.temp6MaxTime, -25, 5, labelKey: "zone_6", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_7", "Zone 7"), selectedDevice.temp7, selectedDevice.temp7Min, selectedDevice.temp7Max, selectedDevice.temp7MinTime, selectedDevice.temp7MaxTime, -25, 5, labelKey: "zone_7", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_8", "Zone 8"), selectedDevice.temp8, selectedDevice.temp8Min, selectedDevice.temp8Max, selectedDevice.temp8MinTime, selectedDevice.temp8MaxTime, -25, 5, labelKey: "zone_8", deviceId: selectedDevice.deviceId),
                 ],
               ),
               SizedBox(height: 24),
@@ -4602,7 +4865,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           touchTooltipData: BarTouchTooltipData(
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               return BarTooltipItem(
-                'Zone ${groupIndex + 1}\n${rod.toY.toStringAsFixed(1)}°C',
+                '${_getLabel(device, "zone_${groupIndex + 1}", "Zone ${groupIndex + 1}")}\n${rod.toY.toStringAsFixed(1)}°C',
                 GoogleFonts.inter(color: Colors.white, fontSize: 12),
               );
             },
@@ -4750,7 +5013,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     }
   }
 
-  Widget _buildZoneTemperatureCard(String zoneName, double? temperature, double? minTemp, double? maxTemp, String? minTime, String? maxTime, double minThreshold, double maxThreshold) {
+  Widget _buildZoneTemperatureCard(String zoneName, double? temperature, double? minTemp, double? maxTemp, String? minTime, String? maxTime, double minThreshold, double maxThreshold, {String? labelKey, String? deviceId}) {
     Color statusColor = Colors.grey;
     String status = "No Data";
 
@@ -4777,9 +5040,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(zoneName,
-              style: GoogleFonts.inter(
-                  fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+          GestureDetector(
+            onLongPress: labelKey != null && deviceId != null
+                ? () => _showRenameLabelDialog(labelKey, zoneName, deviceId)
+                : null,
+            child: Text(zoneName,
+                style: GoogleFonts.inter(
+                    fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+          ),
           SizedBox(height: 2),
           Text("${temperature?.toStringAsFixed(1) ?? '--'}°C",
               style: GoogleFonts.inter(
@@ -4911,6 +5179,53 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   ),
                 ],
               ),
+              SizedBox(height: 24),
+
+              // Total Current Section (expanded with harvest times, energy & cost)
+              Text("Total Current",
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              // Amps + Power + Energy row
+              GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: isMobile ? 2 : 3,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: isMobile ? 1.3 : 1.5,
+                children: [
+                  _buildDevice3MetricCard(
+                    "Amps",
+                    selectedDevice.amps,
+                    "A",
+                    FontAwesomeIcons.bolt,
+                    Colors.amber,
+                  ),
+                  _buildDevice3MetricCard(
+                    "Power",
+                    selectedDevice.powerKw,
+                    " kW",
+                    FontAwesomeIcons.plug,
+                    Colors.deepOrange,
+                  ),
+                  _buildDevice3MetricCard(
+                    "Energy (24h)",
+                    selectedDevice.energyConsumed24h,
+                    " kWh",
+                    FontAwesomeIcons.chartBar,
+                    Colors.teal,
+                  ),
+                ],
+              ),
+              SizedBox(height: 24),
+
+              // Financial Metrics
+              Text("Financial Metrics",
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              _buildFinancialMetricsCard(selectedDevice),
               SizedBox(height: 24),
 
               // Temperature Comparison Bar Chart
@@ -5381,6 +5696,479 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     );
   }
 
+  Widget _buildCompressorCard(int compNum, double? avgAmp, bool isOn,
+      {double? minValue, double? maxValue, String? minTime, String? maxTime,
+       double? ph1, double? ph2, double? ph3, String? label, String? labelKey, String? deviceId}) {
+    final isMobile = _isMobile(context);
+    final color = isOn ? Colors.green : Colors.grey.shade400;
+
+    String formatDateTime(String? isoTime) {
+      if (isoTime == null) return '--';
+      try {
+        final dt = DateTime.parse(isoTime);
+        return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (e) {
+        return '--';
+      }
+    }
+
+    Widget phaseChip(String label, double? value) {
+      final phaseOn = value != null && value > 0.5;
+      final phColor = phaseOn ? Colors.green : Colors.grey.shade400;
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: phaseOn ? Colors.green.withOpacity(0.1) : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: phaseOn ? Colors.green.withOpacity(0.3) : Colors.grey.shade300, width: 0.5),
+        ),
+        child: Text(
+          "$label: ${value?.toStringAsFixed(1) ?? '--'}A",
+          style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.w600, color: phColor),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 6 : 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isOn ? Icons.circle : Icons.circle_outlined,
+            color: color,
+            size: isMobile ? 14 : 18,
+          ),
+          SizedBox(height: 2),
+          GestureDetector(
+            onLongPress: labelKey != null && deviceId != null
+                ? () => _showRenameLabelDialog(labelKey, label ?? "Comp $compNum", deviceId)
+                : null,
+            child: Text(label ?? "Comp $compNum",
+                style: GoogleFonts.inter(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+          ),
+          SizedBox(height: 2),
+          Text("${avgAmp?.toStringAsFixed(1) ?? '--'} A",
+              style: GoogleFonts.inter(fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.bold, color: color)),
+          SizedBox(height: 2),
+          Text(isOn ? 'ON' : 'OFF',
+              style: GoogleFonts.inter(fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w600, color: color)),
+          SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(child: phaseChip("Ph1", ph1)),
+              SizedBox(width: 3),
+              Expanded(child: phaseChip("Ph2", ph2)),
+              SizedBox(width: 3),
+              Expanded(child: phaseChip("Ph3", ph3)),
+            ],
+          ),
+          if (minValue != null || maxValue != null) ...[
+            SizedBox(height: 6),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.arrow_downward, size: isMobile ? 10 : 12, color: Colors.blue),
+                      SizedBox(width: 2),
+                      Text("${minValue?.toStringAsFixed(1) ?? '--'}A",
+                          style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.w600, color: Colors.blue)),
+                      SizedBox(width: 4),
+                      Text(formatDateTime(minTime),
+                          style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Colors.grey.shade600)),
+                    ],
+                  ),
+                  SizedBox(height: 2),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.arrow_upward, size: isMobile ? 10 : 12, color: Colors.red),
+                      SizedBox(width: 2),
+                      Text("${maxValue?.toStringAsFixed(1) ?? '--'}A",
+                          style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.w600, color: Colors.red)),
+                      SizedBox(width: 4),
+                      Text(formatDateTime(maxTime),
+                          style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Colors.grey.shade600)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Device 4 Metrics View (Multi-Compressor Amp Monitor)
+  Widget _buildDevice4MetricsView(bool isMobile) {
+    final selectedDevice = latestDeviceDataList
+        .where((device) => device.deviceId == selectedDeviceId)
+        .firstOrNull;
+
+    if (selectedDevice == null) {
+      return Center(child: Text('No device data available'));
+    }
+
+    List<double?> compAvgs = [];
+    List<List<double?>> compPhases = [];
+    List<double?> compAvgMins = [selectedDevice.comp1AvgMin, selectedDevice.comp2AvgMin, selectedDevice.comp3AvgMin, selectedDevice.comp4AvgMin, selectedDevice.comp5AvgMin, selectedDevice.comp6AvgMin, selectedDevice.comp7AvgMin, selectedDevice.comp8AvgMin];
+    List<double?> compAvgMaxs = [selectedDevice.comp1AvgMax, selectedDevice.comp2AvgMax, selectedDevice.comp3AvgMax, selectedDevice.comp4AvgMax, selectedDevice.comp5AvgMax, selectedDevice.comp6AvgMax, selectedDevice.comp7AvgMax, selectedDevice.comp8AvgMax];
+    List<String?> compMinTimes = [selectedDevice.comp1AvgMinTime, selectedDevice.comp2AvgMinTime, selectedDevice.comp3AvgMinTime, selectedDevice.comp4AvgMinTime, selectedDevice.comp5AvgMinTime, selectedDevice.comp6AvgMinTime, selectedDevice.comp7AvgMinTime, selectedDevice.comp8AvgMinTime];
+    List<String?> compMaxTimes = [selectedDevice.comp1AvgMaxTime, selectedDevice.comp2AvgMaxTime, selectedDevice.comp3AvgMaxTime, selectedDevice.comp4AvgMaxTime, selectedDevice.comp5AvgMaxTime, selectedDevice.comp6AvgMaxTime, selectedDevice.comp7AvgMaxTime, selectedDevice.comp8AvgMaxTime];
+
+    for (int c = 1; c <= 8; c++) {
+      final ph1 = _getCompPhase(selectedDevice, c, 1);
+      final ph2 = _getCompPhase(selectedDevice, c, 2);
+      final ph3 = _getCompPhase(selectedDevice, c, 3);
+      compPhases.add([ph1, ph2, ph3]);
+      compAvgs.add(_compressorAvg(ph1, ph2, ph3));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Detailed Metrics - Multi-Compressor Amp Monitor",
+            style: GoogleFonts.inter(
+                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
+        SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)
+            ],
+          ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Compressor Averages", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: isMobile ? 2 : 4,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: isMobile ? 0.48 : 0.52,
+                children: List.generate(8, (i) {
+                  final isOn = compAvgs[i] != null && compAvgs[i]! > 0.5;
+                  return _buildCompressorCard(
+                    i + 1,
+                    compAvgs[i],
+                    isOn,
+                    minValue: compAvgMins[i],
+                    maxValue: compAvgMaxs[i],
+                    minTime: compMinTimes[i],
+                    maxTime: compMaxTimes[i],
+                    ph1: compPhases[i][0],
+                    ph2: compPhases[i][1],
+                    ph3: compPhases[i][2],
+                    label: _getLabel(selectedDevice, "comp_${i + 1}", "Comp ${i + 1}"),
+                    labelKey: "comp_${i + 1}",
+                    deviceId: selectedDevice.deviceId,
+                  );
+                }),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Device 5 Metrics View (Relay Controller)
+  Widget _buildDevice5MetricsView(bool isMobile) {
+    final selectedDevice = latestDeviceDataList
+        .where((device) => device.deviceId == selectedDeviceId)
+        .firstOrNull;
+
+    if (selectedDevice == null) {
+      return Center(child: Text('No device data available'));
+    }
+
+    final onCount = selectedDevice.relaysOnCount ?? 0;
+    final offCount = selectedDevice.relaysOffCount ?? 0;
+    final totalReadings = selectedDevice.totalReadingsToday ?? 0;
+    final utilization = (onCount > 0) ? ((onCount / 16) * 100).toStringAsFixed(0) : '0';
+
+    List<bool?> relayStates = [
+      selectedDevice.relay1, selectedDevice.relay2, selectedDevice.relay3, selectedDevice.relay4,
+      selectedDevice.relay5, selectedDevice.relay6, selectedDevice.relay7, selectedDevice.relay8,
+      selectedDevice.relay9, selectedDevice.relay10, selectedDevice.relay11, selectedDevice.relay12,
+      selectedDevice.relay13, selectedDevice.relay14, selectedDevice.relay15, selectedDevice.relay16,
+    ];
+    List<double?> relayPcts = [
+      selectedDevice.relay1OnPct, selectedDevice.relay2OnPct, selectedDevice.relay3OnPct, selectedDevice.relay4OnPct,
+      selectedDevice.relay5OnPct, selectedDevice.relay6OnPct, selectedDevice.relay7OnPct, selectedDevice.relay8OnPct,
+      selectedDevice.relay9OnPct, selectedDevice.relay10OnPct, selectedDevice.relay11OnPct, selectedDevice.relay12OnPct,
+      selectedDevice.relay13OnPct, selectedDevice.relay14OnPct, selectedDevice.relay15OnPct, selectedDevice.relay16OnPct,
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Detailed Metrics - Relay Controller",
+            style: GoogleFonts.inter(
+                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
+        SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)
+            ],
+          ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Summary row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDevice3MetricCard("Relays ON", onCount.toDouble(), "", FontAwesomeIcons.toggleOn, Colors.green),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDevice3MetricCard("Relays OFF", offCount.toDouble(), "", FontAwesomeIcons.toggleOff, Colors.grey),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDevice3MetricCard("Utilization", double.tryParse(utilization), "%", FontAwesomeIcons.chartPie, Constants.ctaColorLight),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDevice3MetricCard("Readings", totalReadings.toDouble(), "", FontAwesomeIcons.database, Colors.purple),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24),
+              Text("Relay Status & Duty Cycle", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: isMobile ? 4 : 8,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: isMobile ? 0.75 : 0.8,
+                children: List.generate(16, (i) {
+                  return _buildRelayCard(i + 1, relayStates[i], relayPcts[i]);
+                }),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRelayCard(int relayNum, bool? isOn, double? dutyPct) {
+    final isMobile = _isMobile(context);
+    final color = isOn == true ? Colors.green : Colors.grey.shade400;
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 6 : 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isOn == true ? Icons.circle : Icons.circle_outlined,
+            color: color,
+            size: isMobile ? 14 : 18,
+          ),
+          SizedBox(height: 2),
+          Text("R$relayNum",
+              style: GoogleFonts.inter(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+          SizedBox(height: 2),
+          Text(isOn == true ? 'ON' : 'OFF',
+              style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.w500, color: color)),
+          if (dutyPct != null) ...[
+            SizedBox(height: 4),
+            SizedBox(
+              height: 4,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: dutyPct / 100,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
+                ),
+              ),
+            ),
+            SizedBox(height: 2),
+            Text("${dutyPct.toStringAsFixed(0)}%",
+                style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, color: Colors.grey.shade600)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Device 6 Metrics View (Pressure Monitor)
+  Widget _buildPressureCard(int sensorNum, double? current,
+      {double? minValue, double? maxValue, String? minTime, String? maxTime}) {
+    final isMobile = _isMobile(context);
+    final hasReading = current != null;
+    final color = hasReading ? Colors.blue : Colors.grey.shade400;
+
+    String formatDateTime(String? isoTime) {
+      if (isoTime == null) return '--';
+      try {
+        final dt = DateTime.parse(isoTime);
+        return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (e) {
+        return '--';
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 6 : 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(FontAwesomeIcons.tachometerAlt, color: color, size: isMobile ? 16 : 20),
+          SizedBox(height: 4),
+          Text("Pressure $sensorNum",
+              style: GoogleFonts.inter(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+          SizedBox(height: 2),
+          Text("${current?.toStringAsFixed(2) ?? '--'} psi",
+              style: GoogleFonts.inter(fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.bold, color: color)),
+          SizedBox(height: 6),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.arrow_downward, size: isMobile ? 10 : 12, color: Colors.blue.shade700),
+                    SizedBox(width: 3),
+                    Text("Min: ",
+                        style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, color: Colors.grey.shade600)),
+                    Text("${minValue?.toStringAsFixed(2) ?? '--'} psi",
+                        style: GoogleFonts.inter(fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w600, color: Colors.blue.shade700)),
+                  ],
+                ),
+                if (minTime != null)
+                  Text(formatDateTime(minTime),
+                      style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Colors.grey.shade500)),
+                SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.arrow_upward, size: isMobile ? 10 : 12, color: Colors.red.shade600),
+                    SizedBox(width: 3),
+                    Text("Max: ",
+                        style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, color: Colors.grey.shade600)),
+                    Text("${maxValue?.toStringAsFixed(2) ?? '--'} psi",
+                        style: GoogleFonts.inter(fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w600, color: Colors.red.shade600)),
+                  ],
+                ),
+                if (maxTime != null)
+                  Text(formatDateTime(maxTime),
+                      style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Colors.grey.shade500)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice6MetricsView(bool isMobile) {
+    final selectedDevice = latestDeviceDataList
+        .where((device) => device.deviceId == selectedDeviceId)
+        .firstOrNull;
+
+    if (selectedDevice == null) {
+      return Center(child: Text('No device data available'));
+    }
+
+    List<double?> prsValues = [selectedDevice.prs1, selectedDevice.prs2, selectedDevice.prs3, selectedDevice.prs4, selectedDevice.prs5, selectedDevice.prs6, selectedDevice.prs7, selectedDevice.prs8];
+    List<double?> prsMins = [selectedDevice.prs1Min, selectedDevice.prs2Min, selectedDevice.prs3Min, selectedDevice.prs4Min, selectedDevice.prs5Min, selectedDevice.prs6Min, selectedDevice.prs7Min, selectedDevice.prs8Min];
+    List<double?> prsMaxs = [selectedDevice.prs1Max, selectedDevice.prs2Max, selectedDevice.prs3Max, selectedDevice.prs4Max, selectedDevice.prs5Max, selectedDevice.prs6Max, selectedDevice.prs7Max, selectedDevice.prs8Max];
+    List<String?> prsMinTimes = [selectedDevice.prs1MinTime, selectedDevice.prs2MinTime, selectedDevice.prs3MinTime, selectedDevice.prs4MinTime, selectedDevice.prs5MinTime, selectedDevice.prs6MinTime, selectedDevice.prs7MinTime, selectedDevice.prs8MinTime];
+    List<String?> prsMaxTimes = [selectedDevice.prs1MaxTime, selectedDevice.prs2MaxTime, selectedDevice.prs3MaxTime, selectedDevice.prs4MaxTime, selectedDevice.prs5MaxTime, selectedDevice.prs6MaxTime, selectedDevice.prs7MaxTime, selectedDevice.prs8MaxTime];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Detailed Metrics - Pressure Monitor",
+            style: GoogleFonts.inter(
+                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
+        SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)
+            ],
+          ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Pressure Sensor Analysis", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: isMobile ? 2 : 4,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: isMobile ? 0.62 : 0.7,
+                children: List.generate(8, (i) {
+                  return _buildPressureCard(
+                    i + 1,
+                    prsValues[i],
+                    minValue: prsMins[i],
+                    maxValue: prsMaxs[i],
+                    minTime: prsMinTimes[i],
+                    maxTime: prsMaxTimes[i],
+                  );
+                }),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   // Helper widget for Device 3 status card
   Widget _buildDevice3StatusCard(String title, String value, Color color, IconData icon) {
     return Container(
@@ -5487,6 +6275,215 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     );
   }
 
+  // Harvest times card showing individual harvest timestamps in the last 24h
+  Widget _buildHarvestTimesCard(LatestDeviceData device) {
+    final harvestTimes = device.harvestTimes ?? [];
+    final harvestCount = device.harvestCount ?? 0;
+
+    String formatHarvestTime(String isoTime) {
+      try {
+        final dt = DateTime.parse(isoTime).toLocal();
+        return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      } catch (e) {
+        return '--';
+      }
+    }
+
+    String formatHarvestDate(String isoTime) {
+      try {
+        final dt = DateTime.parse(isoTime).toLocal();
+        return '${dt.day}/${dt.month}/${dt.year}';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Iconsax.activity, color: Colors.orange, size: 20),
+              SizedBox(width: 8),
+              Text("Harvest Times (24h)",
+                  style: GoogleFonts.inter(
+                      fontSize: 14, fontWeight: FontWeight.w600, color: Colors.orange.shade800)),
+              Spacer(),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text("$harvestCount harvests",
+                    style: GoogleFonts.inter(
+                        fontSize: 11, fontWeight: FontWeight.w600, color: Colors.orange.shade700)),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          if (harvestTimes.isEmpty)
+            Text("No harvests in the last 24 hours",
+                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600))
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: harvestTimes.map((time) {
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time, size: 12, color: Colors.orange.shade700),
+                      SizedBox(width: 4),
+                      Text(formatHarvestTime(time),
+                          style: GoogleFonts.inter(
+                              fontSize: 12, fontWeight: FontWeight.w600, color: Colors.orange.shade800)),
+                      SizedBox(width: 4),
+                      Text(formatHarvestDate(time),
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: Colors.grey.shade600)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Financial metrics card showing cost estimates
+  Widget _buildFinancialMetricsCard(LatestDeviceData device) {
+    final dailyCost = device.dailyCostEstimate;
+    final rate = device.electricityRate ?? 2.50;
+    final energyKwh = device.energyConsumed24h;
+    final energyCost24h = device.energyCost24h;
+    final powerKw = device.powerKw;
+
+    // Calculate projections
+    final monthlyCost = dailyCost != null ? dailyCost * 30 : null;
+    final annualCost = dailyCost != null ? dailyCost * 365 : null;
+
+    // Calculate cost per harvest
+    final harvestCount = device.harvestCount ?? 0;
+    final costPerHarvest = (dailyCost != null && harvestCount > 0)
+        ? dailyCost / harvestCount
+        : null;
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(FontAwesomeIcons.moneyBill, color: Colors.green.shade700, size: 18),
+              SizedBox(width: 8),
+              Text("Cost Estimates",
+                  style: GoogleFonts.inter(
+                      fontSize: 14, fontWeight: FontWeight.w600, color: Colors.green.shade800)),
+              Spacer(),
+              Text("R${rate.toStringAsFixed(2)}/kWh",
+                  style: GoogleFonts.inter(
+                      fontSize: 11, color: Colors.grey.shade600)),
+            ],
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _buildCostItem("Daily", dailyCost, Colors.green)),
+              SizedBox(width: 12),
+              Expanded(child: _buildCostItem("Monthly", monthlyCost, Colors.green.shade600)),
+              SizedBox(width: 12),
+              Expanded(child: _buildCostItem("Annual", annualCost, Colors.green.shade800)),
+            ],
+          ),
+          if (costPerHarvest != null || energyKwh != null) ...[
+            SizedBox(height: 12),
+            Divider(color: Colors.green.withOpacity(0.2)),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                if (costPerHarvest != null)
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(Iconsax.activity, size: 14, color: Colors.orange),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text("R${costPerHarvest.toStringAsFixed(2)}/harvest",
+                              style: GoogleFonts.inter(
+                                  fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (energyKwh != null)
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(FontAwesomeIcons.chartBar, size: 14, color: Colors.teal),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("${energyKwh.toStringAsFixed(1)} kWh (24h)",
+                                  style: GoogleFonts.inter(
+                                      fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+                              if (energyCost24h != null)
+                                Text("R${energyCost24h.toStringAsFixed(2)} spent",
+                                    style: GoogleFonts.inter(
+                                        fontSize: 11, fontWeight: FontWeight.w600, color: Colors.green.shade700)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Helper for individual cost display items
+  Widget _buildCostItem(String label, double? cost, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey.shade600)),
+        SizedBox(height: 4),
+        Text(cost != null ? "R${cost.toStringAsFixed(2)}" : "--",
+            style: GoogleFonts.inter(
+                fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+
   // Helper to get water level color
   Color _getWaterLevelColor(double? level) {
     if (level == null) return Colors.grey;
@@ -5567,28 +6564,28 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           DailySummaryRecords(
             deviceToDisplay.temp1?.toInt() ?? 0,
             0,
-            "Zone 1 Temperature",
+            "${_getLabel(deviceToDisplay, "zone_1", "Zone 1")} Temperature",
             FontAwesomeIcons.thermometerHalf,
             const Color(0XFFF4F4F4),
           ),
           DailySummaryRecords(
             deviceToDisplay.temp2?.toInt() ?? 0,
             0,
-            "Zone 2 Temperature",
+            "${_getLabel(deviceToDisplay, "zone_2", "Zone 2")} Temperature",
             FontAwesomeIcons.thermometerHalf,
             const Color(0Xcc3C514933),
           ),
           DailySummaryRecords(
             deviceToDisplay.temp3?.toInt() ?? 0,
             0,
-            "Zone 3 Temperature",
+            "${_getLabel(deviceToDisplay, "zone_3", "Zone 3")} Temperature",
             FontAwesomeIcons.thermometerHalf,
             const Color(0XccF4F4F4),
           ),
           DailySummaryRecords(
             deviceToDisplay.temp4?.toInt() ?? 0,
             0,
-            "Zone 4 Temperature",
+            "${_getLabel(deviceToDisplay, "zone_4", "Zone 4")} Temperature",
             FontAwesomeIcons.thermometerHalf,
             const Color(0Xcc3C514914),
           ),
@@ -5603,19 +6600,19 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
         dailySummaryList2 = [
           DailySummaryRecords2(
-            "Zone 5 Active",
+            "${_getLabel(deviceToDisplay, "zone_5", "Zone 5")} Active",
             FontAwesomeIcons.thermometerHalf,
             const Color(0XFFF4F4F4),
             deviceToDisplay.temp5 != null,
           ),
           DailySummaryRecords2(
-            "Zone 6 Active",
+            "${_getLabel(deviceToDisplay, "zone_6", "Zone 6")} Active",
             FontAwesomeIcons.thermometerHalf,
             const Color(0XFFF4F4F4),
             deviceToDisplay.temp6 != null,
           ),
           DailySummaryRecords2(
-            "Zone 7 Active",
+            "${_getLabel(deviceToDisplay, "zone_7", "Zone 7")} Active",
             FontAwesomeIcons.thermometerHalf,
             const Color(0XFFF4F4F4),
             deviceToDisplay.temp7 != null,
@@ -5682,35 +6679,48 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           ),
         ];
       } else if (deviceType == 'device4') {
-        // Device 4: Multi-compressor amp monitoring
-        final comp1Avg = _compressorAvg(deviceToDisplay.comp1ph1, deviceToDisplay.comp1ph2, deviceToDisplay.comp1ph3);
-        final comp2Avg = _compressorAvg(deviceToDisplay.comp2ph1, deviceToDisplay.comp2ph2, deviceToDisplay.comp2ph3);
-        final comp3Avg = _compressorAvg(deviceToDisplay.comp3ph1, deviceToDisplay.comp3ph2, deviceToDisplay.comp3ph3);
-        final comp4Avg = _compressorAvg(deviceToDisplay.comp4ph1, deviceToDisplay.comp4ph2, deviceToDisplay.comp4ph3);
+        // Device 4: Multi-compressor amp monitoring - all 8 compressors
         dailySummaryList = [
-          DailySummaryRecords(comp1Avg?.toInt() ?? 0, 0, "Compressor 1 Avg (A)", FontAwesomeIcons.bolt, const Color(0XFFF4F4F4)),
-          DailySummaryRecords(comp2Avg?.toInt() ?? 0, 0, "Compressor 2 Avg (A)", FontAwesomeIcons.bolt, const Color(0Xcc3C514933)),
-          DailySummaryRecords(comp3Avg?.toInt() ?? 0, 0, "Compressor 3 Avg (A)", FontAwesomeIcons.bolt, const Color(0XccF4F4F4)),
-          DailySummaryRecords(comp4Avg?.toInt() ?? 0, 0, "Compressor 4 Avg (A)", FontAwesomeIcons.bolt, const Color(0Xcc3C514914)),
+          ...List.generate(8, (i) {
+            final ph1 = _getCompPhase(deviceToDisplay, i + 1, 1);
+            final ph2 = _getCompPhase(deviceToDisplay, i + 1, 2);
+            final ph3 = _getCompPhase(deviceToDisplay, i + 1, 3);
+            final avg = _compressorAvg(ph1, ph2, ph3);
+            final isOn = avg != null && avg > 0.5;
+            return DailySummaryRecords(avg?.toInt() ?? 0, 0, "${_getLabel(deviceToDisplay, "comp_${i + 1}", "Comp ${i + 1}")} ${isOn ? 'ON' : 'OFF'} (A)", FontAwesomeIcons.bolt, const Color(0XFFF4F4F4));
+          }),
+          DailySummaryRecords(deviceToDisplay.totalPowerKw?.toInt() ?? 0, 0, "Total Power (kW)", FontAwesomeIcons.plug, const Color(0XFFF4F4F4)),
         ];
         dailySummaryList2 = [];
       } else if (deviceType == 'device5') {
         // Device 5: Relay controller
         final onCount = deviceToDisplay.relaysOnCount ?? 0;
         final offCount = deviceToDisplay.relaysOffCount ?? 0;
+        final dutyCycles5 = [
+          deviceToDisplay.relay1OnPct, deviceToDisplay.relay2OnPct, deviceToDisplay.relay3OnPct, deviceToDisplay.relay4OnPct,
+          deviceToDisplay.relay5OnPct, deviceToDisplay.relay6OnPct, deviceToDisplay.relay7OnPct, deviceToDisplay.relay8OnPct,
+          deviceToDisplay.relay9OnPct, deviceToDisplay.relay10OnPct, deviceToDisplay.relay11OnPct, deviceToDisplay.relay12OnPct,
+          deviceToDisplay.relay13OnPct, deviceToDisplay.relay14OnPct, deviceToDisplay.relay15OnPct, deviceToDisplay.relay16OnPct,
+        ].whereType<double>().toList();
+        final avgDuty5 = dutyCycles5.isNotEmpty ? dutyCycles5.reduce((a, b) => a + b) / dutyCycles5.length : 0.0;
         dailySummaryList = [
           DailySummaryRecords(onCount, 0, "Relays ON", FontAwesomeIcons.toggleOn, const Color(0XFFF4F4F4)),
           DailySummaryRecords(offCount, 0, "Relays OFF", FontAwesomeIcons.toggleOff, const Color(0Xcc3C514933)),
           DailySummaryRecords(16, 0, "Total Relays", FontAwesomeIcons.microchip, const Color(0XccF4F4F4)),
+          DailySummaryRecords(avgDuty5.toInt(), 0, "Avg Duty Cycle (%)", FontAwesomeIcons.percentage, const Color(0Xcc3C514914)),
         ];
         dailySummaryList2 = [];
       } else if (deviceType == 'device6') {
-        // Device 6: Pressure monitoring
+        // Device 6: Pressure monitoring - all 8 sensors
+        final List<double?> prsVals = [deviceToDisplay.prs1, deviceToDisplay.prs2, deviceToDisplay.prs3, deviceToDisplay.prs4, deviceToDisplay.prs5, deviceToDisplay.prs6, deviceToDisplay.prs7, deviceToDisplay.prs8];
+        final List<Color> colors = [const Color(0XFFF4F4F4), const Color(0Xcc3C514933), const Color(0XccF4F4F4), const Color(0Xcc3C514914), const Color(0XFFF4F4F4), const Color(0Xcc3C514933), const Color(0XccF4F4F4), const Color(0Xcc3C514914)];
+        final validPrs = prsVals.whereType<double>().toList();
+        final avgPrs6 = validPrs.isNotEmpty ? validPrs.reduce((a, b) => a + b) / validPrs.length : 0.0;
         dailySummaryList = [
-          DailySummaryRecords(deviceToDisplay.prs1?.toInt() ?? 0, 0, "Pressure 1 (bar)", FontAwesomeIcons.tachometerAlt, const Color(0XFFF4F4F4)),
-          DailySummaryRecords(deviceToDisplay.prs2?.toInt() ?? 0, 0, "Pressure 2 (bar)", FontAwesomeIcons.tachometerAlt, const Color(0Xcc3C514933)),
-          DailySummaryRecords(deviceToDisplay.prs3?.toInt() ?? 0, 0, "Pressure 3 (bar)", FontAwesomeIcons.tachometerAlt, const Color(0XccF4F4F4)),
-          DailySummaryRecords(deviceToDisplay.prs4?.toInt() ?? 0, 0, "Pressure 4 (bar)", FontAwesomeIcons.tachometerAlt, const Color(0Xcc3C514914)),
+          ...List.generate(8, (i) {
+            return DailySummaryRecords(prsVals[i]?.toInt() ?? 0, 0, "Pressure ${i + 1} (psi)", FontAwesomeIcons.tachometerAlt, colors[i]);
+          }),
+          DailySummaryRecords(avgPrs6.toInt(), 0, "Avg Pressure (psi)", FontAwesomeIcons.chartLine, const Color(0Xcc3C514914)),
         ];
         dailySummaryList2 = [];
       } else {
