@@ -793,10 +793,15 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     with TickerProviderStateMixin {
   bool isLoading = true;
   bool isInitialLoad = true;
+  bool isRefreshing = false;
 
   // Device Selection
   String? selectedDeviceId;
   List<DeviceModel3> availableDevices = [];
+
+  // Device Filter
+  String? deviceTypeFilter;
+  String? onlineStatusFilter;
   List<DeviceModel3> totalDetached = [];
   List<DeviceModel3> totalActive = [];
   List<DeviceModel3> totalInactive = [];
@@ -3946,100 +3951,275 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 strokeWidth: 1.5,
               )),
             )
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(padding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildWelcomeHeader(),
-                  SizedBox(height: isMobile ? 16 : 24),
-                  _buildPerformanceOverview(),
-                  SizedBox(height: isMobile ? 16 : 24),
-                  _buildEnhancedSummaryCards2(),
-                  SizedBox(height: isMobile ? 16 : 24),
-                  _buildMetricsTabView(),
-                  SizedBox(height: isMobile ? 16 : 24),
-                  _buildAlertsSection(),
-                  SizedBox(height: isMobile ? 16 : 24),
-                  _buildDeviceMapSection(),
-                ],
-              ),
+          : Stack(
+              children: [
+                SingleChildScrollView(
+                  padding: EdgeInsets.all(padding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildWelcomeHeader(),
+                      SizedBox(height: isMobile ? 16 : 24),
+                      _buildPerformanceOverview(),
+                      SizedBox(height: isMobile ? 16 : 24),
+                      _buildEnhancedSummaryCards2(),
+                      SizedBox(height: isMobile ? 16 : 24),
+                      _buildMetricsTabView(),
+                      SizedBox(height: isMobile ? 16 : 24),
+                      _buildAlertsSection(),
+                      SizedBox(height: isMobile ? 16 : 24),
+                      _buildDeviceMapSection(),
+                    ],
+                  ),
+                ),
+                if (isRefreshing)
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Constants.ctaColorLight,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
     );
   }
 
-  Widget _buildDeviceDropdown() {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16),
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 3)
+  List<DeviceModel3> _getFilteredDevices() {
+    var filtered = availableDevices.toList();
+    if (onlineStatusFilter == 'online') {
+      filtered = filtered.where((d) => d.isOnline == true).toList();
+    } else if (onlineStatusFilter == 'offline') {
+      filtered = filtered.where((d) => d.isOnline != true).toList();
+    }
+    if (deviceTypeFilter != null) {
+      filtered = filtered.where((d) => d.deviceType == deviceTypeFilter).toList();
+    }
+    return filtered;
+  }
+
+  Widget _buildFilterButton() {
+    final hasActiveFilter = deviceTypeFilter != null || onlineStatusFilter != null;
+    return PopupMenuButton<String>(
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(Icons.filter_list_rounded, color: Constants.ctaColorLight, size: 22),
+          if (hasActiveFilter)
+            Positioned(
+              right: -4,
+              top: -4,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
         ],
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: selectedDeviceId,
-          hint: Text("Select Device",
-              style:
-                  GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
-          icon: Icon(Icons.keyboard_arrow_down, color: Constants.ctaColorLight),
-          isExpanded: true,
-          items: [
-            DropdownMenuItem<String>(
-              value: null,
-              child:
-                  Text("All Devices", style: GoogleFonts.inter(fontSize: 12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      offset: Offset(0, 40),
+      itemBuilder: (context) {
+        final deviceTypes = availableDevices.map((d) => d.deviceType).toSet().toList()..sort();
+        return [
+          PopupMenuItem(
+            value: 'all',
+            child: Row(
+              children: [
+                Icon(Icons.devices, size: 18, color: deviceTypeFilter == null && onlineStatusFilter == null ? Constants.ctaColorLight : Colors.grey),
+                SizedBox(width: 8),
+                Text('All Devices', style: GoogleFonts.inter(fontSize: 13, fontWeight: deviceTypeFilter == null && onlineStatusFilter == null ? FontWeight.w600 : FontWeight.w400)),
+              ],
             ),
-            ...availableDevices.map((device) {
-              return DropdownMenuItem<String>(
-                value: device.deviceId,
+          ),
+          PopupMenuDivider(),
+          PopupMenuItem(
+            value: 'online',
+            child: Row(
+              children: [
+                Icon(Icons.wifi, size: 18, color: onlineStatusFilter == 'online' ? Colors.green : Colors.grey),
+                SizedBox(width: 8),
+                Text('Online', style: GoogleFonts.inter(fontSize: 13, fontWeight: onlineStatusFilter == 'online' ? FontWeight.w600 : FontWeight.w400)),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            value: 'offline',
+            child: Row(
+              children: [
+                Icon(Icons.wifi_off, size: 18, color: onlineStatusFilter == 'offline' ? Colors.red : Colors.grey),
+                SizedBox(width: 8),
+                Text('Offline', style: GoogleFonts.inter(fontSize: 13, fontWeight: onlineStatusFilter == 'offline' ? FontWeight.w600 : FontWeight.w400)),
+              ],
+            ),
+          ),
+          if (deviceTypes.length > 1) ...[
+            PopupMenuDivider(),
+            ...deviceTypes.map((type) {
+              final typeLabel = _getDeviceTypeLabel(type);
+              return PopupMenuItem(
+                value: 'type_$type',
                 child: Row(
                   children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      margin: EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _getStatusColor2(device.isOnline ?? false),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        "${device.name} - ${device.isOnline == true ? 'Online' : 'Offline'}",
-                        style: GoogleFonts.inter(fontSize: 11),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
+                    Icon(Icons.memory, size: 18, color: deviceTypeFilter == type ? Constants.ctaColorLight : Colors.grey),
+                    SizedBox(width: 8),
+                    Text(typeLabel, style: GoogleFonts.inter(fontSize: 13, fontWeight: deviceTypeFilter == type ? FontWeight.w600 : FontWeight.w400)),
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
-          onChanged: (String? newValue) async {
-            setState(() {
-              selectedDeviceId = newValue;
-            });
-            // Only call _refreshDataForSelectedDevice which handles all data fetching
-            // Don't call multiple fetch methods that can race and reset selectedDeviceId
-            await _refreshDataForSelectedDevice();
-          },
+        ];
+      },
+      onSelected: (value) {
+        setState(() {
+          if (value == 'all') {
+            deviceTypeFilter = null;
+            onlineStatusFilter = null;
+          } else if (value == 'online') {
+            onlineStatusFilter = onlineStatusFilter == 'online' ? null : 'online';
+          } else if (value == 'offline') {
+            onlineStatusFilter = onlineStatusFilter == 'offline' ? null : 'offline';
+          } else if (value.startsWith('type_')) {
+            final type = value.substring(5);
+            deviceTypeFilter = deviceTypeFilter == type ? null : type;
+          }
+          // Reset selected device if it's no longer in filtered list
+          final filtered = _getFilteredDevices();
+          if (selectedDeviceId != null && !filtered.any((d) => d.deviceId == selectedDeviceId)) {
+            selectedDeviceId = filtered.isNotEmpty ? filtered.first.deviceId : null;
+          }
+        });
+        _refreshDataForSelectedDevice();
+      },
+    );
+  }
+
+  String _getDeviceTypeLabel(String type) {
+    switch (type) {
+      case 'device1': return 'Refrigeration Units';
+      case 'device2': return 'Multi-Zone Temp';
+      case 'device3': return 'Ice Machine';
+      case 'device4': return 'Multi-Compressor';
+      case 'device5': return 'Relay Controller';
+      case 'device6': return 'Pressure Monitor';
+      default: return type;
+    }
+  }
+
+  Widget _buildDeviceDropdown() {
+    final filteredDevices = _getFilteredDevices();
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.grey.shade300),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 3)
+              ],
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: selectedDeviceId,
+                hint: Text("Select Device",
+                    style:
+                        GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
+                icon: Icon(Icons.keyboard_arrow_down, color: Constants.ctaColorLight),
+                isExpanded: true,
+                items: [
+                  DropdownMenuItem<String>(
+                    value: null,
+                    child:
+                        Text("All Devices", style: GoogleFonts.inter(fontSize: 12)),
+                  ),
+                  ...filteredDevices.map((device) {
+                    return DropdownMenuItem<String>(
+                      value: device.deviceId,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _getStatusColor2(device.isOnline ?? false),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              "${device.name} - ${device.isOnline == true ? 'Online' : 'Offline'}",
+                              style: GoogleFonts.inter(fontSize: 11),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ],
+                onChanged: (String? newValue) async {
+                  setState(() {
+                    selectedDeviceId = newValue;
+                  });
+                  await _refreshDataForSelectedDevice();
+                },
+              ),
+            ),
+          ),
         ),
-      ),
+        SizedBox(width: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.grey.shade300),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 3)
+            ],
+          ),
+          child: _buildFilterButton(),
+        ),
+      ],
     );
   }
 
   // Include all the existing API methods here
   Future<void> _refreshDataForSelectedDevice() async {
     setState(() {
-      isLoading = true;
+      isRefreshing = true;
     });
 
     try {
@@ -4053,7 +4233,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       print('Error refreshing data for selected device: $e');
     } finally {
       setState(() {
-        isLoading = false;
+        isRefreshing = false;
       });
     }
   }
@@ -4195,7 +4375,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                           style: GoogleFonts.inter(
                               fontSize: 18, fontWeight: FontWeight.w600)),
                       Spacer(),
-                      Container(width: 300, child: _buildDeviceDropdown()),
+                      Container(width: 350, child: _buildDeviceDropdown()),
                     ],
                   ),
             SizedBox(height: 16),

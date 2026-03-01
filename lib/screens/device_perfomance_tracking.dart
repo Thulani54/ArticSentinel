@@ -1572,12 +1572,14 @@ class Device {
   final String deviceId;
   final String name;
   final String deviceType;
+  final bool isOnline;
 
   Device({
     required this.id,
     required this.deviceId,
     required this.name,
     required this.deviceType,
+    this.isOnline = false,
   });
 
   factory Device.fromJson(Map<String, dynamic> json) {
@@ -1586,6 +1588,7 @@ class Device {
       deviceId: json['device_id']?.toString() ?? '',
       name: json['name'],
       deviceType: json['device_type'] ?? 'device1',
+      isOnline: json['is_online'] ?? false,
     );
   }
 }
@@ -1698,6 +1701,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Device? selectedDevice;
   DateTime startDate = DateTime.now().subtract(const Duration(days: 7));
   DateTime endDate = DateTime.now();
+
+  // Device Filter
+  String? deviceTypeFilter;
+  String? onlineStatusFilter;
   DeviceAnalytics? analyticsData;
   Device2Analytics? device2AnalyticsData;
   Device3Analytics? device3AnalyticsData;
@@ -1939,6 +1946,133 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     );
   }
 
+  List<Device> _getFilteredDevices() {
+    var filtered = devices.toList();
+    if (onlineStatusFilter == 'online') {
+      filtered = filtered.where((d) => d.isOnline).toList();
+    } else if (onlineStatusFilter == 'offline') {
+      filtered = filtered.where((d) => !d.isOnline).toList();
+    }
+    if (deviceTypeFilter != null) {
+      filtered = filtered.where((d) => d.deviceType == deviceTypeFilter).toList();
+    }
+    return filtered;
+  }
+
+  String _getDeviceTypeLabel(String type) {
+    switch (type) {
+      case 'device1': return 'Refrigeration Units';
+      case 'device2': return 'Multi-Zone Temp';
+      case 'device3': return 'Ice Machine';
+      case 'device4': return 'Multi-Compressor';
+      case 'device5': return 'Relay Controller';
+      case 'device6': return 'Pressure Monitor';
+      default: return type;
+    }
+  }
+
+  Widget _buildFilterButton() {
+    final hasActiveFilter = deviceTypeFilter != null || onlineStatusFilter != null;
+    return PopupMenuButton<String>(
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(Icons.filter_list_rounded, color: Constants.ctaColorLight, size: 22),
+          if (hasActiveFilter)
+            Positioned(
+              right: -4,
+              top: -4,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      offset: Offset(0, 40),
+      itemBuilder: (context) {
+        final deviceTypes = devices.map((d) => d.deviceType).toSet().toList()..sort();
+        return [
+          PopupMenuItem(
+            value: 'all',
+            child: Row(
+              children: [
+                Icon(Icons.devices, size: 18, color: deviceTypeFilter == null && onlineStatusFilter == null ? Constants.ctaColorLight : Colors.grey),
+                SizedBox(width: 8),
+                Text('All Devices', style: GoogleFonts.inter(fontSize: 13, fontWeight: deviceTypeFilter == null && onlineStatusFilter == null ? FontWeight.w600 : FontWeight.w400)),
+              ],
+            ),
+          ),
+          PopupMenuDivider(),
+          PopupMenuItem(
+            value: 'online',
+            child: Row(
+              children: [
+                Icon(Icons.wifi, size: 18, color: onlineStatusFilter == 'online' ? Colors.green : Colors.grey),
+                SizedBox(width: 8),
+                Text('Online', style: GoogleFonts.inter(fontSize: 13, fontWeight: onlineStatusFilter == 'online' ? FontWeight.w600 : FontWeight.w400)),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            value: 'offline',
+            child: Row(
+              children: [
+                Icon(Icons.wifi_off, size: 18, color: onlineStatusFilter == 'offline' ? Colors.red : Colors.grey),
+                SizedBox(width: 8),
+                Text('Offline', style: GoogleFonts.inter(fontSize: 13, fontWeight: onlineStatusFilter == 'offline' ? FontWeight.w600 : FontWeight.w400)),
+              ],
+            ),
+          ),
+          if (deviceTypes.length > 1) ...[
+            PopupMenuDivider(),
+            ...deviceTypes.map((type) {
+              final typeLabel = _getDeviceTypeLabel(type);
+              return PopupMenuItem(
+                value: 'type_$type',
+                child: Row(
+                  children: [
+                    Icon(Icons.memory, size: 18, color: deviceTypeFilter == type ? Constants.ctaColorLight : Colors.grey),
+                    SizedBox(width: 8),
+                    Text(typeLabel, style: GoogleFonts.inter(fontSize: 13, fontWeight: deviceTypeFilter == type ? FontWeight.w600 : FontWeight.w400)),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ];
+      },
+      onSelected: (value) {
+        setState(() {
+          if (value == 'all') {
+            deviceTypeFilter = null;
+            onlineStatusFilter = null;
+          } else if (value == 'online') {
+            onlineStatusFilter = onlineStatusFilter == 'online' ? null : 'online';
+          } else if (value == 'offline') {
+            onlineStatusFilter = onlineStatusFilter == 'offline' ? null : 'offline';
+          } else if (value.startsWith('type_')) {
+            final type = value.substring(5);
+            deviceTypeFilter = deviceTypeFilter == type ? null : type;
+          }
+          // Reset selected device if it's no longer in filtered list
+          final filtered = _getFilteredDevices();
+          if (selectedDevice != null && !filtered.any((d) => d.deviceId == selectedDevice!.deviceId)) {
+            selectedDevice = filtered.isNotEmpty ? filtered.first : null;
+          }
+        });
+        if (selectedDevice != null) {
+          _loadAnalytics();
+        }
+      },
+    );
+  }
+
   Widget _buildControlPanel() {
     final isMobile = _isMobile(context);
 
@@ -1960,81 +2094,81 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         isMobile
             ? Column(
                 children: [
-                  // ───────── Device selector ─────────
-                  Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: selectedDevice?.deviceId,
-                    hint: Text(
-                      'Select Device',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: const Color(0xFF64748B),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    icon: Icon(Icons.keyboard_arrow_down,
-                        color: Constants.ctaColorLight),
-                    isExpanded: true,
-                    items: [
-                      // "All devices" option
-                      DropdownMenuItem<String>(
-                        value: null,
-                        child: Text(
-                          'All Devices',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                  // ───────── Device selector + filter ─────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: selectedDevice?.deviceId,
+                              hint: Text(
+                                'Select Device',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: const Color(0xFF64748B),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              icon: Icon(Icons.keyboard_arrow_down,
+                                  color: Constants.ctaColorLight),
+                              isExpanded: true,
+                              items: [
+                                ..._getFilteredDevices().map((device) => DropdownMenuItem<String>(
+                                      value: device.deviceId,
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            margin: const EdgeInsets.only(right: 8),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: device.isOnline ? Colors.green : Colors.grey,
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              '${device.name} - ${device.isOnline ? 'Online' : 'Offline'}',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )),
+                              ],
+                              onChanged: (String? newValue) {
+                                if (newValue == null) return;
+                                setState(() {
+                                  selectedDevice = devices.firstWhere((d) => d.deviceId == newValue);
+                                });
+                                _loadAnalytics();
+                              },
+                            ),
                           ),
                         ),
                       ),
-                      // real devices
-                      ...devices.map((device) => DropdownMenuItem<String>(
-                            value: device.deviceId,
-                            child: Row(
-                              children: [
-                                // coloured status dot
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  margin: const EdgeInsets.only(right: 8),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Constants.ctaColorLight,
-                                  ),
-                                ),
-                                // device name + status
-                                Expanded(
-                                  child: Text(
-                                    device.name,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: _buildFilterButton(),
+                      ),
                     ],
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        selectedDevice =
-                            devices.firstWhere((d) => d.deviceId == newValue);
-                      });
-                      _loadAnalytics(); // reload stats for the choice
-                    },
                   ),
-                ),
-              ),
                   const SizedBox(height: 12),
 
                   // ───────── Start date ─────────
@@ -2209,17 +2343,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                               color: Constants.ctaColorLight),
                           isExpanded: true,
                           items: [
-                            DropdownMenuItem<String>(
-                              value: null,
-                              child: Text(
-                                'All Devices',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            ...devices.map((device) => DropdownMenuItem<String>(
+                            ..._getFilteredDevices().map((device) => DropdownMenuItem<String>(
                                   value: device.deviceId,
                                   child: Row(
                                     children: [
@@ -2229,12 +2353,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                         margin: const EdgeInsets.only(right: 8),
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: Constants.ctaColorLight,
+                                          color: device.isOnline ? Colors.green : Colors.grey,
                                         ),
                                       ),
                                       Expanded(
                                         child: Text(
-                                          device.name,
+                                          '${device.name} - ${device.isOnline ? 'Online' : 'Offline'}',
                                           style: GoogleFonts.inter(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w500,
@@ -2247,15 +2371,24 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                 )),
                           ],
                           onChanged: (String? newValue) {
+                            if (newValue == null) return;
                             setState(() {
-                              selectedDevice = devices
-                                  .firstWhere((d) => d.deviceId == newValue);
+                              selectedDevice = devices.firstWhere((d) => d.deviceId == newValue);
                             });
                             _loadAnalytics();
                           },
                         ),
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: _buildFilterButton(),
                   ),
                   const SizedBox(width: 12),
 
