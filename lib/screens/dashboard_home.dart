@@ -86,8 +86,10 @@ Widget _buildPressureMetricRow(String title, double? current, double? min,
   return Container(
     padding: EdgeInsets.all(Constants.spacingMd),
     decoration: BoxDecoration(
-      color: Constants.ctaColorLight.withOpacity(Constants.opacityLight),
+      color: Colors.white,
       borderRadius: BorderRadius.circular(Constants.spacingSm),
+      border: Border.all(color: const Color(0xFFF1F5F9)),
+      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,8 +122,10 @@ Widget _buildCompressorMetricCard(String title, String value, IconData icon) {
   return Container(
     padding: EdgeInsets.all(Constants.spacingMd),
     decoration: BoxDecoration(
-      color: Constants.ctaColorLight.withOpacity(Constants.opacityLight),
+      color: Colors.white,
       borderRadius: BorderRadius.circular(Constants.spacingSm),
+      border: Border.all(color: const Color(0xFFF1F5F9)),
+      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
     ),
     child: Column(
       children: [
@@ -145,9 +149,10 @@ Widget _buildEfficiencyCard(
   return Container(
     padding: EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: color.withOpacity(0.1),
+      color: Colors.white,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: color.withOpacity(0.3)),
+      border: Border.all(color: const Color(0xFFF1F5F9)),
+      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
     ),
     child: Column(
       children: [
@@ -2547,9 +2552,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -2691,9 +2697,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -2931,9 +2938,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -3345,12 +3353,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       width: double.infinity,
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: const Color(0xFFF1F5F9),
           width: 1,
         ),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -3611,9 +3620,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -3905,8 +3915,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: Constants.ctaColorLight.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Text(
         title,
@@ -4295,8 +4307,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       padding: EdgeInsets.all(12),
       margin: isMobile ? EdgeInsets.zero : EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
-        color: Constants.ctaColorLight.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -4750,10 +4764,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Constants.ctaColorLight, Constants.ctaColorLight.withOpacity(0.7)],
-                  ),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFF1F5F9)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4))],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -4764,7 +4778,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         Text("Average Temperature",
                             style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: Colors.white70,
+                                color: const Color(0xFF64748B),
                                 fontWeight: FontWeight.w500)),
                         SizedBox(height: 4),
                         Text(
@@ -4772,10 +4786,17 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                             style: GoogleFonts.inter(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white)),
+                                color: const Color(0xFF0F172A))),
                       ],
                     ),
-                    Icon(Iconsax.chart, size: 48, color: Colors.white54),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Constants.ctaColorLight,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Iconsax.chart, size: 28, color: Colors.white),
+                    ),
                   ],
                 ),
               ),
@@ -5033,9 +5054,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: statusColor.withOpacity(0.3)),
+        border: Border.all(
+          color: status == "Normal" ? const Color(0xFFF1F5F9) : statusColor,
+          width: status == "Normal" ? 1 : 2,
+        ),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -5607,9 +5632,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(isMobile ? 8 : 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -5733,9 +5759,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(isMobile ? 6 : 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(
+          color: isOn ? const Color(0xFFF1F5F9) : Colors.grey.shade300,
+          width: 1,
+        ),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -5988,9 +6018,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(isMobile ? 6 : 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(
+          color: isOn == true ? Colors.green.withOpacity(0.3) : const Color(0xFFF1F5F9),
+          width: isOn == true ? 2 : 1,
+        ),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -6048,9 +6082,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(isMobile ? 6 : 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -6174,9 +6209,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
@@ -6229,9 +6265,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(
+          color: isActive ? Colors.orange.withOpacity(0.3) : const Color(0xFFF1F5F9),
+          width: isActive ? 2 : 1,
+        ),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
@@ -6301,9 +6341,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -6387,9 +6428,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withOpacity(0.2)),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
