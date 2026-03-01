@@ -4261,12 +4261,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         fetchAlerts(),
       ]);
 
-      // Restore the selected device if it still exists in the device list
-      if (preservedDeviceId != null && availableDevices.any((d) => d.deviceId == preservedDeviceId)) {
-        selectedDeviceId = preservedDeviceId;
-        print('Restored selectedDeviceId after refresh: $selectedDeviceId');
-      } else if (preservedDeviceId != null) {
-        print('Previously selected device $preservedDeviceId no longer available, keeping current selection');
+      // Only restore if the user hasn't changed the selection during the refresh
+      // (prevents jumping back to old device when auto-refresh races with manual selection)
+      if (preservedDeviceId != null && selectedDeviceId == preservedDeviceId && availableDevices.any((d) => d.deviceId == preservedDeviceId)) {
+        // Selection unchanged, keep it
+        print('selectedDeviceId unchanged during refresh: $selectedDeviceId');
+      } else if (preservedDeviceId != null && selectedDeviceId != preservedDeviceId) {
+        print('User changed selection during refresh from $preservedDeviceId to $selectedDeviceId, keeping new selection');
       }
 
       _processDashboardData();

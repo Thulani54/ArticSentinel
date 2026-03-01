@@ -1763,6 +1763,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Future<void> _loadAnalytics({bool showLoading = true}) async {
     if (selectedDevice == null) return;
 
+    // Capture the target device at the start of the request
+    final targetDeviceId = selectedDevice!.deviceId;
+    final deviceType = selectedDevice!.deviceType;
+
     if (showLoading) {
       setState(() {
         isLoading = true;
@@ -1771,15 +1775,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     }
 
     try {
-      final deviceType = selectedDevice!.deviceType;
-
       // Get raw JSON first to determine parsing strategy
       final rawData = await ApiService.getDeviceAnalyticsRaw(
-        deviceId: selectedDevice!.deviceId,
+        deviceId: targetDeviceId,
         startDate: startDate.toIso8601String(),
         endDate: endDate.toIso8601String(),
         companyId: widget.companyId,
       );
+
+      // Discard stale response if user switched devices during the API call
+      if (selectedDevice?.deviceId != targetDeviceId) {
+        print('Device changed during analytics load ($targetDeviceId -> ${selectedDevice?.deviceId}), discarding stale response');
+        return;
+      }
 
       setState(() {
         // Clear all analytics data first
@@ -1808,14 +1816,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         isInitialLoad = false;
       });
     } catch (e) {
-      if (showLoading) {
+      // Only show error if this is still the active device
+      if (showLoading && selectedDevice?.deviceId == targetDeviceId) {
         setState(() {
           errorMessage = e.toString();
           print(errorMessage);
           isLoading = false;
         });
       }
-      // For background updates, silently fail to avoid disrupting UI
+      // For background updates or stale requests, silently fail
     }
   }
 
