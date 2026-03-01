@@ -1704,7 +1704,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   // Device Filter
   String? deviceTypeFilter;
-  String? onlineStatusFilter;
+  String? onlineStatusFilter = 'online';
   DeviceAnalytics? analyticsData;
   Device2Analytics? device2AnalyticsData;
   Device3Analytics? device3AnalyticsData;
@@ -2102,7 +2102,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(36),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
                           child: DropdownButtonHideUnderline(
@@ -2162,7 +2162,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(36),
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
                         child: _buildFilterButton(),
@@ -2175,12 +2175,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(36),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: InkWell(
                   onTap: () => _selectDate(true),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(36),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
@@ -2233,12 +2233,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(36),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: InkWell(
                   onTap: () => _selectDate(false),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(36),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
@@ -2303,7 +2303,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(36),
                 ),
                 elevation: 0,
                 shadowColor: Colors.transparent,
@@ -2325,7 +2325,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(36),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                       child: DropdownButtonHideUnderline(
@@ -2385,7 +2385,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   Container(
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(36),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: _buildFilterButton(),
@@ -2397,12 +2397,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(36),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                       child: InkWell(
                         onTap: () => _selectDate(true),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(36),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
@@ -2458,12 +2458,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(36),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                       child: InkWell(
                         onTap: () => _selectDate(false),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(36),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
@@ -2527,7 +2527,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(36),
                       ),
                       elevation: 0,
                       shadowColor: Colors.transparent,

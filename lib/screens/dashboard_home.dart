@@ -801,7 +801,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   // Device Filter
   String? deviceTypeFilter;
-  String? onlineStatusFilter;
+  String? onlineStatusFilter = 'online';
   List<DeviceModel3> totalDetached = [];
   List<DeviceModel3> totalActive = [];
   List<DeviceModel3> totalInactive = [];
@@ -4138,7 +4138,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(36),
               border: Border.all(color: Colors.grey.shade300),
               boxShadow: [
                 BoxShadow(
@@ -4201,7 +4201,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(36),
             border: Border.all(color: Colors.grey.shade300),
             boxShadow: [
               BoxShadow(
