@@ -3745,7 +3745,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               crossAxisCount: isMobile ? 2 : 4,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: isMobile ? 1.0 : 1.1,
+              childAspectRatio: isMobile ? 1.4 : 1.8,
             ),
             itemCount: 8,
             itemBuilder: (context, index) => _buildZoneCard(zones[index]),
@@ -4028,10 +4028,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     }
 
     final zones = data.zoneSummary.zones;
-    final zoneColors = [
-      Colors.blue, Colors.green, Colors.orange, Colors.purple,
-      Colors.red, Colors.teal, Colors.pink, Colors.indigo,
-    ];
+    final barColor = Constants.ctaColorLight;
 
     return Container(
       height: 250,
@@ -4094,9 +4091,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               barRods: [
                 BarChartRodData(
                   toY: zone.avg ?? 0.0,
-                  color: zoneColors[index % zoneColors.length],
+                  color: barColor,
                   width: 20,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                 ),
               ],
             );

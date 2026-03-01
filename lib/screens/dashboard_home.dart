@@ -4825,7 +4825,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 crossAxisCount: isMobile ? 2 : 4,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: isMobile ? 1.1 : 1.3,
+                childAspectRatio: isMobile ? 1.4 : 1.8,
                 children: [
                   _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_1", "Zone 1"), selectedDevice.temp1, selectedDevice.temp1Min, selectedDevice.temp1Max, selectedDevice.temp1MinTime, selectedDevice.temp1MaxTime, -25, 5, labelKey: "zone_1", deviceId: selectedDevice.deviceId),
                   _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_2", "Zone 2"), selectedDevice.temp2, selectedDevice.temp2Min, selectedDevice.temp2Max, selectedDevice.temp2MinTime, selectedDevice.temp2MaxTime, -25, 5, labelKey: "zone_2", deviceId: selectedDevice.deviceId),
@@ -4868,10 +4868,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       {'name': 'Z8', 'temp': device.temp8 ?? 0.0},
     ];
 
-    final zoneColors = [
-      Colors.blue, Colors.green, Colors.orange, Colors.purple,
-      Colors.red, Colors.teal, Colors.pink, Colors.indigo,
-    ];
+    final barColor = Constants.ctaColorLight;
 
     final temps = zones.map((z) => z['temp'] as double).toList();
     final maxTemp = temps.isNotEmpty ? temps.reduce((a, b) => a > b ? a : b) : 10.0;
@@ -4935,11 +4932,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             barRods: [
               BarChartRodData(
                 toY: temp,
-                color: zoneColors[index],
+                color: barColor,
                 width: 24,
                 borderRadius: BorderRadius.vertical(
-                  top: temp >= 0 ? Radius.circular(4) : Radius.zero,
-                  bottom: temp < 0 ? Radius.circular(4) : Radius.zero,
+                  top: temp >= 0 ? Radius.circular(12) : Radius.zero,
+                  bottom: temp < 0 ? Radius.circular(12) : Radius.zero,
                 ),
               ),
             ],
