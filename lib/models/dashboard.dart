@@ -939,6 +939,25 @@ class LatestDeviceData {
   final String? prs8MaxTime;
   final double? prs8Avg;
 
+  // Device 7 specific fields (IoT Bottle Vetting System)
+  final String? codeScan;
+  final double? tray1wt;
+  final double? tray2wt;
+  final double? tray3wt;
+  final double? tray4wt;
+  final double? bottleTemp;
+  final bool? scanVerified;
+  final int? totalScansToday;
+  final int? verifiedScansToday;
+  final int? failedScansToday;
+  final double? verificationRate;
+  final double? avgTotalWeightToday;
+  final double? avgTempToday;
+  final int? scansInToday;
+  final int? scansOutToday;
+  final int? activeScansToday;
+  final int? totalBottlesToday;
+
   // Enhanced calculated metrics
   final double? avgCompAmp;
   final double? maxCompAmp;
@@ -1247,6 +1266,24 @@ class LatestDeviceData {
     this.lastDoorOpenTimestamp,
     this.lastDoorCloseTimestamp,
     this.customLabels,
+    // Device 7 fields
+    this.codeScan,
+    this.tray1wt,
+    this.tray2wt,
+    this.tray3wt,
+    this.tray4wt,
+    this.bottleTemp,
+    this.scanVerified,
+    this.totalScansToday,
+    this.verifiedScansToday,
+    this.failedScansToday,
+    this.verificationRate,
+    this.avgTotalWeightToday,
+    this.avgTempToday,
+    this.scansInToday,
+    this.scansOutToday,
+    this.activeScansToday,
+    this.totalBottlesToday,
   });
 
   // Helper method to get device type
@@ -1256,6 +1293,7 @@ class LatestDeviceData {
     if (comp1ph1 != null) return 'device4';
     if (relay1 != null) return 'device5';
     if (prs1 != null) return 'device6';
+    if (tray1wt != null || codeScan != null) return 'device7';
     if (temp1 != null || temp2 != null) return 'device2';
     if (hsTemp != null || lsTemp != null || iceTemp != null) return 'device3';
     return 'device1';
@@ -1569,6 +1607,24 @@ class LatestDeviceData {
       customLabels: json['custom_labels'] != null
           ? Map<String, String>.from(json['custom_labels'])
           : null,
+      // Device 7 fields (Bottle Vetting System)
+      codeScan: json['codeScan'],
+      tray1wt: json['tray1wt']?.toDouble(),
+      tray2wt: json['tray2wt']?.toDouble(),
+      tray3wt: json['tray3wt']?.toDouble(),
+      tray4wt: json['tray4wt']?.toDouble(),
+      bottleTemp: json['bottleTemp']?.toDouble(),
+      scanVerified: json['scanVerified'],
+      totalScansToday: json['totalScansToday'],
+      verifiedScansToday: json['verifiedScansToday'],
+      failedScansToday: json['failedScansToday'],
+      verificationRate: json['verificationRate']?.toDouble(),
+      avgTotalWeightToday: json['avgTotalWeightToday']?.toDouble(),
+      avgTempToday: json['avgTempToday']?.toDouble(),
+      scansInToday: json['scansInToday'],
+      scansOutToday: json['scansOutToday'],
+      activeScansToday: json['activeScansToday'],
+      totalBottlesToday: json['totalBottlesToday'],
     );
   }
 }

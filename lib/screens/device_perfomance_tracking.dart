@@ -1567,6 +1567,36 @@ class Device6Analytics {
   }
 }
 
+// ─── Device 7 – IoT Bottle Vetting System ────────────────────────────────────
+class Device7Analytics {
+  final String deviceType;
+  final Map<String, dynamic> overallStatistics;
+  final List<Map<String, dynamic>> dailyData;
+  final List<Map<String, dynamic>> hourlyActivity;
+
+  Device7Analytics({
+    required this.deviceType,
+    required this.overallStatistics,
+    required this.dailyData,
+    required this.hourlyActivity,
+  });
+
+  factory Device7Analytics.fromJson(Map<String, dynamic> json) {
+    return Device7Analytics(
+      deviceType: json['device_type'] ?? 'device7',
+      overallStatistics: Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
+      dailyData: (json['daily_data'] as List?)
+              ?.map((e) => Map<String, dynamic>.from(e))
+              .toList() ??
+          [],
+      hourlyActivity: (json['hourly_activity'] as List?)
+              ?.map((e) => Map<String, dynamic>.from(e))
+              .toList() ??
+          [],
+    );
+  }
+}
+
 class Device {
   final int id;
   final String deviceId;
@@ -1711,6 +1741,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Device4Analytics? device4AnalyticsData;
   Device5Analytics? device5AnalyticsData;
   Device6Analytics? device6AnalyticsData;
+  Device7Analytics? device7AnalyticsData;
   bool isLoading = false;
   bool isInitialLoad = true;
   String? errorMessage;
@@ -1797,6 +1828,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         device4AnalyticsData = null;
         device5AnalyticsData = null;
         device6AnalyticsData = null;
+        device7AnalyticsData = null;
 
         // Parse based on device type
         if (deviceType == 'device2') {
@@ -1809,6 +1841,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           device5AnalyticsData = Device5Analytics.fromJson(rawData);
         } else if (deviceType == 'device6') {
           device6AnalyticsData = Device6Analytics.fromJson(rawData);
+        } else if (deviceType == 'device7') {
+          device7AnalyticsData = Device7Analytics.fromJson(rawData);
         } else {
           analyticsData = DeviceAnalytics.fromJson(rawData);
         }
@@ -1884,7 +1918,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           ],
                         ),
                       )
-                    : (analyticsData != null || device2AnalyticsData != null || device3AnalyticsData != null || device4AnalyticsData != null || device5AnalyticsData != null || device6AnalyticsData != null)
+                    : (analyticsData != null || device2AnalyticsData != null || device3AnalyticsData != null || device4AnalyticsData != null || device5AnalyticsData != null || device6AnalyticsData != null || device7AnalyticsData != null)
                         ? Stack(
                             children: [
                               _buildDashboard(),
@@ -1976,6 +2010,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       case 'device4': return 'Multi-Compressor';
       case 'device5': return 'Relay Controller';
       case 'device6': return 'Pressure Monitor';
+      case 'device7': return 'Bottle Vetting';
       default: return type;
     }
   }
@@ -3742,6 +3777,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     } else if (deviceType == 'device6') {
       if (device6AnalyticsData == null) return _noDataWidget();
       return _buildDevice6Dashboard();
+    } else if (deviceType == 'device7') {
+      if (device7AnalyticsData == null) return _noDataWidget();
+      return _buildDevice7Dashboard();
     } else {
       if (analyticsData == null) return _noDataWidget();
       return _buildDevice1Dashboard();
@@ -6916,6 +6954,827 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ),
       ],
     );
+  }
+
+  // ─── Device 7 Dashboard – IoT Bottle Vetting System ─────────────────────────
+  Widget _buildDevice7Dashboard() {
+    final isMobile = _isMobile(context);
+    final padding = isMobile ? 12.0 : 16.0;
+    final spacing = isMobile ? 8.0 : 12.0;
+    final data = device7AnalyticsData!;
+    final stats = data.overallStatistics;
+
+    final totalScans     = stats['total_scans'] as int? ?? 0;
+    final verifiedScans  = stats['verified_scans'] as int? ?? 0;
+    final failedScans    = stats['failed_scans'] as int? ?? 0;
+    final verifyRate     = (stats['verification_rate'] as num?)?.toDouble() ?? 0.0;
+    final scansIn        = stats['scans_in'] as int? ?? 0;
+    final scansOut       = stats['scans_out'] as int? ?? 0;
+    final activeScans    = stats['active_scans'] as int? ?? 0;
+    final totalBottles   = stats['total_bottles'] as int? ?? 0;
+    final tempMap        = Map<String, dynamic>.from(stats['temperature'] as Map? ?? {});
+    final avgTemp        = (tempMap['avg'] as num?)?.toDouble() ?? 0.0;
+    final minTemp        = (tempMap['min'] as num?)?.toDouble() ?? 0.0;
+    final maxTemp        = (tempMap['max'] as num?)?.toDouble() ?? 0.0;
+    final trayMap        = Map<String, dynamic>.from(stats['tray_weights'] as Map? ?? {});
+
+    Color _scanStatusColor(double rate) {
+      if (rate >= 90) return Colors.green;
+      if (rate >= 70) return Colors.orange;
+      return Colors.red;
+    }
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(padding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header summary row ─────────────────────────────────────────────
+          Container(
+            padding: EdgeInsets.all(isMobile ? 16 : 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.deepPurple.shade700, Colors.deepPurple.shade400],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.deepPurple.shade200, blurRadius: 12, offset: Offset(0, 4))],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Icon(Icons.qr_code_scanner, color: Colors.white, size: 22),
+                  SizedBox(width: 8),
+                  Text('Bottle Vetting System', style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                ]),
+                SizedBox(height: 16),
+                isMobile
+                    ? Column(children: [
+                        _device7ScansCard(scansIn, scansOut, activeScans),
+                        SizedBox(height: 8),
+                        _device7StatCard('Auth Rate', '${verifyRate.toStringAsFixed(1)}%', Icons.security, _scanStatusColor(verifyRate).withOpacity(0.8)),
+                        SizedBox(height: 8),
+                        _device7StatCard('Total Bottles', totalBottles.toString(), Icons.liquor, Colors.amber.shade300),
+                        SizedBox(height: 8),
+                        _device7StatCard('Fridge Temp', '${avgTemp.toStringAsFixed(1)}°C', Icons.thermostat,
+                            avgTemp <= 4 ? Colors.cyan.shade200 : avgTemp <= 8 ? Colors.orange.shade300 : Colors.red.shade300),
+                      ])
+                    : Row(children: [
+                        Expanded(child: _device7ScansCard(scansIn, scansOut, activeScans)),
+                        SizedBox(width: 12),
+                        Expanded(child: _device7StatCard('Auth Rate', '${verifyRate.toStringAsFixed(1)}%', Icons.security, _scanStatusColor(verifyRate).withOpacity(0.8))),
+                        SizedBox(width: 12),
+                        Expanded(child: _device7StatCard('Total Bottles', totalBottles.toString(), Icons.liquor, Colors.amber.shade300)),
+                        SizedBox(width: 12),
+                        Expanded(child: _device7StatCard('Fridge Temp', '${avgTemp.toStringAsFixed(1)}°C', Icons.thermostat,
+                            avgTemp <= 4 ? Colors.cyan.shade200 : avgTemp <= 8 ? Colors.orange.shade300 : Colors.red.shade300)),
+                      ]),
+              ],
+            ),
+          ),
+          SizedBox(height: spacing),
+
+          // ── Temperature + Verification gauge row ──────────────────────────
+          isMobile
+              ? Column(children: [
+                  _buildDevice7TempCard(avgTemp, minTemp, maxTemp),
+                  SizedBox(height: spacing),
+                  _buildDevice7VerificationCard(verifyRate, verifiedScans, totalScans),
+                ])
+              : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Expanded(child: _buildDevice7TempCard(avgTemp, minTemp, maxTemp)),
+                  SizedBox(width: spacing),
+                  Expanded(child: _buildDevice7VerificationCard(verifyRate, verifiedScans, totalScans)),
+                ]),
+          SizedBox(height: spacing),
+
+          // ── Tray grid with bottle counts ──────────────────────────────────
+          _buildDevice7TrayGrid(trayMap, isMobile, scansIn, scansOut, activeScans),
+          SizedBox(height: spacing),
+
+          // ── Charts ───────────────────────────────────────────────────────
+          _buildChart('Daily Scan Activity (Total vs Verified)', _buildDevice7DailyScanChart()),
+          SizedBox(height: spacing),
+
+          _buildChart('Hourly Scan Activity', _buildDevice7HourlyChart()),
+          SizedBox(height: spacing),
+
+          _buildChart('Fridge Temperature Trend (Daily Avg)', _buildDevice7TempTrendChart()),
+          SizedBox(height: spacing),
+
+          _buildChart('Daily Bottle Activity (In / Out / Active)', _buildDevice7DailyBottleChart()),
+          SizedBox(height: spacing),
+
+          _buildChart('Tray Weight Overview (avg kg)', _buildDevice7TrayBarChart(trayMap)),
+        ],
+      ),
+    );
+  }
+
+  Widget _device7ScansCard(int scansIn, int scansOut, int activeScans) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.document_scanner, color: Colors.blue.shade300, size: 20),
+            SizedBox(width: 10),
+            Text("Today's Scans", style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+          ]),
+          SizedBox(height: 10),
+          _scanRow('Total Scans (In)', scansIn, Colors.green.shade300),
+          SizedBox(height: 6),
+          _scanRow('Total Scans Out', scansOut, Colors.red.shade300),
+          SizedBox(height: 6),
+          _scanRow('Active (Inside)', activeScans, Colors.amber.shade300),
+        ],
+      ),
+    );
+  }
+
+  Widget _scanRow(String label, int value, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(children: [
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          SizedBox(width: 8),
+          Text(label, style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
+        ]),
+        Text('$value', style: GoogleFonts.inter(color: color, fontSize: 16, fontWeight: FontWeight.w700)),
+      ],
+    );
+  }
+
+  Widget _device7StatCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          SizedBox(width: 10),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(value, style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(label, style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevice7TempCard(double avg, double min, double max) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: Offset(0, 2))]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.thermostat, color: Colors.blue.shade600, size: 18),
+          SizedBox(width: 6),
+          Text('Fridge Temperature', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+        ]),
+        SizedBox(height: 12),
+        Center(
+          child: Text('${avg.toStringAsFixed(1)}°C',
+              style: GoogleFonts.inter(fontSize: 36, fontWeight: FontWeight.w700,
+                  color: avg <= 4 ? Colors.blue.shade700 : avg <= 8 ? Colors.orange : Colors.red)),
+        ),
+        SizedBox(height: 8),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+          Column(children: [
+            Text('${min.toStringAsFixed(1)}°C', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.blue.shade700)),
+            Text('Min', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+          ]),
+          Column(children: [
+            Text('${max.toStringAsFixed(1)}°C', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.red.shade400)),
+            Text('Max', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+          ]),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _buildDevice7VerificationCard(double rate, int verified, int total) {
+    final color = rate >= 90 ? Colors.green : rate >= 70 ? Colors.orange : Colors.red;
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: Offset(0, 2))]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.verified_user, color: color, size: 18),
+          SizedBox(width: 6),
+          Text('QR Verification Rate', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+        ]),
+        SizedBox(height: 12),
+        Center(
+          child: Stack(alignment: Alignment.center, children: [
+            SizedBox(
+              width: 100, height: 100,
+              child: CircularProgressIndicator(
+                value: rate / 100,
+                strokeWidth: 10,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
+            Text('${rate.toStringAsFixed(0)}%',
+                style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, color: color)),
+          ]),
+        ),
+        SizedBox(height: 8),
+        Center(child: Text('$verified / $total scans verified',
+            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600))),
+      ]),
+    );
+  }
+
+  Widget _buildDevice7TrayGrid(Map<String, dynamic> trayMap, bool isMobile, int scansIn, int scansOut, int activeScans) {
+    final trays = ['tray1', 'tray2', 'tray3', 'tray4'];
+    final labels = ['Tray 1', 'Tray 2', 'Tray 3', 'Tray 4'];
+    final colors = [Colors.blue.shade400, Colors.teal.shade400, Colors.purple.shade400, Colors.orange.shade400];
+
+    List<Widget> cards = List.generate(trays.length, (i) {
+      final t = Map<String, dynamic>.from(trayMap[trays[i]] as Map? ?? {});
+      final avg = (t['avg'] as num?)?.toDouble() ?? 0.0;
+      final min = (t['min'] as num?)?.toDouble() ?? 0.0;
+      final max = (t['max'] as num?)?.toDouble() ?? 0.0;
+      return Container(
+        padding: EdgeInsets.all(14),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: Offset(0, 2))]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(Icons.scale, color: colors[i], size: 16),
+            SizedBox(width: 6),
+            Text(labels[i], style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+          ]),
+          SizedBox(height: 8),
+          Text('${avg.toStringAsFixed(3)} kg', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: colors[i])),
+          Text('avg weight', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey)),
+          SizedBox(height: 4),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text('↓ ${min.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 11, color: Colors.blue.shade600)),
+            Text('↑ ${max.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 11, color: Colors.red.shade400)),
+          ]),
+        ]),
+      );
+    });
+
+    // Bottle summary card
+    final bottleSummary = Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white, borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: Offset(0, 2))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.liquor, color: Colors.deepPurple, size: 18),
+          SizedBox(width: 6),
+          Text('Bottle Tracking', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+        ]),
+        SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildBottleCountColumn('Scanned In', scansIn, Colors.green.shade600),
+            Container(width: 1, height: 40, color: Colors.grey.shade200),
+            _buildBottleCountColumn('Still Inside', activeScans, Colors.amber.shade700),
+            Container(width: 1, height: 40, color: Colors.grey.shade200),
+            _buildBottleCountColumn('Scanned Out', scansOut, Colors.red.shade400),
+          ],
+        ),
+      ]),
+    );
+
+    if (isMobile) {
+      return Column(children: [
+        Row(children: [Expanded(child: cards[0]), SizedBox(width: 8), Expanded(child: cards[1])]),
+        SizedBox(height: 8),
+        Row(children: [Expanded(child: cards[2]), SizedBox(width: 8), Expanded(child: cards[3])]),
+        SizedBox(height: 8),
+        bottleSummary,
+      ]);
+    }
+    return Column(children: [
+      Row(
+        children: List.generate(4, (i) => Expanded(
+          child: Padding(padding: EdgeInsets.only(right: i < 3 ? 10 : 0), child: cards[i]),
+        )),
+      ),
+      SizedBox(height: 10),
+      bottleSummary,
+    ]);
+  }
+
+  Widget _buildBottleCountColumn(String label, int count, Color color) {
+    return Column(children: [
+      Text('$count', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: color)),
+      SizedBox(height: 2),
+      Text(label, style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600)),
+    ]);
+  }
+
+  Widget _buildDevice7DailyScanChart() {
+    final data = device7AnalyticsData!.dailyData;
+    if (data.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(Icons.bar_chart_outlined, size: 48, color: Colors.grey.shade300),
+      const SizedBox(height: 8),
+      Text('No scan data available', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+    ]));
+
+    final maxScans = data.map((d) => (d['scans'] as num?)?.toDouble() ?? 0.0).reduce((a, b) => a > b ? a : b);
+    final yMax = (maxScans * 1.3).clamp(5.0, double.infinity);
+    final hInterval = (yMax / 4).clamp(1.0, double.infinity);
+    final labelInterval = data.length > 1 ? (data.length / 5).ceilToDouble().clamp(1.0, double.infinity) : 1.0;
+
+    return Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        _buildLegendItem(Colors.deepPurple, 'Total Scans'),
+        const SizedBox(width: 20),
+        _buildLegendItem(Colors.green.shade600, 'Verified'),
+      ]),
+      const SizedBox(height: 8),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(right: 16, top: 4),
+          child: LineChart(LineChartData(
+            minY: 0, maxY: yMax,
+            gridData: FlGridData(
+              show: true, drawVerticalLine: false, horizontalInterval: hInterval,
+              getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+            ),
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, reservedSize: 28, interval: labelInterval,
+                getTitlesWidget: (value, meta) {
+                  final idx = value.toInt();
+                  if (idx < 0 || idx >= data.length) return const SizedBox();
+                  final d = data[idx]['date']?.toString() ?? '';
+                  final parts = d.split('-');
+                  return Padding(padding: const EdgeInsets.only(top: 4),
+                      child: Text(parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
+                          style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                },
+              )),
+              leftTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, reservedSize: 36, interval: hInterval,
+                getTitlesWidget: (v, m) => Text('${v.toInt()}', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+              )),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            lineTouchData: LineTouchData(
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipColor: (_) => Colors.blueGrey.shade800,
+                getTooltipItems: (spots) => spots.map((spot) {
+                  final d = data[spot.x.toInt()];
+                  final isTotal = spot.barIndex == 0;
+                  return LineTooltipItem(
+                    isTotal ? '${d['date']}\n' : '',
+                    GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                    children: [TextSpan(
+                      text: isTotal ? 'Total: ${spot.y.toInt()} scans' : 'Verified: ${spot.y.toInt()} scans',
+                      style: TextStyle(
+                          color: isTotal ? Colors.purple.shade200 : Colors.green.shade300,
+                          fontWeight: FontWeight.w600, fontSize: 11),
+                    )],
+                  );
+                }).toList(),
+              ),
+            ),
+            lineBarsData: [
+              LineChartBarData(
+                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['scans'] as num?)?.toDouble() ?? 0)),
+                isCurved: true, curveSmoothness: 0.3,
+                color: Colors.deepPurple, barWidth: 2.5,
+                dotData: FlDotData(
+                  show: data.length <= 7,
+                  getDotPainter: (s, p, b, i) => FlDotCirclePainter(radius: 3, color: Colors.deepPurple, strokeWidth: 0),
+                ),
+                shadow: Shadow(color: Colors.deepPurple.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2)),
+                belowBarData: BarAreaData(show: true, gradient: LinearGradient(
+                    colors: [Colors.deepPurple.withValues(alpha: 0.18), Colors.deepPurple.withValues(alpha: 0.01)],
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+              ),
+              LineChartBarData(
+                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['verified'] as num?)?.toDouble() ?? 0)),
+                isCurved: true, curveSmoothness: 0.3,
+                color: Colors.green.shade600, barWidth: 2.5,
+                dotData: FlDotData(
+                  show: data.length <= 7,
+                  getDotPainter: (s, p, b, i) => FlDotCirclePainter(radius: 3, color: Colors.green.shade600, strokeWidth: 0),
+                ),
+                shadow: Shadow(color: Colors.green.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2)),
+                belowBarData: BarAreaData(show: true, gradient: LinearGradient(
+                    colors: [Colors.green.withValues(alpha: 0.12), Colors.green.withValues(alpha: 0.01)],
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+              ),
+            ],
+          )),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _buildDevice7DailyBottleChart() {
+    final data = device7AnalyticsData!.dailyData;
+    if (data.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(Icons.liquor_outlined, size: 48, color: Colors.grey.shade300),
+      const SizedBox(height: 8),
+      Text('No bottle data available', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+    ]));
+
+    final allValues = data.expand((d) => [
+      (d['scans_in'] as num?)?.toDouble() ?? 0.0,
+      (d['scans_out'] as num?)?.toDouble() ?? 0.0,
+      (d['active'] as num?)?.toDouble() ?? 0.0,
+    ]);
+    final maxVal = allValues.isEmpty ? 5.0 : allValues.reduce((a, b) => a > b ? a : b);
+    final yMax = (maxVal * 1.3).clamp(3.0, double.infinity);
+    final hInterval = (yMax / 4).clamp(1.0, double.infinity);
+    final labelInterval = data.length > 1 ? (data.length / 5).ceilToDouble().clamp(1.0, double.infinity) : 1.0;
+
+    return Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        _buildLegendItem(Colors.green.shade500, 'Scanned In'),
+        const SizedBox(width: 16),
+        _buildLegendItem(Colors.red.shade400, 'Scanned Out'),
+        const SizedBox(width: 16),
+        _buildLegendItem(Colors.amber.shade700, 'Active (Inside)'),
+      ]),
+      const SizedBox(height: 8),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(right: 16, top: 4),
+          child: LineChart(LineChartData(
+            minY: 0, maxY: yMax,
+            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: hInterval,
+                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, reservedSize: 28, interval: labelInterval,
+                getTitlesWidget: (value, meta) {
+                  final idx = value.toInt();
+                  if (idx < 0 || idx >= data.length) return const SizedBox();
+                  final d = data[idx]['date']?.toString() ?? '';
+                  final parts = d.split('-');
+                  return Padding(padding: const EdgeInsets.only(top: 4),
+                      child: Text(parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
+                          style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                },
+              )),
+              leftTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, reservedSize: 32, interval: hInterval,
+                getTitlesWidget: (v, m) => Text('${v.toInt()}', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+              )),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            lineTouchData: LineTouchData(
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipColor: (_) => Colors.blueGrey.shade800,
+                getTooltipItems: (spots) => spots.map((spot) {
+                  final d = data[spot.x.toInt()];
+                  final labels = ['In: ${spot.y.toInt()} bottles', 'Out: ${spot.y.toInt()} bottles', 'Active: ${spot.y.toInt()} bottles'];
+                  final colors = [Colors.green.shade300, Colors.red.shade300, Colors.amber.shade300];
+                  return LineTooltipItem(
+                    spot.barIndex == 0 ? '${d['date']}\n' : '',
+                    GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                    children: [TextSpan(
+                      text: labels[spot.barIndex],
+                      style: TextStyle(color: colors[spot.barIndex], fontWeight: FontWeight.w600, fontSize: 11),
+                    )],
+                  );
+                }).toList(),
+              ),
+            ),
+            lineBarsData: [
+              LineChartBarData(
+                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['scans_in'] as num?)?.toDouble() ?? 0)),
+                isCurved: true, curveSmoothness: 0.3, color: Colors.green.shade500, barWidth: 2.5,
+                dotData: FlDotData(show: data.length <= 7,
+                    getDotPainter: (s, p, b, i) => FlDotCirclePainter(radius: 3, color: Colors.green.shade500, strokeWidth: 0)),
+                belowBarData: BarAreaData(show: true, gradient: LinearGradient(
+                    colors: [Colors.green.withValues(alpha: 0.15), Colors.green.withValues(alpha: 0.01)],
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+              ),
+              LineChartBarData(
+                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['scans_out'] as num?)?.toDouble() ?? 0)),
+                isCurved: true, curveSmoothness: 0.3, color: Colors.red.shade400, barWidth: 2.5,
+                dotData: FlDotData(show: data.length <= 7,
+                    getDotPainter: (s, p, b, i) => FlDotCirclePainter(radius: 3, color: Colors.red.shade400, strokeWidth: 0)),
+              ),
+              LineChartBarData(
+                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['active'] as num?)?.toDouble() ?? 0)),
+                isCurved: true, curveSmoothness: 0.3, color: Colors.amber.shade700, barWidth: 2.5,
+                dashArray: [6, 3],
+                dotData: FlDotData(show: data.length <= 7,
+                    getDotPainter: (s, p, b, i) => FlDotCirclePainter(radius: 3, color: Colors.amber.shade700, strokeWidth: 0)),
+                belowBarData: BarAreaData(show: true, gradient: LinearGradient(
+                    colors: [Colors.amber.withValues(alpha: 0.12), Colors.amber.withValues(alpha: 0.01)],
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+              ),
+            ],
+          )),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _buildDevice7TrayBarChart(Map<String, dynamic> trayMap) {
+    final trays = ['tray1', 'tray2', 'tray3', 'tray4'];
+    final labels = ['Tray 1', 'Tray 2', 'Tray 3', 'Tray 4'];
+    final colors = [Colors.blue.shade400, Colors.teal.shade400, Colors.purple.shade400, Colors.orange.shade400];
+
+    final avgs = trays.map((t) {
+      final d = Map<String, dynamic>.from(trayMap[t] as Map? ?? {});
+      return (d['avg'] as num?)?.toDouble() ?? 0.0;
+    }).toList();
+    final maxAvg = avgs.isEmpty ? 1.0 : avgs.reduce((a, b) => a > b ? a : b);
+    final yMax = (maxAvg * 1.3).clamp(0.1, double.infinity);
+
+    return Column(children: [
+      Wrap(
+        spacing: 16, runSpacing: 4,
+        alignment: WrapAlignment.center,
+        children: List.generate(4, (i) => _buildLegendItem(colors[i], labels[i])),
+      ),
+      const SizedBox(height: 8),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(right: 16, top: 4),
+          child: BarChart(BarChartData(
+            alignment: BarChartAlignment.spaceAround,
+            minY: 0, maxY: yMax,
+            barTouchData: BarTouchData(
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipColor: (_) => Colors.blueGrey.shade800,
+                getTooltipItem: (group, gi, rod, ri) {
+                  final t = Map<String, dynamic>.from(trayMap[trays[gi]] as Map? ?? {});
+                  final avg = (t['avg'] as num?)?.toDouble() ?? 0.0;
+                  final mn = (t['min'] as num?)?.toDouble() ?? 0.0;
+                  final mx = (t['max'] as num?)?.toDouble() ?? 0.0;
+                  return BarTooltipItem(
+                    '${labels[gi]}\n',
+                    GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                    children: [
+                      TextSpan(text: 'Avg: ${avg.toStringAsFixed(3)} kg\n',
+                          style: TextStyle(color: colors[gi].withValues(alpha: 0.9), fontWeight: FontWeight.bold, fontSize: 12)),
+                      TextSpan(text: 'Min: ${mn.toStringAsFixed(3)} kg   Max: ${mx.toStringAsFixed(3)} kg',
+                          style: TextStyle(color: Colors.white54, fontSize: 10)),
+                    ],
+                  );
+                },
+              ),
+            ),
+            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: yMax / 4,
+                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, reservedSize: 28,
+                getTitlesWidget: (value, meta) {
+                  final idx = value.toInt();
+                  if (idx < 0 || idx >= labels.length) return const SizedBox();
+                  return Padding(padding: const EdgeInsets.only(top: 6),
+                      child: Text(labels[idx].replaceAll('Tray ', 'T'),
+                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: colors[idx])));
+                },
+              )),
+              leftTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, reservedSize: 52, interval: yMax / 4,
+                getTitlesWidget: (v, m) => Text('${v.toStringAsFixed(2)} kg', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+              )),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            barGroups: List.generate(4, (i) {
+              return BarChartGroupData(x: i, barRods: [
+                BarChartRodData(
+                  toY: avgs[i],
+                  color: colors[i],
+                  width: 48,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                  backDrawRodData: BackgroundBarChartRodData(show: true, toY: yMax, color: colors[i].withValues(alpha: 0.06)),
+                ),
+              ]);
+            }),
+          )),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _buildDevice7HourlyChart() {
+    final data = device7AnalyticsData!.hourlyActivity;
+    if (data.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(Icons.access_time_outlined, size: 48, color: Colors.grey.shade300),
+      const SizedBox(height: 8),
+      Text('No hourly data available', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+    ]));
+
+    String formatHour(String h) {
+      try { final dt = DateTime.parse(h); return '${dt.hour.toString().padLeft(2, '0')}h'; }
+      catch (_) { return h.length >= 13 ? h.substring(11, 13) : h; }
+    }
+
+    final maxScans = data.map((d) => (d['scans'] as num?)?.toDouble() ?? 0.0).reduce((a, b) => a > b ? a : b);
+    final yMax = (maxScans * 1.3).clamp(2.0, double.infinity);
+    final labelInterval = data.length > 12 ? (data.length / 6).ceilToDouble() : 1.0;
+    final barWidth = (220.0 / data.length.clamp(1, 30)).clamp(3.0, 18.0);
+
+    return Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        _buildLegendItem(Colors.indigo.shade400, 'Total Scans'),
+        const SizedBox(width: 20),
+        _buildLegendItem(Colors.green.shade500, 'Verified'),
+      ]),
+      const SizedBox(height: 8),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(right: 16, top: 4),
+          child: BarChart(BarChartData(
+            alignment: BarChartAlignment.spaceAround,
+            minY: 0, maxY: yMax,
+            barTouchData: BarTouchData(
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipColor: (_) => Colors.blueGrey.shade800,
+                getTooltipItem: (group, gi, rod, ri) {
+                  final d = data[gi];
+                  final scans = d['scans'] ?? 0;
+                  final verified = d['verified'] ?? 0;
+                  return BarTooltipItem(
+                    '${formatHour(d['hour']?.toString() ?? '')}\n',
+                    GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                    children: [
+                      TextSpan(text: ri == 0 ? 'Total: $scans scans' : 'Verified: $verified',
+                          style: TextStyle(
+                              color: ri == 0 ? Colors.indigo.shade200 : Colors.green.shade300,
+                              fontWeight: FontWeight.w600, fontSize: 11)),
+                    ],
+                  );
+                },
+              ),
+            ),
+            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: yMax / 4,
+                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, reservedSize: 28, interval: labelInterval,
+                getTitlesWidget: (value, meta) {
+                  final idx = value.toInt();
+                  if (idx < 0 || idx >= data.length) return const SizedBox();
+                  return Padding(padding: const EdgeInsets.only(top: 4),
+                      child: Text(formatHour(data[idx]['hour']?.toString() ?? ''),
+                          style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                },
+              )),
+              leftTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, reservedSize: 32, interval: yMax / 4,
+                getTitlesWidget: (v, m) => Text('${v.toInt()}', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+              )),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            barGroups: List.generate(data.length, (i) {
+              final scans = (data[i]['scans'] as num?)?.toDouble() ?? 0.0;
+              final verified = (data[i]['verified'] as num?)?.toDouble() ?? 0.0;
+              return BarChartGroupData(x: i, barsSpace: 2, barRods: [
+                BarChartRodData(
+                  toY: scans,
+                  gradient: LinearGradient(colors: [Colors.indigo.shade400, Colors.indigo.shade200],
+                      begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                  width: barWidth,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+                ),
+                BarChartRodData(
+                  toY: verified,
+                  gradient: LinearGradient(colors: [Colors.green.shade400, Colors.green.shade200],
+                      begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                  width: barWidth,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+                ),
+              ]);
+            }),
+          )),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _buildDevice7TempTrendChart() {
+    final raw = device7AnalyticsData!.dailyData;
+    final data = raw.where((d) => (d['avg_temp'] as num?)?.toDouble() != null).toList();
+    if (data.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(Icons.thermostat_outlined, size: 48, color: Colors.grey.shade300),
+      const SizedBox(height: 8),
+      Text('No temperature data', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+    ]));
+
+    final temps = data.map((d) => (d['avg_temp'] as num?)?.toDouble() ?? 0.0).toList();
+    final minT = temps.reduce((a, b) => a < b ? a : b);
+    final maxT = temps.reduce((a, b) => a > b ? a : b);
+    final yMin = (minT - 2.0).clamp(-20.0, 100.0);
+    final yMax = (maxT + 2.0).clamp(yMin + 4.0, 100.0);
+    final hInterval = ((yMax - yMin) / 4).clamp(0.5, double.infinity);
+    final labelInterval = data.length > 1 ? (data.length / 5).ceilToDouble().clamp(1.0, double.infinity) : 1.0;
+
+    Color tempColor(double t) {
+      if (t <= 4) return Colors.blue.shade500;
+      if (t <= 8) return Colors.orange.shade500;
+      return Colors.red.shade500;
+    }
+
+    return Column(children: [
+      Wrap(spacing: 12, runSpacing: 4, alignment: WrapAlignment.center, children: [
+        _buildLegendItem(Colors.blue.shade500, '≤ 4°C Optimal'),
+        _buildLegendItem(Colors.orange.shade500, '4–8°C Warning'),
+        _buildLegendItem(Colors.red.shade500, '> 8°C Critical'),
+      ]),
+      const SizedBox(height: 8),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(right: 16, top: 4),
+          child: LineChart(LineChartData(
+            minY: yMin, maxY: yMax,
+            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: hInterval,
+                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, reservedSize: 28, interval: labelInterval,
+                getTitlesWidget: (value, meta) {
+                  final idx = value.toInt();
+                  if (idx < 0 || idx >= data.length) return const SizedBox();
+                  final d = data[idx]['date']?.toString() ?? '';
+                  final parts = d.split('-');
+                  return Padding(padding: const EdgeInsets.only(top: 4),
+                      child: Text(parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
+                          style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                },
+              )),
+              leftTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true, reservedSize: 42, interval: hInterval,
+                getTitlesWidget: (v, m) => Text('${v.toStringAsFixed(1)}°C', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+              )),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            lineTouchData: LineTouchData(
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipColor: (_) => Colors.blueGrey.shade800,
+                getTooltipItems: (spots) => spots.map((spot) {
+                  final d = data[spot.x.toInt()];
+                  final color = tempColor(spot.y);
+                  return LineTooltipItem(
+                    '${d['date']}\n',
+                    GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                    children: [TextSpan(
+                      text: '${spot.y.toStringAsFixed(1)}°C avg fridge temp',
+                      style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 11),
+                    )],
+                  );
+                }).toList(),
+              ),
+            ),
+            lineBarsData: [
+              LineChartBarData(
+                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), temps[i])),
+                isCurved: true, curveSmoothness: 0.3, barWidth: 2.5,
+                color: Colors.cyan.shade500,
+                dotData: FlDotData(
+                  show: true,
+                  getDotPainter: (spot, pct, bar, i) => FlDotCirclePainter(
+                    radius: 4, color: tempColor(spot.y), strokeWidth: 1.5,
+                    strokeColor: Colors.white,
+                  ),
+                ),
+                shadow: Shadow(color: Colors.cyan.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2)),
+                belowBarData: BarAreaData(show: true, gradient: LinearGradient(
+                    colors: [Colors.cyan.withValues(alpha: 0.15), Colors.cyan.withValues(alpha: 0.01)],
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+              ),
+            ],
+          )),
+        ),
+      ),
+    ]);
   }
 
   // Device 1 Dashboard (Original refrigeration unit dashboard)

@@ -23,6 +23,7 @@ import '../models/daily_summar_records.dart';
 import '../models/notification.dart';
 import '../services/dashboard_services.dart';
 import '../services/myNotifier.dart';
+import '../widgets/ai_chat_panel.dart';
 import 'device_perfomance_tracking.dart';
 import 'device_management.dart';
 import 'geo_fencing.dart';
@@ -274,10 +275,17 @@ Widget _buildChartsTabView() {
 
 Widget _buildHourlyTrendsChart() {
   if (hourlyAggregatesList.isEmpty) {
-    return Center(
-        child: Text("No hourly data available",
-            style: GoogleFonts.inter(color: Colors.grey)));
+    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(Icons.show_chart, size: 48, color: Colors.grey.shade300),
+      SizedBox(height: 8),
+      Text("No hourly data available", style: GoogleFonts.inter(color: Colors.grey[500])),
+    ]));
   }
+
+  final n = hourlyAggregatesList.length;
+  final labelInterval = n > 12 ? (n / 6).ceilToDouble() : (n > 6 ? 2.0 : 1.0);
+  final tempMax = hourlyAggregatesList.map((e) => e.avgTempAir ?? 0.0).reduce((a, b) => a > b ? a : b);
+  final yMax = (tempMax * 1.2).clamp(10.0, double.infinity);
 
   return Padding(
     padding: EdgeInsets.all(16),
@@ -285,71 +293,96 @@ Widget _buildHourlyTrendsChart() {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("Temperature & Pressure Trends (Today)",
-            style:
-                GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500)),
-        SizedBox(height: 16),
+            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500)),
+        SizedBox(height: 8),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          _buildLegendItem("Temperature (°C)", Colors.blue.shade500),
+          SizedBox(width: 20),
+          _buildLegendItem("Pressure/10 (psi)", Colors.orange.shade500),
+        ]),
+        SizedBox(height: 8),
         Expanded(
           child: LineChart(
             LineChartData(
-              gridData: FlGridData(show: true, drawVerticalLine: false),
+              minY: 0, maxY: yMax,
+              gridData: FlGridData(
+                show: true, drawVerticalLine: false,
+                horizontalInterval: yMax / 4,
+                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+              ),
               titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (value, meta) {
-                      final index = value.toInt();
-                      if (index >= 0 && index < hourlyAggregatesList.length) {
-                        final hour = DateTime.parse(
-                            hourlyAggregatesList[index].hourBucket!);
-                        return Text(DateFormat('HH:mm').format(hour),
-                            style: GoogleFonts.inter(fontSize: 10));
-                      }
-                      return Text('');
-                    },
-                  ),
-                ),
-                topTitles:
-                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles:
-                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 40,
+                  getTitlesWidget: (v, m) => Text('${v.toInt()}', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                )),
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 24,
+                  interval: labelInterval,
+                  getTitlesWidget: (value, meta) {
+                    final index = value.toInt();
+                    if (index >= 0 && index < hourlyAggregatesList.length && hourlyAggregatesList[index].hourBucket != null) {
+                      final hour = DateTime.parse(hourlyAggregatesList[index].hourBucket!);
+                      return Padding(padding: EdgeInsets.only(top: 4),
+                          child: Text(DateFormat('HH:mm').format(hour),
+                              style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                    }
+                    return const SizedBox();
+                  },
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (_) => Colors.blueGrey.shade800,
+                  getTooltipItems: (spots) => spots.map((spot) {
+                    final entry = hourlyAggregatesList[spot.x.toInt()];
+                    final hour = entry.hourBucket != null
+                        ? DateFormat('HH:mm').format(DateTime.parse(entry.hourBucket!))
+                        : '--';
+                    final isTemp = spot.barIndex == 0;
+                    return LineTooltipItem(
+                      isTemp ? '$hour\n' : '',
+                      GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                      children: [TextSpan(
+                        text: isTemp
+                            ? '${spot.y.toStringAsFixed(1)}°C temp'
+                            : '${(spot.y * 10).toStringAsFixed(1)} psi pressure',
+                        style: TextStyle(
+                            color: isTemp ? Colors.blue.shade200 : Colors.orange.shade200,
+                            fontWeight: FontWeight.w600, fontSize: 11),
+                      )],
+                    );
+                  }).toList(),
+                ),
+              ),
               lineBarsData: [
                 LineChartBarData(
-                  spots: hourlyAggregatesList.asMap().entries.map((entry) {
-                    return FlSpot(
-                        entry.key.toDouble(), entry.value.avgTempAir ?? 0);
-                  }).toList(),
-                  isCurved: true,
-                  color: Constants.ctaColorLight,
-                  barWidth: 3,
+                  spots: hourlyAggregatesList.asMap().entries.map((e) =>
+                      FlSpot(e.key.toDouble(), e.value.avgTempAir ?? 0)).toList(),
+                  isCurved: true, color: Colors.blue.shade500, barWidth: 2.5,
                   dotData: FlDotData(show: false),
+                  shadow: Shadow(color: Colors.blue.withValues(alpha: 0.2), blurRadius: 6),
+                  belowBarData: BarAreaData(show: true, gradient: LinearGradient(
+                    colors: [Colors.blue.withValues(alpha: 0.15), Colors.blue.withValues(alpha: 0.01)],
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  )),
                 ),
                 LineChartBarData(
-                  spots: hourlyAggregatesList.asMap().entries.map((entry) {
-                    return FlSpot(
-                        entry.key.toDouble(),
-                        (entry.value.avgLowSidePressure ?? 0) /
-                            10); // Scale for visibility
-                  }).toList(),
-                  isCurved: true,
-                  color: Constants.ctaColorLight,
-                  barWidth: 3,
+                  spots: hourlyAggregatesList.asMap().entries.map((e) =>
+                      FlSpot(e.key.toDouble(), (e.value.avgLowSidePressure ?? 0) / 10)).toList(),
+                  isCurved: true, color: Colors.orange.shade500, barWidth: 2.5,
                   dotData: FlDotData(show: false),
+                  shadow: Shadow(color: Colors.orange.withValues(alpha: 0.2), blurRadius: 6),
+                  belowBarData: BarAreaData(show: true, gradient: LinearGradient(
+                    colors: [Colors.orange.withValues(alpha: 0.10), Colors.orange.withValues(alpha: 0.01)],
+                    begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  )),
                 ),
               ],
             ),
           ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem("Temperature (°C)", Colors.blue),
-            SizedBox(width: 20),
-            _buildLegendItem("Pressure/10 (psi)", Constants.ctaColorLight),
-          ],
         ),
       ],
     ),
@@ -358,54 +391,79 @@ Widget _buildHourlyTrendsChart() {
 
 Widget _buildDailySummaryChart() {
   if (dailyAggregatesList.isEmpty) {
-    return Center(
-        child: Text("No daily data available",
-            style: GoogleFonts.inter(color: Colors.grey)));
+    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(Icons.bar_chart_outlined, size: 48, color: Colors.grey.shade300),
+      SizedBox(height: 8),
+      Text("No daily data available", style: GoogleFonts.inter(color: Colors.grey[500])),
+    ]));
   }
+
+  final maxY = (dailyAggregatesList.map((e) => e.maxTempAir ?? 0).reduce((a, b) => a > b ? a : b) + 5).toDouble();
+  final minY = (dailyAggregatesList.map((e) => e.minTempAir ?? 0).reduce((a, b) => a < b ? a : b) - 5).toDouble();
 
   return Padding(
     padding: EdgeInsets.all(16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("7-Day Temperature Range",
-            style:
-                GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500)),
-        SizedBox(height: 16),
+        Text("7-Day Temperature Range (Min–Max)",
+            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500)),
+        SizedBox(height: 8),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          _buildLegendItem("Temp Range (Min–Max)", Constants.ctaColorLight),
+        ]),
+        SizedBox(height: 8),
         Expanded(
           child: BarChart(
             BarChartData(
               alignment: BarChartAlignment.spaceAround,
-              maxY: dailyAggregatesList
-                      .map((e) => e.maxTempAir ?? 0)
-                      .reduce((a, b) => a > b ? a : b) +
-                  5,
-              minY: dailyAggregatesList
-                      .map((e) => e.minTempAir ?? 0)
-                      .reduce((a, b) => a < b ? a : b) -
-                  5,
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (value, meta) {
-                      final index = value.toInt();
-                      if (index >= 0 && index < dailyAggregatesList.length) {
-                        final date = DateTime.parse(
-                            dailyAggregatesList[index].dayBucket!);
-                        return Text(DateFormat('MM/dd').format(date),
-                            style: GoogleFonts.inter(fontSize: 10));
-                      }
-                      return Text('');
-                    },
-                  ),
+              maxY: maxY, minY: minY,
+              barTouchData: BarTouchData(
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipColor: (_) => Colors.blueGrey.shade800,
+                  getTooltipItem: (group, gi, rod, ri) {
+                    final d = dailyAggregatesList[gi];
+                    final date = d.dayBucket != null
+                        ? DateFormat('MMM dd').format(DateTime.parse(d.dayBucket!))
+                        : '--';
+                    return BarTooltipItem(
+                      '$date\n',
+                      GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                      children: [
+                        TextSpan(text: 'Max: ${(d.maxTempAir ?? 0).toStringAsFixed(1)}°C\n',
+                            style: TextStyle(color: Colors.red.shade300, fontWeight: FontWeight.w600, fontSize: 11)),
+                        TextSpan(text: 'Min: ${(d.minTempAir ?? 0).toStringAsFixed(1)}°C',
+                            style: TextStyle(color: Colors.blue.shade300, fontSize: 10)),
+                      ],
+                    );
+                  },
                 ),
-                topTitles:
-                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles:
-                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: FlGridData(
+                show: true, drawVerticalLine: false,
+                horizontalInterval: (maxY - minY) / 4,
+                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 40,
+                  getTitlesWidget: (v, m) => Text('${v.toInt()}°', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                )),
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 24,
+                  getTitlesWidget: (value, meta) {
+                    final index = value.toInt();
+                    if (index >= 0 && index < dailyAggregatesList.length && dailyAggregatesList[index].dayBucket != null) {
+                      final date = DateTime.parse(dailyAggregatesList[index].dayBucket!);
+                      return Padding(padding: EdgeInsets.only(top: 4),
+                          child: Text(DateFormat('MM/dd').format(date),
+                              style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                    }
+                    return const SizedBox();
+                  },
+                )),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
               barGroups: dailyAggregatesList.asMap().entries.map((entry) {
@@ -416,7 +474,10 @@ Widget _buildDailySummaryChart() {
                     BarChartRodData(
                       toY: data.maxTempAir ?? 0,
                       fromY: data.minTempAir ?? 0,
-                      color: Constants.ctaColorLight.withOpacity(0.7),
+                      gradient: LinearGradient(
+                        colors: [Colors.red.shade300, Constants.ctaColorLight, Colors.blue.shade300],
+                        begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                      ),
                       width: 20,
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -1225,6 +1286,45 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           status: states[i] == true ? 'Active' : 'Inactive',
         );
       });
+    } else if (deviceType == 'device7') {
+      // Device7: Bottle Vetting – tray weights + temperature
+      temperatureRanges = [
+        TemperatureRange(
+          sensor: 'Tray 1 Weight',
+          current: selectedDevice.tray1wt,
+          min: null, max: null, avg: null,
+          unit: 'kg',
+          status: selectedDevice.tray1wt != null ? 'Active' : 'No Data',
+        ),
+        TemperatureRange(
+          sensor: 'Tray 2 Weight',
+          current: selectedDevice.tray2wt,
+          min: null, max: null, avg: null,
+          unit: 'kg',
+          status: selectedDevice.tray2wt != null ? 'Active' : 'No Data',
+        ),
+        TemperatureRange(
+          sensor: 'Tray 3 Weight',
+          current: selectedDevice.tray3wt,
+          min: null, max: null, avg: null,
+          unit: 'kg',
+          status: selectedDevice.tray3wt != null ? 'Active' : 'No Data',
+        ),
+        TemperatureRange(
+          sensor: 'Tray 4 Weight',
+          current: selectedDevice.tray4wt,
+          min: null, max: null, avg: null,
+          unit: 'kg',
+          status: selectedDevice.tray4wt != null ? 'Active' : 'No Data',
+        ),
+        TemperatureRange(
+          sensor: 'Fridge Temp',
+          current: selectedDevice.bottleTemp,
+          min: null, max: null, avg: null,
+          unit: '°C',
+          status: selectedDevice.bottleTemp != null ? 'Active' : 'No Data',
+        ),
+      ];
     } else if (deviceType == 'device6') {
       // Device6: pressure monitoring - all 8 sensors with min/max/timestamps/averages
       List<double?> vals = [selectedDevice.prs1, selectedDevice.prs2, selectedDevice.prs3, selectedDevice.prs4, selectedDevice.prs5, selectedDevice.prs6, selectedDevice.prs7, selectedDevice.prs8];
@@ -1489,6 +1589,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     } else if (deviceType == 'device6') {
       // Device 6: Pressure monitoring
       enhancedSummaryCards = _buildDevice6SummaryCards(selectedDevice);
+    } else if (deviceType == 'device7') {
+      // Device 7: Bottle Vetting System
+      enhancedSummaryCards = _buildDevice7SummaryCards(selectedDevice);
     } else {
       // Device 1: Refrigeration unit (default)
       enhancedSummaryCards = _buildDevice1SummaryCards(selectedDevice, dailyData);
@@ -2010,6 +2113,71 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     ];
   }
 
+  // Device 7 Summary Cards (Bottle Vetting System)
+  List<EnhancedSummaryCard> _buildDevice7SummaryCards(LatestDeviceData d) {
+    final rate = d.verificationRate ?? 0.0;
+    final scansIn = d.scansInToday ?? 0;
+    final scansOut = d.scansOutToday ?? 0;
+    final activeScans = d.activeScansToday ?? (scansIn - scansOut).clamp(0, double.maxFinite).toInt();
+    final totalBottles = d.totalBottlesToday ?? 0;
+    return [
+      EnhancedSummaryCard(
+        title: 'Today\'s Scans',
+        value: '$activeScans',
+        unit: 'active',
+        subtitle: '$scansIn scans in · $scansOut scans out',
+        trend: activeScans > 0 ? 'Active' : 'No Activity',
+        trendDirection: 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: Constants.ctaColorLight,
+        icon: FontAwesomeIcons.qrcode,
+        alerts: [],
+      ),
+      EnhancedSummaryCard(
+        title: 'Auth Rate',
+        value: '${rate.toStringAsFixed(1)}',
+        unit: '%',
+        subtitle: rate >= 90 ? 'Excellent – minimal counterfeit risk'
+            : rate >= 70 ? 'Warning – check suspect bottles'
+            : 'Critical – high counterfeit risk',
+        trend: rate >= 90 ? 'Good' : rate >= 70 ? 'Warning' : 'Critical',
+        trendDirection: rate >= 90 ? 'stable' : 'down',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: rate >= 90 ? Colors.green : rate >= 70 ? Colors.orange : Colors.red,
+        icon: FontAwesomeIcons.shieldAlt,
+        alerts: rate < 70 ? ['High counterfeit risk detected'] : [],
+      ),
+      EnhancedSummaryCard(
+        title: 'Total Bottles',
+        value: '$totalBottles',
+        unit: '',
+        subtitle: totalBottles > 0 ? 'Unique bottles scanned today' : 'No bottles scanned',
+        trend: totalBottles > 0 ? 'Active' : 'No Activity',
+        trendDirection: 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: Constants.ctaColorLight,
+        icon: FontAwesomeIcons.wineBottle,
+        alerts: [],
+      ),
+      EnhancedSummaryCard(
+        title: 'Fridge Temperature',
+        value: d.bottleTemp?.toStringAsFixed(1) ?? '--',
+        unit: '°C',
+        subtitle: d.bottleTemp != null
+            ? (d.bottleTemp! <= 4 ? 'Optimal cold chain' : d.bottleTemp! <= 8 ? 'Slightly warm' : 'Temperature alert')
+            : 'No reading',
+        trend: d.bottleTemp != null && d.bottleTemp! <= 4 ? 'Normal' : 'Check',
+        trendDirection: d.bottleTemp != null && d.bottleTemp! > 8 ? 'up' : 'stable',
+        cardColor: const Color(0XFFF4F4F4),
+        accentColor: d.bottleTemp != null && d.bottleTemp! <= 4 ? Colors.blue
+            : d.bottleTemp != null && d.bottleTemp! <= 8 ? Colors.orange
+            : Colors.red,
+        icon: FontAwesomeIcons.thermometerHalf,
+        alerts: d.bottleTemp != null && d.bottleTemp! > 8 ? ['Temperature above safe limit'] : [],
+      ),
+    ];
+  }
+
 // Detailed Temperature Metrics with timestamps
   String _getAnalyticsTitle() {
     final deviceType = _getSelectedDeviceType();
@@ -2017,6 +2185,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       case 'device4': return 'Compressor Amp Analysis';
       case 'device5': return 'Relay Status & Duty Cycle';
       case 'device6': return 'Pressure Sensor Analysis';
+      case 'device7': return 'Bottle Scan & Weight Analysis';
       default: return 'Temperature Analytics';
     }
   }
@@ -2027,6 +2196,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       case 'device4': return 'Detailed Compressor Amp Analysis';
       case 'device5': return 'Detailed Relay Analysis';
       case 'device6': return 'Detailed Pressure Analysis';
+      case 'device7': return 'Bottle Vetting – Tray & Scan Details';
       default: return 'Detailed Temperature Analysis';
     }
   }
@@ -3960,6 +4130,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     children: [
                       _buildWelcomeHeader(),
                       SizedBox(height: isMobile ? 16 : 24),
+                      AIChatPanel(
+                        deviceId: selectedDeviceId,
+                        deviceName: availableDevices
+                            .where((d) => d.deviceId == selectedDeviceId)
+                            .map((d) => d.name)
+                            .firstOrNull,
+                      ),
+                      SizedBox(height: isMobile ? 16 : 24),
                       _buildPerformanceOverview(),
                       SizedBox(height: isMobile ? 16 : 24),
                       _buildEnhancedSummaryCards2(),
@@ -4125,6 +4303,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       case 'device4': return 'Multi-Compressor';
       case 'device5': return 'Relay Controller';
       case 'device6': return 'Pressure Monitor';
+      case 'device7': return 'Bottle Vetting';
       default: return type;
     }
   }
@@ -4800,6 +4979,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return _buildDevice5MetricsView(isMobile);
     } else if (deviceType == 'device6') {
       return _buildDevice6MetricsView(isMobile);
+    } else if (deviceType == 'device7') {
+      return _buildDevice7MetricsView(isMobile);
     }
 
     // Default: Device 1 metrics
@@ -6382,6 +6563,185 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     );
   }
 
+  // Device 7 Metrics View (Bottle Vetting System)
+  Widget _buildDevice7MetricsView(bool isMobile) {
+    final selectedDevice = latestDeviceDataList
+        .where((device) => device.deviceId == selectedDeviceId)
+        .firstOrNull;
+
+    if (selectedDevice == null) {
+      return Center(child: Text('No device data available'));
+    }
+
+    final trayWeights = [selectedDevice.tray1wt, selectedDevice.tray2wt, selectedDevice.tray3wt, selectedDevice.tray4wt];
+    final trayLabels = ['Tray 1', 'Tray 2', 'Tray 3', 'Tray 4'];
+    final totalWeight = trayWeights.whereType<double>().fold(0.0, (a, b) => a + b);
+    final verificationRate = selectedDevice.verificationRate ?? 0.0;
+    final scanVerified = selectedDevice.scanVerified ?? false;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Detailed Metrics - Bottle Vetting System",
+            style: GoogleFonts.inter(
+                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B))),
+        SizedBox(height: 16),
+        // Scan status & verification rate
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
+          ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Scan & Authentication Summary",
+                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              isMobile
+                  ? Column(children: [
+                      _buildDevice7MetricTile("Last Scan Code", selectedDevice.codeScan ?? '--', FontAwesomeIcons.qrcode, Colors.indigo),
+                      SizedBox(height: 8),
+                      _buildDevice7MetricTile("Status", scanVerified ? "Verified ✓" : "Unverified ✗", FontAwesomeIcons.shieldHalved, scanVerified ? Colors.green : Colors.red),
+                      SizedBox(height: 8),
+                      _buildDevice7MetricTile("Verification Rate", "${verificationRate.toStringAsFixed(1)}%", FontAwesomeIcons.percent, Colors.blue),
+                      SizedBox(height: 8),
+                      _buildDevice7MetricTile("Fridge Temp", "${selectedDevice.bottleTemp?.toStringAsFixed(1) ?? '--'} °C", FontAwesomeIcons.thermometerHalf, Colors.cyan),
+                    ])
+                  : Row(children: [
+                      Expanded(child: _buildDevice7MetricTile("Last Scan Code", selectedDevice.codeScan ?? '--', FontAwesomeIcons.qrcode, Colors.indigo)),
+                      SizedBox(width: 8),
+                      Expanded(child: _buildDevice7MetricTile("Status", scanVerified ? "Verified ✓" : "Unverified ✗", FontAwesomeIcons.shieldHalved, scanVerified ? Colors.green : Colors.red)),
+                      SizedBox(width: 8),
+                      Expanded(child: _buildDevice7MetricTile("Verification Rate", "${verificationRate.toStringAsFixed(1)}%", FontAwesomeIcons.percent, Colors.blue)),
+                      SizedBox(width: 8),
+                      Expanded(child: _buildDevice7MetricTile("Fridge Temp", "${selectedDevice.bottleTemp?.toStringAsFixed(1) ?? '--'} °C", FontAwesomeIcons.thermometerHalf, Colors.cyan)),
+                    ]),
+            ],
+          ),
+        ),
+        SizedBox(height: 16),
+        // Tray weights grid
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
+          ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text("Tray Weight Analysis",
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                Text("Total: ${totalWeight.toStringAsFixed(1)} kg",
+                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.indigo)),
+              ]),
+              SizedBox(height: 12),
+              GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: isMobile ? 2 : 4,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: isMobile ? 1.2 : 1.5,
+                children: List.generate(4, (i) {
+                  final weight = trayWeights[i];
+                  return Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.indigo.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.indigo.withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(FontAwesomeIcons.weightHanging, color: Colors.indigo, size: 24),
+                        SizedBox(height: 8),
+                        Text(trayLabels[i],
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade600)),
+                        SizedBox(height: 4),
+                        Text(weight != null ? "${weight.toStringAsFixed(2)} kg" : '--',
+                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 16),
+        // Today's scan counts
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
+          ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Today's Scan Activity",
+                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+              SizedBox(height: 12),
+              isMobile
+                  ? Column(children: [
+                      _buildDevice7MetricTile("Total Scans", "${selectedDevice.totalScansToday ?? 0}", FontAwesomeIcons.barcode, Colors.blueGrey),
+                      SizedBox(height: 8),
+                      _buildDevice7MetricTile("Verified", "${selectedDevice.verifiedScansToday ?? 0}", FontAwesomeIcons.circleCheck, Colors.green),
+                      SizedBox(height: 8),
+                      _buildDevice7MetricTile("Failed", "${selectedDevice.failedScansToday ?? 0}", FontAwesomeIcons.circleXmark, Colors.red),
+                      SizedBox(height: 8),
+                      _buildDevice7MetricTile("Avg Weight", "${selectedDevice.avgTotalWeightToday?.toStringAsFixed(1) ?? '--'} kg", FontAwesomeIcons.scaleBalanced, Colors.orange),
+                    ])
+                  : Row(children: [
+                      Expanded(child: _buildDevice7MetricTile("Total Scans", "${selectedDevice.totalScansToday ?? 0}", FontAwesomeIcons.barcode, Colors.blueGrey)),
+                      SizedBox(width: 8),
+                      Expanded(child: _buildDevice7MetricTile("Verified", "${selectedDevice.verifiedScansToday ?? 0}", FontAwesomeIcons.circleCheck, Colors.green)),
+                      SizedBox(width: 8),
+                      Expanded(child: _buildDevice7MetricTile("Failed", "${selectedDevice.failedScansToday ?? 0}", FontAwesomeIcons.circleXmark, Colors.red)),
+                      SizedBox(width: 8),
+                      Expanded(child: _buildDevice7MetricTile("Avg Weight", "${selectedDevice.avgTotalWeightToday?.toStringAsFixed(1) ?? '--'} kg", FontAwesomeIcons.scaleBalanced, Colors.orange)),
+                    ]),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDevice7MetricTile(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600)),
+                Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Helper widget for Device 3 status card
   Widget _buildDevice3StatusCard(String title, String value, Color color, IconData icon) {
     return Container(
@@ -6941,6 +7301,46 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             return DailySummaryRecords(prsVals[i]?.toInt() ?? 0, 0, "Pressure ${i + 1} (psi)", FontAwesomeIcons.tachometerAlt, colors[i]);
           }),
           DailySummaryRecords(avgPrs6.toInt(), 0, "Avg Pressure (psi)", FontAwesomeIcons.chartLine, const Color(0Xcc3C514914)),
+        ];
+        dailySummaryList2 = [];
+      } else if (deviceType == 'device7') {
+        // Device 7: Bottle Vetting System
+        dailySummaryList = [
+          DailySummaryRecords(
+            deviceToDisplay.totalScansToday ?? 0,
+            0,
+            "Total Scans Today",
+            FontAwesomeIcons.barcode,
+            const Color(0XFFF4F4F4),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.verifiedScansToday ?? 0,
+            0,
+            "Verified Scans",
+            FontAwesomeIcons.circleCheck,
+            const Color(0Xcc3C514933),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.failedScansToday ?? 0,
+            0,
+            "Failed Scans",
+            FontAwesomeIcons.circleXmark,
+            const Color(0XccF4F4F4),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.verificationRate?.toInt() ?? 0,
+            0,
+            "Auth Rate (%)",
+            FontAwesomeIcons.percent,
+            const Color(0Xcc3C514914),
+          ),
+          DailySummaryRecords(
+            deviceToDisplay.avgTotalWeightToday?.toInt() ?? 0,
+            0,
+            "Avg Total Weight (kg)",
+            FontAwesomeIcons.weightHanging,
+            const Color(0Xcc3C514980),
+          ),
         ];
         dailySummaryList2 = [];
       } else {

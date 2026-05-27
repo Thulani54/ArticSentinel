@@ -10,6 +10,7 @@ import '../custom_widgets/customCard.dart';
 import '../models/alert.dart';
 import '../services/shared_preferences.dart';
 import '../widgets/compact_header.dart';
+import '../widgets/ai_alerts_settings_tile.dart';
 
 class AlertApiService {
   static final String _baseUrl = Constants.articBaseUrl2;
@@ -470,6 +471,8 @@ class _NotificationPageState extends State<NotificationPage> {
             ),
 
             const SizedBox(height: 24),
+
+            const AIAlertsSettingsTile(),
 
             // Main Content Card
             Container(

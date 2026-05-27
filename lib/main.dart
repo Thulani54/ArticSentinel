@@ -19,6 +19,7 @@ import 'screens/device_perfomance_tracking.dart';
 import 'screens/geo_fencing.dart';
 import 'screens/health_wellness.dart';
 import 'screens/help.dart';
+import 'screens/landing_page.dart';
 import 'screens/livestock_management.dart';
 import 'screens/maintanance.dart';
 import 'screens/reports.dart';
@@ -63,7 +64,7 @@ Future<void> main() async {
   }
 
   // Determine initial route
-  final initialRoute = isLoggedIn ? '/dashboard' : '/login';
+  final initialRoute = isLoggedIn ? '/dashboard' : '/';
 
   runApp(MyApp(initialRoute: initialRoute));
 }
@@ -76,6 +77,14 @@ class MyApp extends StatelessWidget {
   late final GoRouter _router = GoRouter(
     initialLocation: initialRoute,
     routes: [
+      // Landing page (public home page)
+      GoRoute(
+        path: '/',
+        name: 'home',
+        builder: (BuildContext context, GoRouterState state) =>
+            const LandingPage(),
+      ),
+
       // Authentication routes (no layout)
       GoRoute(
         path: '/login',
