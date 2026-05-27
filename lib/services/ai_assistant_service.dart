@@ -8,17 +8,27 @@ class AIChatResponse {
   final String sessionId;
   final String answer;
   final Map<String, dynamic> snapshot;
+  final List<String> suggestedFollowups;
+  final List<Map<String, dynamic>> toolCalls;
 
   AIChatResponse({
     required this.sessionId,
     required this.answer,
     required this.snapshot,
+    required this.suggestedFollowups,
+    required this.toolCalls,
   });
 
   factory AIChatResponse.fromJson(Map<String, dynamic> json) => AIChatResponse(
         sessionId: json['session_id'] as String? ?? '',
         answer: json['answer'] as String? ?? '',
         snapshot: (json['snapshot'] as Map?)?.cast<String, dynamic>() ?? const {},
+        suggestedFollowups: ((json['suggested_followups'] as List?) ?? const [])
+            .map((e) => e.toString())
+            .toList(),
+        toolCalls: ((json['tool_calls'] as List?) ?? const [])
+            .map((e) => (e as Map).cast<String, dynamic>())
+            .toList(),
       );
 }
 
