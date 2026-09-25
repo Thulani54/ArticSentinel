@@ -459,3 +459,11 @@ dialog.modal-veil::backdrop { background: transparent; }
 .performance-series input { width:auto; }
 .performance-details .chart-pair { margin-top:18px; align-items:start; }
 .performance-details .tiles { margin-top:18px; }
+
+.empty-performance-chart { height:240px; position:relative; display:grid; place-items:center; padding:24px; border-left:1px solid var(--border); border-bottom:1px solid var(--border); background:repeating-linear-gradient(to top, transparent 0, transparent 47px, #e4edf2 47px, #e4edf2 48px); }
+.empty-performance-message { display:grid; gap:8px; text-align:center; background:var(--panel); padding:16px; max-width:320px; }
+.empty-performance-message span { color:var(--ink2); font-size:12px; line-height:1.6; }
+.empty-performance-dates { display:flex; justify-content:space-between; font-size:11px; color:var(--ink2); margin-top:8px; }
+.empty-performance-legend { display:flex; flex-wrap:wrap; justify-content:center; gap:10px 16px; padding:0; margin:20px 0 0; list-style:none; }
+.empty-performance-legend li { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink2); }
+.empty-performance-legend li span { width:12px; height:3px; }

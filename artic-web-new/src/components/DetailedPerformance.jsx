@@ -32,6 +32,23 @@ function Chart({title, rows, fields, unit='', axis='label', initialFields}) {
     <details className="telemetry-data"><summary>View all chart values</summary><DataTable rows={rows}/></details>
   </Panel>;
 }
+function EmptyPerformanceCharts({type, dates}) {
+  const numbered=(name,count)=>Array.from({length:count},(_,i)=>`${name} ${i+1}`);
+  const profiles={
+    device1: [['Temperature history','°C',['Room','Coil','Drain']],['Compressor current','A',['Phase 1','Phase 2','Phase 3']]],
+    device2: [['Zone temperature history','°C',numbered('Zone',8)]],
+    device3: [['Temperature history','°C',['High side','Low side','Ice','Air']],['Water level','%',['Water level']],['Current history','A',['Current']],['Harvest activity','cycles',['Harvests']]],
+    device4: [['Compressor current history','A',numbered('Compressor',8)]],
+    device5: [['Relay duty cycle history','%',numbered('Relay',16)]],
+    device6: [['Pressure history','bar',numbered('Pressure sensor',8)]],
+    device7: [['Daily scan activity','scans',['Scans','Verified']],['Hourly scan activity','scans',['Scans','Verified']],['Daily bottle movement','scans',['In','Out']],['Fridge temperature history','°C',['Temperature']],['Tray weights','kg',numbered('Tray',4)],['Total weight history','kg',['Total weight']]],
+  };
+  return <div className="chart-pair">{(profiles[type] || [['Reading history','',[]]]).map(([title,unit,channels])=><Panel key={title} title={title} eyebrow={unit || 'Selected reporting period'}>
+    <div className="empty-performance-chart" role="img" aria-label={`${title}: no readings for ${dates.start} through ${dates.end}`}><div className="empty-performance-message"><strong>No readings in this period</strong><span>Waiting for recorded measurements. No values have been plotted.</span></div></div>
+    <div className="empty-performance-dates"><span>{dates.start}</span><span>{dates.end}</span></div>
+    <ul className="empty-performance-legend" aria-label={`${title} channels`}>{channels.map((label,i)=><li key={label}><span style={{background:colors[i%colors.length]}}/>{label}</li>)}</ul>
+  </Panel>)}</div>;
+}
 function BottleAnalytics({data}) {
   const stats=data.overall_statistics;
   const trays=Object.entries(stats.tray_weights || {}).map(([tray,values])=>({tray:humanLabel(tray),...values}));
@@ -77,6 +94,6 @@ export default function DetailedPerformance({device}) {
     <p className="hint">Showing {dates.start} through {dates.end}. Date filters use your local timezone; chart bucket labels use the service’s reporting timezone.</p>
     {latestError && <div className="form-err">Latest snapshot could not load: {latestError}</div>}
     {latest && fields.length>0 && <Panel title="Latest device readings" eyebrow={latest.time?`Last reported ${new Date(latest.time).toLocaleString()}`:'No stored latest reading'}><div className="readouts">{fields.map(([key,label,unit])=><div className="readout" key={key}><div className="eyebrow">{label}</div><div className="v">{displayReading(latest[key],unit)}</div></div>)}</div><p className="hint">Latest reported snapshot; may fall outside the selected analytics dates.</p></Panel>}
-    {loading ? <Spinner/> : error ? <div role="alert" className="form-err">Analytics could not load: {error}. Use Refresh analytics to retry.</div> : data && count===0 ? <Panel title="No readings in this period"><Empty>{latest?.time?'Choose Last reporting period to inspect the equipment’s stored history.':'No stored readings were found for the selected dates. Try an earlier date range.'}</Empty></Panel> : data && <><p className="hint">{count==null?'Available analytics':`${count.toLocaleString()} readings in selected period`}</p><Analytics key={`${device.device_id}-${dates.start}-${dates.end}-${revision}`} data={data} type={device.device_type}/></>}
+    {loading ? <Spinner/> : error ? <div role="alert" className="form-err">Analytics could not load: {error}. Use Refresh analytics to retry.</div> : data && count===0 ? <><Panel title="No readings in this period"><Empty>{latest?.time?'Choose Last reporting period to inspect the equipment’s stored history.':'No stored readings were found for the selected dates. Try an earlier date range.'}</Empty></Panel><EmptyPerformanceCharts type={device.device_type} dates={dates}/></> : data && <><p className="hint">{count==null?'Available analytics':`${count.toLocaleString()} readings in selected period`}</p><Analytics key={`${device.device_id}-${dates.start}-${dates.end}-${revision}`} data={data} type={device.device_type}/></>}
   </section>;
 }
