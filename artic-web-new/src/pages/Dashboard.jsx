@@ -72,7 +72,7 @@ export default function Dashboard() {
           <h1 className="page-title">{firstName ? `Welcome back, ${firstName}` : 'Dashboard'}</h1>
           <p className="page-sub">Your equipment, connections and gas supply in one place.</p>
         </div>
-        <div className="dashboard-date">{new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+        <a href="#equipment-list" className="btn sm">View all equipment ({devices?.length ?? '…'})</a><div className="dashboard-date">{new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</div>
       </div>
 
       {error && <div className="form-err">{error}</div>}
@@ -110,7 +110,7 @@ export default function Dashboard() {
           </div>
 
           <DashboardTelemetry devices={devices} />
-          <div className="panel">
+          <div className="panel" id="equipment-list">
             <div className="panel-head">
               <h2 className="panel-title">Your equipment <span className="muted">({devices.length})</span></h2>
               <Link to="/devices" className="btn sm">

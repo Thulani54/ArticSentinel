@@ -1,3 +1,4 @@
+import DashboardTelemetry from '../components/DashboardTelemetry';
 // Device Performance — temperature analytics from the backend's
 // device-metrics endpoint (same data source as lib/screens/
 // device_perfomance_tracking.dart). Gas cylinders have no temperature
@@ -62,9 +63,10 @@ export default function Performance() {
     [devices, deviceId],
   );
   const isGas = device ? isGasCylinderType(device.device_type) : false;
+  const specialized = ['device4', 'device5', 'device6', 'device7'].includes(device?.device_type);
 
   useEffect(() => {
-    if (!deviceId || isGas) {
+    if (!deviceId || isGas || specialized) {
       // Gas cylinders render their own panel; drop any temperature error/data left over.
       setError(null);
       setData(null);
@@ -91,7 +93,7 @@ export default function Performance() {
       .then(setData)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [deviceId, days, devices, token, business, isGas]);
+  }, [deviceId, days, devices, token, business, isGas, specialized]);
 
   const series = useMemo(() => {
     const ta = data?.temperature_analytics;
@@ -122,7 +124,7 @@ export default function Performance() {
           <div className="eyebrow">Telemetry</div>
           <h1 className="page-title">Device Performance</h1>
           <p className="page-sub">
-            {isGas ? 'Gas level and burn behaviour over time.' : 'Temperature behaviour per device over time.'}
+            {specialized ? 'Device-specific readings and reporting activity.' : isGas ? 'Gas level and burn behaviour over time.' : 'Temperature behaviour per device over time.'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -133,16 +135,17 @@ export default function Performance() {
               </option>
             ))}
           </select>
-          <div className="seg">
+          {!specialized && <div className="seg">
             {RANGES.map((r) => (
               <button key={r.days} className={r.days === days ? 'on' : ''} onClick={() => setDays(r.days)}>
                 {r.label}
               </button>
             ))}
-          </div>
+          </div>}
         </div>
       </div>
 
+      {specialized && device && <DashboardTelemetry devices={[device]} />}
       {isGas && device && <GasPerformance device={device} days={days} />}
 
       {error && (

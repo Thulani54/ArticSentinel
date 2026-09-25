@@ -114,13 +114,13 @@ export const api = {
 
 // The backend's device_type choices (device/models.py DEVICE_TYPES).
 export const DEVICE_TYPE_OPTIONS = [
-  { value: 'device1', label: 'Device 1' },
-  { value: 'device2', label: 'Device 2' },
-  { value: 'device3', label: 'Device 3' },
-  { value: 'device4', label: 'Device 4' },
-  { value: 'device5', label: 'Device 5' },
-  { value: 'device6', label: 'Device 6' },
-  { value: 'device7', label: 'Device 7 — Bottle Vetting' },
+  { value: 'device1', label: 'Refrigeration' },
+  { value: 'device2', label: 'Multi-zone temperature' },
+  { value: 'device3', label: 'Ice machine' },
+  { value: 'device4', label: 'Compressor monitoring' },
+  { value: 'device5', label: 'Relay controller' },
+  { value: 'device6', label: 'Pressure monitoring' },
+  { value: 'device7', label: 'Bottle vetting' },
   { value: 'gas_cylinder', label: 'Gas Cylinder' },
 ];
 

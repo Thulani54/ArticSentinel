@@ -443,3 +443,5 @@ button { touch-action: manipulation; }
 dialog.modal-veil { border: 0; width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; color: var(--ink); }
 dialog.modal-veil:not([open]) { display: none; }
 dialog.modal-veil::backdrop { background: transparent; }
+
+.readout .v { overflow-wrap: anywhere; }

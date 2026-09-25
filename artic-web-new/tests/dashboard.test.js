@@ -25,3 +25,25 @@ test('chooses available sensor channels without inventing zero readings or dupli
   assert.deepEqual(temperatureSeries([{ avg_temp: 0 }]), [['avg_temp', 'Temperature']]);
   assert.deepEqual(temperatureSeries([{ avg_temp_air: null, total_readings: 0 }]), []);
 });
+
+test('maps compressor, relay, pressure and bottle devices to their own measurements', async () => {
+  const {telemetryProfile, latestFields, displayReading} = await import('../src/lib/telemetry/dashboard.js');
+  assert.equal(telemetryProfile('device4').fields.length,24);
+  assert.equal(telemetryProfile('device4').fields[0][0],'avg_1comph1');
+  assert.equal(telemetryProfile('device5').fields[15][0],'relay16_on_pct');
+  assert.equal(telemetryProfile('device6').unit,'bar');
+  assert.equal(telemetryProfile('device7').fields[1][0],'verified_scans');
+  assert.equal(latestFields('device5').length,16);
+  assert.equal(displayReading(false,'state'),'Off');
+  assert.equal(displayReading(null,'state'),'—');
+  assert.equal(displayReading(0,'bar'),'0 bar');
+  assert.equal(displayReading('ABC123','text'),'ABC123');
+});
+
+test('normalizes relay and scan values while preserving missing readings', () => {
+  const rows = chartSeries({daily_aggregates:[{device_id:'R',day_bucket:'2026-09-25',relay1_on_pct:'0',relay2_on_pct:null,total_scans:'4',verified_scans:'3'}]},'R','week');
+  assert.equal(rows[0].relay1_on_pct,0);
+  assert.equal(rows[0].relay2_on_pct,null);
+  assert.equal(rows[0].total_scans,4);
+  assert.equal(rows[0].verified_scans,3);
+});
