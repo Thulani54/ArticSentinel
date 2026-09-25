@@ -1,10 +1,4 @@
-import { performanceSeries, metricsQuery } from '../lib/telemetry/performance';
-import DashboardTelemetry from '../components/DashboardTelemetry';
-// Device Performance — temperature analytics from the backend's
-// device-metrics endpoint (same data source as lib/screens/
-// device_perfomance_tracking.dart). Gas cylinders have no temperature
-// telemetry; they get their level/burn series from the gas engine instead.
-
+import DetailedPerformance from '../components/DetailedPerformance';
 import { useEffect, useMemo, useState } from 'react';
 import {
   CartesianGrid,
@@ -14,10 +8,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  Legend,
 } from 'recharts';
-import { api } from '../api';
-import { useAuth } from '../auth';
 import { useDevices } from '../useDevices';
 import { Empty, Panel, Spinner, fmtDay } from '../components/bits';
 import {
@@ -47,13 +38,9 @@ const inkTooltip = {
 };
 
 export default function Performance() {
-  const { token, business } = useAuth();
   const { devices, error: devicesError } = useDevices();
   const [deviceId, setDeviceId] = useState('');
   const [days, setDays] = useState(7);
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (devices && !deviceId && devices.length) setDeviceId(String(devices[0].id));
@@ -64,38 +51,6 @@ export default function Performance() {
     [devices, deviceId],
   );
   const isGas = device ? isGasCylinderType(device.device_type) : false;
-  const specialized = device?.is_active === false || ['device4', 'device5', 'device6', 'device7'].includes(device?.device_type);
-
-  useEffect(() => {
-    if (!deviceId || isGas || specialized) {
-      // Gas cylinders render their own panel; drop any temperature error/data left over.
-      setError(null);
-      setData(null);
-      setLoading(false);
-      return;
-    }
-    const device = devices?.find((d) => String(d.id) === deviceId);
-    if (!device) return;
-    setLoading(true);
-    setError(null);
-    setData(null);
-    let cancelled = false;
-    api
-      .get(
-        metricsQuery(device.device_id, business.business_uid, days),
-        token,
-      )
-      .then(result => { if (!cancelled) setData(result); })
-      .catch(e => { if (!cancelled) setError(e.message); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [deviceId, days, devices, token, business, isGas, specialized]);
-
-  const { rows: series, fields } = useMemo(() => performanceSeries(data, device?.device_type), [data, device?.device_type]);
-  const stats = useMemo(() => {
-    const vals = series.flatMap(row => fields.map(([key]) => row[key])).filter(value => value != null);
-    return vals.length ? { min: Math.min(...vals), max: Math.max(...vals), avg: vals.reduce((a,b) => a+b,0)/vals.length } : null;
-  }, [series, fields]);
 
   return (
     <>
@@ -104,7 +59,7 @@ export default function Performance() {
           <div className="eyebrow">Telemetry</div>
           <h1 className="page-title">Device Performance</h1>
           <p className="page-sub">
-            {specialized ? 'Device-specific readings and reporting activity.' : isGas ? 'Gas level and burn behaviour over time.' : 'Temperature behaviour per device over time.'}
+            {isGas ? 'Gas level and burn behaviour over time.' : 'Complete equipment analytics, operating history and sensor detail.'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -115,7 +70,7 @@ export default function Performance() {
               </option>
             ))}
           </select>
-          {!specialized && <div className="seg">
+          {isGas && <div className="seg">
             {RANGES.map((r) => (
               <button key={r.days} className={r.days === days ? 'on' : ''} onClick={() => setDays(r.days)}>
                 {r.label}
@@ -129,64 +84,9 @@ export default function Performance() {
       {!devices && !devicesError && <Spinner />}
       {devices?.length === 0 && <Empty>No equipment is registered in this workspace.</Empty>}
       {device?.is_active === false && <div className="banner warn">This device is inactive. Available historical readings are shown below; no device settings have been changed.</div>}
-      {specialized && !isGas && device && <DashboardTelemetry devices={[device]} />}
+      {!isGas && device && <DetailedPerformance key={device.device_id} device={device} />}
       {isGas && device && <GasPerformance device={device} days={days} />}
 
-      {error && (
-        <div className="panel">
-          <Empty>
-            No telemetry available for this device in the selected window
-            {error ? ` — ${error}` : ''}.
-          </Empty>
-        </div>
-      )}
-      {loading && <Spinner />}
-
-      {!specialized && !isGas && !loading && data && !error && !stats && <Empty>No sensor readings in this period. Choose another time range or device.</Empty>}
-      {!specialized && !isGas && !loading && stats && !error && (
-        <>
-          {stats && (
-            <div className="tiles">
-              <div className="tile">
-                <div className="eyebrow">Sensor average</div>
-                <div className="v">{stats.avg.toFixed(1)}<span className="unit">°C</span></div>
-              </div>
-              <div className="tile">
-                <div className="eyebrow">Lowest sensor average</div>
-                <div className="v" style={{ color: 'var(--series)' }}>{stats.min.toFixed(1)}<span className="unit">°C</span></div>
-              </div>
-              <div className="tile">
-                <div className="eyebrow">Highest sensor average</div>
-                <div className="v" style={{ color: 'var(--flame)' }}>{stats.max.toFixed(1)}<span className="unit">°C</span></div>
-              </div>
-              <div className="tile">
-                <div className="eyebrow">Window</div>
-                <div className="v" style={{ fontSize: 16, paddingTop: 8 }}>
-                  last {days === 1 ? '24 hours' : `${days} days`}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <Panel title="Temperature profile" eyebrow="Hourly averages">
-            <div className="chart-box" style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={series} margin={{ top: 6, right: 8, left: -12, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#E2E8F0" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={{ stroke: '#E2E8F0' }} minTickGap={16} />
-                  <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={false} width={44} tickFormatter={(v) => `${v}°`} />
-                  <Tooltip {...inkTooltip} formatter={(v, name) => [`${Number(v).toFixed(1)} °C`, name]} />
-                  <Legend wrapperStyle={{fontSize:11}} />
-                  {fields.map(([key, name], index) => <Line key={key} type="monotone" dataKey={key} name={name} stroke={['#176bba','#bf521b','#158367','#7954a1','#a77917','#278791','#a24873','#667888'][index % 8]} strokeWidth={2} dot={series.length < 3} connectNulls={false} />)}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="ink2" style={{ fontSize: 12, marginTop: 8 }}>
-              Sensor averages over the selected {days === 1 ? '24 hours' : `${days} days`}
-            </p>
-          </Panel>
-        </>
-      )}
     </>
   );
 }

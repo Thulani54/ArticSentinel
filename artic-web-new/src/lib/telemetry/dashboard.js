@@ -27,6 +27,8 @@ export function telemetryProfile(type, rows = []) {
 }
 
 export function latestFields(type) {
+  if (type === 'device2') return Array.from({length:8}, (_,i)=>[`temp${i+1}`, `Zone ${i+1}`, '°C']);
+  if (type === 'device3') return [['hs_temp','High-side temperature','°C'],['ls_temp','Low-side temperature','°C'],['ice_temp','Ice temperature','°C'],['air_temp','Air temperature','°C'],['wtrlvl','Water level','%'],['amps','Current','A'],['harvsw','Harvest switch','state'],['harvestCount','Harvests today','']];
   if (type === 'device1') return [['temperatureAir','Room temperature','°C'],['temperatureCoil','Coil temperature','°C'],['temperatureDrain','Drain temperature','°C'],['compressorLow','Low-side pressure','psi'],['compressorHigh','High-side pressure','psi'],['comp','Compressor','state'],['door','Door open','state']];
   if (type === 'device4') return Array.from({length:8}, (_,i) => Array.from({length:3}, (_,p) => [`${i+1}comph${p+1}`, `Compressor ${i+1} · Phase ${p+1}`, 'A'])).flat();
   if (type === 'device5') return Array.from({length:16}, (_,i) => [`relay${i+1}`, `Relay ${i+1}`, 'state']);

@@ -1,0 +1,10 @@
+--- a/services/mqtt_data_service.py
++++ b/services/mqtt_data_service.py
+@@ -1541,7 +1541,6 @@
+             device = Device.objects.get(
+                 device_id=device_id,
+                 company_id=company_id,
+-                is_active=True
+             )
+ 
+             # Parse dates

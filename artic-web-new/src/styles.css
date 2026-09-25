@@ -445,3 +445,17 @@ dialog.modal-veil:not([open]) { display: none; }
 dialog.modal-veil::backdrop { background: transparent; }
 
 .readout .v { overflow-wrap: anywhere; }
+
+.performance-details > .panel { margin-top: 18px; }
+.performance-toolbar { display:flex; gap:12px; align-items:end; flex-wrap:wrap; margin:16px 0; }
+.performance-toolbar label { display:grid; gap:6px; font-size:12px; color:var(--ink2); }
+.performance-facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:12px 0; }
+.performance-facts dt { font-size:12px; color:var(--ink2); }
+.performance-facts dd { margin:5px 0 0; font-weight:600; overflow-wrap:anywhere; }
+.performance-detail-group { border-top:1px solid #e4edf2; margin-top:16px; padding-top:12px; }
+.performance-detail-group h3 { font-size:14px; margin-bottom:10px; }
+.performance-series { display:flex; flex-wrap:wrap; gap:8px 16px; max-height:140px; overflow:auto; margin:8px 0 16px; }
+.performance-series label { display:flex; align-items:center; gap:5px; font-size:11px; }
+.performance-series input { width:auto; }
+.performance-details .chart-pair { margin-top:18px; align-items:start; }
+.performance-details .tiles { margin-top:18px; }
