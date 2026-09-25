@@ -1,3 +1,4 @@
+import { performanceSeries, metricsQuery } from '../lib/telemetry/performance';
 import DashboardTelemetry from '../components/DashboardTelemetry';
 // Device Performance — temperature analytics from the backend's
 // device-metrics endpoint (same data source as lib/screens/
@@ -13,6 +14,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  Legend,
 } from 'recharts';
 import { api } from '../api';
 import { useAuth } from '../auth';
@@ -29,7 +31,6 @@ import {
 } from '../lib/gas/gasCore';
 import { useGasData } from '../lib/gas/useGasData';
 
-const iso = (d) => d.toISOString().slice(0, 10);
 const RANGES = [
   { days: 1, label: '24h' },
   { days: 7, label: '7d' },
@@ -47,7 +48,7 @@ const inkTooltip = {
 
 export default function Performance() {
   const { token, business } = useAuth();
-  const { devices } = useDevices();
+  const { devices, error: devicesError } = useDevices();
   const [deviceId, setDeviceId] = useState('');
   const [days, setDays] = useState(7);
   const [data, setData] = useState(null);
@@ -63,7 +64,7 @@ export default function Performance() {
     [devices, deviceId],
   );
   const isGas = device ? isGasCylinderType(device.device_type) : false;
-  const specialized = ['device4', 'device5', 'device6', 'device7'].includes(device?.device_type);
+  const specialized = device?.is_active === false || ['device4', 'device5', 'device6', 'device7'].includes(device?.device_type);
 
   useEffect(() => {
     if (!deviceId || isGas || specialized) {
@@ -75,47 +76,26 @@ export default function Performance() {
     }
     const device = devices?.find((d) => String(d.id) === deviceId);
     if (!device) return;
-    if (device.is_active === false) {
-      setData(null);
-      setError('This device is retired. Reactivate it in Device Management to collect telemetry again.');
-      return;
-    }
     setLoading(true);
     setError(null);
     setData(null);
-    const end = new Date();
-    const start = new Date(end.getTime() - days * 86400000);
+    let cancelled = false;
     api
       .get(
-        `/device-metrics/?device_id=${encodeURIComponent(device.device_id)}&start_date=${iso(start)}&end_date=${iso(end)}&company_id=${business.business_uid}`,
+        metricsQuery(device.device_id, business.business_uid, days),
         token,
       )
-      .then(setData)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+      .then(result => { if (!cancelled) setData(result); })
+      .catch(e => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [deviceId, days, devices, token, business, isGas, specialized]);
 
-  const series = useMemo(() => {
-    const ta = data?.temperature_analytics;
-    if (!ta?.labels) return null;
-    return ta.labels.map((l, i) => ({
-      label: l,
-      avg: ta.avg_temperature?.[i] ?? null,
-      min: ta.min_temperature?.[i] ?? null,
-      max: ta.max_temperature?.[i] ?? null,
-    }));
-  }, [data]);
-
+  const { rows: series, fields } = useMemo(() => performanceSeries(data, device?.device_type), [data, device?.device_type]);
   const stats = useMemo(() => {
-    if (!series) return null;
-    const vals = series.flatMap((p) => [p.avg, p.min, p.max]).filter((v) => v != null);
-    if (!vals.length) return null;
-    return {
-      min: Math.min(...vals),
-      max: Math.max(...vals),
-      avg: vals.reduce((a, v) => a + v, 0) / vals.length,
-    };
-  }, [series]);
+    const vals = series.flatMap(row => fields.map(([key]) => row[key])).filter(value => value != null);
+    return vals.length ? { min: Math.min(...vals), max: Math.max(...vals), avg: vals.reduce((a,b) => a+b,0)/vals.length } : null;
+  }, [series, fields]);
 
   return (
     <>
@@ -128,7 +108,7 @@ export default function Performance() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <select style={{ width: 230 }} value={deviceId} onChange={(e) => setDeviceId(e.target.value)}>
+          <select aria-label="Performance equipment" style={{ width: 230 }} value={deviceId} onChange={(e) => setDeviceId(e.target.value)}>
             {(devices ?? []).map((d) => (
               <option key={d.id} value={String(d.id)}>
                 {d.name} ({d.device_id})
@@ -145,7 +125,11 @@ export default function Performance() {
         </div>
       </div>
 
-      {specialized && device && <DashboardTelemetry devices={[device]} />}
+      {devicesError && <div className="form-err" role="alert">{devicesError}</div>}
+      {!devices && !devicesError && <Spinner />}
+      {devices?.length === 0 && <Empty>No equipment is registered in this workspace.</Empty>}
+      {device?.is_active === false && <div className="banner warn">This device is inactive. Available historical readings are shown below; no device settings have been changed.</div>}
+      {specialized && !isGas && device && <DashboardTelemetry devices={[device]} />}
       {isGas && device && <GasPerformance device={device} days={days} />}
 
       {error && (
@@ -158,20 +142,21 @@ export default function Performance() {
       )}
       {loading && <Spinner />}
 
-      {!loading && series && !error && (
+      {!specialized && !isGas && !loading && data && !error && !stats && <Empty>No sensor readings in this period. Choose another time range or device.</Empty>}
+      {!specialized && !isGas && !loading && stats && !error && (
         <>
           {stats && (
             <div className="tiles">
               <div className="tile">
-                <div className="eyebrow">Average temp</div>
+                <div className="eyebrow">Sensor average</div>
                 <div className="v">{stats.avg.toFixed(1)}<span className="unit">°C</span></div>
               </div>
               <div className="tile">
-                <div className="eyebrow">Minimum</div>
+                <div className="eyebrow">Lowest sensor average</div>
                 <div className="v" style={{ color: 'var(--series)' }}>{stats.min.toFixed(1)}<span className="unit">°C</span></div>
               </div>
               <div className="tile">
-                <div className="eyebrow">Maximum</div>
+                <div className="eyebrow">Highest sensor average</div>
                 <div className="v" style={{ color: 'var(--flame)' }}>{stats.max.toFixed(1)}<span className="unit">°C</span></div>
               </div>
               <div className="tile">
@@ -191,14 +176,13 @@ export default function Performance() {
                   <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={{ stroke: '#E2E8F0' }} minTickGap={16} />
                   <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={false} width={44} tickFormatter={(v) => `${v}°`} />
                   <Tooltip {...inkTooltip} formatter={(v, name) => [`${Number(v).toFixed(1)} °C`, name]} />
-                  {series[0]?.min != null && <Line type="monotone" dataKey="min" name="Min" stroke="#94A3B8" strokeWidth={1.5} dot={false} strokeDasharray="4 3" />}
-                  <Line type="monotone" dataKey="avg" name="Avg" stroke="#3B82F6" strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />
-                  {series[0]?.max != null && <Line type="monotone" dataKey="max" name="Max" stroke="#EA580C" strokeWidth={1.5} dot={false} strokeDasharray="4 3" />}
+                  <Legend wrapperStyle={{fontSize:11}} />
+                  {fields.map(([key, name], index) => <Line key={key} type="monotone" dataKey={key} name={name} stroke={['#176bba','#bf521b','#158367','#7954a1','#a77917','#278791','#a24873','#667888'][index % 8]} strokeWidth={2} dot={series.length < 3} connectNulls={false} />)}
                 </LineChart>
               </ResponsiveContainer>
             </div>
             <p className="ink2" style={{ fontSize: 12, marginTop: 8 }}>
-              Hour-of-day averages across {fmtDay(new Date())} window · min/avg/max per hour
+              Sensor averages over the selected {days === 1 ? '24 hours' : `${days} days`}
             </p>
           </Panel>
         </>

@@ -47,3 +47,16 @@ test('normalizes relay and scan values while preserving missing readings', () =>
   assert.equal(rows[0].total_scans,4);
   assert.equal(rows[0].verified_scans,3);
 });
+
+test('performance reads device-specific channel arrays', async () => {
+  const {performanceSeries, metricsQuery} = await import('../src/lib/telemetry/performance.js');
+  const zones = performanceSeries({temperature_analytics:{labels:['10:00'],zone1:[0],zone2:['-18.2']}},'device2');
+  assert.deepEqual(zones.fields,[['zone1','Zone 1'],['zone2','Zone 2']]);
+  assert.equal(zones.rows[0].zone2,-18.2);
+  const ice = performanceSeries({temperature_analytics:{labels:['10:00'],ice_temp:[-12],air_temp:[20]}},'device3');
+  assert.equal(ice.rows[0].ice_temp,-12);
+  assert.deepEqual(performanceSeries({},'device1'),{fields:[],rows:[]});
+  const query = new URLSearchParams(metricsQuery('0X000007',1,7,new Date('2026-09-25T19:30:00Z')).split('?')[1]);
+  assert.equal(query.get('start_date'),'2026-09-18T19:30:00.000Z');
+  assert.equal(query.get('end_date'),'2026-09-25T19:30:00.000Z');
+});
