@@ -51,7 +51,7 @@ async function get(path, token, base = BASE) {
 // DRF errors arrive as {error: "..."} or {error: {field: [..]}} — flatten.
 function describeError(status, data) {
   if (data) {
-    const e = data.error ?? data.detail ?? data.message;
+    const e = data.error ?? data.detail ?? data.message ?? data;
     if (typeof e === 'string') return e;
     if (e && typeof e === 'object') {
       return Object.entries(e)
@@ -62,7 +62,27 @@ function describeError(status, data) {
   return `Request failed (${status})`;
 }
 
+async function request(path, method, body, token, downloadName) {
+  const multipart = body instanceof FormData;
+  const headers = token ? { Authorization: `Token ${token}` } : {};
+  if (body != null && !multipart) headers['Content-Type'] = 'application/json';
+  const response = await fetch(BASE + path, { method, headers, ...(body != null ? { body: multipart ? body : JSON.stringify(body) } : {}) });
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(describeError(response.status, data));
+  }
+  if (downloadName) {
+    const url = URL.createObjectURL(await response.blob());
+    const link = document.createElement('a'); link.href = url; link.download = downloadName; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return;
+  }
+  return response.status === 204 ? null : response.json();
+}
+
 export const api = {
+  request,
+  download: (path, method, body, token, name) => request(path, method, body, token, name),
   // Legacy telemetry routes live at the API origin root, outside /api/.
   dashboard: (businessId, deviceId, token) => get(
     `/dashboard-data/?business_uid=${encodeURIComponent(businessId)}&device_id=${encodeURIComponent(deviceId)}`,

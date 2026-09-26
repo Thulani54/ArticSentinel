@@ -1,0 +1,158 @@
+.ops-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  margin: 8px 0 24px;
+  padding-bottom: 10px;
+}
+.ops-tabs button {
+  font: inherit;
+  border: 0;
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--ink2);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ops-tabs button.on {
+  background: var(--ink);
+  color: var(--paper, #fff);
+}
+.ops-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin: 14px 0;
+}
+.ops-toolbar > div {
+  flex: 1;
+  min-width: 140px;
+}
+.ops-toolbar input,
+.ops-toolbar select {
+  width: 100%;
+}
+.ops-stack {
+  display: grid;
+  gap: 14px;
+}
+.ops-card {
+  border: 1px solid var(--border);
+  padding: 18px;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.ops-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin: 12px 0;
+}
+.ops-facts dt {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  margin-bottom: 5px;
+}
+.ops-facts dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ops-facts .ops-facts {
+  display: block;
+}
+.ops-facts .ops-facts > div {
+  margin-bottom: 8px;
+}
+.ops-modal {
+  max-width: 900px !important;
+  width: min(900px, 94vw);
+}
+.ops-modal textarea {
+  font: inherit;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+.ops-modal input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+.ops-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ops-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.ops-file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ops-file a {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.ops-note {
+  color: var(--ink2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.ops-chart {
+  height: 260px;
+  width: 100%;
+}
+.ops-check {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.ops-check input {
+  width: 20px;
+  height: 20px;
+}
+.ops-detail {
+  max-height: 75vh;
+  overflow: auto;
+}
+.ops-success {
+  padding: 12px;
+  background: #e9f5ec;
+  color: #205c34;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+@media (max-width: 700px) {
+  .ops-two {
+    grid-template-columns: 1fr;
+  }
+  .ops-facts {
+    grid-template-columns: 1fr;
+  }
+  .ops-tabs button {
+    padding: 9px;
+  }
+  .ops-modal .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .ops-toolbar > div {
+    min-width: 100%;
+  }
+  .ops-actions .btn {
+    white-space: normal;
+  }
+}

@@ -47,6 +47,7 @@ export default function App() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/control" element={<Control />} />
         <Route path="/access" element={<Access />} />
+        <Route path="/roles" element={<Access />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

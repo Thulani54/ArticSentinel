@@ -7,3 +7,7 @@ Applied to `/home/vmrvsnyo/exvr/services/mqtt_data_service.py` on 2026-09-25. Or
 Validation: the metrics view returned HTTP 200 for all 11 non-gas devices in company 1, querying 2026-07-19 through 2026-08-06. D7-001 returned 90 readings with daily and hourly activity. Device1 without data returns synthetic zero buckets, so the frontend checks actual reading counts before displaying analytics.
 
 Existing limitation: device1 maintenance insight generation logs a missing `device_maintenance_urgency_log` table, although the metrics request succeeds. This patch does not alter database schema or maintenance logic.
+
+## Operations parity (2026-09-26)
+
+`operations-actions.patch` restores acknowledge semantics, adds the separate false-positive route, and authenticates role creation with the existing DRF Token/Bearer support. It changes only the affected views/routes and requires a graceful Gunicorn reload. Existing role permissions and company filtering are retained. Validate with mocked alert objects before applying; do not acknowledge real alerts as a smoke test.
