@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -641,12 +642,12 @@ class _RoleManagementPageState extends State<RoleManagementPage>
       ),
       child: Column(
         children: [
-          Row(
+          MobileFormRow(
             children: [
               Expanded(
                 child: TextField(
                   onChanged: (value) => setState(() => _searchQuery = value),
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     hintText: 'Search roles, permissions, or users...',
                     hintStyle: GoogleFonts.inter(
                       color: const Color(0xFF9CA3AF),
@@ -670,7 +671,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                     ),
                     filled: true,
                     fillColor: const Color(0xFFF9FAFB),
-                  ),
+                  )),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1158,7 +1159,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
             ),
           ),
           const SizedBox(height: 16),
-          Row(
+          MobileFormRow(
             children: [
               Text(
                 'Requested ${_formatTimeAgo(request.requestTimestamp)}',
@@ -1386,7 +1387,7 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       child: Container(
         constraints: const BoxConstraints(maxWidth: 400),
@@ -1452,7 +1453,7 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                   TextField(
                     controller: _reasonController,
                     maxLines: 4,
-                    decoration: InputDecoration(
+                    decoration: mobileInputDecoration(context, InputDecoration(
                       hintText: 'Enter rejection reason...',
                       hintStyle: GoogleFonts.inter(
                         color: const Color(0xFF9CA3AF),
@@ -1472,7 +1473,7 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                       ),
                       filled: true,
                       fillColor: const Color(0xFFF9FAFB),
-                    ),
+                    )),
                   ),
                 ],
               ),
@@ -1488,7 +1489,7 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                   bottomRight: Radius.circular(16),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 children: [
                   Expanded(
                     child: OutlinedButton(
@@ -1549,7 +1550,7 @@ class RoleDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       child: Container(
         constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
@@ -1570,7 +1571,7 @@ class RoleDetailsDialog extends StatelessWidget {
             // Header
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -1583,7 +1584,7 @@ class RoleDetailsDialog extends StatelessWidget {
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-              ),
+              )),
               child: Row(
                 children: [
                   Container(
@@ -1675,7 +1676,7 @@ class RoleDetailsDialog extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // Actions
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
@@ -1877,7 +1878,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -1903,7 +1904,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             // Header Section
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -1916,7 +1917,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
                 ),
-              ),
+              )),
               child: Row(
                 children: [
                   Container(
@@ -2026,7 +2027,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       const SizedBox(height: 20),
 
                       // Category and Parent Role Row
-                      Row(
+                      MobileFormRow(
                         children: [
                           Expanded(
                             child: _buildDropdown(
@@ -2112,7 +2113,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
@@ -2235,7 +2236,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
-          decoration: InputDecoration(
+          decoration: mobileInputDecoration(context, InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.inter(
               fontSize: 14,
@@ -2270,7 +2271,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
+          )),
         ),
       ],
     );
@@ -2306,7 +2307,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
           child: DropdownButtonFormField<String>(
             value: value,
             validator: validator,
-            decoration: InputDecoration(
+            decoration: mobileInputDecoration(context, InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.inter(
                 fontSize: 14,
@@ -2320,7 +2321,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
+            )),
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -2788,7 +2789,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                 )
               : DropdownButtonFormField<String>(
                   value: _selectedParentRole,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     hintText: _parentRoles.isEmpty
                         ? 'No parent roles available'
                         : 'Select parent role',
@@ -2833,7 +2834,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       ),
                     );
                   }).toList(),
-                ),
+                )),
         ),
         if (_parentRoles.isEmpty && !_loadingParentRoles)
           Padding(
@@ -2853,7 +2854,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
 
   // Update the form to use the new parent role dropdown
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       // ... existing dialog code ...
       child: Column(
         children: [

@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
@@ -897,7 +898,7 @@ class AlertDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -923,7 +924,7 @@ class AlertDetailsDialog extends StatelessWidget {
             // Header Section
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -936,7 +937,7 @@ class AlertDetailsDialog extends StatelessWidget {
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
                 ),
-              ),
+              )),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1175,7 +1176,7 @@ class AlertDetailsDialog extends StatelessWidget {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   // Close Button

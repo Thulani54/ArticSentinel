@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -498,13 +499,13 @@ class _UnitManagementState extends State<UnitManagement>
       ),
       child: Column(
         children: [
-          Row(
+          MobileFormRow(
             children: [
               // Search Field
               Expanded(
                 child: TextField(
                   controller: _searchController,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     hintText:
                         'Search units by name, serial, model, or location...',
                     hintStyle: GoogleFonts.inter(
@@ -529,7 +530,7 @@ class _UnitManagementState extends State<UnitManagement>
                     ),
                     filled: true,
                     fillColor: const Color(0xFFF9FAFB),
-                  ),
+                  )),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1168,7 +1169,7 @@ class _UnitManagementState extends State<UnitManagement>
   void _showFilterDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -1301,7 +1302,7 @@ class _UnitManagementState extends State<UnitManagement>
   Future<void> _deleteUnit(String unitId) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -1364,7 +1365,7 @@ class _UnitManagementState extends State<UnitManagement>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: OutlinedButton(
@@ -1608,7 +1609,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.all(16),
       child: Container(
@@ -1630,7 +1631,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
             // Enhanced Header
             Container(
               padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     Constants.ctaColorGreen,
@@ -1643,7 +1644,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-              ),
+              )),
               child: Row(
                 children: [
                   Container(
@@ -1724,7 +1725,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
               Container(
                 margin: EdgeInsets.all(20),
                 padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
+                decoration: mobileFlatDecoration(context, BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Colors.blue[50]!, Colors.cyan[50]!],
                     begin: Alignment.topLeft,
@@ -1732,7 +1733,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
                   ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.blue[200]!),
-                ),
+                )),
                 child: Row(
                   children: [
                     Icon(Icons.lightbulb,
@@ -1782,7 +1783,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
                     });
                   },
                   controlsBuilder: (context, details) {
-                    return Row(
+                    return MobileFormRow(
                       children: [
                         if (details.stepIndex > 0)
                           TextButton(
@@ -1911,7 +1912,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
         ),
         SizedBox(height: 20),
 
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -1945,7 +1946,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -1985,7 +1986,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2053,7 +2054,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
         // Refrigeration System
         _buildSectionHeader('Refrigeration System', Icons.opacity),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -2097,7 +2098,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
         // Control & Compressor System
         _buildSectionHeader('Control & Compressor System', Icons.settings),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -2136,7 +2137,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2174,7 +2175,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
       children: [
         // Power Specifications
         _buildSectionHeader('Power Specifications', Icons.power),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2201,7 +2202,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
         // Component Specifications
         _buildSectionHeader('Component Specifications', Icons.engineering),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2223,7 +2224,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2255,7 +2256,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
         // Fan Configuration
         _buildSectionHeader('Fan Configuration', Icons.air),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -2296,7 +2297,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -2346,7 +2347,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           hintText: 'e.g., Standard Evaporator',
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2389,7 +2390,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
         // Summary header
         Container(
           padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
+          decoration: mobileFlatDecoration(context, BoxDecoration(
             gradient: LinearGradient(
               colors: [Colors.green[50]!, Colors.blue[50]!],
               begin: Alignment.topLeft,
@@ -2397,7 +2398,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
             ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.green[200]!),
-          ),
+          )),
           child: Row(
             children: [
               Icon(Icons.check_circle, color: Colors.green[600], size: 32),
@@ -2436,7 +2437,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
         // Maintenance Information
         _buildSectionHeader('Maintenance Information', Icons.build),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDateField(
@@ -2579,7 +2580,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
       keyboardType: keyboardType,
       validator: validator,
       maxLines: maxLines,
-      decoration: InputDecoration(
+      decoration: mobileInputDecoration(context, InputDecoration(
         labelText: label,
         hintText: hintText,
         prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
@@ -2598,7 +2599,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
         filled: true,
         fillColor: Colors.grey[50],
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
+      )),
     );
   }
 
@@ -2611,7 +2612,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
   }) {
     return DropdownButtonFormField<String>(
       value: value,
-      decoration: InputDecoration(
+      decoration: mobileInputDecoration(context, InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
         border: OutlineInputBorder(
@@ -2629,7 +2630,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
         filled: true,
         fillColor: Colors.grey[50],
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
+      )),
       items: items.map((item) {
         return DropdownMenuItem<String>(
           value: item['value'],
@@ -3019,7 +3020,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.all(16),
       child: Container(
@@ -3041,7 +3042,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
             // Enhanced Header
             Container(
               padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     Constants.ctaColorGreen,
@@ -3054,7 +3055,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-              ),
+              )),
               child: Row(
                 children: [
                   Container(
@@ -3141,7 +3142,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
                     });
                   },
                   controlsBuilder: (context, details) {
-                    return Row(
+                    return MobileFormRow(
                       children: [
                         if (details.stepIndex > 0)
                           TextButton(
@@ -3226,7 +3227,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
   Widget _buildBasicInformationStep() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3258,7 +3259,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3297,7 +3298,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3335,7 +3336,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
       children: [
         // Refrigeration System
         _buildSectionHeader('Refrigeration System', Icons.opacity),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -3379,7 +3380,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
 
         // Control & Compressor System
         _buildSectionHeader('Control & Compressor System', Icons.settings),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -3418,7 +3419,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3455,7 +3456,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
       children: [
         // Power Specifications
         _buildSectionHeader('Power Specifications', Icons.power),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3480,7 +3481,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
 
         // Component Specifications
         _buildSectionHeader('Component Specifications', Icons.engineering),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3500,7 +3501,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3529,7 +3530,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
 
         // Fan Configuration
         _buildSectionHeader('Fan Configuration', Icons.air),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -3568,7 +3569,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -3610,7 +3611,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
 
         // Evaporator Dimensions
         _buildSectionHeader('Evaporator Dimensions', Icons.straighten),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3622,7 +3623,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3661,7 +3662,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
       children: [
         // Maintenance Dates
         _buildSectionHeader('Maintenance Dates', Icons.calendar_today),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDateField(
@@ -3830,7 +3831,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
   }) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(
+      decoration: mobileInputDecoration(context, InputDecoration(
         labelText: label,
         hintText: hintText,
         prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
@@ -3847,7 +3848,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
         ),
         filled: true,
         fillColor: Colors.grey[50],
-      ),
+      )),
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
@@ -3863,7 +3864,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
   }) {
     return DropdownButtonFormField<String>(
       value: value,
-      decoration: InputDecoration(
+      decoration: mobileInputDecoration(context, InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
         border: OutlineInputBorder(
@@ -3879,7 +3880,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
         ),
         filled: true,
         fillColor: Colors.grey[50],
-      ),
+      )),
       items: items.map((item) {
         return DropdownMenuItem<String>(
           value: item['value']!,
@@ -4014,7 +4015,7 @@ class UnitDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.all(16),
       child: Container(
@@ -4036,7 +4037,7 @@ class UnitDetailsDialog extends StatelessWidget {
             // Enhanced Header with gradient background
             Container(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     Constants.ctaColorGreen,
@@ -4049,7 +4050,7 @@ class UnitDetailsDialog extends StatelessWidget {
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-              ),
+              )),
               child: Row(
                 children: [
                   Container(
@@ -4309,7 +4310,7 @@ class UnitDetailsDialog extends StatelessWidget {
                                   'Amp Rating',
                                   '${unit.compressorAmpRating} A',
                                   Icons.electrical_services),
-                            _buildCompressorSpecsCard(),
+                            _buildCompressorSpecsCard(context),
                           ],
                         ),
                       ),
@@ -4394,7 +4395,7 @@ class UnitDetailsDialog extends StatelessWidget {
                           children: [
                             _buildEnhancedInfoRow('Evaporator Model',
                                 unit.evaporatorModel, Icons.model_training),
-                            _buildEvaporatorDimensionsCard(),
+                            _buildEvaporatorDimensionsCard(context),
                           ],
                         ),
                       ),
@@ -4755,10 +4756,10 @@ class UnitDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildCompressorSpecsCard() {
+  Widget _buildCompressorSpecsCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: mobileFlatDecoration(context, BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.red[50]!, Colors.orange[50]!],
           begin: Alignment.centerLeft,
@@ -4766,7 +4767,7 @@ class UnitDetailsDialog extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.red[200]!),
-      ),
+      )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -4802,10 +4803,10 @@ class UnitDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildEvaporatorDimensionsCard() {
+  Widget _buildEvaporatorDimensionsCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: mobileFlatDecoration(context, BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.blue[50]!, Colors.cyan[50]!],
           begin: Alignment.centerLeft,
@@ -4813,7 +4814,7 @@ class UnitDetailsDialog extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.blue[200]!),
-      ),
+      )),
       child: Row(
         children: [
           Icon(Icons.straighten, size: 32, color: Constants.ctaColorLight),

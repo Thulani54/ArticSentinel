@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -60,7 +61,7 @@ class CustomInput extends StatelessWidget {
                 ? null
                 : "Please Enter Correct Email";
           },*/
-        decoration: InputDecoration(
+        decoration: mobileInputDecoration(context, InputDecoration(
           border: InputBorder.none,
           hintText: hintText,
           prefixIcon: prefix,
@@ -82,7 +83,7 @@ class CustomInput extends StatelessWidget {
             borderSide: BorderSide(color: Colors.white),
             borderRadius: BorderRadius.circular(4),
           ),
-        ),
+        )),
         style: const TextStyle(
             color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13.5),
       ),
@@ -142,7 +143,7 @@ class CustomInputTransparent1 extends StatelessWidget {
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
               ]
             : null,
-        decoration: InputDecoration(
+        decoration: mobileInputDecoration(context, InputDecoration(
           border: InputBorder.none,
           hintText: hintText,
           prefixIcon: prefix,
@@ -165,7 +166,7 @@ class CustomInputTransparent1 extends StatelessWidget {
             borderSide: BorderSide(color: Constants.ctaColorLight),
             borderRadius: BorderRadius.circular(32),
           ),
-        ),
+        )),
         style: TextStyle(
             color: Colors.black, fontWeight: FontWeight.normal, fontSize: 13.5),
       ),
@@ -219,7 +220,7 @@ class CustomInputTransparent extends StatelessWidget {
         onSubmitted: onSubmitted,
         controller: controller,
         textInputAction: textInputAction,
-        decoration: InputDecoration(
+        decoration: mobileInputDecoration(context, InputDecoration(
           border: InputBorder.none,
           hintText: hintText,
           prefixIcon: prefix,
@@ -242,7 +243,7 @@ class CustomInputTransparent extends StatelessWidget {
             borderSide: BorderSide(color: Constants.ctaColorGreen),
             borderRadius: BorderRadius.circular(360),
           ),
-        ),
+        )),
         style: GoogleFonts.lato(
           textStyle: TextStyle(
               fontSize: 13.5,
@@ -308,7 +309,7 @@ class CustomInputTransparentOption extends StatelessWidget {
                 ? null
                 : "Please Enter Correct Email";
           },*/
-        decoration: InputDecoration(
+        decoration: mobileInputDecoration(context, InputDecoration(
           border: InputBorder.none,
           hintText: hintText,
           labelText: labelText,
@@ -332,7 +333,7 @@ class CustomInputTransparentOption extends StatelessWidget {
             borderSide: BorderSide(color: Constants.ctaColorGreen),
             borderRadius: BorderRadius.circular(4),
           ),
-        ),
+        )),
         style: GoogleFonts.lato(
           textStyle: TextStyle(
               fontSize: 13.5,

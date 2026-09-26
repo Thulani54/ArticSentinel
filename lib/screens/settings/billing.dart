@@ -1,3 +1,4 @@
+import '../../widgets/mobile_forms.dart';
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
@@ -460,13 +461,13 @@ class _BillManagementState extends State<BillManagement>
       ),
       child: Column(
         children: [
-          Row(
+          MobileFormRow(
             children: [
               // Search Field
               Expanded(
                 child: TextField(
                   controller: _searchController,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     hintText:
                         'Search bills by description, recipient, or amount...',
                     hintStyle: GoogleFonts.inter(
@@ -491,7 +492,7 @@ class _BillManagementState extends State<BillManagement>
                     ),
                     filled: true,
                     fillColor: const Color(0xFFF9FAFB),
-                  ),
+                  )),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1204,7 +1205,7 @@ class _BillManagementState extends State<BillManagement>
   void _showFilterDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -1369,7 +1370,7 @@ class _BillManagementState extends State<BillManagement>
   void _deleteBill(BillingManagement bill) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -1432,7 +1433,7 @@ class _BillManagementState extends State<BillManagement>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: OutlinedButton(

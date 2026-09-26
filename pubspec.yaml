@@ -42,7 +42,7 @@ dependencies:
   motion_toast: ^2.11.0
   intl: ^0.18.0
   http: ^1.2.2
-  google_fonts: ^6.2.1
+  google_fonts: ^6.2.0
   go_router: ^14.6.2
   uuid: ^4.5.1
   file_picker: ^8.1.7
@@ -61,6 +61,15 @@ dependencies:
   csv: ^6.0.0
   pdf: ^3.11.1
   printing: ^5.13.4
+
+  # Gas scale Wi-Fi setup over Bluetooth (ESP32 unified provisioning, security 1).
+  esp_provisioning_ble: ^1.1.0
+  # Pinned: 1.36.8 is the last BSD-3 release. 2.x needs a paid commercial
+  # licence for for-profit use — don't upgrade without buying one.
+  flutter_blue_plus: 1.36.8
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+  flutter_local_notifications: ^22.3.1
 
 dev_dependencies:
   flutter_test:

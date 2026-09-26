@@ -1,3 +1,4 @@
+import '../../widgets/mobile_forms.dart';
 import 'dart:convert';
 
 import 'package:artic_sentinel/screens/settings/security.dart';
@@ -488,7 +489,7 @@ class _SettingsPageState extends State<SettingsPage>
           // User Info Header
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
+            decoration: mobileFlatDecoration(context, BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -499,7 +500,7 @@ class _SettingsPageState extends State<SettingsPage>
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
+            )),
             child: isMobile
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -659,7 +660,7 @@ class _SettingsPageState extends State<SettingsPage>
           // Business Info Header
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
+            decoration: mobileFlatDecoration(context, BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -670,7 +671,7 @@ class _SettingsPageState extends State<SettingsPage>
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
+            )),
             child: isMobile
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -943,7 +944,7 @@ class _SettingsPageState extends State<SettingsPage>
                 ),
               ],
             )
-          : Row(
+          : MobileFormRow(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
@@ -1055,7 +1056,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -1081,7 +1082,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
             // Header Section
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -1094,7 +1095,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
                 ),
-              ),
+              )),
               child: Row(
                 children: [
                   Container(
@@ -1200,7 +1201,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                                 ),
                               ],
                             )
-                          : Row(
+                          : MobileFormRow(
                               children: [
                                 Expanded(
                                   child: _buildModernTextField(
@@ -1310,7 +1311,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                                 ),
                               ],
                             )
-                          : Row(
+                          : MobileFormRow(
                               children: [
                                 Expanded(
                                   child: _buildModernTextField(
@@ -1368,7 +1369,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
@@ -1493,7 +1494,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
-          decoration: InputDecoration(
+          decoration: mobileInputDecoration(context, InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.inter(
               fontSize: 14,
@@ -1528,7 +1529,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
+          )),
         ),
       ],
     );
@@ -1555,7 +1556,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
           ),
           child: DropdownButtonFormField<Province>(
             value: selectedProvince,
-            decoration: InputDecoration(
+            decoration: mobileInputDecoration(context, InputDecoration(
               hintText: 'Select your province',
               hintStyle: GoogleFonts.inter(
                 fontSize: 14,
@@ -1569,7 +1570,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
+            )),
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -1846,7 +1847,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -1872,7 +1873,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
             // Header Section
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -1885,7 +1886,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
                 ),
-              ),
+              )),
               child: Row(
                 children: [
                   Container(
@@ -2013,7 +2014,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                                 ),
                               ],
                             )
-                          : Row(
+                          : MobileFormRow(
                               children: [
                                 Expanded(
                                   child: _buildModernTextField(
@@ -2128,7 +2129,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                                 _buildProvinceDropdown(),
                               ],
                             )
-                          : Row(
+                          : MobileFormRow(
                               children: [
                                 Expanded(
                                   child: _buildModernTextField(
@@ -2197,7 +2198,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                                 ),
                               ],
                             )
-                          : Row(
+                          : MobileFormRow(
                               children: [
                                 Expanded(
                                   child: _buildModernTextField(
@@ -2238,7 +2239,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
@@ -2363,7 +2364,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
-          decoration: InputDecoration(
+          decoration: mobileInputDecoration(context, InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.inter(
               fontSize: 14,
@@ -2398,7 +2399,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
+          )),
         ),
       ],
     );
@@ -2425,7 +2426,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
           ),
           child: DropdownButtonFormField<Province>(
             value: selectedProvince,
-            decoration: InputDecoration(
+            decoration: mobileInputDecoration(context, InputDecoration(
               hintText: 'Select province',
               hintStyle: GoogleFonts.inter(
                 fontSize: 14,
@@ -2439,7 +2440,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
+            )),
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,

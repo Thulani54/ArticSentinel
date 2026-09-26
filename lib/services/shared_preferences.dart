@@ -1,3 +1,4 @@
+import 'push_notifications.dart';
 import 'dart:convert';
 
 import 'package:encrypt/encrypt.dart' as encrypt;
@@ -89,6 +90,7 @@ class Sharedprefs {
   // Existing methods
   static Future<bool> saveUserLoggedInSharedPreference(
       bool isUserLoggedIn) async {
+    if (!isUserLoggedIn) await PushNotifications.instance.unregister();
     SharedPreferences preferences = await SharedPreferences.getInstance();
     return await preferences.setBool(
         sharedPreferenceUserLoggedInKey, isUserLoggedIn);

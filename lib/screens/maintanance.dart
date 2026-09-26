@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'package:artic_sentinel/constants/Constants.dart';
 import 'package:artic_sentinel/custom_widgets/customCard.dart';
 import 'package:flutter/foundation.dart';
@@ -473,7 +474,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
         return Container(
           padding: EdgeInsets.all(isMobile ? 12 : 16),
-          decoration: BoxDecoration(
+          decoration: mobileFlatDecoration(context, BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -487,7 +488,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               color: Constants.ctaColorLight.withOpacity(0.1),
               width: 1,
             ),
-          ),
+          )),
           child: Column(
             children: [
               Row(
@@ -1449,7 +1450,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Future<void> _deleteSchedule(String scheduleId) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => MobileAlertDialog(
         title: Text('Delete Schedule'),
         content: Text('Are you sure you want to delete this schedule?'),
         actions: [
@@ -1872,7 +1873,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Widget _buildReminderStats(Map<String, dynamic> summary) {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: mobileFlatDecoration(context, BoxDecoration(
         gradient: LinearGradient(
           colors: [Constants.ctaColorLight, Constants.ctaColorLight.withOpacity(0.8)],
           begin: Alignment.topLeft,
@@ -1886,7 +1887,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 4),
           ),
         ],
-      ),
+      )),
       child: Row(
         children: [
           Expanded(
@@ -3494,14 +3495,14 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   }
 
   Widget _buildQuickAddChecklistItem() {
-    return Row(
+    return MobileFormRow(
       children: [
         Icon(Icons.add_task, color: Constants.ctaColorLight, size: 20),
         SizedBox(width: 8),
         Expanded(
           child: TextField(
             controller: TextEditingController(),
-            decoration: InputDecoration(
+            decoration: mobileInputDecoration(context, InputDecoration(
               hintText: 'Type to quickly add a checklist item...',
               hintStyle: GoogleFonts.inter(
                 fontSize: 14,
@@ -3526,7 +3527,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 icon: Icon(Icons.add_circle, color: Constants.ctaColorLight),
                 tooltip: 'Add Item',
               ),
-            ),
+            )),
             onSubmitted: (value) {
               if (value.trim().isNotEmpty) {
                 _addChecklistItemQuick(value.trim());
@@ -3701,7 +3702,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         width: double.infinity,
         padding: EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(
+          MobileFormRow(
             children: [
               Container(
                 padding: EdgeInsets.all(8),
@@ -3931,12 +3932,12 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     ],
                   ),
                   SizedBox(height: 12),
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: controller,
-                          decoration: InputDecoration(
+                          decoration: mobileInputDecoration(context, InputDecoration(
                             hintText:
                                 'Enter part name or code (e.g., Air Filter #AF-100)',
                             filled: true,
@@ -3961,7 +3962,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                               color: Colors.grey[500],
                               size: 20,
                             ),
-                          ),
+                          )),
                           onSubmitted: (value) {
                             if (value.trim().isEmpty) return;
                             setState(() {
@@ -4020,7 +4021,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         width: double.infinity,
         padding: EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(
+          MobileFormRow(
             children: [
               Container(
                 padding: EdgeInsets.all(8),
@@ -4252,12 +4253,12 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     ],
                   ),
                   SizedBox(height: 12),
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: controller,
-                          decoration: InputDecoration(
+                          decoration: mobileInputDecoration(context, InputDecoration(
                             hintText:
                                 'Enter material name or type (e.g., Lubricant Oil 1L)',
                             filled: true,
@@ -4282,7 +4283,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                               color: Colors.grey[500],
                               size: 20,
                             ),
-                          ),
+                          )),
                           onSubmitted: (value) {
                             if (value.trim().isEmpty) return;
                             setState(() {
@@ -4344,7 +4345,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         padding: EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // Header with stats and upload buttons
-          Row(
+          MobileFormRow(
             children: [
               Container(
                 padding: EdgeInsets.all(8),
@@ -5334,7 +5335,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => AlertDialog(
+      builder: (context) => MobileAlertDialog(
         backgroundColor: Colors.white,
         title: Text(
           'Add Finding',
@@ -5348,7 +5349,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
           children: [
             TextField(
               controller: controller,
-              decoration: InputDecoration(
+              decoration: mobileInputDecoration(context, InputDecoration(
                 hintText: 'Enter your finding...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -5357,7 +5358,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: Constants.ctaColorLight),
                 ),
-              ),
+              )),
               maxLines: 3,
               minLines: 2,
             ),
@@ -5451,7 +5452,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
+        return MobileDialog(
           backgroundColor: Colors.transparent,
           child: Container(
             width: 400,
@@ -5511,7 +5512,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   ),
                 ),
                 SizedBox(height: 24),
-                Row(
+                MobileFormRow(
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
@@ -5555,7 +5556,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
+        return MobileDialog(
           backgroundColor: Colors.transparent,
           child: Container(
             width: 450,
@@ -5626,7 +5627,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 SizedBox(height: 8),
                 TextField(
                   controller: descriptionController,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     hintText: 'Enter document description...',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -5637,7 +5638,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       borderSide: BorderSide(color: Constants.ctaColorLight),
                     ),
                     contentPadding: EdgeInsets.all(12),
-                  ),
+                  )),
                   maxLines: 3,
                 ),
                 SizedBox(height: 20),
@@ -6101,7 +6102,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   void _showImagePreview(String imageUrl, String title) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: BoxConstraints(maxWidth: 800, maxHeight: 600),
@@ -6550,7 +6551,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Dialog(
+        builder: (context, setState) => MobileDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -6645,7 +6646,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       SizedBox(height: 8),
                       TextField(
                         controller: _descriptionController,
-                        decoration: InputDecoration(
+                        decoration: mobileInputDecoration(context, InputDecoration(
                           hintText: 'e.g., Check compressor oil levels',
                           hintStyle: GoogleFonts.inter(
                             color: Colors.grey[500],
@@ -6667,7 +6668,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: EdgeInsets.all(16),
-                        ),
+                        )),
                         style: GoogleFonts.inter(fontSize: 14),
                         maxLines: 2,
                       ),
@@ -6685,7 +6686,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       SizedBox(height: 8),
                       TextField(
                         controller: _notesController,
-                        decoration: InputDecoration(
+                        decoration: mobileInputDecoration(context, InputDecoration(
                           hintText: 'Additional details or instructions',
                           hintStyle: GoogleFonts.inter(
                             color: Colors.grey[500],
@@ -6707,7 +6708,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: EdgeInsets.all(16),
-                        ),
+                        )),
                         style: GoogleFonts.inter(fontSize: 14),
                         maxLines: 3,
                       ),
@@ -6777,7 +6778,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 SizedBox(height: 24),
 
                 // Action Buttons
-                Row(
+                MobileFormRow(
                   children: [
                     Expanded(
                       child: TextButton(
@@ -6939,7 +6940,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   void _showChecklistItemOptions(Map<String, dynamic> item) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => MobileAlertDialog(
         title: Text('Checklist Item Options'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -6997,7 +6998,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (context, setState) => MobileAlertDialog(
           title: Text('Edit Checklist Item'),
           content: Container(
             width: MediaQuery.of(context).size.width * 0.8,
@@ -7006,7 +7007,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               children: [
                 TextField(
                   controller: _descriptionController,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     labelText: 'Item Description *',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -7015,13 +7016,13 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Constants.ctaColorLight),
                     ),
-                  ),
+                  )),
                   maxLines: 2,
                 ),
                 SizedBox(height: 16),
                 TextField(
                   controller: _notesController,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     labelText: 'Notes (Optional)',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -7030,7 +7031,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Constants.ctaColorLight),
                     ),
-                  ),
+                  )),
                   maxLines: 3,
                 ),
                 SizedBox(height: 16),
@@ -7160,7 +7161,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   void _showDeleteChecklistItemDialog(Map<String, dynamic> item) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => MobileAlertDialog(
         title: Text('Delete Checklist Item'),
         content: Text(
           'Are you sure you want to delete this checklist item?\n\n"${item['description']}"',
@@ -7678,7 +7679,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
 
   InputDecoration _buildInputDecoration(String label,
       {String? hint, IconData? icon, Color? iconColor}) {
-    return InputDecoration(
+    return mobileInputDecoration(context, InputDecoration(
       labelText: label,
       hintText: hint,
       prefixIcon: icon != null
@@ -7710,7 +7711,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
       hintStyle:
           GoogleFonts.inter(fontSize: 14, color: const Color(0xFF9CA3AF)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    );
+    ));
   }
 
   @override
@@ -7755,7 +7756,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
       );
     }
 
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -7843,7 +7844,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
               ),
               const SizedBox(height: 16),
               Container(
-                decoration: BoxDecoration(
+                decoration: mobileFlatDecoration(context, BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   gradient: LinearGradient(
                     colors: [
@@ -7851,7 +7852,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                       Constants.ctaColorLight.withOpacity(0.8)
                     ],
                   ),
-                ),
+                )),
                 child: ElevatedButton(
                   onPressed: _loadData,
                   style: ElevatedButton.styleFrom(
@@ -8071,7 +8072,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                 _buildSectionHeader('Optional Information',
                                     const Color(0xFF3B82F6), Icons.tune),
                                 const SizedBox(height: 20),
-                                Row(
+                                MobileFormRow(
                                   children: [
                                     Expanded(
                                       child: DropdownButtonFormField<String>(
@@ -8161,7 +8162,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                       () => _selectedAssignedToId = value),
                                 ),
                                 const SizedBox(height: 20),
-                                Row(
+                                MobileFormRow(
                                   children: [
                                     Expanded(
                                       child: TextFormField(
@@ -8377,7 +8378,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                   ),
                                   const SizedBox(height: 20),
                                 ],
-                                Row(
+                                MobileFormRow(
                                   children: [
                                     Expanded(
                                       child: TextFormField(
@@ -10213,7 +10214,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
 
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
+            builder: (context) => MobileAlertDialog(
               title: Text(
                 'PDF Saved Successfully',
                 style: GoogleFonts.inter(fontWeight: FontWeight.bold),
@@ -10416,7 +10417,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
       );
     }
 
-    return Dialog(
+    return MobileDialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.all(20),
         child: Container(

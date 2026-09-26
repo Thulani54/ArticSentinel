@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -207,7 +208,7 @@ class _HelpSupportState extends State<HelpSupport> {
           // Header
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
+            decoration: mobileFlatDecoration(context, BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -220,7 +221,7 @@ class _HelpSupportState extends State<HelpSupport> {
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
-            ),
+            )),
             child: Row(
               children: [
                 Container(

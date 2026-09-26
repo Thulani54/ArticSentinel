@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -2021,7 +2022,7 @@ class _ReportsState extends State<Reports> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -2246,7 +2247,7 @@ class _ReportsState extends State<Reports> {
                   SizedBox(height: 24),
 
                   // Footer buttons
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -2349,7 +2350,7 @@ class _ReportsState extends State<Reports> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -2616,7 +2617,7 @@ class _ReportsState extends State<Reports> {
                     SizedBox(height: 24),
 
                     // Footer buttons
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: TextButton(
@@ -2882,7 +2883,7 @@ class _ReportsState extends State<Reports> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -3020,7 +3021,7 @@ class _ReportsState extends State<Reports> {
                             ],
                           ),
                           SizedBox(height: 12),
-                          Row(
+                          MobileFormRow(
                             children: [
                               Expanded(
                                 child: TextButton.icon(
@@ -3080,7 +3081,7 @@ class _ReportsState extends State<Reports> {
                   ],
 
                   // Footer buttons
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -3184,7 +3185,7 @@ class _ReportsState extends State<Reports> {
           List<ScheduledReport> currentPageReports =
               scheduledReports.sublist(startIndex, endIndex);
 
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -3489,7 +3490,7 @@ class _ReportsState extends State<Reports> {
 
                   // Footer buttons
                   SizedBox(height: 16),
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -3613,7 +3614,7 @@ class _ReportsState extends State<Reports> {
             }
           }
 
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -3905,7 +3906,7 @@ class _ReportsState extends State<Reports> {
 
                   // Footer buttons
                   SizedBox(height: 16),
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -4029,7 +4030,7 @@ class _ReportsState extends State<Reports> {
             }
           }
 
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -4414,7 +4415,7 @@ class _ReportsState extends State<Reports> {
 
                   // Footer buttons
                   SizedBox(height: 16),
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -4490,7 +4491,7 @@ class _ReportsState extends State<Reports> {
   void _showSuccessDialog(String reportName) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -4536,7 +4537,7 @@ class _ReportsState extends State<Reports> {
                 ),
               ),
               SizedBox(height: 24),
-              Row(
+              MobileFormRow(
                 children: [
                   Expanded(
                     child: TextButton(
@@ -4625,7 +4626,7 @@ class _ReportsState extends State<Reports> {
     showDialog(
       context: context,
       builder: (context) {
-        return Dialog(
+        return MobileDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -8554,7 +8555,7 @@ class _ReportsState extends State<Reports> {
             }
           }
 
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -8743,7 +8744,7 @@ class _ReportsState extends State<Reports> {
                   SizedBox(height: 24),
 
                   // Footer Buttons
-                  Row(
+                  MobileFormRow(
                     children: [
                       if (!isCompleted)
                         Expanded(
@@ -8874,7 +8875,7 @@ class _ReportsState extends State<Reports> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: mobileFlatDecoration(context, BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -8884,7 +8885,7 @@ class _ReportsState extends State<Reports> {
             Color(0xFFF8FAFC),
           ],
         ),
-      ),
+      )),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -8892,7 +8893,7 @@ class _ReportsState extends State<Reports> {
             // Modern Header with Gradient
             Container(
               width: double.infinity,
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -8902,7 +8903,7 @@ class _ReportsState extends State<Reports> {
                     Color(0xFF3B82F6),
                   ],
                 ),
-              ),
+              )),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   isMobile ? 20 : 32,
@@ -9453,14 +9454,14 @@ class _ReportsState extends State<Reports> {
             children: [
               Container(
                 padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
+                decoration: mobileFlatDecoration(context, BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: bgGradient,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                ),
+                )),
                 child: Icon(
                   icon,
                   color: Colors.white,
@@ -10089,7 +10090,7 @@ class _ReportsState extends State<Reports> {
     return showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
+        return MobileAlertDialog(
           title: Row(
             children: [
               Icon(FontAwesomeIcons.fileLines, size: 20, color: Constants.ctaColorLight),

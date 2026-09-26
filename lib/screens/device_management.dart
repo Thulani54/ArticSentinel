@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
@@ -12,6 +13,9 @@ import '../custom_widgets/customCard.dart';
 import '../custom_widgets/customInput.dart';
 import '../models/device.dart';
 import '../models/unit.dart';
+import '../gasmon/gas_cylinder_details_dialog.dart';
+import '../gasmon/gas_api.dart';
+import '../gasmon/scale_setup_screen.dart';
 import '../services/shared_preferences.dart';
 import '../widgets/compact_header.dart';
 
@@ -415,13 +419,13 @@ class _DeviceManagementState extends State<DeviceManagement>
       ),
       child: Column(
         children: [
-          Row(
+          MobileFormRow(
             children: [
               // Search Field
               Expanded(
                 child: TextField(
                   controller: _searchController,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     hintText:
                         'Search devices by name, ID, unit, or location...',
                     hintStyle: GoogleFonts.inter(
@@ -446,7 +450,7 @@ class _DeviceManagementState extends State<DeviceManagement>
                     ),
                     filled: true,
                     fillColor: const Color(0xFFF9FAFB),
-                  ),
+                  )),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1128,7 +1132,7 @@ class _DeviceManagementState extends State<DeviceManagement>
   void _showFilterDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -1235,7 +1239,41 @@ class _DeviceManagementState extends State<DeviceManagement>
       context: context,
       barrierDismissible: false,
       builder: (context) => AddDeviceDialog(availableUnits: _availableUnits),
-    ).then((_) => _loadData());
+    ).then((result) {
+      _loadData();
+      if (result is Device && mounted) _offerScaleSetup(result);
+    });
+  }
+
+  /// After adding a gas cylinder, offer to connect its scale to Wi-Fi over
+  /// Bluetooth right away ("Configure Wi-Fi").
+  Future<void> _offerScaleSetup(Device device) async {
+    final connect = await showDialog<bool>(
+      context: context,
+      builder: (context) => MobileAlertDialog(
+        title: const Text('Connect the scale now?'),
+        content: Text(
+          '${device.name} is added. Connect its scale to Wi-Fi over Bluetooth so '
+          'readings start coming in. You can also do this later from the cylinder '
+          'screen (Connect scale).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Later'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Connect scale'),
+          ),
+        ],
+      ),
+    );
+    if (connect != true || !mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ScaleSetupScreen(device: device),
+    ));
+    if (mounted) _loadData();
   }
 
   void _editDevice(Device device) {
@@ -1248,6 +1286,15 @@ class _DeviceManagementState extends State<DeviceManagement>
   }
 
   void _showDeviceDetails(Device device) {
+    // Gas cylinder devices open the gas dashboard instead of the
+    // temperature-oriented details dialog.
+    if (isGasCylinderType(device.deviceType)) {
+      showDialog(
+        context: context,
+        builder: (context) => GasCylinderDetailsDialog(device: device),
+      );
+      return;
+    }
     showDialog(
       context: context,
       builder: (context) => DeviceDetailsDialog(
@@ -1278,7 +1325,7 @@ class _DeviceManagementState extends State<DeviceManagement>
   Future<void> _deleteDevice(int deviceId) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -1341,7 +1388,7 @@ class _DeviceManagementState extends State<DeviceManagement>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: OutlinedButton(
@@ -1411,7 +1458,7 @@ class DeviceDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.all(16),
       child: Container(
@@ -1433,7 +1480,7 @@ class DeviceDetailsDialog extends StatelessWidget {
             // Enhanced Header with gradient background
             Container(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     Constants.ctaColorLight,
@@ -1446,7 +1493,7 @@ class DeviceDetailsDialog extends StatelessWidget {
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-              ),
+              )),
               child: Row(
                 children: [
                   Container(
@@ -1585,7 +1632,7 @@ class DeviceDetailsDialog extends StatelessWidget {
                               )
                             : null,
                         child: device.connectedUnit != null
-                            ? _buildConnectedUnitInfo()
+                            ? _buildConnectedUnitInfo(context)
                             : _buildNoUnitConnected(),
                       ),
 
@@ -1652,7 +1699,7 @@ class DeviceDetailsDialog extends StatelessWidget {
                         null,
                         child: Column(
                           children: [
-                            _buildTemperatureCard(),
+                            _buildTemperatureCard(context),
                             if (device.targetTempMin != null)
                               _buildEnhancedInfoRow(
                                 'Minimum Temperature',
@@ -1962,14 +2009,14 @@ class DeviceDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildConnectedUnitInfo() {
+  Widget _buildConnectedUnitInfo(BuildContext context) {
     final unit = device.connectedUnit!;
     return Column(
       children: [
         // Unit Overview Card
         Container(
           padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
+          decoration: mobileFlatDecoration(context, BoxDecoration(
             gradient: LinearGradient(
               colors: [Colors.teal[50]!, Colors.teal[100]!],
               begin: Alignment.topLeft,
@@ -1977,7 +2024,7 @@ class DeviceDetailsDialog extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.teal[200]!),
-          ),
+          )),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2314,10 +2361,10 @@ class DeviceDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildTemperatureCard() {
+  Widget _buildTemperatureCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: mobileFlatDecoration(context, BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.orange[50]!, Colors.red[50]!],
           begin: Alignment.centerLeft,
@@ -2325,7 +2372,7 @@ class DeviceDetailsDialog extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.orange[200]!),
-      ),
+      )),
       child: Row(
         children: [
           Icon(Icons.device_thermostat, size: 32, color: Colors.orange[600]),
@@ -2743,7 +2790,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -2940,7 +2987,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                   top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Container(
@@ -3575,7 +3622,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 20,
       child: Container(
@@ -3735,7 +3782,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
                     ),
                   ),
                 ),
-                child: Row(
+                child: MobileFormRow(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Container(
@@ -4000,7 +4047,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   // Modern text form field styling
   InputDecoration _buildInputDecoration(String label, IconData icon,
       {bool enabled = true}) {
-    return InputDecoration(
+    return mobileInputDecoration(context, InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon,
           color: enabled ? Constants.ctaColorLight : const Color(0xFF9CA3AF),
@@ -4033,14 +4080,14 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
         fontWeight: FontWeight.w500,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    );
+    ));
   }
 
   // Required fields section
   Widget _buildRequiredFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4072,7 +4119,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
@@ -4084,6 +4131,8 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
                 items: const [
                   DropdownMenuItem(value: 'chiller', child: Text('Chiller')),
                   DropdownMenuItem(value: 'freezer', child: Text('Freezer')),
+                  DropdownMenuItem(
+                      value: 'gas_cylinder', child: Text('Gas Cylinder')),
                 ],
                 onChanged: (value) {
                   setState(() {
@@ -4122,7 +4171,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   Widget _buildBasicInfoFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4146,7 +4195,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4184,7 +4233,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   Widget _buildTechnicalFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4208,7 +4257,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4232,7 +4281,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4301,7 +4350,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   Widget _buildServiceFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4345,7 +4394,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4396,7 +4445,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   Widget _buildUnitConnectionFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: DropdownButtonFormField<String?>(
@@ -4567,6 +4616,9 @@ class ApiService {
       [String? unitId]) async {
     Map<String, dynamic> deviceData = device.toJson();
     deviceData['business_id'] = businessId;
+    if (device.deviceType == 'gas_cylinder') {
+      for (final key in ['phase_type', 'target_temp_min', 'target_temp_max', 'capacity']) { deviceData.remove(key); }
+    }
     if (unitId != null) {
       deviceData['connected_unit_id'] = unitId;
     }
@@ -4719,9 +4771,122 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   bool _isActive = true;
   bool _isLoading = false;
 
+  final _gasCapacity = TextEditingController();
+  final _gasTare = TextEditingController();
+  final _gasPrice = TextEditingController(text: '0');
+  final _gasLow = TextEditingController(text: '20');
+  final _gasWarning = TextEditingController(text: '40');
+  Device? _createdDevice;
+  String? _mobileError;
+  bool get _isGas => _selectedDeviceType == 'gas_cylinder';
+
+  InputDecoration _mobileDecoration(String label, {String? helper}) =>
+      mobileInputDecoration(context, InputDecoration(labelText: label, helperText: helper));
+
+  Widget _mobileField(String label, TextEditingController controller,
+      {bool required = false, bool numeric = false, bool positive = false,
+       String? helper, VoidCallback? onTap}) => Padding(
+    padding: const EdgeInsets.only(bottom: 18),
+    child: TextFormField(
+      key: ValueKey(label), controller: controller,
+      style: const TextStyle(color: Color(0xFF252C44), fontSize: 16),
+      decoration: _mobileDecoration(label, helper: helper),
+      keyboardType: numeric ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+      readOnly: onTap != null, onTap: onTap,
+      validator: (value) {
+        final text = value?.trim() ?? '';
+        if (required && text.isEmpty) return 'Enter ${label.toLowerCase()}';
+        if (numeric && text.isNotEmpty) {
+          final number = double.tryParse(text);
+          if (number != null && (controller == _gasCapacity || controller == _gasTare) && number > 200) return 'Enter a weight up to 200 kg';
+          if (number == null || !number.isFinite || number < 0 || (positive && number == 0)) return positive ? 'Enter a number greater than zero' : 'Enter zero or a positive number';
+        }
+        return null;
+      },
+    ),
+  );
+
+  Widget _mobileSection(String title, List<Widget> fields) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [Padding(padding: const EdgeInsets.only(top: 12, bottom: 18),
+      child: Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF252C44)))), ...fields],
+  );
+
+  Widget _buildMobileForm() => MobileDialog(
+    child: Form(key: _formKey, child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(padding: const EdgeInsets.fromLTRB(20, 12, 8, 12), child: Row(children: [
+          Expanded(child: Text(_isGas ? 'Add gas cylinder' : 'Add device', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Color(0xFF252C44)))),
+          IconButton(tooltip: 'Close', onPressed: _isLoading ? null : () => Navigator.of(context).pop(_createdDevice != null), icon: const Icon(Icons.close)),
+        ])),
+        const Divider(height: 1),
+        Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (_mobileError != null) Padding(padding: const EdgeInsets.only(bottom: 16), child: Text(_mobileError!, style: const TextStyle(color: Color(0xFFB42318)))),
+          if (_createdDevice == null) ...[
+            DropdownButtonFormField<String>(
+              key: const ValueKey('mobile-device-type'), value: _selectedDeviceType, isExpanded: true,
+              decoration: _mobileDecoration('Device type'),
+              style: const TextStyle(color: Color(0xFF252C44), fontSize: 16),
+              items: const [DropdownMenuItem(value: 'chiller', child: Text('Chiller')), DropdownMenuItem(value: 'freezer', child: Text('Freezer')), DropdownMenuItem(value: 'gas_cylinder', child: Text('Gas cylinder'))],
+              onChanged: _isLoading ? null : (v) => setState(() { _selectedDeviceType = v!; _mobileError = null; }),
+            ),
+            const SizedBox(height: 22),
+            _mobileField(_isGas ? 'Cylinder name' : 'Device name', _nameController, required: true),
+            _mobileField(_isGas ? 'Scale / device ID' : 'Device ID', _deviceIdController, required: true,
+              helper: _isGas ? 'Use the ID reported by the connected scale.' : null),
+            _mobileField('Location', _locationController),
+          ],
+          if (_isGas) _mobileSection('Cylinder setup', [
+            const Padding(padding: EdgeInsets.only(bottom: 18), child: Text('The scale measures cylinder and gas together. Enter the empty cylinder weight stamped on your cylinder.', style: TextStyle(color: Color(0xFF50586B), height: 1.5))),
+            _mobileField('Gas capacity (kg)', _gasCapacity, required: true, numeric: true, positive: true),
+            _mobileField('Empty cylinder weight (kg)', _gasTare, required: true, numeric: true, positive: true),
+            _mobileField('Price per kg (R)', _gasPrice, required: true, numeric: true),
+            _mobileField('Low gas threshold (%)', _gasLow, required: true, numeric: true),
+            _mobileField('Warning threshold (%)', _gasWarning, required: true, numeric: true),
+          ]) else ...[
+            _mobileSection('Equipment', [
+              DropdownButtonFormField<String>(value: _selectedPhaseType, isExpanded: true,
+                decoration: _mobileDecoration('Phase type'), style: const TextStyle(color: Color(0xFF252C44), fontSize: 16),
+                items: const [DropdownMenuItem(value: 'single', child: Text('Single phase')), DropdownMenuItem(value: 'three', child: Text('Three phase'))],
+                onChanged: (v) => setState(() => _selectedPhaseType = v!)),
+              const SizedBox(height: 18),
+              _mobileField('Manufacturer', _manufacturerController), _mobileField('Model', _modelController),
+              _mobileField('Serial number', _serialNumberController), _mobileField('Capacity', _capacityController),
+              _mobileField('Minimum temperature (°C)', _targetTempMinController),
+              _mobileField('Maximum temperature (°C)', _targetTempMaxController),
+            ]),
+          ],
+          if (_createdDevice == null) ...[
+            ExpansionTile(tilePadding: EdgeInsets.zero, title: const Text('More details (optional)'), children: [
+              _mobileField('Product ID', _productIdController), _mobileField('Building', _buildingController),
+              _mobileField('Floor', _floorController), _mobileField('Room', _roomController),
+              _mobileField('Installation date', _installationDateController, onTap: () => _selectDate(context, _installationDateController)),
+              _mobileField('Warranty expiry', _warrantyExpiryController, onTap: () => _selectDate(context, _warrantyExpiryController)),
+              _mobileField('Last service date', _lastServiceDateController, onTap: () => _selectDate(context, _lastServiceDateController)),
+              _mobileField('Next service date', _nextServiceDateController, onTap: () => _selectDate(context, _nextServiceDateController)),
+            ]),
+            const SizedBox(height: 18),
+            DropdownButtonFormField<String>(value: _selectedUnitId, isExpanded: true,
+              decoration: _mobileDecoration('Connected unit (optional)'), style: const TextStyle(color: Color(0xFF252C44), fontSize: 16),
+              items: [const DropdownMenuItem<String>(value: null, child: Text('No unit')), ...widget.availableUnits.map((u) => DropdownMenuItem(value: u.id, child: Text(u.displayName, overflow: TextOverflow.ellipsis)))],
+              onChanged: (v) => setState(() => _selectedUnitId = v)),
+            SwitchListTile(contentPadding: EdgeInsets.zero, title: const Text('Device active'), value: _isActive, onChanged: (v) => setState(() => _isActive = v)),
+          ],
+        ]))),
+        const Divider(height: 1),
+        Padding(padding: const EdgeInsets.all(20), child: SizedBox(height: 54,
+          child: FilledButton(style: FilledButton.styleFrom(backgroundColor: const Color(0xFF252C44), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32))),
+            onPressed: _isLoading ? null : _addDevice,
+            child: Text(_isLoading ? 'Saving…' : _createdDevice != null ? 'Retry cylinder setup' : _isGas ? 'Add gas cylinder' : 'Add device')))),
+      ],
+    )),
+  );
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    if (isPhoneLayout(context)) return _buildMobileForm();
+    return MobileDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 20,
       child: Container(
@@ -4851,7 +5016,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
                     ),
                   ),
                 ),
-                child: Row(
+                child: MobileFormRow(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Container(
@@ -4913,7 +5078,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
                     ),
                     const SizedBox(width: 16),
                     Container(
-                      decoration: BoxDecoration(
+                      decoration: mobileFlatDecoration(context, BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         gradient: LinearGradient(
                           colors: [
@@ -4928,7 +5093,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
                             offset: const Offset(0, 4),
                           ),
                         ],
-                      ),
+                      )),
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _addDevice,
                         style: ElevatedButton.styleFrom(
@@ -4993,13 +5158,26 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   Future<void> _addDevice() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (_isGas && isPhoneLayout(context)) {
+      final low = double.tryParse(_gasLow.text), warning = double.tryParse(_gasWarning.text);
+      if (low == null || warning == null || low <= 0 || low >= warning || warning >= 100) {
+        setState(() => _mobileError = 'Thresholds must satisfy 0 < low < warning < 100.');
+        return;
+      }
+    }
+    if (!_isGas) {
+      final min = double.tryParse(_targetTempMinController.text), max = double.tryParse(_targetTempMaxController.text);
+      if ((_targetTempMinController.text.isNotEmpty && min == null) || (_targetTempMaxController.text.isNotEmpty && max == null) || (min != null && max != null && min > max)) {
+        setState(() => _mobileError = 'Enter valid minimum and maximum temperatures, with minimum no greater than maximum.');
+        return;
+      }
+    }
+    setState(() { _isLoading = true; _mobileError = null; });
 
     try {
       int? businessId = await Sharedprefs.getBusinessUidSharedPreference();
-      if (businessId != null) {
+      if (businessId == null) throw Exception('Sign in again to add a device.');
+      {
         Device newDevice = Device(
           name: _nameController.text,
           deviceId: _deviceIdController.text,
@@ -5027,10 +5205,10 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           capacity: _capacityController.text.isNotEmpty
               ? _capacityController.text
               : null,
-          targetTempMin: _targetTempMinController.text.isNotEmpty
+          targetTempMin: !_isGas && _targetTempMinController.text.isNotEmpty
               ? double.tryParse(_targetTempMinController.text)
               : null,
-          targetTempMax: _targetTempMaxController.text.isNotEmpty
+          targetTempMax: !_isGas && _targetTempMaxController.text.isNotEmpty
               ? double.tryParse(_targetTempMaxController.text)
               : null,
           phaseType: _selectedPhaseType,
@@ -5049,9 +5227,18 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           isActive: _isActive,
         );
 
-        await ApiService.addDevice(businessId, newDevice, _selectedUnitId);
+        _createdDevice ??= await ApiService.addDevice(businessId, newDevice, _selectedUnitId);
+        if (_isGas && isPhoneLayout(context)) {
+          await GasApi.saveConfig(deviceId: _createdDevice!.id!, config: GasConfig(
+            gasCapacityKg: double.parse(_gasCapacity.text), tareKg: double.parse(_gasTare.text),
+            pricePerKg: double.parse(_gasPrice.text), lowPct: double.parse(_gasLow.text),
+            warningPct: double.parse(_gasWarning.text), isDefault: false));
+        }
+        if (!mounted) return;
 
-        Navigator.of(context).pop();
+        // A new gas cylinder goes back to the list screen, which offers to
+        // connect its scale straight away.
+        Navigator.of(context).pop(_isGas ? _createdDevice : null);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -5073,6 +5260,13 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
+      if (isPhoneLayout(context)) {
+        setState(() => _mobileError = _createdDevice != null
+          ? 'Device created. Cylinder setup could not be saved: $e. Retry below without creating another device.'
+          : 'Could not add device: $e');
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -5094,9 +5288,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() { _isLoading = false; });
     }
   }
 
@@ -5166,7 +5358,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   // Modern text form field styling
   InputDecoration _buildInputDecoration(
       String label, IconData icon, Color iconColor) {
-    return InputDecoration(
+    return mobileInputDecoration(context, InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, color: iconColor, size: 20),
       border: OutlineInputBorder(
@@ -5193,14 +5385,14 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
         fontWeight: FontWeight.w500,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    );
+    ));
   }
 
   // Required fields section
   Widget _buildRequiredFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5236,7 +5428,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
@@ -5248,6 +5440,8 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
                 items: const [
                   DropdownMenuItem(value: 'chiller', child: Text('Chiller')),
                   DropdownMenuItem(value: 'freezer', child: Text('Freezer')),
+                  DropdownMenuItem(
+                      value: 'gas_cylinder', child: Text('Gas Cylinder')),
                 ],
                 onChanged: (value) {
                   setState(() {
@@ -5292,7 +5486,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   Widget _buildBasicInfoFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5324,7 +5518,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5373,7 +5567,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   Widget _buildTechnicalFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5397,7 +5591,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5437,7 +5631,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5508,7 +5702,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   Widget _buildServiceFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5564,7 +5758,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5627,7 +5821,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   Widget _buildUnitConnectionFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: DropdownButtonFormField<String?>(
@@ -5736,6 +5930,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
 
   @override
   void dispose() {
+    for (final controller in [_gasCapacity, _gasTare, _gasPrice, _gasLow, _gasWarning]) { controller.dispose(); }
     _nameController.dispose();
     _deviceIdController.dispose();
     _productIdController.dispose();

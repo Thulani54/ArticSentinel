@@ -1,3 +1,5 @@
+import '../services/push_notifications.dart';
+import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
 import 'package:artic_sentinel/authentication/signup.dart';
@@ -593,7 +595,7 @@ class _LoginPageState extends State<LoginPage> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return Dialog(
+        return MobileDialog(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Row(
@@ -709,6 +711,8 @@ class _LoginPageState extends State<LoginPage> {
           await Sharedprefs.saveUserPasswordPreference(
               _passwordController.text);
           await Sharedprefs.saveAuthTokenPreference(token);
+          await PushNotifications.instance.initialize();
+          await PushNotifications.instance.sync();
 
           // Save business information
           if (primaryBusiness != null) {

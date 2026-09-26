@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -105,7 +106,7 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
   Widget build(BuildContext context) {
     // var device = deviceTypeList;
     return StatefulBuilder(
-        builder: (context1, setState) => Dialog(
+        builder: (context1, setState) => MobileDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -1449,7 +1450,7 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                       SizedBox(height: 20),
                       Padding(
                         padding: const EdgeInsets.only(left: 24, right: 24),
-                        child: Row(
+                        child: MobileFormRow(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [

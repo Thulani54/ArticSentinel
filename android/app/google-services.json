@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "182447063043",
+    "project_id": "articsentinel-mobile-2026",
+    "storage_bucket": "articsentinel-mobile-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:182447063043:android:3aaa1f32aa926c3dab0e36",
+        "android_client_info": {
+          "package_name": "com.navario.artic_sentinel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8f2ytS7rd_I5rowKr6av4dYNcB4z8NY8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

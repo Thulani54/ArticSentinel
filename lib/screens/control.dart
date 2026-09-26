@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -1071,7 +1072,7 @@ class _ControlScreenState extends State<ControlScreen>
           const SizedBox(height: 16),
           DropdownButtonFormField<DeviceInfo>(
             value: _selectedDevice,
-            decoration: InputDecoration(
+            decoration: mobileInputDecoration(context, InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -1087,7 +1088,7 @@ class _ControlScreenState extends State<ControlScreen>
               filled: true,
               fillColor: const Color(0xFFF9FAFB),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
+            )),
             items: _devices.map((device) {
               return DropdownMenuItem(
                 value: device,
@@ -1526,7 +1527,7 @@ class _ControlScreenState extends State<ControlScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return AlertDialog(
+          return MobileAlertDialog(
             title: const Text('Turn OFF After Harvests'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -2093,12 +2094,12 @@ class _ControlScreenState extends State<ControlScreen>
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
+                      decoration: mobileFlatDecoration(context, BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)],
                         ),
                         borderRadius: BorderRadius.circular(12),
-                      ),
+                      )),
                       child: const Icon(CupertinoIcons.snow, color: Colors.white, size: 24),
                     ),
                     const SizedBox(width: 16),
@@ -2164,10 +2165,10 @@ class _ControlScreenState extends State<ControlScreen>
                           const Spacer(),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
+                            decoration: mobileFlatDecoration(context, BoxDecoration(
                               gradient: const LinearGradient(colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)]),
                               borderRadius: BorderRadius.circular(20),
-                            ),
+                            )),
                             child: Text(
                               '${selectedTimes.length}x per day',
                               style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
@@ -2272,11 +2273,11 @@ class _ControlScreenState extends State<ControlScreen>
                                 duration: const Duration(milliseconds: 200),
                                 margin: const EdgeInsets.only(right: 10),
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                decoration: BoxDecoration(
+                                decoration: mobileFlatDecoration(context, BoxDecoration(
                                   gradient: isSelected ? const LinearGradient(colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)]) : null,
                                   color: isSelected ? null : Colors.grey.shade100,
                                   borderRadius: BorderRadius.circular(12),
-                                ),
+                                )),
                                 child: Text(
                                   '$d min',
                                   style: GoogleFonts.inter(
@@ -2310,11 +2311,11 @@ class _ControlScreenState extends State<ControlScreen>
                                 duration: const Duration(milliseconds: 200),
                                 width: 42,
                                 height: 42,
-                                decoration: BoxDecoration(
+                                decoration: mobileFlatDecoration(context, BoxDecoration(
                                   gradient: isSelected ? const LinearGradient(colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)]) : null,
                                   color: isSelected ? null : Colors.grey.shade100,
                                   shape: BoxShape.circle,
-                                ),
+                                )),
                                 child: Center(
                                   child: Text(
                                     entry.value,
@@ -2343,7 +2344,7 @@ class _ControlScreenState extends State<ControlScreen>
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
                 ),
                 child: SafeArea(
-                  child: Row(
+                  child: MobileFormRow(
                     children: [
                       Expanded(
                         child: OutlinedButton(
@@ -2360,10 +2361,10 @@ class _ControlScreenState extends State<ControlScreen>
                       Expanded(
                         flex: 2,
                         child: Container(
-                          decoration: BoxDecoration(
+                          decoration: mobileFlatDecoration(context, BoxDecoration(
                             gradient: const LinearGradient(colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)]),
                             borderRadius: BorderRadius.circular(12),
-                          ),
+                          )),
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.pop(context);
@@ -2440,10 +2441,10 @@ class _ControlScreenState extends State<ControlScreen>
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
+                      decoration: mobileFlatDecoration(context, BoxDecoration(
                         gradient: const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFF57C00)]),
                         borderRadius: BorderRadius.circular(12),
-                      ),
+                      )),
                       child: const Icon(CupertinoIcons.bolt_fill, color: Colors.white, size: 24),
                     ),
                     const SizedBox(width: 16),
@@ -2469,7 +2470,7 @@ class _ControlScreenState extends State<ControlScreen>
                       TextField(
                         controller: nameController,
                         onChanged: (v) => name = v,
-                        decoration: InputDecoration(
+                        decoration: mobileInputDecoration(context, InputDecoration(
                           hintText: 'e.g., High Pressure Protection',
                           filled: true,
                           fillColor: Colors.grey.shade50,
@@ -2485,7 +2486,7 @@ class _ControlScreenState extends State<ControlScreen>
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(color: Colors.orange, width: 2),
                           ),
-                        ),
+                        )),
                       ),
                       const SizedBox(height: 24),
 
@@ -2510,12 +2511,12 @@ class _ControlScreenState extends State<ControlScreen>
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
+                              decoration: mobileFlatDecoration(context, BoxDecoration(
                                 gradient: isSelected ? const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFF57C00)]) : null,
                                 color: isSelected ? null : Colors.grey.shade50,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: isSelected ? Colors.transparent : Colors.grey.shade200),
-                              ),
+                              )),
                               child: Row(
                                 children: [
                                   Icon(opt['icon'] as IconData, color: isSelected ? Colors.white : Colors.grey.shade600, size: 20),
@@ -2539,7 +2540,7 @@ class _ControlScreenState extends State<ControlScreen>
                       const SizedBox(height: 24),
 
                       // Threshold
-                      Row(
+                      MobileFormRow(
                         children: [
                           Expanded(
                             child: Column(
@@ -2551,7 +2552,7 @@ class _ControlScreenState extends State<ControlScreen>
                                   controller: thresholdController,
                                   keyboardType: TextInputType.number,
                                   onChanged: (v) => threshold = double.tryParse(v) ?? threshold,
-                                  decoration: InputDecoration(
+                                  decoration: mobileInputDecoration(context, InputDecoration(
                                     suffixText: sensor.contains('pressure') ? 'PSI' : '°C',
                                     filled: true,
                                     fillColor: Colors.grey.shade50,
@@ -2559,7 +2560,7 @@ class _ControlScreenState extends State<ControlScreen>
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide: BorderSide(color: Colors.grey.shade200),
                                     ),
-                                  ),
+                                  )),
                                 ),
                               ],
                             ),
@@ -2628,12 +2629,12 @@ class _ControlScreenState extends State<ControlScreen>
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(vertical: 20),
-                                decoration: BoxDecoration(
+                                decoration: mobileFlatDecoration(context, BoxDecoration(
                                   gradient: turnOn ? const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF43A047)]) : null,
                                   color: turnOn ? null : Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: turnOn ? Colors.transparent : Colors.grey.shade200),
-                                ),
+                                )),
                                 child: Column(
                                   children: [
                                     Icon(CupertinoIcons.power, color: turnOn ? Colors.white : Colors.grey, size: 28),
@@ -2652,12 +2653,12 @@ class _ControlScreenState extends State<ControlScreen>
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(vertical: 20),
-                                decoration: BoxDecoration(
+                                decoration: mobileFlatDecoration(context, BoxDecoration(
                                   gradient: !turnOn ? const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFE53935)]) : null,
                                   color: !turnOn ? null : Colors.grey.shade50,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: !turnOn ? Colors.transparent : Colors.grey.shade200),
-                                ),
+                                )),
                                 child: Column(
                                   children: [
                                     Icon(CupertinoIcons.stop_fill, color: !turnOn ? Colors.white : Colors.grey, size: 28),
@@ -2685,7 +2686,7 @@ class _ControlScreenState extends State<ControlScreen>
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
                 ),
                 child: SafeArea(
-                  child: Row(
+                  child: MobileFormRow(
                     children: [
                       Expanded(
                         child: OutlinedButton(
@@ -2702,10 +2703,10 @@ class _ControlScreenState extends State<ControlScreen>
                       Expanded(
                         flex: 2,
                         child: Container(
-                          decoration: BoxDecoration(
+                          decoration: mobileFlatDecoration(context, BoxDecoration(
                             gradient: const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFF57C00)]),
                             borderRadius: BorderRadius.circular(12),
-                          ),
+                          )),
                           child: ElevatedButton(
                             onPressed: () {
                               if (nameController.text.isEmpty) {
@@ -2977,7 +2978,7 @@ class _ControlScreenState extends State<ControlScreen>
           const SizedBox(height: 20),
 
           // All ON / All OFF buttons
-          Row(
+          MobileFormRow(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
@@ -3261,7 +3262,7 @@ class _ControlScreenState extends State<ControlScreen>
     int minutes = 60;
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => MobileAlertDialog(
         title: const Text('Turn OFF for Duration'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -3351,7 +3352,7 @@ class _ControlScreenState extends State<ControlScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return AlertDialog(
+          return MobileAlertDialog(
             title: const Text('Schedule Relay Action'),
             content: SingleChildScrollView(
               child: Column(
@@ -3449,7 +3450,7 @@ class _ControlScreenState extends State<ControlScreen>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return AlertDialog(
+          return MobileAlertDialog(
             title: const Text('Create Recurring Schedule'),
             content: SingleChildScrollView(
               child: Column(

@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -1486,7 +1487,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
         context: context,
         barrierDismissible: false,
         builder: (context) => StatefulBuilder(
-            builder: (context, setState) => Dialog(
+            builder: (context, setState) => MobileDialog(
                   insetAnimationDuration: Duration(milliseconds: 800),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(64),

@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -1514,7 +1515,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
           // Header Section
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
+            decoration: mobileFlatDecoration(context, BoxDecoration(
               gradient: LinearGradient(
                 colors: [
                   Constants.ctaColorLight.withOpacity(0.1),
@@ -1527,7 +1528,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
               ),
-            ),
+            )),
             child: Row(
               children: [
                 Container(

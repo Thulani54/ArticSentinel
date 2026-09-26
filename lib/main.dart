@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'services/push_notifications.dart';
 import 'package:artic_sentinel/screens/dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -64,9 +67,14 @@ Future<void> main() async {
   }
 
   // Determine initial route
-  final initialRoute = isLoggedIn ? '/dashboard' : '/';
+  final initialRoute = isLoggedIn ? '/dashboard' : (kIsWeb ? '/' : '/login');
 
-  runApp(MyApp(initialRoute: initialRoute));
+  final app = MyApp(initialRoute: initialRoute);
+  runApp(app);
+  PushNotifications.instance.attachOpenHandler(() {
+    Sharedprefs.getUserLoggedInSharedPreference().then((loggedIn) => app._router.go(loggedIn == true ? '/device-management' : '/login'));
+  });
+  unawaited(PushNotifications.instance.initialize());
 }
 
 class MyApp extends StatelessWidget {

@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -132,7 +133,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
   Widget build(BuildContext context) {
     // var device = deviceTypeList;
     return StatefulBuilder(
-        builder: (context1, setState) => Dialog(
+        builder: (context1, setState) => MobileDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -1377,7 +1378,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                       SizedBox(height: 20),
                       Padding(
                         padding: const EdgeInsets.only(left: 24, right: 24),
-                        child: Row(
+                        child: MobileFormRow(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [

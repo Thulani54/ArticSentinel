@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -16,6 +17,9 @@ import 'package:timeago/timeago.dart' as timeAgo;
 
 import '../constants/Constants.dart';
 import '../constants/models/device.dart';
+import '../gasmon/gas_core.dart' show isGasCylinderType;
+import '../gasmon/gas_dashboard_card.dart';
+import '../models/device.dart' as app;
 import '../custom_widgets/customCard.dart';
 import '../models/animal_breed.dart';
 import '../models/average_temperature.dart';
@@ -947,15 +951,15 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     final controller = TextEditingController(text: currentName);
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => MobileAlertDialog(
         title: Text('Rename', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: InputDecoration(
+          decoration: mobileInputDecoration(context, InputDecoration(
             hintText: 'Enter new name',
             border: OutlineInputBorder(),
-          ),
+          )),
           onSubmitted: (val) => Navigator.of(ctx).pop(val.trim()),
         ),
         actions: [
@@ -3167,7 +3171,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration: mobileFlatDecoration(context, BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -3190,7 +3194,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               .withOpacity(0.3),
           width: 2,
         ),
-      ),
+      )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -4107,6 +4111,20 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   }
 
   @override
+  /// The selected device when it's a gas cylinder, as the app's Device model.
+  app.Device? get _selectedGasDevice {
+    final d = availableDevices.where((d) => d.deviceId == selectedDeviceId).firstOrNull;
+    if (d == null || !isGasCylinderType(d.deviceType)) return null;
+    return app.Device(
+      id: d.id,
+      name: d.name,
+      deviceId: d.deviceId,
+      location: d.location,
+      deviceType: d.deviceType,
+      isOnline: d.isOnline,
+    );
+  }
+
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
     final padding = isMobile ? 16.0 : 24.0;
@@ -4140,10 +4158,15 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       SizedBox(height: isMobile ? 16 : 24),
                       _buildPerformanceOverview(),
                       SizedBox(height: isMobile ? 16 : 24),
-                      _buildEnhancedSummaryCards2(),
-                      SizedBox(height: isMobile ? 16 : 24),
-                      _buildMetricsTabView(),
-                      SizedBox(height: isMobile ? 16 : 24),
+                      if (_selectedGasDevice != null) ...[
+                        GasDashboardCard(device: _selectedGasDevice!),
+                        SizedBox(height: isMobile ? 16 : 24),
+                      ] else ...[
+                        _buildEnhancedSummaryCards2(),
+                        SizedBox(height: isMobile ? 16 : 24),
+                        _buildMetricsTabView(),
+                        SizedBox(height: isMobile ? 16 : 24),
+                      ],
                       _buildAlertsSection(),
                       SizedBox(height: isMobile ? 16 : 24),
                       _buildDeviceMapSection(),

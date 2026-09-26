@@ -317,10 +317,16 @@ class Device {
     return 'Offline';
   }
 
-  // Get device type display text (capitalize first letter)
+  // Get device type display text (title-cases snake_case:
+  // 'chiller' -> 'Chiller', 'gas_cylinder' -> 'Gas Cylinder')
   String get deviceTypeDisplay {
-    if (deviceType == null || deviceType!.isEmpty) return 'Unknown';
-    return deviceType![0].toUpperCase() + deviceType!.substring(1);
+    final raw = deviceType;
+    if (raw == null || raw.isEmpty) return 'Unknown';
+    return raw
+        .split(RegExp(r'[_\s]+'))
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0].toUpperCase() + w.substring(1))
+        .join(' ');
   }
 
   // Get formatted temperature range
@@ -439,6 +445,7 @@ enum DeviceType {
   airConditioner,
   heater,
   ventilation,
+  gasCylinder,
   unknown;
 
   String get displayName {
@@ -455,6 +462,8 @@ enum DeviceType {
         return 'Heater';
       case DeviceType.ventilation:
         return 'Ventilation';
+      case DeviceType.gasCylinder:
+        return 'Gas Cylinder';
       case DeviceType.unknown:
         return 'Unknown';
     }
@@ -477,6 +486,11 @@ enum DeviceType {
         return DeviceType.heater;
       case 'ventilation':
         return DeviceType.ventilation;
+      case 'gas_cylinder':
+      case 'gas cylinder':
+      case 'gas monitor':
+      case 'gas':
+        return DeviceType.gasCylinder;
       default:
         return DeviceType.unknown;
     }

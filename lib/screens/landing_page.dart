@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -1237,7 +1238,7 @@ class _LandingPageState extends State<LandingPage> {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      decoration: InputDecoration(
+      decoration: mobileInputDecoration(context, InputDecoration(
         hintText: hint,
         hintStyle: GoogleFonts.lato(color: Constants.ctaTextColor.withValues(alpha: 0.6), fontSize: 14),
         prefixIcon: icon != null ? Icon(icon, size: 20, color: Constants.ctaTextColor.withValues(alpha: 0.5)) : null,
@@ -1247,7 +1248,7 @@ class _LandingPageState extends State<LandingPage> {
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Constants.ctaColorLight)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
+      )),
     );
   }
 
@@ -1279,7 +1280,7 @@ class _LandingPageState extends State<LandingPage> {
                 Expanded(
                   child: TextField(
                     controller: _newsletterController,
-                    decoration: InputDecoration(
+                    decoration: mobileInputDecoration(context, InputDecoration(
                       hintText: "Enter your email",
                       hintStyle: GoogleFonts.lato(color: Constants.ctaTextColor.withValues(alpha: 0.5), fontSize: 14),
                       filled: true,
@@ -1288,7 +1289,7 @@ class _LandingPageState extends State<LandingPage> {
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(32), borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(32), borderSide: BorderSide(color: Constants.ctaColorLight)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    ),
+                    )),
                   ),
                 ),
                 const SizedBox(width: 12),
