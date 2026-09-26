@@ -1,3 +1,4 @@
+import '../widgets/device_alert_card.dart';
 import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
@@ -1615,6 +1616,9 @@ class DeviceDetailsDialog extends StatelessWidget {
                       ),
 
                       SizedBox(height: 24),
+
+                      DeviceAlertCard(device: device),
+                      const SizedBox(height: 24),
 
                       // Connected Unit Section with enhanced styling
                       _buildEnhancedSection(

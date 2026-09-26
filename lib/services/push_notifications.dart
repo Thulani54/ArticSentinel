@@ -95,8 +95,8 @@ class PushNotifications {
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(const AndroidNotificationChannel(
-              'gas_alerts', 'Gas level alerts',
-              description: 'Cylinder alerts at 50%, 30% and 10%.',
+              'gas_alerts', 'Device alerts',
+              description: 'Your device threshold notifications.',
               importance: Importance.high));
       await FirebaseMessaging.instance
           .setForegroundNotificationPresentationOptions(
@@ -114,7 +114,7 @@ class PushNotifications {
             payload: jsonEncode(message.data),
             notificationDetails: const NotificationDetails(
                 android: AndroidNotificationDetails(
-                    'gas_alerts', 'Gas level alerts',
+                    'gas_alerts', 'Device alerts',
                     importance: Importance.high,
                     priority: Priority.high,
                     icon: 'ic_stat_gas')));
@@ -208,7 +208,7 @@ class PushNotifications {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     _registeredToken = token;
     status.value = data['delivery_configured'] == true
-        ? 'Phone alerts enabled at 50%, 30% and 10% remaining.'
+        ? 'Phone alerts enabled. Configure thresholds on each device.'
         : 'Phone registered. Server delivery configuration is still required.';
   }
 

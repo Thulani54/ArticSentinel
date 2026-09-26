@@ -5,7 +5,7 @@ from django.db import connections, transaction
 from django.utils import timezone
 from device.models import Device, GasCylinderConfig
 from device.gas_views import _user_can_access
-from .models import PushInstallation, GasPushState, GasPushEvent, PushDelivery
+from .models import PushInstallation, GasPushState, GasPushEvent, PushDelivery, DeviceAlertSettings
 from .thresholds import evaluate_level
 from .sender import configured, send_notification
 
@@ -39,9 +39,13 @@ def check_gas_levels():
                 event,_ = GasPushEvent.objects.get_or_create(device=config.device,threshold=threshold,reading_at=at,defaults={'level':level})
                 installations = PushInstallation.objects.filter(company=config.device.company,enabled=True,user__is_active=True).select_related('user')
                 for installation in installations:
+                    if DeviceAlertSettings.objects.filter(user=installation.user,device=config.device).exists():
+                        continue
                     if _user_can_access(installation.user,config.device.company):
                         PushDelivery.objects.get_or_create(event=event,installation=installation)
                 count += 1
+    from .rule_tasks import check_device_thresholds
+    check_device_thresholds()
     deliver_gas_notifications.delay()
     return {'events':count}
 
@@ -61,7 +65,9 @@ def deliver_gas_notifications():
                 break
             installation = delivery.installation
             delivery.attempts += 1
-            if not installation.user.is_active or not _user_can_access(installation.user,delivery.event.device.company):
+            if DeviceAlertSettings.objects.filter(user=installation.user,device=delivery.event.device).exists():
+                delivery.attempts=5;delivery.last_error='replaced by personal rules'
+            elif not installation.user.is_active or not _user_can_access(installation.user,delivery.event.device.company):
                 installation.enabled=False;installation.save(update_fields=['enabled'])
                 delivery.last_error='access revoked'
             else:
@@ -76,3 +82,6 @@ def deliver_gas_notifications():
                     delivery.last_error=type(error).__name__
             delivery.next_attempt_at=timezone.now()+timedelta(seconds=min(300,15*2**delivery.attempts))
             delivery.save()
+
+# Import so Celery autodiscovery registers the personal-rule delivery task.
+from .rule_tasks import deliver_device_thresholds

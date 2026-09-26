@@ -396,7 +396,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
         const SizedBox(height: 20),
         GasSetupCard(config: _config, onSave: _saveConfig),
         const SizedBox(height: 20),
-        const GasNotificationCard(),
+        GasNotificationCard(device: widget.device),
       ]);
     }
     return Column(
@@ -440,7 +440,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
         _buildReports(levelPct),
         const SizedBox(height: 24),
         if (isPhoneLayout(context)) ...[
-          const GasNotificationCard(),
+          GasNotificationCard(device: widget.device),
           const SizedBox(height: 24)
         ],
         GasSetupCard(

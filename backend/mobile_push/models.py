@@ -33,3 +33,38 @@ class PushDelivery(models.Model):
     last_error = models.CharField(max_length=100, blank=True)
     class Meta:
         constraints = [models.UniqueConstraint(fields=['event','installation'],name='unique_gas_push_delivery')]
+
+class DeviceAlertSettings(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    device = models.ForeignKey('device.Device', on_delete=models.CASCADE)
+    revision = models.PositiveIntegerField(default=0)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user','device'],name='personal_device_alert_settings')]
+
+class DeviceAlertRule(models.Model):
+    settings = models.ForeignKey(DeviceAlertSettings, on_delete=models.CASCADE, related_name='rules')
+    metric = models.CharField(max_length=40)
+    comparison = models.CharField(max_length=3)
+    threshold = models.FloatField()
+    triggered = models.BooleanField(default=False)
+    last_reading_at = models.DateTimeField(null=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['settings','metric','comparison','threshold'],name='personal_device_alert_rule')]
+
+class DeviceThresholdEvent(models.Model):
+    rule = models.ForeignKey(DeviceAlertRule, on_delete=models.CASCADE)
+    value = models.FloatField()
+    reading_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['rule','reading_at'],name='unique_device_threshold_event')]
+
+class DeviceThresholdDelivery(models.Model):
+    event = models.ForeignKey(DeviceThresholdEvent, on_delete=models.CASCADE)
+    installation = models.ForeignKey(PushInstallation, on_delete=models.CASCADE)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    next_attempt_at = models.DateTimeField(default=timezone.now)
+    sent_at = models.DateTimeField(null=True)
+    last_error = models.CharField(max_length=100,blank=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['event','installation'],name='unique_device_threshold_delivery')]
