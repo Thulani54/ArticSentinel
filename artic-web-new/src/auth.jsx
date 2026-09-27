@@ -1,5 +1,7 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
+import { preferenceKey, readPreferences, applyPreferences, DEFAULT_PREFERENCES } from './lib/settings/preferences';
+import './pages/settings.css';
 
 const STORAGE_KEY = 'artic_auth';
 const AuthContext = createContext(null);
@@ -15,6 +17,14 @@ function readStored() {
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState(readStored);
+
+  useEffect(() => {
+    const apply = () => applyPreferences(auth?.user ? readPreferences(preferenceKey(auth.user)) : DEFAULT_PREFERENCES);
+    apply();
+    window.addEventListener('storage', apply);
+    window.addEventListener('artic-preferences', apply);
+    return () => { window.removeEventListener('storage', apply); window.removeEventListener('artic-preferences', apply); };
+  }, [auth?.user]);
 
   const value = useMemo(
     () => ({
