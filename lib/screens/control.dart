@@ -1,3 +1,7 @@
+import '../gasmon/gas_widgets.dart';
+import '../widgets/mobile_screen.dart';
+import '../gasmon/gas_theme.dart';
+import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -136,7 +140,10 @@ class _ControlScreenState extends State<ControlScreen>
         if (data['success'] == true) {
           // Include both device1 and device3
           final devices = (data['devices'] as List)
-              .where((d) => d['device_type'] == 'device3' || d['device_type'] == 'device1' || d['device_type'] == 'device5')
+              .where((d) =>
+                  d['device_type'] == 'device3' ||
+                  d['device_type'] == 'device1' ||
+                  d['device_type'] == 'device5')
               .map((d) => DeviceInfo.fromJson(d))
               .toList();
 
@@ -242,7 +249,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/harvest-turnoff/status/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/harvest-turnoff/status/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -268,7 +276,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-control/status/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-control/status/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -294,7 +303,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-control/history/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-control/history/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -323,7 +333,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-defrost/schedules/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-defrost/schedules/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -351,7 +362,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-automation/rules/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-automation/rules/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -374,19 +386,22 @@ class _ControlScreenState extends State<ControlScreen>
     }
   }
 
-  Future<void> _createDefrostSchedule(String scheduleType, List<TimeOfDay> times, int duration, List<String> days) async {
+  Future<void> _createDefrostSchedule(String scheduleType,
+      List<TimeOfDay> times, int duration, List<String> days) async {
     if (_selectedDevice == null) return;
 
     setState(() => _isLoading = true);
 
     try {
       // Convert times to comma-separated string
-      final scheduledTimes = times.map((t) =>
-        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}'
-      ).join(',');
+      final scheduledTimes = times
+          .map((t) =>
+              '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}')
+          .join(',');
 
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-defrost/schedule/create/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-defrost/schedule/create/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -402,7 +417,8 @@ class _ControlScreenState extends State<ControlScreen>
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          _showSuccessSnackBar('Defrost schedule created (${times.length}x per day)');
+          _showSuccessSnackBar(
+              'Defrost schedule created (${times.length}x per day)');
           await _loadDefrostSchedules();
         }
       }
@@ -418,7 +434,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-defrost/schedule/delete/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-defrost/schedule/delete/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -437,14 +454,16 @@ class _ControlScreenState extends State<ControlScreen>
     }
   }
 
-  Future<void> _createAutomationRule(String name, String triggerType, String sensor, double threshold, bool turnOn, double hysteresis) async {
+  Future<void> _createAutomationRule(String name, String triggerType,
+      String sensor, double threshold, bool turnOn, double hysteresis) async {
     if (_selectedDevice == null) return;
 
     setState(() => _isLoading = true);
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-automation/rule/create/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-automation/rule/create/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -475,7 +494,8 @@ class _ControlScreenState extends State<ControlScreen>
   Future<void> _toggleAutomationRule(int ruleId, bool isActive) async {
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-automation/rule/toggle/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-automation/rule/toggle/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -496,7 +516,8 @@ class _ControlScreenState extends State<ControlScreen>
   Future<void> _deleteAutomationRule(int ruleId) async {
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-automation/rule/delete/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-automation/rule/delete/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -522,7 +543,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-control/toggle-defrost/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-control/toggle-defrost/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -566,7 +588,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device1-control/toggle-compressor/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device1-control/toggle-compressor/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -587,7 +610,8 @@ class _ControlScreenState extends State<ControlScreen>
       } else {
         try {
           final errorData = jsonDecode(response.body);
-          _showErrorSnackBar(errorData['error'] ?? 'Failed to toggle compressor');
+          _showErrorSnackBar(
+              errorData['error'] ?? 'Failed to toggle compressor');
         } catch (_) {
           _showErrorSnackBar('Failed to toggle compressor');
         }
@@ -610,7 +634,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device5-relay-status/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device5-relay-status/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -640,7 +665,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device5-relay-history/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device5-relay-history/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -653,7 +679,8 @@ class _ControlScreenState extends State<ControlScreen>
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           setState(() {
-            _device5History = List<Map<String, dynamic>>.from(data['history'] ?? []);
+            _device5History =
+                List<Map<String, dynamic>>.from(data['history'] ?? []);
           });
         }
       }
@@ -669,7 +696,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device5-relay-toggle/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device5-relay-toggle/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -704,7 +732,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/device5-relay-toggle-all/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/device5-relay-toggle-all/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -756,7 +785,8 @@ class _ControlScreenState extends State<ControlScreen>
           _showSuccessSnackBar(data['message'] ?? 'Harvest turnoff updated');
           await _loadHarvestTurnoffStatus();
         } else {
-          _showErrorSnackBar(data['error'] ?? 'Failed to update harvest turnoff');
+          _showErrorSnackBar(
+              data['error'] ?? 'Failed to update harvest turnoff');
         }
       } else {
         _showErrorSnackBar('Failed to update harvest turnoff');
@@ -838,7 +868,8 @@ class _ControlScreenState extends State<ControlScreen>
       }
 
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/relay-schedule/create/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/relay-schedule/create/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
@@ -846,7 +877,8 @@ class _ControlScreenState extends State<ControlScreen>
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          _showSuccessSnackBar(data['message'] ?? 'Schedule created successfully');
+          _showSuccessSnackBar(
+              data['message'] ?? 'Schedule created successfully');
           Navigator.pop(context);
           await _loadSchedules();
         } else {
@@ -871,7 +903,8 @@ class _ControlScreenState extends State<ControlScreen>
 
     try {
       final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/devices/relay-schedule/delete/'),
+        Uri.parse(
+            '${Constants.articBaseUrl2}api/devices/relay-schedule/delete/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
@@ -934,9 +967,10 @@ class _ControlScreenState extends State<ControlScreen>
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: isPhoneLayout(context) ? GasPalette.page : Colors.white,
       child: _isLoading && _devices.isEmpty
-          ? Center(child: CircularProgressIndicator(color: const Color(0xFF3B82F6)))
+          ? Center(
+              child: CircularProgressIndicator(color: const Color(0xFF3B82F6)))
           : _error.isNotEmpty
               ? Center(
                   child: Text(
@@ -947,37 +981,45 @@ class _ControlScreenState extends State<ControlScreen>
               : _devices.isEmpty
                   ? _buildEmptyState()
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CompactHeader(
-                            title: "Control",
-                            description: _selectedDevice?.deviceType == 'device1'
-                                ? "Monitor control switches for Device 1"
-                                : _selectedDevice?.deviceType == 'device5'
-                                    ? "16-Relay Controller"
-                                    : "Manage relay control for ice machines",
-                            icon: CupertinoIcons.power,
-                          ),
-                          const SizedBox(height: 24),
+                          if (isPhoneLayout(context))
+                            const MobileScreenHeader(
+                              padding: EdgeInsets.fromLTRB(0, 4, 0, 0),
+                              title: 'Control',
+                            )
+                          else
+                            CompactHeader(
+                              title: "Control",
+                              description: _selectedDevice?.deviceType ==
+                                      'device1'
+                                  ? "Monitor control switches for Device 1"
+                                  : _selectedDevice?.deviceType == 'device5'
+                                      ? "16-Relay Controller"
+                                      : "Manage relay control for ice machines",
+                              icon: CupertinoIcons.power,
+                            ),
+                          SizedBox(height: isPhoneLayout(context) ? 16 : 24),
                           _buildDeviceSelector(),
-                          const SizedBox(height: 24),
+                          SizedBox(height: isPhoneLayout(context) ? 16 : 24),
                           if (_selectedDevice?.deviceType == 'device1') ...[
                             _buildDevice1ControlCard(),
-                            const SizedBox(height: 24),
+                            SizedBox(height: isPhoneLayout(context) ? 16 : 24),
                             _buildDefrostScheduleSection(),
-                            const SizedBox(height: 24),
+                            SizedBox(height: isPhoneLayout(context) ? 16 : 24),
                             _buildAutomationRulesSection(),
-                            const SizedBox(height: 24),
+                            SizedBox(height: isPhoneLayout(context) ? 16 : 24),
                             _buildDevice1HistorySection(),
-                          ] else if (_selectedDevice?.deviceType == 'device5') ...[
+                          ] else if (_selectedDevice?.deviceType ==
+                              'device5') ...[
                             _buildDevice5ControlCard(),
-                            const SizedBox(height: 24),
+                            SizedBox(height: isPhoneLayout(context) ? 16 : 24),
                             _buildDevice5HistorySection(),
                           ] else ...[
                             _buildStatusCard(),
-                            const SizedBox(height: 24),
+                            SizedBox(height: isPhoneLayout(context) ? 16 : 24),
                             _buildTabSection(),
                           ],
                         ],
@@ -1028,116 +1070,157 @@ class _ControlScreenState extends State<ControlScreen>
 
   Widget _buildDeviceSelector() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.all(isPhoneLayout(context) ? 0 : 20),
+      decoration: isPhoneLayout(context)
+          ? null
+          : BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(
+                isPhoneLayout(context) ? 14 : 16,
+              ),
+              border: isPhoneLayout(context)
+                  ? Border.all(color: GasPalette.border)
+                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+          if (!isPhoneLayout(context)) ...[
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.devices_rounded,
+                    size: 20,
+                    color: Color(0xFF3B82F6),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.devices_rounded,
-                  size: 20,
-                  color: Color(0xFF3B82F6),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Select Device',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E293B),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Select Device',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E293B),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
           DropdownButtonFormField<DeviceInfo>(
+            isExpanded: true,
             value: _selectedDevice,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            decoration: mobileInputDecoration(
+              context,
+              InputDecoration(
+                labelText: isPhoneLayout(context) ? 'Equipment' : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF3B82F6),
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF9FAFB),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
-              ),
-              filled: true,
-              fillColor: const Color(0xFFF9FAFB),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             items: _devices.map((device) {
               return DropdownMenuItem(
                 value: device,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: device.isOnline ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
+                child: isPhoneLayout(context)
+                    ? Text(
                         device.name,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF1E293B),
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          color: GasPalette.ink,
                         ),
+                      )
+                    : Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: device.isOnline
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFF9CA3AF),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              device.name,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF1E293B),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: device.deviceType == 'device1'
+                                  ? const Color(0xFF3B82F6).withOpacity(0.1)
+                                  : device.deviceType == 'device5'
+                                  ? const Color(0xFF8B5CF6).withOpacity(0.1)
+                                  : const Color(0xFF06B6D4).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              device.deviceType == 'device1'
+                                  ? 'D1'
+                                  : device.deviceType == 'device5'
+                                  ? 'D5'
+                                  : 'D3',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: device.deviceType == 'device1'
+                                    ? const Color(0xFF3B82F6)
+                                    : device.deviceType == 'device5'
+                                    ? const Color(0xFF8B5CF6)
+                                    : const Color(0xFF06B6D4),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: device.deviceType == 'device1'
-                            ? const Color(0xFF3B82F6).withOpacity(0.1)
-                            : device.deviceType == 'device5'
-                                ? const Color(0xFF8B5CF6).withOpacity(0.1)
-                                : const Color(0xFF06B6D4).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        device.deviceType == 'device1' ? 'D1' : device.deviceType == 'device5' ? 'D5' : 'D3',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: device.deviceType == 'device1'
-                              ? const Color(0xFF3B82F6)
-                              : device.deviceType == 'device5'
-                                  ? const Color(0xFF8B5CF6)
-                                  : const Color(0xFF06B6D4),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               );
             }).toList(),
             onChanged: (value) {
@@ -1155,22 +1238,35 @@ class _ControlScreenState extends State<ControlScreen>
   Widget _buildStatusCard() {
     if (_selectedDevice == null) return const SizedBox.shrink();
 
-    final statusColor = _relayStatus ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final statusColor =
+        _relayStatus ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
+      decoration: isPhoneLayout(context)
+          ? BoxDecoration(
+              color: GasPalette.panel,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: GasPalette.border),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x05000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2))
+              ],
+            )
+          : BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: statusColor.withOpacity(0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
       child: Column(
         children: [
           Row(
@@ -1323,7 +1419,8 @@ class _ControlScreenState extends State<ControlScreen>
             unselectedLabelColor: const Color(0xFF9CA3AF),
             indicatorColor: const Color(0xFF3B82F6),
             labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
-            unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500),
+            unselectedLabelStyle:
+                GoogleFonts.inter(fontWeight: FontWeight.w500),
             tabs: const [
               Tab(text: 'Quick Actions'),
               Tab(text: 'Schedules'),
@@ -1360,7 +1457,8 @@ class _ControlScreenState extends State<ControlScreen>
                   color: const Color(0xFFF59E0B).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.flash_on_rounded, size: 20, color: Color(0xFFF59E0B)),
+                child: const Icon(Icons.flash_on_rounded,
+                    size: 20, color: Color(0xFFF59E0B)),
               ),
               const SizedBox(width: 12),
               Text(
@@ -1417,17 +1515,22 @@ class _ControlScreenState extends State<ControlScreen>
     final harvestsRemaining = _harvestTurnoffStatus?['harvests_remaining'] ?? 0;
     final progressPercent = _harvestTurnoffStatus?['progress_percent'] ?? 0;
     final threshold = _harvestTurnoffStatus?['turn_off_after_harvests'];
-    final harvestsSinceEnable = _harvestTurnoffStatus?['harvests_since_enable'] ?? 0;
+    final harvestsSinceEnable =
+        _harvestTurnoffStatus?['harvests_since_enable'] ?? 0;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border.all(
-          color: isEnabled ? const Color(0xFF06B6D4).withOpacity(0.3) : const Color(0xFFE5E7EB),
+          color: isEnabled
+              ? const Color(0xFF06B6D4).withOpacity(0.3)
+              : const Color(0xFFE5E7EB),
           width: isEnabled ? 2 : 1,
         ),
         borderRadius: BorderRadius.circular(12),
-        color: isEnabled ? const Color(0xFF06B6D4).withOpacity(0.05) : const Color(0xFFF9FAFB),
+        color: isEnabled
+            ? const Color(0xFF06B6D4).withOpacity(0.05)
+            : const Color(0xFFF9FAFB),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1440,7 +1543,8 @@ class _ControlScreenState extends State<ControlScreen>
                   color: const Color(0xFF06B6D4).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(CupertinoIcons.snow, color: Color(0xFF06B6D4), size: 24),
+                child: const Icon(CupertinoIcons.snow,
+                    color: Color(0xFF06B6D4), size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -1469,14 +1573,18 @@ class _ControlScreenState extends State<ControlScreen>
               ),
               if (isEnabled)
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFFEF4444)),
-                  onPressed: _isLoading ? null : () => _setHarvestTurnoff(false),
+                  icon:
+                      const Icon(Icons.close_rounded, color: Color(0xFFEF4444)),
+                  onPressed:
+                      _isLoading ? null : () => _setHarvestTurnoff(false),
                   tooltip: 'Disable',
                 )
               else
                 IconButton(
-                  icon: const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
-                  onPressed: _isLoading ? null : () => _showHarvestTurnoffDialog(),
+                  icon:
+                      const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
+                  onPressed:
+                      _isLoading ? null : () => _showHarvestTurnoffDialog(),
                 ),
             ],
           ),
@@ -1488,7 +1596,9 @@ class _ControlScreenState extends State<ControlScreen>
                 value: progressPercent / 100,
                 backgroundColor: const Color(0xFFE5E7EB),
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  progressPercent > 80 ? const Color(0xFFF59E0B) : const Color(0xFF06B6D4),
+                  progressPercent > 80
+                      ? const Color(0xFFF59E0B)
+                      : const Color(0xFF06B6D4),
                 ),
                 minHeight: 8,
               ),
@@ -1509,7 +1619,9 @@ class _ControlScreenState extends State<ControlScreen>
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: progressPercent > 80 ? const Color(0xFFF59E0B) : const Color(0xFF06B6D4),
+                    color: progressPercent > 80
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFF06B6D4),
                   ),
                 ),
               ],
@@ -1522,11 +1634,11 @@ class _ControlScreenState extends State<ControlScreen>
 
   void _showHarvestTurnoffDialog() {
     int harvestCount = 5;
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return AlertDialog(
+          return MobileAlertDialog(
             title: const Text('Turn OFF After Harvests'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1557,7 +1669,8 @@ class _ControlScreenState extends State<ControlScreen>
                     ),
                     Container(
                       width: 80,
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 16),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(8),
@@ -1587,7 +1700,8 @@ class _ControlScreenState extends State<ControlScreen>
                     return ChoiceChip(
                       label: Text('$count'),
                       selected: harvestCount == count,
-                      onSelected: (s) => setDialogState(() => harvestCount = count),
+                      onSelected: (s) =>
+                          setDialogState(() => harvestCount = count),
                     );
                   }).toList(),
                 ),
@@ -1627,66 +1741,87 @@ class _ControlScreenState extends State<ControlScreen>
     final lastUpdated = _device1ControlStatus?['last_updated'];
 
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
+      decoration: isPhoneLayout(context)
+          ? BoxDecoration(
+              color: GasPalette.panel,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: GasPalette.border),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x05000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2))
+              ],
+            )
+          : BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+              if (!isPhoneLayout(context)) ...[
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(CupertinoIcons.slider_horizontal_3,
+                      color: Color(0xFF3B82F6), size: 24),
                 ),
-                child: const Icon(CupertinoIcons.slider_horizontal_3, color: Color(0xFF3B82F6), size: 24),
-              ),
-              const SizedBox(width: 16),
+                const SizedBox(width: 16),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _selectedDevice!.name,
+                      isPhoneLayout(context)
+                          ? 'Switches'
+                          : _selectedDevice!.name,
                       style: GoogleFonts.inter(
-                        fontSize: 18,
+                        fontSize: isPhoneLayout(context) ? 16 : 18,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF1E293B),
                       ),
                     ),
-                    Text(
-                      'Control Switches',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: const Color(0xFF64748B),
+                    if (!isPhoneLayout(context))
+                      Text(
+                        'Control Switches',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: const Color(0xFF64748B),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF3B82F6)),
+                icon:
+                    const Icon(Icons.refresh_rounded, color: Color(0xFF3B82F6)),
                 onPressed: _isLoading ? null : () => _loadData(),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: isPhoneLayout(context) ? 16 : 24),
 
           // Defrost Switch - Toggleable
           _buildDevice1SwitchToggle(
             title: 'Defrost Mode',
-            subtitle: defrostSwitch ? 'Active - Defrost cycle running' : 'Inactive - Tap to activate',
+            subtitle: defrostSwitch
+                ? 'Active - Defrost cycle running'
+                : 'Inactive - Tap to activate',
             isOn: defrostSwitch,
             icon: CupertinoIcons.snow,
             activeColor: const Color(0xFF06B6D4),
@@ -1712,7 +1847,8 @@ class _ControlScreenState extends State<ControlScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.access_time, size: 14, color: Color(0xFF9CA3AF)),
+                const Icon(Icons.access_time,
+                    size: 14, color: Color(0xFF9CA3AF)),
                 const SizedBox(width: 4),
                 Text(
                   'Last updated: ${_formatDateTime(lastUpdated)}',
@@ -1752,7 +1888,8 @@ class _ControlScreenState extends State<ControlScreen>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isOn ? activeColor.withOpacity(0.1) : const Color(0xFFF1F5F9),
+              color:
+                  isOn ? activeColor.withOpacity(0.1) : const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -1778,7 +1915,9 @@ class _ControlScreenState extends State<ControlScreen>
                   subtitle,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: isOn ? activeColor.withOpacity(0.8) : const Color(0xFF64748B),
+                    color: isOn
+                        ? activeColor.withOpacity(0.8)
+                        : const Color(0xFF64748B),
                   ),
                 ),
               ],
@@ -1802,17 +1941,29 @@ class _ControlScreenState extends State<ControlScreen>
 
   Widget _buildDefrostScheduleSection() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: isPhoneLayout(context)
+          ? BoxDecoration(
+              color: GasPalette.panel,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: GasPalette.border),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x05000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2))
+              ],
+            )
+          : BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1820,26 +1971,30 @@ class _ControlScreenState extends State<ControlScreen>
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF06B6D4).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                if (!isPhoneLayout(context)) ...[
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF06B6D4).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(CupertinoIcons.snow,
+                        color: Color(0xFF06B6D4), size: 20),
                   ),
-                  child: const Icon(CupertinoIcons.snow, color: Color(0xFF06B6D4), size: 20),
-                ),
-                const SizedBox(width: 12),
-                Text(
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                    child: Text(
                   'Defrost Schedules',
                   style: GoogleFonts.inter(
-                    fontSize: 18,
+                    fontSize: isPhoneLayout(context) ? 16 : 18,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E293B),
                   ),
-                ),
-                const Spacer(),
+                )),
                 IconButton(
-                  icon: const Icon(Icons.add_circle_rounded, color: Color(0xFF06B6D4)),
+                  icon: const Icon(Icons.add_circle_rounded,
+                      color: Color(0xFF06B6D4)),
                   onPressed: () => _showAddDefrostScheduleDialog(),
                 ),
               ],
@@ -1848,19 +2003,22 @@ class _ControlScreenState extends State<ControlScreen>
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
           if (_defrostSchedules.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 24),
               child: Center(
                 child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF06B6D4).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                    if (!isPhoneLayout(context)) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF06B6D4).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(CupertinoIcons.snow,
+                            size: 32, color: Color(0xFF06B6D4)),
                       ),
-                      child: const Icon(CupertinoIcons.snow, size: 32, color: Color(0xFF06B6D4)),
-                    ),
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
+                    ],
                     Text(
                       'No defrost schedules',
                       style: GoogleFonts.inter(
@@ -1871,7 +2029,8 @@ class _ControlScreenState extends State<ControlScreen>
                     const SizedBox(height: 4),
                     Text(
                       'Tap + to add a schedule',
-                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: const Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -1898,17 +2057,22 @@ class _ControlScreenState extends State<ControlScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(CupertinoIcons.snow, color: Colors.cyan, size: 16),
+                        const Icon(CupertinoIcons.snow,
+                            color: Colors.cyan, size: 16),
                         Text(
                           '${schedule.timesPerDay}x',
-                          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.cyan),
+                          style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.cyan),
                         ),
                       ],
                     ),
                   ),
                   title: Text(
                     timesDisplay,
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   subtitle: Text(
                     '${schedule.scheduleTypeDisplay} • ${schedule.durationMinutes} min${schedule.daysOfWeek != null && schedule.daysOfWeek!.isNotEmpty ? " • ${schedule.daysOfWeek}" : ""}',
@@ -1928,17 +2092,29 @@ class _ControlScreenState extends State<ControlScreen>
 
   Widget _buildAutomationRulesSection() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: isPhoneLayout(context)
+          ? BoxDecoration(
+              color: GasPalette.panel,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: GasPalette.border),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x05000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2))
+              ],
+            )
+          : BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1946,26 +2122,30 @@ class _ControlScreenState extends State<ControlScreen>
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                if (!isPhoneLayout(context)) ...[
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(CupertinoIcons.bolt,
+                        color: Color(0xFFF59E0B), size: 20),
                   ),
-                  child: const Icon(CupertinoIcons.bolt, color: Color(0xFFF59E0B), size: 20),
-                ),
-                const SizedBox(width: 12),
-                Text(
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                    child: Text(
                   'Automation Rules',
                   style: GoogleFonts.inter(
-                    fontSize: 18,
+                    fontSize: isPhoneLayout(context) ? 16 : 18,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E293B),
                   ),
-                ),
-                const Spacer(),
+                )),
                 IconButton(
-                  icon: const Icon(Icons.add_circle_rounded, color: Color(0xFFF59E0B)),
+                  icon: const Icon(Icons.add_circle_rounded,
+                      color: Color(0xFFF59E0B)),
                   onPressed: () => _showAddAutomationRuleDialog(),
                 ),
               ],
@@ -1974,19 +2154,22 @@ class _ControlScreenState extends State<ControlScreen>
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
           if (_automationRules.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 24),
               child: Center(
                 child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                    if (!isPhoneLayout(context)) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(CupertinoIcons.bolt,
+                            size: 32, color: Color(0xFFF59E0B)),
                       ),
-                      child: const Icon(CupertinoIcons.bolt, size: 32, color: Color(0xFFF59E0B)),
-                    ),
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
+                    ],
                     Text(
                       'No automation rules',
                       style: GoogleFonts.inter(
@@ -1997,7 +2180,8 @@ class _ControlScreenState extends State<ControlScreen>
                     const SizedBox(height: 4),
                     Text(
                       'Add rules to auto-control compressor',
-                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: const Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -2015,11 +2199,15 @@ class _ControlScreenState extends State<ControlScreen>
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: rule.turnCompressorOn ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                      color: rule.turnCompressorOn
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      rule.turnCompressorOn ? CupertinoIcons.play_fill : CupertinoIcons.stop_fill,
+                      rule.turnCompressorOn
+                          ? CupertinoIcons.play_fill
+                          : CupertinoIcons.stop_fill,
                       color: rule.turnCompressorOn ? Colors.green : Colors.red,
                       size: 20,
                     ),
@@ -2041,7 +2229,8 @@ class _ControlScreenState extends State<ControlScreen>
                         activeColor: Colors.green,
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                        icon: const Icon(Icons.delete_outline,
+                            color: Colors.red, size: 20),
                         onPressed: () => _deleteAutomationRule(rule.id),
                       ),
                     ],
@@ -2058,13 +2247,19 @@ class _ControlScreenState extends State<ControlScreen>
     List<TimeOfDay> selectedTimes = [const TimeOfDay(hour: 6, minute: 0)];
     int duration = 15;
     String scheduleType = 'daily';
-    Set<String> selectedDays = {'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'};
+    Set<String> selectedDays = {
+      'mon',
+      'tue',
+      'wed',
+      'thu',
+      'fri',
+      'sat',
+      'sun'
+    };
 
-    showModalBottomSheet(
+    showMobileDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
+      builder: (context) => MobileDialog(child: StatefulBuilder(
         builder: (context, setDialogState) => Container(
           height: MediaQuery.of(context).size.height * 0.85,
           decoration: const BoxDecoration(
@@ -2076,8 +2271,8 @@ class _ControlScreenState extends State<ControlScreen>
           ),
           child: Column(
             children: [
-              // Handle bar
-              Container(
+              // Keep the drag handle only on wider dialog layouts.
+              if (!isPhoneLayout(context)) Container(
                 margin: const EdgeInsets.only(top: 12),
                 width: 40,
                 height: 4,
@@ -2088,25 +2283,32 @@ class _ControlScreenState extends State<ControlScreen>
               ),
               // Header
               Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(CupertinoIcons.snow, color: Colors.white, size: 24),
+                      decoration: mobileFlatDecoration(
+                          context,
+                          BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          )),
+                      child: const Icon(CupertinoIcons.snow,
+                          color: Colors.white, size: 24),
                     ),
                     const SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Schedule Defrost', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700)),
-                        Text('Set automatic defrost cycles', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade600)),
+                        Text('Schedule Defrost',
+                            style: GoogleFonts.inter(
+                                fontSize: 20, fontWeight: FontWeight.w700)),
+                        Text('Set automatic defrost cycles',
+                            style: GoogleFonts.inter(
+                                fontSize: 13, color: Colors.grey.shade600)),
                       ],
                     ),
                   ],
@@ -2130,23 +2332,37 @@ class _ControlScreenState extends State<ControlScreen>
                             final isSelected = scheduleType == type;
                             return Expanded(
                               child: GestureDetector(
-                                onTap: () => setDialogState(() => scheduleType = type),
+                                onTap: () =>
+                                    setDialogState(() => scheduleType = type),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
                                   decoration: BoxDecoration(
-                                    color: isSelected ? Colors.white : Colors.transparent,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.transparent,
                                     borderRadius: BorderRadius.circular(10),
-                                    boxShadow: isSelected ? [
-                                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
-                                    ] : null,
+                                    boxShadow: isSelected
+                                        ? [
+                                            BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.05),
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 2)),
+                                          ]
+                                        : null,
                                   ),
                                   child: Text(
                                     type == 'daily' ? 'Daily' : 'Weekly',
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.inter(
-                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                      color: isSelected ? Colors.cyan.shade700 : Colors.grey.shade600,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? Colors.cyan.shade700
+                                          : Colors.grey.shade600,
                                     ),
                                   ),
                                 ),
@@ -2155,22 +2371,33 @@ class _ControlScreenState extends State<ControlScreen>
                           }).toList(),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: isPhoneLayout(context) ? 16 : 24),
 
                       // Times Per Day Header
                       Row(
                         children: [
-                          Text('Defrost Times', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                          Text('Defrost Times',
+                              style: GoogleFonts.inter(
+                                  fontSize: 16, fontWeight: FontWeight.w600)),
                           const Spacer(),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)]),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: mobileFlatDecoration(
+                                context,
+                                BoxDecoration(
+                                  gradient: const LinearGradient(colors: [
+                                    Color(0xFF00BCD4),
+                                    Color(0xFF00ACC1)
+                                  ]),
+                                  borderRadius: BorderRadius.circular(20),
+                                )),
                             child: Text(
                               '${selectedTimes.length}x per day',
-                              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                              style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white),
                             ),
                           ),
                         ],
@@ -2189,7 +2416,8 @@ class _ControlScreenState extends State<ControlScreen>
                             border: Border.all(color: Colors.grey.shade200),
                           ),
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 4),
                             leading: Container(
                               width: 44,
                               height: 44,
@@ -2200,19 +2428,28 @@ class _ControlScreenState extends State<ControlScreen>
                               child: Center(
                                 child: Text(
                                   '${index + 1}',
-                                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.cyan.shade700),
+                                  style: GoogleFonts.inter(
+                                      fontSize:
+                                          isPhoneLayout(context) ? 16 : 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.cyan.shade700),
                                 ),
                               ),
                             ),
                             title: Text(
                               time.format(context),
-                              style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w600),
+                              style: GoogleFonts.inter(
+                                  fontSize: 24, fontWeight: FontWeight.w600),
                             ),
-                            subtitle: Text('Tap to change', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
+                            subtitle: Text('Tap to change',
+                                style: GoogleFonts.inter(
+                                    fontSize: 12, color: Colors.grey)),
                             trailing: selectedTimes.length > 1
                                 ? IconButton(
-                                    icon: Icon(Icons.remove_circle_rounded, color: Colors.red.shade400, size: 28),
-                                    onPressed: () => setDialogState(() => selectedTimes.removeAt(index)),
+                                    icon: Icon(Icons.remove_circle_rounded,
+                                        color: Colors.red.shade400, size: 28),
+                                    onPressed: () => setDialogState(
+                                        () => selectedTimes.removeAt(index)),
                                   )
                                 : null,
                             onTap: () async {
@@ -2221,13 +2458,15 @@ class _ControlScreenState extends State<ControlScreen>
                                 initialTime: time,
                                 builder: (context, child) => Theme(
                                   data: Theme.of(context).copyWith(
-                                    colorScheme: const ColorScheme.light(primary: Colors.cyan),
+                                    colorScheme: const ColorScheme.light(
+                                        primary: Colors.cyan),
                                   ),
                                   child: child!,
                                 ),
                               );
                               if (newTime != null) {
-                                setDialogState(() => selectedTimes[index] = newTime);
+                                setDialogState(
+                                    () => selectedTimes[index] = newTime);
                               }
                             },
                           ),
@@ -2237,28 +2476,38 @@ class _ControlScreenState extends State<ControlScreen>
                       // Add Time Button
                       if (selectedTimes.length < 10)
                         GestureDetector(
-                          onTap: () => setDialogState(() => selectedTimes.add(const TimeOfDay(hour: 12, minute: 0))),
+                          onTap: () => setDialogState(() => selectedTimes
+                              .add(const TimeOfDay(hour: 12, minute: 0))),
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.cyan, style: BorderStyle.solid, width: 2),
+                              border: Border.all(
+                                  color: Colors.cyan,
+                                  style: BorderStyle.solid,
+                                  width: 2),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.add_circle_rounded, color: Colors.cyan.shade600, size: 24),
+                                Icon(Icons.add_circle_rounded,
+                                    color: Colors.cyan.shade600, size: 24),
                                 const SizedBox(width: 8),
-                                Text('Add Another Time', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.cyan.shade700)),
+                                Text('Add Another Time',
+                                    style: GoogleFonts.inter(
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.cyan.shade700)),
                               ],
                             ),
                           ),
                         ),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: isPhoneLayout(context) ? 16 : 24),
 
                       // Duration Selector
-                      Text('Duration', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text('Duration',
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
                       SizedBox(
                         height: 50,
@@ -2271,17 +2520,29 @@ class _ControlScreenState extends State<ControlScreen>
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 margin: const EdgeInsets.only(right: 10),
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                decoration: BoxDecoration(
-                                  gradient: isSelected ? const LinearGradient(colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)]) : null,
-                                  color: isSelected ? null : Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 12),
+                                decoration: mobileFlatDecoration(
+                                    context,
+                                    BoxDecoration(
+                                      gradient: isSelected
+                                          ? const LinearGradient(colors: [
+                                              Color(0xFF00BCD4),
+                                              Color(0xFF00ACC1)
+                                            ])
+                                          : null,
+                                      color: isSelected
+                                          ? null
+                                          : Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(12),
+                                    )),
                                 child: Text(
                                   '$d min',
                                   style: GoogleFonts.inter(
                                     fontWeight: FontWeight.w600,
-                                    color: isSelected ? Colors.white : Colors.grey.shade700,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.grey.shade700,
                                   ),
                                 ),
                               ),
@@ -2292,35 +2553,61 @@ class _ControlScreenState extends State<ControlScreen>
 
                       // Weekly Days Selector
                       if (scheduleType == 'weekly') ...[
-                        const SizedBox(height: 24),
-                        Text('Days', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                        SizedBox(height: isPhoneLayout(context) ? 16 : 24),
+                        Text('Days',
+                            style: GoogleFonts.inter(
+                                fontSize: 16, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 12),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].asMap().entries.map((entry) {
-                            final days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                          children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                              .asMap()
+                              .entries
+                              .map((entry) {
+                            final days = [
+                              'mon',
+                              'tue',
+                              'wed',
+                              'thu',
+                              'fri',
+                              'sat',
+                              'sun'
+                            ];
                             final day = days[entry.key];
                             final isSelected = selectedDays.contains(day);
                             return GestureDetector(
                               onTap: () => setDialogState(() {
-                                if (isSelected) selectedDays.remove(day);
-                                else selectedDays.add(day);
+                                if (isSelected)
+                                  selectedDays.remove(day);
+                                else
+                                  selectedDays.add(day);
                               }),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 width: 42,
                                 height: 42,
-                                decoration: BoxDecoration(
-                                  gradient: isSelected ? const LinearGradient(colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)]) : null,
-                                  color: isSelected ? null : Colors.grey.shade100,
-                                  shape: BoxShape.circle,
-                                ),
+                                decoration: mobileFlatDecoration(
+                                    context,
+                                    BoxDecoration(
+                                      gradient: isSelected
+                                          ? const LinearGradient(colors: [
+                                              Color(0xFF00BCD4),
+                                              Color(0xFF00ACC1)
+                                            ])
+                                          : null,
+                                      color: isSelected
+                                          ? null
+                                          : Colors.grey.shade100,
+                                      shape: BoxShape.circle,
+                                    )),
                                 child: Center(
                                   child: Text(
                                     entry.value,
                                     style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w600,
-                                      color: isSelected ? Colors.white : Colors.grey.shade600,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.grey.shade600,
                                     ),
                                   ),
                                 ),
@@ -2340,10 +2627,15 @@ class _ControlScreenState extends State<ControlScreen>
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5))
+                  ],
                 ),
                 child: SafeArea(
-                  child: Row(
+                  child: MobileFormRow(
                     children: [
                       Expanded(
                         child: OutlinedButton(
@@ -2351,31 +2643,53 @@ class _ControlScreenState extends State<ControlScreen>
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 12)),
                           ),
-                          child: Text('Cancel', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+                          child: Text('Cancel',
+                              style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade700)),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         flex: 2,
                         child: Container(
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)]),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          decoration: isPhoneLayout(context)
+                              ? BoxDecoration(
+                                  color: const Color(0xFF222B45),
+                                  borderRadius: BorderRadius.circular(32),
+                                )
+                              : BoxDecoration(
+                                  gradient: const LinearGradient(colors: [
+                                    Color(0xFF00BCD4),
+                                    Color(0xFF00ACC1)
+                                  ]),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.pop(context);
-                              _createDefrostSchedule(scheduleType, selectedTimes, duration, selectedDays.toList());
+                              _createDefrostSchedule(
+                                  scheduleType,
+                                  selectedTimes,
+                                  duration,
+                                  selectedDays.toList());
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      isPhoneLayout(context) ? 32 : 12)),
                             ),
-                            child: Text('Create Schedule', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+                            child: Text('Create Schedule',
+                                style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white)),
                           ),
                         ),
                       ),
@@ -2386,7 +2700,7 @@ class _ControlScreenState extends State<ControlScreen>
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 
@@ -2401,17 +2715,35 @@ class _ControlScreenState extends State<ControlScreen>
     final thresholdController = TextEditingController(text: '300');
 
     final sensorOptions = [
-      {'value': 'compressor_high', 'label': 'High Pressure', 'icon': CupertinoIcons.gauge, 'unit': 'PSI'},
-      {'value': 'compressor_low', 'label': 'Low Pressure', 'icon': CupertinoIcons.gauge, 'unit': 'PSI'},
-      {'value': 'temperature_air', 'label': 'Air Temp', 'icon': CupertinoIcons.thermometer, 'unit': '°C'},
-      {'value': 'temperature_coil', 'label': 'Coil Temp', 'icon': CupertinoIcons.thermometer, 'unit': '°C'},
+      {
+        'value': 'compressor_high',
+        'label': 'High Pressure',
+        'icon': CupertinoIcons.gauge,
+        'unit': 'PSI'
+      },
+      {
+        'value': 'compressor_low',
+        'label': 'Low Pressure',
+        'icon': CupertinoIcons.gauge,
+        'unit': 'PSI'
+      },
+      {
+        'value': 'temperature_air',
+        'label': 'Air Temp',
+        'icon': CupertinoIcons.thermometer,
+        'unit': '°C'
+      },
+      {
+        'value': 'temperature_coil',
+        'label': 'Coil Temp',
+        'icon': CupertinoIcons.thermometer,
+        'unit': '°C'
+      },
     ];
 
-    showModalBottomSheet(
+    showMobileDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
+      builder: (context) => MobileDialog(child: StatefulBuilder(
         builder: (context, setDialogState) => Container(
           height: MediaQuery.of(context).size.height * 0.9,
           decoration: const BoxDecoration(
@@ -2423,8 +2755,8 @@ class _ControlScreenState extends State<ControlScreen>
           ),
           child: Column(
             children: [
-              // Handle bar
-              Container(
+              // Keep the drag handle only on wider dialog layouts.
+              if (!isPhoneLayout(context)) Container(
                 margin: const EdgeInsets.only(top: 12),
                 width: 40,
                 height: 4,
@@ -2440,18 +2772,26 @@ class _ControlScreenState extends State<ControlScreen>
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFF57C00)]),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(CupertinoIcons.bolt_fill, color: Colors.white, size: 24),
+                      decoration: mobileFlatDecoration(
+                          context,
+                          BoxDecoration(
+                            gradient: const LinearGradient(
+                                colors: [Color(0xFFFF9800), Color(0xFFF57C00)]),
+                            borderRadius: BorderRadius.circular(12),
+                          )),
+                      child: const Icon(CupertinoIcons.bolt_fill,
+                          color: Colors.white, size: 24),
                     ),
                     const SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Automation Rule', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700)),
-                        Text('Auto-control compressor', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade600)),
+                        Text('Automation Rule',
+                            style: GoogleFonts.inter(
+                                fontSize: 20, fontWeight: FontWeight.w700)),
+                        Text('Auto-control compressor',
+                            style: GoogleFonts.inter(
+                                fontSize: 13, color: Colors.grey.shade600)),
                       ],
                     ),
                   ],
@@ -2464,33 +2804,42 @@ class _ControlScreenState extends State<ControlScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Rule Name
-                      Text('Rule Name', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text('Rule Name',
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: nameController,
                         onChanged: (v) => name = v,
-                        decoration: InputDecoration(
-                          hintText: 'e.g., High Pressure Protection',
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade200),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade200),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.orange, width: 2),
-                          ),
-                        ),
+                        decoration: mobileInputDecoration(
+                            context,
+                            InputDecoration(
+                              hintText: 'e.g., High Pressure Protection',
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade200),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade200),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                    color: Colors.orange, width: 2),
+                              ),
+                            )),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: isPhoneLayout(context) ? 16 : 24),
 
                       // Sensor Selection
-                      Text('Monitor Sensor', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text('Monitor Sensor',
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
                       GridView.count(
                         crossAxisCount: 2,
@@ -2510,15 +2859,30 @@ class _ControlScreenState extends State<ControlScreen>
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                gradient: isSelected ? const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFF57C00)]) : null,
-                                color: isSelected ? null : Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: isSelected ? Colors.transparent : Colors.grey.shade200),
-                              ),
+                              decoration: mobileFlatDecoration(
+                                  context,
+                                  BoxDecoration(
+                                    gradient: isSelected
+                                        ? const LinearGradient(colors: [
+                                            Color(0xFFFF9800),
+                                            Color(0xFFF57C00)
+                                          ])
+                                        : null,
+                                    color:
+                                        isSelected ? null : Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: isSelected
+                                            ? Colors.transparent
+                                            : Colors.grey.shade200),
+                                  )),
                               child: Row(
                                 children: [
-                                  Icon(opt['icon'] as IconData, color: isSelected ? Colors.white : Colors.grey.shade600, size: 20),
+                                  Icon(opt['icon'] as IconData,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.grey.shade600,
+                                      size: 20),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -2526,7 +2890,9 @@ class _ControlScreenState extends State<ControlScreen>
                                       style: GoogleFonts.inter(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
-                                        color: isSelected ? Colors.white : Colors.grey.shade700,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.grey.shade700,
                                       ),
                                     ),
                                   ),
@@ -2536,30 +2902,40 @@ class _ControlScreenState extends State<ControlScreen>
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: isPhoneLayout(context) ? 16 : 24),
 
                       // Threshold
-                      Row(
+                      MobileFormRow(
                         children: [
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Threshold', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                                Text('Threshold',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600)),
                                 const SizedBox(height: 8),
                                 TextField(
                                   controller: thresholdController,
                                   keyboardType: TextInputType.number,
-                                  onChanged: (v) => threshold = double.tryParse(v) ?? threshold,
-                                  decoration: InputDecoration(
-                                    suffixText: sensor.contains('pressure') ? 'PSI' : '°C',
-                                    filled: true,
-                                    fillColor: Colors.grey.shade50,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: Colors.grey.shade200),
-                                    ),
-                                  ),
+                                  onChanged: (v) => threshold =
+                                      double.tryParse(v) ?? threshold,
+                                  decoration: mobileInputDecoration(
+                                      context,
+                                      InputDecoration(
+                                        suffixText: sensor.contains('pressure')
+                                            ? 'PSI'
+                                            : '°C',
+                                        filled: true,
+                                        fillColor: Colors.grey.shade50,
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: BorderSide(
+                                              color: Colors.grey.shade200),
+                                        ),
+                                      )),
                                 ),
                               ],
                             ),
@@ -2569,7 +2945,10 @@ class _ControlScreenState extends State<ControlScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Condition', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                                Text('Condition',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600)),
                                 const SizedBox(height: 8),
                                 Container(
                                   padding: const EdgeInsets.all(4),
@@ -2581,29 +2960,74 @@ class _ControlScreenState extends State<ControlScreen>
                                     children: [
                                       Expanded(
                                         child: GestureDetector(
-                                          onTap: () => setDialogState(() => triggerType = sensor.contains('pressure') ? 'pressure_high' : 'temp_high'),
+                                          onTap: () => setDialogState(() =>
+                                              triggerType =
+                                                  sensor.contains('pressure')
+                                                      ? 'pressure_high'
+                                                      : 'temp_high'),
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12),
                                             decoration: BoxDecoration(
-                                              color: triggerType.contains('high') ? Colors.white : Colors.transparent,
-                                              borderRadius: BorderRadius.circular(10),
-                                              boxShadow: triggerType.contains('high') ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)] : null,
+                                              color:
+                                                  triggerType.contains('high')
+                                                      ? Colors.white
+                                                      : Colors.transparent,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              boxShadow: triggerType
+                                                      .contains('high')
+                                                  ? [
+                                                      BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(
+                                                                  0.05),
+                                                          blurRadius: 4)
+                                                    ]
+                                                  : null,
                                             ),
-                                            child: Icon(Icons.arrow_upward, color: triggerType.contains('high') ? Colors.red : Colors.grey, size: 20),
+                                            child: Icon(Icons.arrow_upward,
+                                                color:
+                                                    triggerType.contains('high')
+                                                        ? Colors.red
+                                                        : Colors.grey,
+                                                size: 20),
                                           ),
                                         ),
                                       ),
                                       Expanded(
                                         child: GestureDetector(
-                                          onTap: () => setDialogState(() => triggerType = sensor.contains('pressure') ? 'pressure_low' : 'temp_low'),
+                                          onTap: () => setDialogState(() =>
+                                              triggerType =
+                                                  sensor.contains('pressure')
+                                                      ? 'pressure_low'
+                                                      : 'temp_low'),
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12),
                                             decoration: BoxDecoration(
-                                              color: triggerType.contains('low') ? Colors.white : Colors.transparent,
-                                              borderRadius: BorderRadius.circular(10),
-                                              boxShadow: triggerType.contains('low') ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)] : null,
+                                              color: triggerType.contains('low')
+                                                  ? Colors.white
+                                                  : Colors.transparent,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              boxShadow: triggerType
+                                                      .contains('low')
+                                                  ? [
+                                                      BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(
+                                                                  0.05),
+                                                          blurRadius: 4)
+                                                    ]
+                                                  : null,
                                             ),
-                                            child: Icon(Icons.arrow_downward, color: triggerType.contains('low') ? Colors.blue : Colors.grey, size: 20),
+                                            child: Icon(Icons.arrow_downward,
+                                                color:
+                                                    triggerType.contains('low')
+                                                        ? Colors.blue
+                                                        : Colors.grey,
+                                                size: 20),
                                           ),
                                         ),
                                       ),
@@ -2615,10 +3039,12 @@ class _ControlScreenState extends State<ControlScreen>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: isPhoneLayout(context) ? 16 : 24),
 
                       // Action
-                      Text('Action', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text('Action',
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -2627,19 +3053,44 @@ class _ControlScreenState extends State<ControlScreen>
                               onTap: () => setDialogState(() => turnOn = true),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                decoration: BoxDecoration(
-                                  gradient: turnOn ? const LinearGradient(colors: [Color(0xFF4CAF50), Color(0xFF43A047)]) : null,
-                                  color: turnOn ? null : Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: turnOn ? Colors.transparent : Colors.grey.shade200),
-                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20),
+                                decoration: mobileFlatDecoration(
+                                    context,
+                                    BoxDecoration(
+                                      gradient: turnOn
+                                          ? const LinearGradient(colors: [
+                                              Color(0xFF4CAF50),
+                                              Color(0xFF43A047)
+                                            ])
+                                          : null,
+                                      color:
+                                          turnOn ? null : Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                          color: turnOn
+                                              ? Colors.transparent
+                                              : Colors.grey.shade200),
+                                    )),
                                 child: Column(
                                   children: [
-                                    Icon(CupertinoIcons.power, color: turnOn ? Colors.white : Colors.grey, size: 28),
+                                    Icon(CupertinoIcons.power,
+                                        color:
+                                            turnOn ? Colors.white : Colors.grey,
+                                        size: 28),
                                     const SizedBox(height: 8),
-                                    Text('Turn ON', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: turnOn ? Colors.white : Colors.grey.shade700)),
-                                    Text('Start compressor', style: GoogleFonts.inter(fontSize: 11, color: turnOn ? Colors.white70 : Colors.grey)),
+                                    Text('Turn ON',
+                                        style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.w600,
+                                            color: turnOn
+                                                ? Colors.white
+                                                : Colors.grey.shade700)),
+                                    Text('Start compressor',
+                                        style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            color: turnOn
+                                                ? Colors.white70
+                                                : Colors.grey)),
                                   ],
                                 ),
                               ),
@@ -2651,19 +3102,45 @@ class _ControlScreenState extends State<ControlScreen>
                               onTap: () => setDialogState(() => turnOn = false),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(vertical: 20),
-                                decoration: BoxDecoration(
-                                  gradient: !turnOn ? const LinearGradient(colors: [Color(0xFFF44336), Color(0xFFE53935)]) : null,
-                                  color: !turnOn ? null : Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: !turnOn ? Colors.transparent : Colors.grey.shade200),
-                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 20),
+                                decoration: mobileFlatDecoration(
+                                    context,
+                                    BoxDecoration(
+                                      gradient: !turnOn
+                                          ? const LinearGradient(colors: [
+                                              Color(0xFFF44336),
+                                              Color(0xFFE53935)
+                                            ])
+                                          : null,
+                                      color:
+                                          !turnOn ? null : Colors.grey.shade50,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                          color: !turnOn
+                                              ? Colors.transparent
+                                              : Colors.grey.shade200),
+                                    )),
                                 child: Column(
                                   children: [
-                                    Icon(CupertinoIcons.stop_fill, color: !turnOn ? Colors.white : Colors.grey, size: 28),
+                                    Icon(CupertinoIcons.stop_fill,
+                                        color: !turnOn
+                                            ? Colors.white
+                                            : Colors.grey,
+                                        size: 28),
                                     const SizedBox(height: 8),
-                                    Text('Turn OFF', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: !turnOn ? Colors.white : Colors.grey.shade700)),
-                                    Text('Stop compressor', style: GoogleFonts.inter(fontSize: 11, color: !turnOn ? Colors.white70 : Colors.grey)),
+                                    Text('Turn OFF',
+                                        style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.w600,
+                                            color: !turnOn
+                                                ? Colors.white
+                                                : Colors.grey.shade700)),
+                                    Text('Stop compressor',
+                                        style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            color: !turnOn
+                                                ? Colors.white70
+                                                : Colors.grey)),
                                   ],
                                 ),
                               ),
@@ -2682,10 +3159,15 @@ class _ControlScreenState extends State<ControlScreen>
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5))
+                  ],
                 ),
                 child: SafeArea(
-                  child: Row(
+                  child: MobileFormRow(
                     children: [
                       Expanded(
                         child: OutlinedButton(
@@ -2693,19 +3175,32 @@ class _ControlScreenState extends State<ControlScreen>
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 12)),
                           ),
-                          child: Text('Cancel', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+                          child: Text('Cancel',
+                              style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade700)),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         flex: 2,
                         child: Container(
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(colors: [Color(0xFFFF9800), Color(0xFFF57C00)]),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          decoration: isPhoneLayout(context)
+                              ? BoxDecoration(
+                                  color: const Color(0xFF222B45),
+                                  borderRadius: BorderRadius.circular(32),
+                                )
+                              : BoxDecoration(
+                                  gradient: const LinearGradient(colors: [
+                                    Color(0xFFFF9800),
+                                    Color(0xFFF57C00)
+                                  ]),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                           child: ElevatedButton(
                             onPressed: () {
                               if (nameController.text.isEmpty) {
@@ -2713,15 +3208,26 @@ class _ControlScreenState extends State<ControlScreen>
                                 return;
                               }
                               Navigator.pop(context);
-                              _createAutomationRule(nameController.text, triggerType, sensor, threshold, turnOn, hysteresis);
+                              _createAutomationRule(
+                                  nameController.text,
+                                  triggerType,
+                                  sensor,
+                                  threshold,
+                                  turnOn,
+                                  hysteresis);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
                               shadowColor: Colors.transparent,
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      isPhoneLayout(context) ? 32 : 12)),
                             ),
-                            child: Text('Create Rule', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+                            child: Text('Create Rule',
+                                style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white)),
                           ),
                         ),
                       ),
@@ -2732,23 +3238,35 @@ class _ControlScreenState extends State<ControlScreen>
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 
   Widget _buildDevice1HistorySection() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: isPhoneLayout(context)
+          ? BoxDecoration(
+              color: GasPalette.panel,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: GasPalette.border),
+              boxShadow: const [
+                BoxShadow(
+                    color: Color(0x05000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2))
+              ],
+            )
+          : BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2762,17 +3280,19 @@ class _ControlScreenState extends State<ControlScreen>
                     color: const Color(0xFF64748B).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(CupertinoIcons.clock, color: Color(0xFF64748B), size: 20),
+                  child: const Icon(CupertinoIcons.clock,
+                      color: Color(0xFF64748B), size: 20),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                Expanded(
+                    child: Text(
                   'Control History',
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E293B),
                   ),
-                ),
+                )),
               ],
             ),
           ),
@@ -2789,7 +3309,8 @@ class _ControlScreenState extends State<ControlScreen>
                         color: const Color(0xFF64748B).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(CupertinoIcons.clock, size: 32, color: Color(0xFF64748B)),
+                      child: const Icon(CupertinoIcons.clock,
+                          size: 32, color: Color(0xFF64748B)),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -2808,7 +3329,9 @@ class _ControlScreenState extends State<ControlScreen>
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _device1ControlHistory.length > 10 ? 10 : _device1ControlHistory.length,
+              itemCount: _device1ControlHistory.length > 10
+                  ? 10
+                  : _device1ControlHistory.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final item = _device1ControlHistory[index];
@@ -2821,7 +3344,9 @@ class _ControlScreenState extends State<ControlScreen>
                         height: 8,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: item.defrostSwitch ? Colors.cyan : Colors.grey.shade300,
+                          color: item.defrostSwitch
+                              ? Colors.cyan
+                              : Colors.grey.shade300,
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -2830,16 +3355,20 @@ class _ControlScreenState extends State<ControlScreen>
                         height: 8,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: item.compSwitch ? Colors.green : Colors.grey.shade300,
+                          color: item.compSwitch
+                              ? Colors.green
+                              : Colors.grey.shade300,
                         ),
                       ),
                     ],
                   ),
                   title: Row(
                     children: [
-                      _buildMiniStatusChip('Defrost', item.defrostSwitch, Colors.cyan),
+                      _buildMiniStatusChip(
+                          'Defrost', item.defrostSwitch, Colors.cyan),
                       const SizedBox(width: 8),
-                      _buildMiniStatusChip('Comp', item.compSwitch, Colors.green),
+                      _buildMiniStatusChip(
+                          'Comp', item.compSwitch, Colors.green),
                     ],
                   ),
                   trailing: Text(
@@ -2898,19 +3427,101 @@ class _ControlScreenState extends State<ControlScreen>
 
     final onCount = _device5RelayStates.values.where((v) => v).length;
 
+    if (isPhoneLayout(context)) {
+      return GPanel(
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text('Relays', style: gasTitle(context))),
+                Text('$onCount of 16 on', style: gasSmall(context)),
+                IconButton(
+                  tooltip: 'Refresh relays',
+                  onPressed: _isLoading ? null : () => _loadData(),
+                  icon: const Icon(
+                    Icons.refresh_rounded,
+                    size: 20,
+                    color: GasPalette.ink2,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () => _toggleDevice5AllRelays(true),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: GasPalette.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(32),
+                      ),
+                    ),
+                    child: const Text('All on'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () => _toggleDevice5AllRelays(false),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: GasPalette.ink,
+                      side: const BorderSide(color: GasPalette.border),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(32),
+                      ),
+                    ),
+                    child: const Text('All off'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            for (var relay = 1; relay <= 16; relay++) ...[
+              const Divider(height: 1, color: GasPalette.border),
+              _buildDevice5RelayTile(
+                relay,
+                _device5RelayStates[relay] ?? false,
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
+      decoration: isPhoneLayout(context)
+          ? BoxDecoration(
+              color: GasPalette.panel,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: GasPalette.border),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x05000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            )
+          : BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2923,7 +3534,11 @@ class _ControlScreenState extends State<ControlScreen>
                   color: const Color(0xFF8B5CF6).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(CupertinoIcons.slider_horizontal_3, color: Color(0xFF8B5CF6), size: 24),
+                child: const Icon(
+                  CupertinoIcons.slider_horizontal_3,
+                  color: Color(0xFF8B5CF6),
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -2949,7 +3564,10 @@ class _ControlScreenState extends State<ControlScreen>
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF8B5CF6).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),
@@ -2969,7 +3587,10 @@ class _ControlScreenState extends State<ControlScreen>
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF8B5CF6)),
+                icon: const Icon(
+                  Icons.refresh_rounded,
+                  color: Color(0xFF8B5CF6),
+                ),
                 onPressed: _isLoading ? null : () => _loadData(),
               ),
             ],
@@ -2977,18 +3598,29 @@ class _ControlScreenState extends State<ControlScreen>
           const SizedBox(height: 20),
 
           // All ON / All OFF buttons
-          Row(
+          MobileFormRow(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : () => _toggleDevice5AllRelays(true),
+                  onPressed: _isLoading
+                      ? null
+                      : () => _toggleDevice5AllRelays(true),
                   icon: const Icon(Icons.flash_on_rounded, size: 18),
-                  label: Text('All ON', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  label: Text(
+                    'All ON',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
+                    backgroundColor: isPhoneLayout(context)
+                        ? const Color(0xFF222B45)
+                        : const Color(0xFF10B981),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        isPhoneLayout(context) ? 32 : 10,
+                      ),
+                    ),
                     elevation: 0,
                   ),
                 ),
@@ -2996,14 +3628,23 @@ class _ControlScreenState extends State<ControlScreen>
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : () => _toggleDevice5AllRelays(false),
+                  onPressed: _isLoading
+                      ? null
+                      : () => _toggleDevice5AllRelays(false),
                   icon: const Icon(Icons.flash_off_rounded, size: 18),
-                  label: Text('All OFF', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  label: Text(
+                    'All OFF',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFEF4444),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        isPhoneLayout(context) ? 32 : 10,
+                      ),
+                    ),
                     elevation: 0,
                   ),
                 ),
@@ -3016,7 +3657,11 @@ class _ControlScreenState extends State<ControlScreen>
           LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
-              final crossAxisCount = width < 300 ? 2 : width < 500 ? 3 : 4;
+              final crossAxisCount = width < 300
+                  ? 2
+                  : width < 500
+                  ? 3
+                  : 4;
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -3041,12 +3686,43 @@ class _ControlScreenState extends State<ControlScreen>
   }
 
   Widget _buildDevice5RelayTile(int relayNumber, bool isOn) {
+    if (isPhoneLayout(context)) {
+      return Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Relay $relayNumber',
+              style: gasBody(context).copyWith(color: GasPalette.ink),
+            ),
+          ),
+          Text(
+            isOn ? 'On' : 'Off',
+            style: gasSmall(context)
+                .copyWith(color: isOn ? GasPalette.good : GasPalette.ink2),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: isOn,
+            onChanged: _isLoading
+                ? null
+                : (value) => _toggleDevice5Relay(relayNumber, value),
+            activeThumbColor: Colors.white,
+            activeTrackColor: GasPalette.primary,
+          ),
+        ],
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
-        color: isOn ? const Color(0xFF8B5CF6).withOpacity(0.05) : const Color(0xFFF9FAFB),
+        color: isOn
+            ? const Color(0xFF8B5CF6).withOpacity(0.05)
+            : const Color(0xFFF9FAFB),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isOn ? const Color(0xFF8B5CF6).withOpacity(0.3) : const Color(0xFFE5E7EB),
+          color: isOn
+              ? const Color(0xFF8B5CF6).withOpacity(0.3)
+              : const Color(0xFFE5E7EB),
           width: isOn ? 2 : 1,
         ),
       ),
@@ -3075,7 +3751,9 @@ class _ControlScreenState extends State<ControlScreen>
             scale: 0.7,
             child: Switch(
               value: isOn,
-              onChanged: _isLoading ? null : (val) => _toggleDevice5Relay(relayNumber, val),
+              onChanged: _isLoading
+                  ? null
+                  : (val) => _toggleDevice5Relay(relayNumber, val),
               activeColor: const Color(0xFF8B5CF6),
               activeTrackColor: const Color(0xFF8B5CF6).withOpacity(0.3),
               inactiveThumbColor: const Color(0xFF9CA3AF),
@@ -3089,17 +3767,30 @@ class _ControlScreenState extends State<ControlScreen>
 
   Widget _buildDevice5HistorySection() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: isPhoneLayout(context)
+          ? BoxDecoration(
+              color: GasPalette.panel,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: GasPalette.border),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x05000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            )
+          : BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -3113,15 +3804,21 @@ class _ControlScreenState extends State<ControlScreen>
                     color: const Color(0xFF64748B).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(CupertinoIcons.clock, color: Color(0xFF64748B), size: 20),
+                  child: const Icon(
+                    CupertinoIcons.clock,
+                    color: Color(0xFF64748B),
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Relay History',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                Expanded(
+                  child: Text(
+                    'Relay History',
+                    style: GoogleFonts.inter(
+                      fontSize: isPhoneLayout(context) ? 16 : 18,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E293B),
+                    ),
                   ),
                 ),
               ],
@@ -3130,7 +3827,7 @@ class _ControlScreenState extends State<ControlScreen>
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
           if (_device5History.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 32),
               child: Center(
                 child: Column(
                   children: [
@@ -3140,7 +3837,11 @@ class _ControlScreenState extends State<ControlScreen>
                         color: const Color(0xFF64748B).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(CupertinoIcons.clock, size: 32, color: Color(0xFF64748B)),
+                      child: const Icon(
+                        CupertinoIcons.clock,
+                        size: 32,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -3159,8 +3860,11 @@ class _ControlScreenState extends State<ControlScreen>
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _device5History.length > 20 ? 20 : _device5History.length,
-              separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              itemCount: _device5History.length > 20
+                  ? 20
+                  : _device5History.length,
+              separatorBuilder: (context, index) =>
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
               itemBuilder: (context, index) {
                 final item = _device5History[index];
                 final isOn = item['action'] == 'relay_on';
@@ -3169,28 +3873,42 @@ class _ControlScreenState extends State<ControlScreen>
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: isOn ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFEF4444).withOpacity(0.1),
+                      color: isOn
+                          ? const Color(0xFF10B981).withOpacity(0.1)
+                          : const Color(0xFFEF4444).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       isOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
-                      color: isOn ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      color: isOn
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
                       size: 20,
                     ),
                   ),
                   title: Text(
                     item['reason'] ?? (isOn ? 'Relay ON' : 'Relay OFF'),
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: const Color(0xFF1E293B)),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF1E293B),
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
                     item['performed_by'] ?? 'System',
-                    style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF9CA3AF)),
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: const Color(0xFF9CA3AF),
+                    ),
                   ),
                   trailing: Text(
                     _formatDateTime(item['timestamp']),
-                    style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF9CA3AF)),
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: const Color(0xFF9CA3AF),
+                    ),
                   ),
                 );
               },
@@ -3259,9 +3977,9 @@ class _ControlScreenState extends State<ControlScreen>
 
   void _showDurationDialog() {
     int minutes = 60;
-    showDialog(
+    showMobileDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => MobileAlertDialog(
         title: const Text('Turn OFF for Duration'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -3347,11 +4065,11 @@ class _ControlScreenState extends State<ControlScreen>
     _scheduledDateTime = DateTime.now().add(const Duration(hours: 1));
     _targetRelayStatus = false;
 
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return AlertDialog(
+          return MobileAlertDialog(
             title: const Text('Schedule Relay Action'),
             content: SingleChildScrollView(
               child: Column(
@@ -3364,14 +4082,16 @@ class _ControlScreenState extends State<ControlScreen>
                       Radio<bool>(
                         value: true,
                         groupValue: _targetRelayStatus,
-                        onChanged: (v) => setDialogState(() => _targetRelayStatus = v!),
+                        onChanged: (v) =>
+                            setDialogState(() => _targetRelayStatus = v!),
                       ),
                       const Text('Turn ON'),
                       const SizedBox(width: 16),
                       Radio<bool>(
                         value: false,
                         groupValue: _targetRelayStatus,
-                        onChanged: (v) => setDialogState(() => _targetRelayStatus = v!),
+                        onChanged: (v) =>
+                            setDialogState(() => _targetRelayStatus = v!),
                       ),
                       const Text('Turn OFF'),
                     ],
@@ -3390,7 +4110,8 @@ class _ControlScreenState extends State<ControlScreen>
                       if (date != null) {
                         final time = await showTimePicker(
                           context: context,
-                          initialTime: TimeOfDay.fromDateTime(_scheduledDateTime),
+                          initialTime:
+                              TimeOfDay.fromDateTime(_scheduledDateTime),
                         );
                         if (time != null) {
                           setDialogState(() {
@@ -3415,7 +4136,8 @@ class _ControlScreenState extends State<ControlScreen>
                         children: [
                           const Icon(Icons.calendar_today),
                           const SizedBox(width: 8),
-                          Text(DateFormat('dd MMM yyyy HH:mm').format(_scheduledDateTime)),
+                          Text(DateFormat('dd MMM yyyy HH:mm')
+                              .format(_scheduledDateTime)),
                         ],
                       ),
                     ),
@@ -3445,11 +4167,11 @@ class _ControlScreenState extends State<ControlScreen>
     _targetRelayStatus = false;
     _selectedDays = {};
 
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return AlertDialog(
+          return MobileAlertDialog(
             title: const Text('Create Recurring Schedule'),
             content: SingleChildScrollView(
               child: Column(
@@ -3462,14 +4184,16 @@ class _ControlScreenState extends State<ControlScreen>
                       Radio<bool>(
                         value: true,
                         groupValue: _targetRelayStatus,
-                        onChanged: (v) => setDialogState(() => _targetRelayStatus = v!),
+                        onChanged: (v) =>
+                            setDialogState(() => _targetRelayStatus = v!),
                       ),
                       const Text('Turn ON'),
                       const SizedBox(width: 16),
                       Radio<bool>(
                         value: false,
                         groupValue: _targetRelayStatus,
-                        onChanged: (v) => setDialogState(() => _targetRelayStatus = v!),
+                        onChanged: (v) =>
+                            setDialogState(() => _targetRelayStatus = v!),
                       ),
                       const Text('Turn OFF'),
                     ],
@@ -3481,14 +4205,16 @@ class _ControlScreenState extends State<ControlScreen>
                       Radio<String>(
                         value: 'recurring_daily',
                         groupValue: _scheduleType,
-                        onChanged: (v) => setDialogState(() => _scheduleType = v!),
+                        onChanged: (v) =>
+                            setDialogState(() => _scheduleType = v!),
                       ),
                       const Text('Daily'),
                       const SizedBox(width: 16),
                       Radio<String>(
                         value: 'recurring_weekly',
                         groupValue: _scheduleType,
-                        onChanged: (v) => setDialogState(() => _scheduleType = v!),
+                        onChanged: (v) =>
+                            setDialogState(() => _scheduleType = v!),
                       ),
                       const Text('Weekly'),
                     ],
@@ -3527,8 +4253,15 @@ class _ControlScreenState extends State<ControlScreen>
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
-                      children: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-                          .map((day) {
+                      children: [
+                        'mon',
+                        'tue',
+                        'wed',
+                        'thu',
+                        'fri',
+                        'sat',
+                        'sun'
+                      ].map((day) {
                         final isSelected = _selectedDays.contains(day);
                         return FilterChip(
                           label: Text(day.toUpperCase()),
@@ -3619,20 +4352,27 @@ class _ControlScreenState extends State<ControlScreen>
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                schedule.relayStatus ? Icons.power_rounded : Icons.power_off_rounded,
-                color: schedule.relayStatus ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                schedule.relayStatus
+                    ? Icons.power_rounded
+                    : Icons.power_off_rounded,
+                color: schedule.relayStatus
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFFEF4444),
               ),
             ),
             title: Text(
               schedule.scheduleTypeDisplay,
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+              style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
             ),
             subtitle: Text(
               _formatScheduleDetails(schedule),
-              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+              style: GoogleFonts.inter(
+                  fontSize: 12, color: const Color(0xFF64748B)),
             ),
             trailing: IconButton(
-              icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
+              icon: const Icon(Icons.delete_outline_rounded,
+                  color: Color(0xFFEF4444)),
               onPressed: () => _deleteSchedule(schedule.id),
             ),
           ),
@@ -3704,7 +4444,9 @@ class _ControlScreenState extends State<ControlScreen>
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isOn ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFEF4444).withOpacity(0.1),
+                color: isOn
+                    ? const Color(0xFF10B981).withOpacity(0.1)
+                    : const Color(0xFFEF4444).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -3714,15 +4456,18 @@ class _ControlScreenState extends State<ControlScreen>
             ),
             title: Text(
               'Turned ${item.actionDisplay}',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+              style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
             ),
             subtitle: Text(
               '${item.performedBy} - ${item.reason ?? ''}',
-              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+              style: GoogleFonts.inter(
+                  fontSize: 12, color: const Color(0xFF64748B)),
             ),
             trailing: Text(
               _formatDateTime(item.timestamp),
-              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF9CA3AF)),
+              style: GoogleFonts.inter(
+                  fontSize: 12, color: const Color(0xFF9CA3AF)),
             ),
           ),
         );

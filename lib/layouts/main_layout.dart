@@ -2,8 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:iconsax/iconsax.dart';
 
 import '../constants/Constants.dart';
+import '../gasmon/gas_theme.dart';
 
 class SideBarItems {
   int id;
@@ -93,6 +95,22 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
     SideBarItems(10, "help", "Help & Support", CupertinoIcons.question_circle),
   ];
 
+  static const _mobileDrawerIcons = [
+    Iconsax.home_2,
+    Iconsax.chart_2,
+    Iconsax.element_3,
+    Iconsax.messages,
+    Iconsax.location,
+    Iconsax.cpu,
+    Iconsax.setting_4,
+    Iconsax.document_text,
+    Iconsax.notification,
+    Iconsax.setting,
+    Iconsax.people,
+    Iconsax.setting_2,
+    Iconsax.message_question,
+  ];
+
   int get sideColorIndex {
     // Determine active index based on current route
     switch (widget.currentRoute) {
@@ -114,18 +132,18 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
       case '/reports':
         return 7;
       case '/alerts':
-        return 7;
+        return 8;
       case '/maintenance':
-        return 8;
+        return 9;
       case '/roles':
-        return 8;
+        return 10;
       case '/settings':
       case '/settings/billing':
       case '/settings/security':
       case '/settings/terms':
-        return 9;
+        return 11;
       case '/help':
-        return 10;
+        return 12;
       default:
         return 0;
     }
@@ -176,11 +194,101 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
     }
   }
 
+  Widget _buildMobileDrawer() {
+    return SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 12, 20),
+            child: Row(children: [
+              Expanded(
+                  child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Workspace',
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 10,
+                          letterSpacing: 0,
+                          fontWeight: FontWeight.w700,
+                          color: GasPalette.ink2)),
+                  const SizedBox(height: 8),
+                  Text(
+                      Constants.business_name.isEmpty
+                          ? 'Artic Sentinel'
+                          : Constants.business_name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: GasPalette.ink)),
+                ],
+              )),
+              IconButton(
+                  tooltip: 'Close navigation',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon:
+                      const Icon(Iconsax.close_circle, color: GasPalette.ink2)),
+            ]),
+          ),
+          const Divider(height: 1, color: GasPalette.border),
+          Expanded(
+              child: ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: sideBarList.length,
+            separatorBuilder: (_, index) =>
+                SizedBox(height: index == 9 ? 16 : 4),
+            itemBuilder: (context, index) {
+              final item = sideBarList[index];
+              final selected = sideColorIndex == index;
+              return Material(
+                color: selected ? GasPalette.page : Colors.transparent,
+                borderRadius: BorderRadius.circular(32),
+                child: ListTile(
+                  selected: selected,
+                  selectedColor: GasPalette.primary,
+                  textColor: GasPalette.ink,
+                  iconColor: GasPalette.ink2,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(32)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  minLeadingWidth: 20,
+                  leading: Icon(_mobileDrawerIcons[index], size: 20),
+                  title: Text(item.itemName,
+                      style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _navigateToRoute(item.item_id);
+                  },
+                ),
+              );
+            },
+          )),
+          const Divider(height: 1, color: GasPalette.border),
+          Padding(
+              padding: const EdgeInsets.all(16),
+              child: OutlinedButton.icon(
+                onPressed: () => context.go('/login'),
+                icon: const Icon(Iconsax.logout, size: 18),
+                label: const Text('Sign out'),
+              )),
+        ],
+      ),
+    );
+  }
+
   // Build sidebar content (reusable for both drawer and inline sidebar)
   Widget _buildSidebarContent({required bool isMobileDrawer}) {
     return Container(
       padding: EdgeInsets.all(_isSidebarExpanded ? 16 : 8),
-      color: isMobileDrawer ? Colors.white : Colors.grey.withValues(alpha: 0.25),
+      color:
+          isMobileDrawer ? Colors.white : Colors.grey.withValues(alpha: 0.25),
       child: SingleChildScrollView(
         child: Column(
           children: [
@@ -257,10 +365,14 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                       hoverColor: Colors.transparent,
                       focusColor: Colors.transparent,
                       child: Container(
-                        height: (isMobileDrawer || _isSidebarExpanded) ? 50 : 40,
+                        height:
+                            (isMobileDrawer || _isSidebarExpanded) ? 50 : 40,
                         padding: EdgeInsets.only(
-                            left: (isMobileDrawer || _isSidebarExpanded) ? 16 : 8,
-                            right: (isMobileDrawer || _isSidebarExpanded) ? 12 : 8),
+                            left:
+                                (isMobileDrawer || _isSidebarExpanded) ? 16 : 8,
+                            right: (isMobileDrawer || _isSidebarExpanded)
+                                ? 12
+                                : 8),
                         width: MediaQuery.of(context).size.width,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(
@@ -366,72 +478,162 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
     );
   }
 
+  Widget _buildPhoneNavigation() {
+    const destinations = [
+      ('Home', '/dashboard-home', Iconsax.home_2),
+      ('Equipment', '/device-management', Iconsax.category),
+      ('Alerts', '/alerts', Iconsax.notification),
+      ('Settings', '/settings', Iconsax.setting_2),
+    ];
+    return ClipRRect(
+      key: const ValueKey('mobile-navigation-surface'),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          border: Border.fromBorderSide(BorderSide(color: GasPalette.border)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+            child: Row(
+              children: [
+                for (final destination in destinations)
+                  Expanded(
+                    child: Builder(builder: (context) {
+                      final selected = widget.currentRoute == destination.$2 ||
+                          (destination.$2 == '/dashboard-home' &&
+                              widget.currentRoute == '/dashboard') ||
+                          (destination.$2 == '/settings' &&
+                              widget.currentRoute.startsWith('/settings/'));
+                      return Semantics(
+                        selected: selected,
+                        child: TextButton(
+                          key: ValueKey('mobile-nav-${destination.$1}'),
+                          onPressed: () => context.go(destination.$2),
+                          style: TextButton.styleFrom(
+                            foregroundColor:
+                                selected ? GasPalette.primary : GasPalette.ink2,
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(32)),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? const Color(0xFFE9EDF4)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(32),
+                                ),
+                                child: Icon(destination.$3, size: 20),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(destination.$1,
+                                  style: TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontSize: 11,
+                                      fontWeight: selected
+                                          ? FontWeight.w600
+                                          : FontWeight.w500)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.white,
+      backgroundColor: isMobile ? GasPalette.page : Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         automaticallyImplyLeading: false,
-        toolbarHeight: 64,
+        toolbarHeight: isMobile ? 56 : 64,
         leading: isMobile
             ? IconButton(
-                icon: Icon(CupertinoIcons.bars, color: Colors.black87),
+                tooltip: 'Open navigation',
+                icon: const Icon(Iconsax.more, color: GasPalette.ink),
                 onPressed: () {
                   _scaffoldKey.currentState?.openDrawer();
                 },
               )
             : null,
+        titleSpacing: isMobile ? 0 : null,
         title: Row(
           children: [
             // Logo and brand
-            Container(
-              height: 40,
-              width: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(
-                  image: AssetImage("lib/assets/artic_logo.png"),
-                  fit: BoxFit.contain,
+            if (!isMobile)
+              Container(
+                height: isMobile ? 28 : 40,
+                width: isMobile ? 28 : 40,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: AssetImage("lib/assets/artic_logo.png"),
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
-            ),
-            SizedBox(width: 12),
-            Text(
-              "Artic Sentinel",
-              style: GoogleFonts.inter(
-                textStyle: TextStyle(
-                  fontSize: isMobile ? 16 : 20,
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ),
+            if (!isMobile) const SizedBox(width: 12),
+            Flexible(
+                child: Text(
+              isMobile ? 'Artic Sentinel.' : 'Artic Sentinel',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: isMobile
+                  ? const TextStyle(
+                      fontFamily: 'Lato',
+                      fontSize: 18,
+                      color: GasPalette.ink,
+                      fontWeight: FontWeight.w300)
+                  : GoogleFonts.inter(
+                      fontSize: 20,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5),
+            )),
           ],
         ),
         actions: [
-          // Notification bell
-          Container(
-            height: 40,
-            width: 40,
-            margin: EdgeInsets.only(right: isMobile ? 8 : 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+          // Phone alerts are in the persistent navigation.
+          if (!isMobile)
+            Container(
+              height: isMobile ? 32 : 40,
+              width: isMobile ? 32 : 40,
+              margin: EdgeInsets.only(right: isMobile ? 8 : 12),
+              decoration: BoxDecoration(
+                color: isMobile
+                    ? Colors.transparent
+                    : Colors.grey.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: Icon(
+                CupertinoIcons.bell,
+                color: Colors.black54,
+                size: 20,
+              ),
             ),
-            child: Icon(
-              CupertinoIcons.bell,
-              color: Colors.black54,
-              size: 20,
-            ),
-          ),
 
           // User info
           Container(
@@ -439,22 +641,31 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
             padding: EdgeInsets.symmetric(
                 horizontal: isMobile ? 4 : 12, vertical: isMobile ? 4 : 8),
             decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.1),
+              color: isMobile
+                  ? Colors.transparent
+                  : Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: isMobile
-                ? CircleAvatar(
-                    backgroundColor: Constants.ctaColorLight,
-                    radius: 16,
-                    child: Text(
-                      Constants.myDisplayname.isNotEmpty
-                          ? Constants.myDisplayname[0].toUpperCase()
-                          : 'U',
-                      style: GoogleFonts.inter(
-                        textStyle: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                ? InkWell(
+                    borderRadius: BorderRadius.circular(32),
+                    onTap: () => context.go('/settings'),
+                    child: Tooltip(
+                      message: 'Open account settings',
+                      child: CircleAvatar(
+                        backgroundColor: Constants.ctaColorLight,
+                        radius: 16,
+                        child: Text(
+                          Constants.myDisplayname.isNotEmpty
+                              ? Constants.myDisplayname[0].toUpperCase()
+                              : 'U',
+                          style: GoogleFonts.inter(
+                            textStyle: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -523,14 +734,20 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
           preferredSize: Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: Colors.grey.withValues(alpha: 0.2),
+            color: GasPalette.border,
           ),
         ),
       ),
       drawer: isMobile
           ? Drawer(
-              child: _buildSidebarContent(isMobileDrawer: true),
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.transparent,
+              width: MediaQuery.sizeOf(context).width.clamp(0, 360) * 0.9,
+              child: _buildMobileDrawer(),
             )
+          : null,
+      bottomNavigationBar: MediaQuery.sizeOf(context).width < 600
+          ? _buildPhoneNavigation()
           : null,
       body: isMobile
           ? widget.child

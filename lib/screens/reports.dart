@@ -1,3 +1,7 @@
+import '../widgets/mobile_screen.dart';
+import '../gasmon/gas_theme.dart';
+import '../gasmon/gas_widgets.dart';
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -2017,11 +2021,11 @@ class _ReportsState extends State<Reports> {
       errorMessage = 'Failed to load devices: $e';
     }
 
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -2109,7 +2113,7 @@ class _ReportsState extends State<Reports> {
                       ),
                     )
                   else
-                    Container(
+                    _ReportFormSurface(
                       padding:
                           EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
@@ -2118,7 +2122,8 @@ class _ReportsState extends State<Reports> {
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
-                          value: selectedDevice,
+                          isDense: isPhoneLayout(context),
+                        value: selectedDevice,
                           isExpanded: true,
                           icon: Icon(Icons.keyboard_arrow_down,
                               color: Constants.ctaColorLight),
@@ -2157,7 +2162,7 @@ class _ReportsState extends State<Reports> {
                     ),
                   ),
                   SizedBox(height: 8),
-                  Container(
+                  _ReportFormSurface(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey.shade300),
@@ -2165,6 +2170,7 @@ class _ReportsState extends State<Reports> {
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
+                          isDense: isPhoneLayout(context),
                         value: selectedMetric,
                         isExpanded: true,
                         icon: Icon(Icons.keyboard_arrow_down,
@@ -2215,7 +2221,7 @@ class _ReportsState extends State<Reports> {
                     ),
                   ),
                   SizedBox(height: 8),
-                  CheckboxListTile(
+                  _ReportOptionSurface(child: CheckboxListTile(
                     title: Text(
                       'Include Charts & Graphs',
                       style: GoogleFonts.inter(fontSize: 14),
@@ -2228,8 +2234,8 @@ class _ReportsState extends State<Reports> {
                     },
                     contentPadding: EdgeInsets.zero,
                     controlAffinity: ListTileControlAffinity.leading,
-                  ),
-                  CheckboxListTile(
+                  )),
+                  _ReportOptionSurface(child: CheckboxListTile(
                     title: Text(
                       'Include Raw Data',
                       style: GoogleFonts.inter(fontSize: 14),
@@ -2242,11 +2248,11 @@ class _ReportsState extends State<Reports> {
                     },
                     contentPadding: EdgeInsets.zero,
                     controlAffinity: ListTileControlAffinity.leading,
-                  ),
+                  )),
                   SizedBox(height: 24),
 
                   // Footer buttons
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -2254,7 +2260,7 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Colors.grey.withValues(alpha: 0.1),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -2275,7 +2281,7 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Constants.ctaColorLight,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () async {
@@ -2345,11 +2351,11 @@ class _ReportsState extends State<Reports> {
       isLoadingDevices = false;
     }
 
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -2422,7 +2428,7 @@ class _ReportsState extends State<Reports> {
                       ),
                     ),
                     SizedBox(height: 8),
-                    Container(
+                    _ReportFormSurface(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
@@ -2432,7 +2438,8 @@ class _ReportsState extends State<Reports> {
                           ? Center(child: CircularProgressIndicator())
                           : DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                value: selectedDevice,
+                          isDense: isPhoneLayout(context),
+                        value: selectedDevice,
                                 isExpanded: true,
                                 icon: Icon(Icons.keyboard_arrow_down,
                                     color: Constants.ctaColorLight),
@@ -2469,7 +2476,7 @@ class _ReportsState extends State<Reports> {
                       ),
                     ),
                     SizedBox(height: 8),
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: InkWell(
@@ -2486,7 +2493,7 @@ class _ReportsState extends State<Reports> {
                                 });
                               }
                             },
-                            child: Container(
+                            child: _ReportFormSurface(
                               padding: EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 12),
                               decoration: BoxDecoration(
@@ -2495,9 +2502,9 @@ class _ReportsState extends State<Reports> {
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.calendar_today,
+                                  if (!isPhoneLayout(context)) Icon(Icons.calendar_today,
                                       size: 16, color: Constants.ctaColorLight),
-                                  SizedBox(width: 8),
+                                  if (!isPhoneLayout(context)) SizedBox(width: 8),
                                   Text(
                                     DateFormat('MMM dd, yyyy').format(startDate),
                                     style: GoogleFonts.inter(fontSize: 14),
@@ -2526,7 +2533,7 @@ class _ReportsState extends State<Reports> {
                                 });
                               }
                             },
-                            child: Container(
+                            child: _ReportFormSurface(
                               padding: EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 12),
                               decoration: BoxDecoration(
@@ -2535,9 +2542,9 @@ class _ReportsState extends State<Reports> {
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.calendar_today,
+                                  if (!isPhoneLayout(context)) Icon(Icons.calendar_today,
                                       size: 16, color: Constants.ctaColorLight),
-                                  SizedBox(width: 8),
+                                  if (!isPhoneLayout(context)) SizedBox(width: 8),
                                   Text(
                                     DateFormat('MMM dd, yyyy').format(endDate),
                                     style: GoogleFonts.inter(fontSize: 14),
@@ -2561,7 +2568,7 @@ class _ReportsState extends State<Reports> {
                       ),
                     ),
                     SizedBox(height: 8),
-                    Container(
+                    _ReportFormSurface(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
@@ -2569,7 +2576,8 @@ class _ReportsState extends State<Reports> {
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
-                          value: temperatureRange,
+                          isDense: isPhoneLayout(context),
+                        value: temperatureRange,
                           isExpanded: true,
                           icon: Icon(Icons.keyboard_arrow_down,
                               color: Constants.ctaColorLight),
@@ -2599,7 +2607,7 @@ class _ReportsState extends State<Reports> {
                     SizedBox(height: 16),
 
                     // Options
-                    CheckboxListTile(
+                    _ReportOptionSurface(child: CheckboxListTile(
                       title: Text(
                         'Highlight Temperature Anomalies',
                         style: GoogleFonts.inter(fontSize: 14),
@@ -2612,11 +2620,11 @@ class _ReportsState extends State<Reports> {
                       },
                       contentPadding: EdgeInsets.zero,
                       controlAffinity: ListTileControlAffinity.leading,
-                    ),
+                    )),
                     SizedBox(height: 24),
 
                     // Footer buttons
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: TextButton(
@@ -2624,7 +2632,7 @@ class _ReportsState extends State<Reports> {
                               backgroundColor: Colors.grey.withValues(alpha: 0.1),
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             onPressed: () => Navigator.pop(context),
@@ -2645,7 +2653,7 @@ class _ReportsState extends State<Reports> {
                               backgroundColor: Constants.ctaColorLight,
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             onPressed: deviceList.isEmpty
@@ -2878,11 +2886,11 @@ class _ReportsState extends State<Reports> {
       selectedValues[dropdown['label']] = dropdown['options'][0];
     }
 
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -2954,7 +2962,7 @@ class _ReportsState extends State<Reports> {
                           ),
                         ),
                         SizedBox(height: 8),
-                        Container(
+                        _ReportFormSurface(
                           padding:
                               EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                           decoration: BoxDecoration(
@@ -2963,7 +2971,8 @@ class _ReportsState extends State<Reports> {
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
-                              value: selectedValues[dropdown['label']],
+                          isDense: isPhoneLayout(context),
+                        value: selectedValues[dropdown['label']],
                               isExpanded: true,
                               icon: Icon(Icons.keyboard_arrow_down,
                                   color: Constants.ctaColorLight),
@@ -3020,7 +3029,7 @@ class _ReportsState extends State<Reports> {
                             ],
                           ),
                           SizedBox(height: 12),
-                          Row(
+                          MobileFormRow(
                             children: [
                               Expanded(
                                 child: TextButton.icon(
@@ -3028,7 +3037,7 @@ class _ReportsState extends State<Reports> {
                                     backgroundColor: Colors.green,
                                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 6),
                                     ),
                                   ),
                                   onPressed: () async {
@@ -3053,7 +3062,7 @@ class _ReportsState extends State<Reports> {
                                     backgroundColor: Colors.red,
                                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 6),
                                     ),
                                   ),
                                   onPressed: () async {
@@ -3080,7 +3089,7 @@ class _ReportsState extends State<Reports> {
                   ],
 
                   // Footer buttons
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -3088,7 +3097,7 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Colors.grey.withValues(alpha: 0.1),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -3109,7 +3118,7 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Constants.ctaColorLight,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () async {
@@ -3172,7 +3181,7 @@ class _ReportsState extends State<Reports> {
   }
 
   void _showScheduledReportsDialog() {
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
@@ -3184,7 +3193,7 @@ class _ReportsState extends State<Reports> {
           List<ScheduledReport> currentPageReports =
               scheduledReports.sublist(startIndex, endIndex);
 
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -3489,7 +3498,7 @@ class _ReportsState extends State<Reports> {
 
                   // Footer buttons
                   SizedBox(height: 16),
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -3497,7 +3506,7 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Colors.grey.withValues(alpha: 0.1),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -3518,7 +3527,7 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Constants.ctaColorLight,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () {
@@ -3562,7 +3571,7 @@ class _ReportsState extends State<Reports> {
   }
 
   void _showDownloadsDialog() {
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
@@ -3613,7 +3622,7 @@ class _ReportsState extends State<Reports> {
             }
           }
 
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -3905,7 +3914,7 @@ class _ReportsState extends State<Reports> {
 
                   // Footer buttons
                   SizedBox(height: 16),
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -3913,7 +3922,7 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Colors.grey.withValues(alpha: 0.1),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -3934,7 +3943,7 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Constants.ctaColorLight,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () {
@@ -3978,7 +3987,7 @@ class _ReportsState extends State<Reports> {
   }
 
   void _showGeneratedReportsDialog() {
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
@@ -4029,7 +4038,7 @@ class _ReportsState extends State<Reports> {
             }
           }
 
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -4414,7 +4423,7 @@ class _ReportsState extends State<Reports> {
 
                   // Footer buttons
                   SizedBox(height: 16),
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
@@ -4422,7 +4431,7 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Colors.grey.withValues(alpha: 0.1),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -4443,7 +4452,7 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Constants.ctaColorLight,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () {
@@ -4488,9 +4497,9 @@ class _ReportsState extends State<Reports> {
   }
 
   void _showSuccessDialog(String reportName) {
-    showDialog(
+    showMobileDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -4536,7 +4545,7 @@ class _ReportsState extends State<Reports> {
                 ),
               ),
               SizedBox(height: 24),
-              Row(
+              MobileFormRow(
                 children: [
                   Expanded(
                     child: TextButton(
@@ -4544,7 +4553,7 @@ class _ReportsState extends State<Reports> {
                         backgroundColor: Colors.grey.withValues(alpha: 0.1),
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                         ),
                       ),
                       onPressed: () => Navigator.pop(context),
@@ -4565,7 +4574,7 @@ class _ReportsState extends State<Reports> {
                         backgroundColor: Colors.blue,
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                         ),
                       ),
                       onPressed: () {
@@ -4589,7 +4598,7 @@ class _ReportsState extends State<Reports> {
                         backgroundColor: Constants.ctaColorLight,
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                         ),
                       ),
                       onPressed: () {
@@ -4622,10 +4631,10 @@ class _ReportsState extends State<Reports> {
     // Build the actual PDF document based on report type
     final pw.Document pdfDoc = _buildPDFDocumentForType(reportType ?? 'device_performance');
 
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) {
-        return Dialog(
+        return MobileDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -4690,7 +4699,7 @@ class _ReportsState extends State<Reports> {
                           backgroundColor: Constants.ctaColorLight,
                           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                           ),
                         ),
                         onPressed: () {
@@ -8474,7 +8483,7 @@ class _ReportsState extends State<Reports> {
     bool isCompleted = false;
     String? savedFilePath = filePath;
 
-    showDialog(
+    showMobileDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
@@ -8554,7 +8563,7 @@ class _ReportsState extends State<Reports> {
             }
           }
 
-          return Dialog(
+          return MobileDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -8743,7 +8752,7 @@ class _ReportsState extends State<Reports> {
                   SizedBox(height: 24),
 
                   // Footer Buttons
-                  Row(
+                  MobileFormRow(
                     children: [
                       if (!isCompleted)
                         Expanded(
@@ -8753,7 +8762,7 @@ class _ReportsState extends State<Reports> {
                                   Colors.grey.withValues(alpha: 0.1),
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             onPressed: () {
@@ -8777,7 +8786,7 @@ class _ReportsState extends State<Reports> {
                                   Colors.grey.withValues(alpha: 0.1),
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             onPressed: () => Navigator.pop(context),
@@ -8798,7 +8807,7 @@ class _ReportsState extends State<Reports> {
                               backgroundColor: Constants.ctaColorLight,
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             onPressed: () async {
@@ -8870,11 +8879,12 @@ class _ReportsState extends State<Reports> {
 
   @override
   Widget build(BuildContext context) {
+    if (isPhoneLayout(context)) return _buildPhoneReports(context);
     final isMobile = _isMobile(context);
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: mobileFlatDecoration(context, BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -8884,7 +8894,7 @@ class _ReportsState extends State<Reports> {
             Color(0xFFF8FAFC),
           ],
         ),
-      ),
+      )),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -8892,7 +8902,7 @@ class _ReportsState extends State<Reports> {
             // Modern Header with Gradient
             Container(
               width: double.infinity,
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -8902,7 +8912,7 @@ class _ReportsState extends State<Reports> {
                     Color(0xFF3B82F6),
                   ],
                 ),
-              ),
+              )),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   isMobile ? 20 : 32,
@@ -9423,6 +9433,167 @@ class _ReportsState extends State<Reports> {
     );
   }
 
+  Widget _buildPhoneReports(BuildContext context) {
+    final start =
+        (currentReportPage * reportsPerPage).clamp(0, downloadedReports.length);
+    final end = (start + reportsPerPage).clamp(0, downloadedReports.length);
+    return ColoredBox(
+      color: GasPalette.page,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const MobileScreenHeader(title: 'Reports', padding: EdgeInsets.fromLTRB(0, 0, 0, 16)),
+          DropdownButtonFormField<String>(
+            initialValue: selectedPeriod,
+            isExpanded: true,
+            decoration: mobileInputDecoration(
+                context, const InputDecoration(labelText: 'Reporting period')),
+            items: periods
+                .map((period) =>
+                    DropdownMenuItem(value: period, child: Text(period)))
+                .toList(),
+            onChanged: (value) {
+              if (value != null) setState(() => selectedPeriod = value);
+            },
+          ),
+          const SizedBox(height: 16),
+          GPanel(
+            padding: const EdgeInsets.all(8),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: _phoneReportLibraryRow(context, 'Generated', '${generatedReports.length}', _showGeneratedReportsDialog)),
+              Expanded(child: _phoneReportLibraryRow(context, 'Downloads', '${downloadedReports.length}', _showDownloadsDialog)),
+              Expanded(child: _phoneReportLibraryRow(context, 'Scheduled', '${scheduledReports.length}', _showScheduledReportsDialog)),
+            ]),
+          ),
+          const SizedBox(height: 20),
+          Text('New report', style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 10),
+          GPanel(padding: EdgeInsets.zero, child: Material(
+            type: MaterialType.transparency,
+            child: Column(children: [
+              for (final entry in reportTypes.asMap().entries) ...[
+                if (entry.key > 0) const Divider(height: 1, color: GasPalette.border),
+                InkWell(
+                  key: ValueKey('configure-report-${entry.value.id}'),
+                  onTap: isGenerating ? null : () => _generateReport(entry.value),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Icon(entry.value.icon, size: 18, color: GasPalette.ink2),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(entry.value.name, style: gasTitle(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 3),
+                        Text(isGenerating && selectedReportType == entry.value.id ? 'Generating…' : entry.value.description, style: gasSmall(context).copyWith(height: 1.4, fontSize: 11.5)),
+                      ])),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.chevron_right_rounded, size: 20, color: GasPalette.ink2),
+                    ]),
+                  ),
+                ),
+              ],
+            ]),
+          )),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: Text('Recent reports', style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600))),
+            TextButton(
+              onPressed: _showDownloadsDialog,
+                child: const Text('View all')),
+          ]),
+          const SizedBox(height: 8),
+          if (isLoadingReports)
+            GPanel(
+                child: Column(children: [
+              const CircularProgressIndicator(color: GasPalette.primary),
+              const SizedBox(height: 16),
+              Text('Loading reports…', style: gasBody(context)),
+            ]))
+          else if (downloadedReports.isEmpty)
+            GPanel(
+              padding: const EdgeInsets.all(16),
+              child: Text('No reports yet. Create one using the options above.', style: gasBody(context)),
+            )
+          else ...[
+            GPanel(padding: EdgeInsets.zero, child: Column(children: [
+              for (final entry in downloadedReports.sublist(start, end).asMap().entries) ...[
+                if (entry.key > 0) const Divider(height: 1, color: GasPalette.border),
+                _phoneRecentReportRow(context, entry.value),
+              ],
+            ])),
+            if (downloadedReports.length > reportsPerPage) ...[
+              Text('Showing ${start + 1}–$end of ${downloadedReports.length}',
+                  style: gasSmall(context), textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                IconButton(
+                    tooltip: 'Previous page',
+                    onPressed: currentReportPage > 0
+                        ? () => setState(() => currentReportPage--)
+                        : null,
+                    icon: const Icon(Icons.chevron_left)),
+                Text(
+                    '${currentReportPage + 1} / ${(downloadedReports.length / reportsPerPage).ceil()}',
+                    style: gasBody(context)),
+                IconButton(
+                    tooltip: 'Next page',
+                    onPressed: end < downloadedReports.length
+                        ? () => setState(() => currentReportPage++)
+                        : null,
+                    icon: const Icon(Icons.chevron_right)),
+              ]),
+            ],
+          ],
+          const SizedBox(height: 24),
+        ]),
+      ),
+    );
+  }
+
+  Widget _phoneReportLibraryRow(BuildContext context, String title,
+      String value, VoidCallback onTap) {
+    return Material(type: MaterialType.transparency, child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(32),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 7),
+        child: Column(children: [
+          Text(value, style: gasData(context, size: 20)),
+          const SizedBox(height: 4),
+          Text(title, style: gasSmall(context).copyWith(fontSize: 10.5), textAlign: TextAlign.center),
+        ]),
+      ),
+    ));
+  }
+
+  Widget _phoneRecentReportRow(BuildContext context, dynamic report) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
+    child: Row(children: [
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(report['report_name'] ?? 'Untitled report', style: gasTitle(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Text(_formatDateTime(report['generated_at']), style: gasSmall(context)),
+      ])),
+      PopupMenuButton<String>(
+        tooltip: 'Report actions',
+        icon: const Icon(Icons.more_horiz, color: GasPalette.ink2),
+        onSelected: (action) {
+          if (action == 'view') _viewReport(report);
+          if (action == 'download') _downloadReport(report);
+        },
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'view', child: Text('View report')),
+          PopupMenuItem(value: 'download', child: Text('Download report')),
+        ],
+      ),
+    ]),
+  );
+
   Widget _buildModernStatCard({
     required IconData icon,
     required Color iconColor,
@@ -9453,14 +9624,14 @@ class _ReportsState extends State<Reports> {
             children: [
               Container(
                 padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
+                decoration: mobileFlatDecoration(context, BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: bgGradient,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                ),
+                )),
                 child: Icon(
                   icon,
                   color: Colors.white,
@@ -10086,10 +10257,10 @@ class _ReportsState extends State<Reports> {
     final deviceIds = report['device_ids'];
     final deviceCount = (deviceIds is List) ? deviceIds.length : 0;
 
-    return showDialog(
+    return showMobileDialog(
       context: context,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
+        return MobileAlertDialog(
           title: Row(
             children: [
               Icon(FontAwesomeIcons.fileLines, size: 20, color: Constants.ctaColorLight),
@@ -10134,7 +10305,7 @@ class _ReportsState extends State<Reports> {
               icon: Icon(Icons.download, size: 16),
               label: Text('Download', style: GoogleFonts.inter(fontSize: 14)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.ctaColorLight,
+                backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                 foregroundColor: Colors.white,
               ),
             ),
@@ -14043,4 +14214,33 @@ extension StringExtension on String {
     if (isEmpty) return this;
     return '${this[0].toUpperCase()}${substring(1)}';
   }
+}
+
+/// Applies the shared phone field treatment to existing non-FormField controls.
+class _ReportFormSurface extends StatelessWidget {
+  const _ReportFormSurface({required this.child, this.padding, this.decoration});
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final Decoration? decoration;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isPhoneLayout(context)) {
+      return Container(padding: padding, decoration: decoration, child: child);
+    }
+    return InputDecorator(
+      decoration: mobileInputDecoration(context, const InputDecoration(isDense: true)),
+      child: child,
+    );
+  }
+}
+
+class _ReportOptionSurface extends StatelessWidget {
+  const _ReportOptionSurface({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => isPhoneLayout(context)
+      ? Material(type: MaterialType.transparency, child: child)
+      : child;
 }

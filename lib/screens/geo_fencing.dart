@@ -1,3 +1,6 @@
+import '../widgets/mobile_screen.dart';
+import '../gasmon/gas_theme.dart';
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -40,11 +43,11 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   bool isLoadingUnits = false;
   bool isLoadingSuppliers = false;
   String error = '';
-  
+
   // Auto-refresh functionality
   Timer? _refreshTimer;
   DateTime? lastRefreshTime;
-  
+
   // Map type
   MapType _currentMapType = MapType.normal;
 
@@ -251,30 +254,51 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 1000,
+      height: isPhoneLayout(context) ? null : 1000,
+      color: isPhoneLayout(context) ? GasPalette.page : null,
       child: Column(
         children: [
           // Header Section
-          const CompactHeader(
-            title: "Geo Fencing",
-            description: "Define and monitor location boundaries",
-            icon: Icons.location_on_rounded,
-          ),
+          if (isPhoneLayout(context))
+            const MobileScreenHeader(
+              title: 'Locations',
+              padding: EdgeInsets.fromLTRB(16, 20, 16, 12),
+            )
+          else
+            const CompactHeader(
+              title: "Geo Fencing",
+              description: "Define and monitor location boundaries",
+              icon: Icons.location_on_rounded,
+            ),
           // Modern TabBar Container
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            margin: isPhoneLayout(context)
+                ? const EdgeInsets.fromLTRB(16, 0, 16, 0)
+                : const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+              borderRadius:
+                  BorderRadius.circular(isPhoneLayout(context) ? 32 : 16),
+              border: Border.all(
+                  color: isPhoneLayout(context)
+                      ? GasPalette.border
+                      : const Color(0xFFE2E8F0),
+                  width: 1),
             ),
             child: TabBar(
               controller: _tabController,
+              isScrollable: isPhoneLayout(context),
+              tabAlignment: isPhoneLayout(context)
+                  ? TabAlignment.start
+                  : TabAlignment.fill,
+              labelPadding: isPhoneLayout(context) ? EdgeInsets.zero : null,
               dividerColor: Colors.transparent,
               indicator: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                color:
+                    isPhoneLayout(context) ? GasPalette.primary : Colors.white,
+                borderRadius:
+                    BorderRadius.circular(isPhoneLayout(context) ? 32 : 12),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.08),
@@ -289,7 +313,9 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 ],
               ),
               indicatorSize: TabBarIndicatorSize.tab,
-              labelColor: Constants.ctaColorLight,
+              labelColor: isPhoneLayout(context)
+                  ? Colors.white
+                  : Constants.ctaColorLight,
               unselectedLabelColor: const Color(0xFF64748B),
               labelStyle: GoogleFonts.inter(
                 fontSize: 14,
@@ -300,50 +326,71 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
-              tabs: [
-                Tab(
-                  height: 48,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.map_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Map View'),
-                      ],
-                    ),
-                  ),
-                ),
-                Tab(
-                  height: 48,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.inventory_2_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Units'),
-                      ],
-                    ),
-                  ),
-                ),
-                Tab(
-                  height: 48,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.business_rounded, size: 18),
-                        SizedBox(width: 8),
-                        Text('Suppliers'),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              tabs: isPhoneLayout(context)
+                  ? const [
+                      Tab(
+                          height: 44,
+                          child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 18),
+                              child: Text('Map'))),
+                      Tab(
+                          height: 44,
+                          child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 18),
+                              child: Text('Units'))),
+                      Tab(
+                          height: 44,
+                          child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 18),
+                              child: Text('Suppliers'))),
+                    ]
+                  : [
+                      Tab(
+                        height: 48,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.map_rounded, size: 18),
+                              SizedBox(width: 8),
+                              Text('Map View'),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Tab(
+                        height: 48,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.inventory_2_rounded, size: 18),
+                              SizedBox(width: 8),
+                              Text('Units'),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Tab(
+                        height: 48,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.business_rounded, size: 18),
+                              SizedBox(width: 8),
+                              Text('Suppliers'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
             ),
           ),
 
@@ -445,40 +492,57 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
         children: [
           // Map Controls Header
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withOpacity(0.1)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+            padding: EdgeInsets.all(isPhoneLayout(context) ? 0 : 16),
+            decoration: isPhoneLayout(context)
+                ? null
+                : BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(
+                      isPhoneLayout(context) ? 14 : 12,
+                    ),
+                    border: Border.all(
+                      color: isPhoneLayout(context)
+                          ? GasPalette.border
+                          : Colors.grey.withOpacity(0.1),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
             child: Row(
               children: [
-                Icon(Icons.map_rounded, color: Constants.ctaColorLight, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Location Overview',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1E293B),
+                if (!isPhoneLayout(context)) ...[
+                  Icon(
+                    Icons.map_rounded,
+                    color: Constants.ctaColorLight,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: Text(
+                    isPhoneLayout(context)
+                        ? '${unitList.length} units'
+                        : 'Location Overview',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1E293B),
+                    ),
                   ),
                 ),
-                const Spacer(),
                 _buildMapTypeButton(),
                 const SizedBox(width: 8),
                 _buildRefreshButton(),
               ],
             ),
           ),
-          
-          const SizedBox(height: 16),
+
+          SizedBox(height: isPhoneLayout(context) ? 8 : 16),
 
           // Map Container
           Expanded(
@@ -512,39 +576,47 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                       mapToolbarEnabled: false,
                     ),
                     // Units Counter Overlay
-                    Positioned(
-                      top: 16,
-                      left: 16,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.location_on, color: Constants.ctaColorLight, size: 16),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${unitList.length} Units',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF1E293B),
+                    if (!isPhoneLayout(context))
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.location_on,
+                                color: Constants.ctaColorLight,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${unitList.length} Units',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1E293B),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -644,7 +716,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
           ),
           child: Row(
             children: [
-              Icon(Icons.inventory_2_rounded, color: Constants.ctaColorLight, size: 20),
+              Icon(Icons.inventory_2_rounded,
+                  color: Constants.ctaColorLight, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Units Overview',
@@ -655,9 +728,11 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 ),
               ),
               const Spacer(),
-              _buildStatusChip(_getOperationalUnitsCount(), 'Operational', const Color(0xFF10B981)),
+              _buildStatusChip(_getOperationalUnitsCount(), 'Operational',
+                  const Color(0xFF10B981)),
               const SizedBox(width: 8),
-              _buildStatusChip(_getMaintenanceUnitsCount(), 'Maintenance', const Color(0xFFF59E0B)),
+              _buildStatusChip(_getMaintenanceUnitsCount(), 'Maintenance',
+                  const Color(0xFFF59E0B)),
             ],
           ),
         ),
@@ -777,7 +852,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
           ),
           child: Row(
             children: [
-              Icon(Icons.business_rounded, color: Constants.ctaColorLight, size: 20),
+              Icon(Icons.business_rounded,
+                  color: Constants.ctaColorLight, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Local Suppliers',
@@ -1384,26 +1460,25 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   Widget _buildMapTypeButton() {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      elevation: 2,
+      borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 10),
+      elevation: isPhoneLayout(context) ? 0 : 2,
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 10),
         onTap: _toggleMapType,
         child: Container(
           padding: const EdgeInsets.all(8),
           child: Stack(
             children: [
-              Icon(
-                _getMapTypeIcon(),
-                color: Constants.ctaColorLight,
-                size: 20,
-              ),
+              Icon(_getMapTypeIcon(), color: Constants.ctaColorLight, size: 20),
               // Badge showing current map type
               Positioned(
                 right: -2,
                 top: -2,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Constants.ctaColorLight,
                     borderRadius: BorderRadius.circular(8),
@@ -1473,10 +1548,10 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   Widget _buildRefreshButton() {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      elevation: 2,
+      borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 10),
+      elevation: isPhoneLayout(context) ? 0 : 2,
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 10),
         onTap: _loadData,
         child: Container(
           padding: const EdgeInsets.all(8),
@@ -1514,20 +1589,22 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
           // Header Section
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Constants.ctaColorLight.withOpacity(0.1),
-                  Constants.ctaColorLight.withOpacity(0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
+            decoration: mobileFlatDecoration(
+                context,
+                BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Constants.ctaColorLight.withOpacity(0.1),
+                      Constants.ctaColorLight.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                )),
             child: Row(
               children: [
                 Container(
@@ -1569,7 +1646,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: _getStatusColor(unit.statusValue).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(20),
@@ -1590,7 +1668,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               ],
             ),
           ),
-          
+
           // Content Section
           Expanded(
             child: SingleChildScrollView(
@@ -1609,11 +1687,14 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildIconDetailRow('Model', unit.modelNumber, Icons.settings),
-                  _buildIconDetailRow('Year', unit.formattedYear, Icons.calendar_today),
+                  _buildIconDetailRow(
+                      'Model', unit.modelNumber, Icons.settings),
+                  _buildIconDetailRow(
+                      'Year', unit.formattedYear, Icons.calendar_today),
                   if (unit.location?.isNotEmpty == true)
-                    _buildIconDetailRow('Location', unit.location!, Icons.place),
-                  
+                    _buildIconDetailRow(
+                        'Location', unit.location!, Icons.place),
+
                   // Coordinates if available
                   if (unit.hasCoordinates) ...[
                     const SizedBox(height: 4),
@@ -1680,7 +1761,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               ),
             ),
           ),
-          
+
           // Action Buttons
           Container(
             padding: const EdgeInsets.all(20),
@@ -1810,11 +1891,9 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   void _showUnitDetails(Unit unit) {
     // Placeholder method for showing detailed unit information
     // This could open a modal, navigate to a details page, or show a bottom sheet
-    showModalBottomSheet(
+    showMobileDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (context) => MobileDialog(child: Container(
         height: MediaQuery.of(context).size.height * 0.8,
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -1862,7 +1941,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
             ),
           ],
         ),
-      ),
+      )),
     );
   }
 
@@ -1878,7 +1957,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
           ),
         ),
       );
-      
+
       // Update selected unit to show details panel
       setState(() {
         selectedUnit = unit;
@@ -1934,11 +2013,15 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   }
 
   int _getOperationalUnitsCount() {
-    return unitList.where((unit) => unit.statusValue.toLowerCase() == 'operational').length;
+    return unitList
+        .where((unit) => unit.statusValue.toLowerCase() == 'operational')
+        .length;
   }
 
   int _getMaintenanceUnitsCount() {
-    return unitList.where((unit) => unit.statusValue.toLowerCase() == 'maintenance').length;
+    return unitList
+        .where((unit) => unit.statusValue.toLowerCase() == 'maintenance')
+        .length;
   }
 
   Widget _buildModernUnitListCard(Unit unit) {
@@ -1974,12 +2057,15 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(unit.statusValue).withOpacity(0.12),
+                        color:
+                            _getStatusColor(unit.statusValue).withOpacity(0.12),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: _getStatusColor(unit.statusValue).withOpacity(0.3),
+                          color: _getStatusColor(unit.statusValue)
+                              .withOpacity(0.3),
                           width: 1,
                         ),
                       ),
@@ -2023,7 +2109,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     if (unit.isMaintenanceDue)
                       Container(
                         margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF59E0B).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
@@ -2050,9 +2137,9 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                       ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // Unit Name
                 Text(
                   unit.name,
@@ -2063,9 +2150,9 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     letterSpacing: -0.3,
                   ),
                 ),
-                
+
                 const SizedBox(height: 4),
-                
+
                 // Model and Serial
                 Text(
                   '${unit.modelNumber} • S/N: ${unit.serialNumber}',
@@ -2075,7 +2162,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     color: const Color(0xFF64748B),
                   ),
                 ),
-                
+
                 if (unit.location?.isNotEmpty == true) ...[
                   const SizedBox(height: 8),
                   Row(
@@ -2106,12 +2193,13 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     ],
                   ),
                 ],
-                
+
                 // Connected Devices Count
                 if (unit.connectedDevicesCount > 0) ...[
                   const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Constants.ctaColorLight.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
@@ -2173,12 +2261,17 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getSupplierTypeColor(supplier['supplier_type_value']).withOpacity(0.12),
+                    color:
+                        _getSupplierTypeColor(supplier['supplier_type_value'])
+                            .withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: _getSupplierTypeColor(supplier['supplier_type_value']).withOpacity(0.3),
+                      color:
+                          _getSupplierTypeColor(supplier['supplier_type_value'])
+                              .withOpacity(0.3),
                       width: 1,
                     ),
                   ),
@@ -2189,7 +2282,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         width: 6,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: _getSupplierTypeColor(supplier['supplier_type_value']),
+                          color: _getSupplierTypeColor(
+                              supplier['supplier_type_value']),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -2199,7 +2293,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: _getSupplierTypeColor(supplier['supplier_type_value']),
+                          color: _getSupplierTypeColor(
+                              supplier['supplier_type_value']),
                         ),
                       ),
                     ],
@@ -2208,7 +2303,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 const Spacer(),
                 if (supplier['is_preferred'] == true)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF59E0B).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -2235,9 +2331,9 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   ),
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Supplier Name
             Text(
               supplier['name'] ?? 'Unknown Supplier',
@@ -2248,7 +2344,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 letterSpacing: -0.3,
               ),
             ),
-            
+
             if (supplier['contact_person']?.isNotEmpty == true) ...[
               const SizedBox(height: 4),
               Text(
@@ -2260,9 +2356,9 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 ),
               ),
             ],
-            
+
             const SizedBox(height: 12),
-            
+
             // Contact Information
             Row(
               children: [
@@ -2314,7 +2410,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 ),
               ],
             ),
-            
+
             // Rating
             if (supplier['rating'] != null && supplier['rating'] > 0) ...[
               const SizedBox(height: 10),
@@ -2341,14 +2437,15 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 ],
               ),
             ],
-            
+
             const SizedBox(height: 10),
-            
+
             // Additional Information Row
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFF3B82F6).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -2365,7 +2462,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 const Spacer(),
                 if (supplier['after_hours_available'] == true)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFF10B981).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -2392,7 +2490,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   ),
               ],
             ),
-            
+
             // Specializations
             if (supplier['specializations']?.isNotEmpty == true) ...[
               const SizedBox(height: 10),

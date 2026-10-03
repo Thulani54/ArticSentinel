@@ -1,3 +1,9 @@
+import '../widgets/mobile_screen.dart';
+import '../widgets/mobile_equipment_card.dart';
+import '../gasmon/gas_theme.dart';
+import '../gasmon/gas_widgets.dart';
+import '../widgets/device_alert_card.dart';
+import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
@@ -12,6 +18,9 @@ import '../custom_widgets/customCard.dart';
 import '../custom_widgets/customInput.dart';
 import '../models/device.dart';
 import '../models/unit.dart';
+import '../gasmon/gas_cylinder_details_dialog.dart';
+import '../gasmon/gas_api.dart';
+import '../gasmon/scale_setup_screen.dart';
 import '../services/shared_preferences.dart';
 import '../widgets/compact_header.dart';
 
@@ -214,8 +223,10 @@ class _DeviceManagementState extends State<DeviceManagement>
 
   @override
   Widget build(BuildContext context) {
+    if (isPhoneLayout(context)) return _buildMobilePage();
     return Container(
-      height: 1000,
+      color: isPhoneLayout(context) ? GasPalette.page : null,
+      height: isPhoneLayout(context) ? null : 1000,
       child: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -227,14 +238,14 @@ class _DeviceManagementState extends State<DeviceManagement>
               // Main Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Statistics Cards
                       _buildStatisticsSection(),
 
-                      const SizedBox(height: 32),
+                      SizedBox(height: isPhoneLayout(context) ? 24 : 32),
 
                       // Search and Controls
                       _buildSearchAndControls(),
@@ -245,8 +256,13 @@ class _DeviceManagementState extends State<DeviceManagement>
                       _buildDevicesSection(),
                       const SizedBox(height: 24),
                       FloatingActionButton.extended(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(32)),
+                        elevation: 0,
                         onPressed: _addDevice,
-                        backgroundColor: Constants.ctaColorLight,
+                        backgroundColor: isPhoneLayout(context)
+                            ? GasPalette.primary
+                            : Constants.ctaColorLight,
                         foregroundColor: Colors.white,
                         icon: const Icon(Icons.add_rounded),
                         label: Text(
@@ -264,6 +280,115 @@ class _DeviceManagementState extends State<DeviceManagement>
       ),
     );
   }
+
+  Widget _buildMobilePage() => ColoredBox(
+    color: GasPalette.page,
+    child: SafeArea(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          children: [
+            MobileScreenHeader(
+              padding: EdgeInsets.zero,
+              title: 'Devices',
+              trailing: FilledButton(
+                onPressed: _addDevice,
+                style: FilledButton.styleFrom(
+                  backgroundColor: GasPalette.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(64, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                ),
+                child: const Text('Add Device'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: deviceRecordList.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, index) =>
+                    _buildStatCard(deviceRecordList[index], index),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _searchController,
+              decoration: mobileInputDecoration(
+                context,
+                const InputDecoration(hintText: 'Search name, ID or location'),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: _showFilterDialog,
+                      icon: const Icon(Icons.tune_rounded, size: 18),
+                      label: Text(
+                        _selectedFilter == 'All'
+                            ? 'Filter'
+                            : _selectedFilter,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: GasPalette.ink,
+                        side: const BorderSide(color: GasPalette.border),
+                        minimumSize: const Size(0, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_selectedFilter != 'All')
+                  IconButton(
+                    tooltip: 'Clear filters',
+                    onPressed: () {
+                      setState(() => _selectedFilter = 'All');
+                      _filterDevices();
+                    },
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Tooltip(
+                    message: '${_filteredDevices.length} devices shown',
+                    child: Semantics(
+                      label: '${_filteredDevices.length} devices shown',
+                      excludeSemantics: true,
+                      child: Text(
+                        '${_filteredDevices.length}',
+                        key: const ValueKey('devices-result-count'),
+                        style: gasSmall(context).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ),
+
+              ],
+            ),
+            const SizedBox(height: 8),
+            _isLoading
+                ? _buildLoadingState()
+                : _filteredDevices.isEmpty
+                ? _buildEmptyState()
+                : _buildMobileDeviceList(),
+          ],
+        ),
+      ),
+    ),
+  );
 
   Widget _buildHeader() {
     return const CompactHeader(
@@ -292,19 +417,22 @@ class _DeviceManagementState extends State<DeviceManagement>
               ),
             ),
             const SizedBox(width: 12),
-            Text(
+            Expanded(
+                child: Text(
               "Device Overview",
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: isPhoneLayout(context)
+                    ? GasPalette.ink
+                    : const Color(0xFF1E293B),
               ),
-            ),
+            )),
           ],
         ),
         const SizedBox(height: 16),
         SizedBox(
-          height: 120,
+          height: isPhoneLayout(context) ? 132 : 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: deviceRecordList.length,
@@ -342,59 +470,104 @@ class _DeviceManagementState extends State<DeviceManagement>
         _filterDevices();
       },
       child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(20),
+        width: isPhoneLayout(context) ? null : 160,
+        padding: isPhoneLayout(context)
+            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
+            : const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: record.cardColor.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color:
+              isPhoneLayout(context) &&
+                  _selectedFilter == (index == 0 ? 'All' : record.itemName)
+              ? GasPalette.primary
+              : Colors.white,
+          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 16),
+          border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : record.cardColor.withOpacity(0.2),
+          ),
+          boxShadow: isPhoneLayout(context)
+              ? const []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: record.cardColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+        child: isPhoneLayout(context)
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    index == 0 ? 'All' : record.itemName,
+                    style: gasSmall(context).copyWith(
+                      color:
+                          _selectedFilter ==
+                              (index == 0 ? 'All' : record.itemName)
+                          ? Colors.white
+                          : GasPalette.ink2,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  child: Icon(
-                    record.itemIcon,
-                    color: record.cardColor,
-                    size: 20,
+                  const SizedBox(width: 8),
+                  Text(
+                    record.itemCount.toString(),
+                    style: gasBody(context).copyWith(
+                      color:
+                          _selectedFilter ==
+                              (index == 0 ? 'All' : record.itemName)
+                          ? Colors.white
+                          : GasPalette.ink,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  record.itemCount.toString(),
-                  style: GoogleFonts.inter(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: record.cardColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          record.itemIcon,
+                          color: record.cardColor,
+                          size: 20,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        record.itemCount.toString(),
+                        style: GoogleFonts.inter(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: isPhoneLayout(context)
+                              ? GasPalette.ink
+                              : const Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              record.itemName,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
+                  const SizedBox(height: 12),
+                  Text(
+                    record.itemName,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -404,7 +577,10 @@ class _DeviceManagementState extends State<DeviceManagement>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -415,38 +591,43 @@ class _DeviceManagementState extends State<DeviceManagement>
       ),
       child: Column(
         children: [
-          Row(
+          MobileFormRow(
             children: [
               // Search Field
               Expanded(
                 child: TextField(
                   controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText:
-                        'Search devices by name, ID, unit, or location...',
-                    hintStyle: GoogleFonts.inter(
-                      color: const Color(0xFF9CA3AF),
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      color: Color(0xFF6B7280),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: Color(0xFF3B82F6), width: 2),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF9FAFB),
-                  ),
+                  decoration: mobileInputDecoration(
+                      context,
+                      InputDecoration(
+                        hintText: isPhoneLayout(context)
+                            ? 'Search name, ID or location'
+                            : 'Search devices by name, ID, unit, or location...',
+                        hintStyle: GoogleFonts.inter(
+                          color: const Color(0xFF9CA3AF),
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF6B7280),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF3B82F6), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                      )),
                 ),
               ),
               const SizedBox(width: 12),
@@ -469,7 +650,8 @@ class _DeviceManagementState extends State<DeviceManagement>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius:
+                        BorderRadius.circular(isPhoneLayout(context) ? 32 : 12),
                   ),
                 ),
               ),
@@ -515,7 +697,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                   'Active filter: ',
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: const Color(0xFF64748B),
+                    color: isPhoneLayout(context)
+                        ? GasPalette.ink2
+                        : const Color(0xFF64748B),
                   ),
                 ),
                 Chip(
@@ -558,14 +742,17 @@ class _DeviceManagementState extends State<DeviceManagement>
               ),
             ),
             const SizedBox(width: 12),
-            Text(
+            Expanded(
+                child: Text(
               "Devices (${_filteredDevices.length})",
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: isPhoneLayout(context)
+                    ? GasPalette.ink
+                    : const Color(0xFF1E293B),
               ),
-            ),
+            )),
           ],
         ),
         const SizedBox(height: 16),
@@ -582,10 +769,14 @@ class _DeviceManagementState extends State<DeviceManagement>
 
   Widget _buildLoadingState() {
     return Container(
-      height: 300,
+      constraints: const BoxConstraints(minHeight: 240),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
       ),
       child: const Center(
         child: CircularProgressIndicator(),
@@ -595,10 +786,16 @@ class _DeviceManagementState extends State<DeviceManagement>
 
   Widget _buildEmptyState() {
     return Container(
-      height: 300,
+      constraints: BoxConstraints(
+        minHeight: isPhoneLayout(context) ? 168 : 240,
+      ),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -610,25 +807,28 @@ class _DeviceManagementState extends State<DeviceManagement>
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.devices_rounded,
-              size: 64,
+              size: isPhoneLayout(context) ? 32 : 64,
               color: Colors.grey.shade400,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: isPhoneLayout(context) ? 12 : 16),
             Text(
               'No devices found',
               style: GoogleFonts.inter(
-                fontSize: 18,
+                fontSize: isPhoneLayout(context) ? 16 : 18,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
+                color: isPhoneLayout(context)
+                    ? GasPalette.ink2
+                    : const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               _searchController.text.isNotEmpty || _selectedFilter != 'All'
-                  ? 'Try adjusting your search or filters'
+                  ? 'Try another search or clear the filters.'
                   : 'Get started by adding your first device',
               style: GoogleFonts.inter(
                 fontSize: 14,
@@ -637,7 +837,7 @@ class _DeviceManagementState extends State<DeviceManagement>
             ),
             if (_searchController.text.isNotEmpty ||
                 _selectedFilter != 'All') ...[
-              const SizedBox(height: 16),
+              SizedBox(height: isPhoneLayout(context) ? 12 : 16),
               OutlinedButton(
                 onPressed: () {
                   _searchController.clear();
@@ -653,7 +853,24 @@ class _DeviceManagementState extends State<DeviceManagement>
     );
   }
 
+  Widget _buildMobileDeviceCard(Device device) => MobileEquipmentCard(
+    device: device,
+    onOpen: () => _showDeviceDetails(device),
+    actions: _buildQuickActions(device),
+  );
+
+  Widget _buildMobileDeviceList() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (var index = 0; index < _filteredDevices.length; index++) ...[
+        if (index > 0) const SizedBox(height: 12),
+        _buildMobileDeviceCard(_filteredDevices[index]),
+      ],
+    ],
+  );
+
   Widget _buildGridView() {
+    if (isPhoneLayout(context)) return _buildMobileDeviceList();
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -678,7 +895,7 @@ class _DeviceManagementState extends State<DeviceManagement>
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
           border: Border.all(
             color: device.isActive
                 ? (device.isOnline
@@ -727,7 +944,9 @@ class _DeviceManagementState extends State<DeviceManagement>
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E293B),
+                color: isPhoneLayout(context)
+                    ? GasPalette.ink
+                    : const Color(0xFF1E293B),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -737,7 +956,9 @@ class _DeviceManagementState extends State<DeviceManagement>
               device.deviceId,
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: const Color(0xFF64748B),
+                color: isPhoneLayout(context)
+                    ? GasPalette.ink2
+                    : const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 8),
@@ -765,10 +986,14 @@ class _DeviceManagementState extends State<DeviceManagement>
   }
 
   Widget _buildListView() {
+    if (isPhoneLayout(context)) return _buildMobileDeviceList();
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -799,7 +1024,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -809,7 +1036,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -819,7 +1048,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -829,7 +1060,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -839,7 +1072,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -885,7 +1120,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748B),
+                    color: isPhoneLayout(context)
+                        ? GasPalette.ink2
+                        : const Color(0xFF64748B),
                   ),
                 ),
               ),
@@ -903,7 +1140,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1E293B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink
+                          : const Color(0xFF1E293B),
                     ),
                   ),
                   if (device.deviceType != null)
@@ -911,7 +1150,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                       device.deviceTypeDisplay,
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: const Color(0xFF64748B),
+                        color: isPhoneLayout(context)
+                            ? GasPalette.ink2
+                            : const Color(0xFF64748B),
                       ),
                     ),
                 ],
@@ -925,7 +1166,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF1E293B),
+                  color: isPhoneLayout(context)
+                      ? GasPalette.ink
+                      : const Color(0xFF1E293B),
                 ),
               ),
             ),
@@ -940,7 +1183,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                           device.connectedUnit!.name,
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: const Color(0xFF1E293B),
+                            color: isPhoneLayout(context)
+                                ? GasPalette.ink
+                                : const Color(0xFF1E293B),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -948,7 +1193,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                           'S/N: ${device.connectedUnit!.serialNumber}',
                           style: GoogleFonts.inter(
                             fontSize: 11,
-                            color: const Color(0xFF64748B),
+                            color: isPhoneLayout(context)
+                                ? GasPalette.ink2
+                                : const Color(0xFF64748B),
                           ),
                         ),
                         if (device.connectedUnit!.isMaintenanceDue)
@@ -995,7 +1242,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                 device.location ?? 'N/A',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: const Color(0xFF1E293B),
+                  color: isPhoneLayout(context)
+                      ? GasPalette.ink
+                      : const Color(0xFF1E293B),
                 ),
               ),
             ),
@@ -1126,61 +1375,27 @@ class _DeviceManagementState extends State<DeviceManagement>
   }
 
   void _showFilterDialog() {
-    showDialog(
+    showMobileDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Constants.ctaColorLight.withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Constants.ctaColorLight,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.filter_list_rounded,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Filter Devices',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Filter Options
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
+      builder: (context) => isPhoneLayout(context)
+          ? MobileDialog(
+              child: Scaffold(
+                backgroundColor: GasPalette.page,
+                appBar: AppBar(
+                    title: const Text('Filter devices'),
+                    backgroundColor: GasPalette.panel,
+                    foregroundColor: GasPalette.ink,
+                    elevation: 0,
+                    surfaceTintColor: Colors.transparent,
+                    automaticallyImplyLeading: false,
+                    actions: [
+                      IconButton(
+                          tooltip: 'Close',
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close_rounded))
+                    ]),
+                body: ListView(padding: const EdgeInsets.all(16), children: [
+                  for (final filter in [
                     'All',
                     'Active',
                     'Inactive',
@@ -1190,56 +1405,187 @@ class _DeviceManagementState extends State<DeviceManagement>
                     'Warranty Expired',
                     'With Unit',
                     'Without Unit'
-                  ].map((filter) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
+                  ])
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Material(
+                        color: GasPalette.panel,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                                color: _selectedFilter == filter
+                                    ? GasPalette.primary
+                                    : GasPalette.border)),
+                        child: ListTile(
+                          title: Text(filter,
+                              style: gasBody(context)
+                                  .copyWith(color: GasPalette.ink)),
+                          trailing: _selectedFilter == filter
+                              ? const Icon(Icons.check_rounded,
+                                  color: GasPalette.primary)
+                              : null,
+                          onTap: () {
+                            setState(() => _selectedFilter = filter);
+                            Navigator.pop(context);
+                            _filterDevices();
+                          },
+                        ),
+                      ),
+                    ),
+                ]),
+              ),
+            )
+          : MobileDialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius:
+                      BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: _selectedFilter == filter
-                              ? Constants.ctaColorLight
-                              : const Color(0xFFE2E8F0),
+                        color: Constants.ctaColorLight.withOpacity(0.1),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
                         ),
-                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: RadioListTile<String>(
-                        title: Text(
-                          filter,
-                          style: GoogleFonts.inter(
-                            fontWeight: _selectedFilter == filter
-                                ? FontWeight.w600
-                                : FontWeight.w500,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Constants.ctaColorLight,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.filter_list_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
                           ),
-                        ),
-                        value: filter,
-                        groupValue: _selectedFilter,
-                        activeColor: Constants.ctaColorLight,
-                        onChanged: (value) {
-                          setState(() => _selectedFilter = value!);
-                          Navigator.pop(context);
-                          _filterDevices();
-                        },
+                          const SizedBox(width: 12),
+                          Text(
+                            'Filter Devices',
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: isPhoneLayout(context)
+                                  ? GasPalette.ink
+                                  : const Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  }).toList(),
+                    ),
+
+                    // Filter Options
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          'All',
+                          'Active',
+                          'Inactive',
+                          'Online',
+                          'Offline',
+                          'Service Due',
+                          'Warranty Expired',
+                          'With Unit',
+                          'Without Unit'
+                        ].map((filter) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: _selectedFilter == filter
+                                    ? Constants.ctaColorLight
+                                    : const Color(0xFFE2E8F0),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Material(
+                                type: MaterialType.transparency,
+                                child: RadioListTile<String>(
+                                  title: Text(
+                                    filter,
+                                    style: GoogleFonts.inter(
+                                      fontWeight: _selectedFilter == filter
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                    ),
+                                  ),
+                                  value: filter,
+                                  groupValue: _selectedFilter,
+                                  activeColor: Constants.ctaColorLight,
+                                  onChanged: (value) {
+                                    setState(() => _selectedFilter = value!);
+                                    Navigator.pop(context);
+                                    _filterDevices();
+                                  },
+                                )),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
   void _addDevice() {
-    showDialog(
+    showMobileDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AddDeviceDialog(availableUnits: _availableUnits),
-    ).then((_) => _loadData());
+    ).then((result) {
+      _loadData();
+      if (result is Device && mounted) _offerScaleSetup(result);
+    });
+  }
+
+  /// After adding a gas cylinder, offer to connect its scale to Wi-Fi over
+  /// Bluetooth right away ("Configure Wi-Fi").
+  Future<void> _offerScaleSetup(Device device) async {
+    final connect = await showMobileDialog<bool>(
+      context: context,
+      builder: (context) => MobileAlertDialog(
+        title: const Text('Connect the scale now?'),
+        content: Text(
+          '${device.name} is added. Connect its scale to Wi-Fi over Bluetooth so '
+          'readings start coming in. You can also do this later from the cylinder '
+          'screen (Connect scale).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Later'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Connect scale'),
+          ),
+        ],
+      ),
+    );
+    if (connect != true || !mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ScaleSetupScreen(device: device),
+    ));
+    if (mounted) _loadData();
   }
 
   void _editDevice(Device device) {
-    showDialog(
+    showMobileDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) =>
@@ -1248,7 +1594,16 @@ class _DeviceManagementState extends State<DeviceManagement>
   }
 
   void _showDeviceDetails(Device device) {
-    showDialog(
+    // Gas cylinder devices open the gas dashboard instead of the
+    // temperature-oriented details dialog.
+    if (isGasCylinderType(device.deviceType)) {
+      showMobileDialog(
+        context: context,
+        builder: (context) => GasCylinderDetailsDialog(device: device),
+      );
+      return;
+    }
+    showMobileDialog(
       context: context,
       builder: (context) => DeviceDetailsDialog(
         device: device,
@@ -1265,7 +1620,7 @@ class _DeviceManagementState extends State<DeviceManagement>
   }
 
   void _showChangeUnitDialog(Device device) {
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => ChangeUnitDialog(
         device: device,
@@ -1276,15 +1631,16 @@ class _DeviceManagementState extends State<DeviceManagement>
   }
 
   Future<void> _deleteDevice(int deviceId) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showMobileDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius:
+                BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1319,7 +1675,9 @@ class _DeviceManagementState extends State<DeviceManagement>
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                        color: isPhoneLayout(context)
+                            ? GasPalette.ink
+                            : const Color(0xFF1E293B),
                       ),
                     ),
                   ],
@@ -1335,13 +1693,15 @@ class _DeviceManagementState extends State<DeviceManagement>
                       'Are you sure you want to delete this device? This action cannot be undone.',
                       style: GoogleFonts.inter(
                         fontSize: 14,
-                        color: const Color(0xFF64748B),
+                        color: isPhoneLayout(context)
+                            ? GasPalette.ink2
+                            : const Color(0xFF64748B),
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: OutlinedButton(
@@ -1349,7 +1709,8 @@ class _DeviceManagementState extends State<DeviceManagement>
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             child: const Text('Cancel'),
@@ -1364,7 +1725,8 @@ class _DeviceManagementState extends State<DeviceManagement>
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 8),
                               ),
                               elevation: 0,
                             ),
@@ -1409,9 +1771,203 @@ class DeviceDetailsDialog extends StatelessWidget {
     this.onChangeUnit,
   }) : super(key: key);
 
+  Widget _buildPhoneDetails(BuildContext context) {
+    final unit = device.connectedUnit;
+    Widget section(
+      String title,
+      Map<String, String?> values, {
+      Widget? action,
+    }) => GPanel(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: gasTitle(context)),
+          const SizedBox(height: 12),
+          for (final entry in values.entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Text(entry.key, style: gasSmall(context)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 6,
+                    child: Text(
+                      (entry.value ?? '').isEmpty ? 'Not set' : entry.value!,
+                      style: gasBody(context).copyWith(color: GasPalette.ink),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (action != null) action,
+        ],
+      ),
+    );
+    return MobileDialog(
+      child: Scaffold(
+        backgroundColor: GasPalette.page,
+        appBar: AppBar(
+          title: const Text('Equipment details'),
+          backgroundColor: GasPalette.panel,
+          foregroundColor: GasPalette.ink,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              tooltip: 'Close',
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close_rounded),
+            ),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            MobileScreenHeader(
+              padding: EdgeInsets.zero,
+              title: device.name,
+              description: '${device.deviceTypeDisplay} · ${device.deviceId}',
+              bottom: Text(
+                device.statusDisplay,
+                style: gasSmall(context).copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(height: 12),
+            DeviceAlertCard(device: device),
+            const SizedBox(height: 12),
+            section('Device information', {
+              'Product ID': device.productId,
+              'Manufacturer': device.manufacturer,
+              'Model': device.model,
+              'Serial number': device.serialNumber,
+              'Phase': device.phaseType,
+              'Capacity': device.capacity,
+            }),
+            const SizedBox(height: 12),
+            section(
+              'Connected unit',
+              unit == null
+                  ? {'Connection': 'No unit connected'}
+                  : {
+                      'Name': unit.name,
+                      'Model': unit.modelNumber,
+                      'Serial number': unit.serialNumber,
+                      'Status': unit.status,
+                      'Location': unit.location,
+                      'Refrigerant': unit.refrigerantType,
+                      'Compressor type': unit.compressorType,
+                      'Compressor model': unit.compressorModel,
+                      'Compressor power': unit.compressorHp == null
+                          ? null
+                          : '${unit.compressorHp} HP',
+                      'Compressor rating': unit.compressorAmpRating == null
+                          ? null
+                          : '${unit.compressorAmpRating} A',
+                      'Condenser fan':
+                          '${unit.condenserFan.count} × ${unit.condenserFan.type} · ${unit.condenserFan.power}',
+                      'Evaporator fan':
+                          '${unit.evaporatorFan.count} × ${unit.evaporatorFan.type} · ${unit.evaporatorFan.power}',
+                      'Evaporator model': unit.evaporatorModel,
+                      'Evaporator dimensions': unit.evaporatorDimensions,
+                      'Orifice size': unit.orificeSize,
+                      'Dryer size': unit.dryerSize,
+                      'Oil separator': unit.oilSeparator,
+                      'Liquid receiver': unit.liquidReceiver,
+                      'Accumulator capacity': unit.accumulatorCapacity,
+                      'Maintenance': unit.isMaintenanceDue
+                          ? 'Maintenance due'
+                          : 'Up to date',
+                    },
+              action: onChangeUnit == null
+                  ? null
+                  : OutlinedButton(
+                      onPressed: onChangeUnit,
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                      ),
+                      child: Text(
+                        unit == null ? 'Connect unit' : 'Change unit',
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 12),
+            section('Location', {
+              'Location': device.location,
+              'Building': device.building,
+              'Floor': device.floor,
+              'Room': device.room,
+              'Full address': device.fullLocation,
+            }),
+            const SizedBox(height: 12),
+            section('Temperature settings', {
+              'Target range': device.temperatureRange,
+            }),
+            const SizedBox(height: 12),
+            section('Status', {
+              'Activity': device.isActive ? 'Active' : 'Inactive',
+              'Connection': device.isOnline ? 'Online' : 'Offline',
+              'Repair mode': device.isInRepairMode ? 'In repair' : 'Normal',
+              if (device.repairModeReason != null)
+                'Repair reason': device.repairModeReason,
+              'Last communication': device.lastPing == null
+                  ? null
+                  : _formatDateTime(device.lastPing!),
+            }),
+            const SizedBox(height: 12),
+            section('Maintenance', {
+              'Installed': device.formattedInstallationDate,
+              'Warranty expiry': device.warrantyExpiry,
+              'Last service': device.lastServiceDate,
+              'Next service': device.nextServiceDate,
+              'Service status': device.isServiceDue ? 'Service due' : 'Not due',
+              'Warranty status': device.isWarrantyValid
+                  ? 'Valid'
+                  : 'Expired or not set',
+            }),
+            const SizedBox(height: 12),
+            section('System information', {
+              'Created': device.createdAt == null
+                  ? null
+                  : _formatDateTime(device.createdAt!),
+              'Last updated': device.updatedAt == null
+                  ? null
+                  : _formatDateTime(device.updatedAt!),
+              'Company': device.companyName,
+            }),
+            if (onEditPressed != null) ...[
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: onEditPressed,
+                style: FilledButton.styleFrom(
+                  backgroundColor: GasPalette.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                ),
+                child: const Text('Edit device'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    if (isPhoneLayout(context)) return _buildPhoneDetails(context);
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.all(16),
       child: Container(
@@ -1433,20 +1989,22 @@ class DeviceDetailsDialog extends StatelessWidget {
             // Enhanced Header with gradient background
             Container(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Constants.ctaColorLight,
-                    Constants.ctaColorLight.withOpacity(0.8)
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
+              decoration: mobileFlatDecoration(
+                  context,
+                  BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Constants.ctaColorLight,
+                        Constants.ctaColorLight.withOpacity(0.8)
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  )),
               child: Row(
                 children: [
                   Container(
@@ -1569,6 +2127,9 @@ class DeviceDetailsDialog extends StatelessWidget {
 
                       SizedBox(height: 24),
 
+                      DeviceAlertCard(device: device),
+                      const SizedBox(height: 24),
+
                       // Connected Unit Section with enhanced styling
                       _buildEnhancedSection(
                         'Connected Unit Information',
@@ -1585,7 +2146,7 @@ class DeviceDetailsDialog extends StatelessWidget {
                               )
                             : null,
                         child: device.connectedUnit != null
-                            ? _buildConnectedUnitInfo()
+                            ? _buildConnectedUnitInfo(context)
                             : _buildNoUnitConnected(),
                       ),
 
@@ -1652,7 +2213,7 @@ class DeviceDetailsDialog extends StatelessWidget {
                         null,
                         child: Column(
                           children: [
-                            _buildTemperatureCard(),
+                            _buildTemperatureCard(context),
                             if (device.targetTempMin != null)
                               _buildEnhancedInfoRow(
                                 'Minimum Temperature',
@@ -1962,22 +2523,24 @@ class DeviceDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildConnectedUnitInfo() {
+  Widget _buildConnectedUnitInfo(BuildContext context) {
     final unit = device.connectedUnit!;
     return Column(
       children: [
         // Unit Overview Card
         Container(
           padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.teal[50]!, Colors.teal[100]!],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.teal[200]!),
-          ),
+          decoration: mobileFlatDecoration(
+              context,
+              BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.teal[50]!, Colors.teal[100]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.teal[200]!),
+              )),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2314,18 +2877,20 @@ class DeviceDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildTemperatureCard() {
+  Widget _buildTemperatureCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.orange[50]!, Colors.red[50]!],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange[200]!),
-      ),
+      decoration: mobileFlatDecoration(
+          context,
+          BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange[50]!, Colors.red[50]!],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.orange[200]!),
+          )),
       child: Row(
         children: [
           Icon(Icons.device_thermostat, size: 32, color: Colors.orange[600]),
@@ -2743,7 +3308,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -2940,7 +3505,7 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                   top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Container(
@@ -2958,7 +3523,8 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                              isPhoneLayout(context) ? 32 : 12),
                         ),
                       ),
                       child: Text(
@@ -2986,7 +3552,8 @@ class _ChangeUnitDialogState extends State<ChangeUnitDialog> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 32, vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                              isPhoneLayout(context) ? 32 : 12),
                         ),
                       ),
                       child: _isLoading
@@ -3575,12 +4142,16 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 20,
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.85,
-        height: MediaQuery.of(context).size.height * 0.9,
+        width: isPhoneLayout(context)
+            ? double.infinity
+            : MediaQuery.of(context).size.width * 0.85,
+        height: isPhoneLayout(context)
+            ? double.infinity
+            : MediaQuery.of(context).size.height * 0.9,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
@@ -3597,88 +4168,94 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           child: Column(
             children: [
               // Modern Header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Constants.ctaColorLight,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
+              if (isPhoneLayout(context))
+                _phoneDeviceFormHeader(context, 'Edit device',
+                    widget.device.deviceId, () => Navigator.of(context).pop())
+              else
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Constants.ctaColorLight,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.edit_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Edit Device',
-                            style: GoogleFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            'Device ID: ${widget.device.deviceId}',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: widget.device.isActive == true
-                            ? Colors.white.withOpacity(0.2)
-                            : Colors.red.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        widget.device.isActive == true ? 'Active' : 'Inactive',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.edit_rounded,
                           color: Colors.white,
+                          size: 20,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(
-                        Icons.close_rounded,
-                        color: Colors.white.withOpacity(0.9),
-                        size: 20,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Edit Device',
+                              style: GoogleFonts.inter(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              'Device ID: ${widget.device.deviceId}',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: Colors.white.withOpacity(0.8),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: widget.device.isActive == true
+                              ? Colors.white.withOpacity(0.2)
+                              : Colors.red.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          widget.device.isActive == true
+                              ? 'Active'
+                              : 'Inactive',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          color: Colors.white.withOpacity(0.9),
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
               // Scrollable form content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -3725,7 +4302,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
 
               // Modern Action buttons
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 24),
                 decoration: const BoxDecoration(
                   color: Color(0xFFFAFAFA),
                   border: Border(
@@ -3735,12 +4312,12 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
                     ),
                   ),
                 ),
-                child: Row(
+                child: MobileFormRow(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 12),
                         border: Border.all(
                           color: const Color(0xFFE5E7EB),
                           width: 1.5,
@@ -3754,7 +4331,8 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                isPhoneLayout(context) ? 32 : 12),
                           ),
                         ),
                         child: Text(
@@ -3770,7 +4348,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
                     const SizedBox(width: 16),
                     Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 12),
                         color: Constants.ctaColorLight,
                       ),
                       child: ElevatedButton(
@@ -3782,7 +4360,8 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 32, vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                isPhoneLayout(context) ? 32 : 12),
                           ),
                         ),
                         child: _isLoading
@@ -3929,7 +4508,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
             backgroundColor: Constants.ctaColorLight,
             behavior: SnackBarBehavior.floating,
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 12)),
           ),
         );
       }
@@ -3951,7 +4530,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           backgroundColor: const Color(0xFFEF4444),
           behavior: SnackBarBehavior.floating,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 12)),
         ),
       );
     } finally {
@@ -3963,11 +4542,15 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
 
   // Helper method to build modern section headers
   Widget _buildSectionHeader(String title, IconData icon) {
+    if (isPhoneLayout(context))
+      return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(title, style: gasTitle(context)));
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Constants.ctaColorLight.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 12),
         border: Border.all(
           color: Constants.ctaColorLight.withOpacity(0.2),
           width: 1,
@@ -4000,47 +4583,52 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   // Modern text form field styling
   InputDecoration _buildInputDecoration(String label, IconData icon,
       {bool enabled = true}) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon,
-          color: enabled ? Constants.ctaColorLight : const Color(0xFF9CA3AF),
-          size: 20),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(36),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(36),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-      ),
-      disabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(36),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(36),
-        borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(36),
-        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-      ),
-      filled: true,
-      fillColor: enabled ? const Color(0xFFFAFAFA) : const Color(0xFFF3F4F6),
-      labelStyle: GoogleFonts.inter(
-        fontSize: 14,
-        color: enabled ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
-        fontWeight: FontWeight.w500,
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    );
+    return mobileInputDecoration(
+        context,
+        InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon,
+              color:
+                  enabled ? Constants.ctaColorLight : const Color(0xFF9CA3AF),
+              size: 20),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(36),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(36),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+          ),
+          disabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(36),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(36),
+            borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(36),
+            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+          ),
+          filled: true,
+          fillColor:
+              enabled ? const Color(0xFFFAFAFA) : const Color(0xFFF3F4F6),
+          labelStyle: GoogleFonts.inter(
+            fontSize: 14,
+            color: enabled ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
+            fontWeight: FontWeight.w500,
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ));
   }
 
   // Required fields section
   Widget _buildRequiredFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4072,18 +4660,22 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: _selectedDeviceType,
                 decoration:
                     _buildInputDecoration('Device Type *', Icons.category),
                 style: GoogleFonts.inter(
-                    fontSize: 14, fontWeight: FontWeight.w500),
+                    fontSize: 14, fontWeight: FontWeight.w500,
+                    color: isPhoneLayout(context) ? GasPalette.ink : null),
                 items: const [
                   DropdownMenuItem(value: 'chiller', child: Text('Chiller')),
                   DropdownMenuItem(value: 'freezer', child: Text('Freezer')),
+                  DropdownMenuItem(
+                      value: 'gas_cylinder', child: Text('Gas Cylinder')),
                 ],
                 onChanged: (value) {
                   setState(() {
@@ -4095,11 +4687,13 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
             const SizedBox(width: 20),
             Expanded(
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: _selectedPhaseType,
                 decoration: _buildInputDecoration(
                     'Phase Type', Icons.electrical_services),
                 style: GoogleFonts.inter(
-                    fontSize: 14, fontWeight: FontWeight.w500),
+                    fontSize: 14, fontWeight: FontWeight.w500,
+                    color: isPhoneLayout(context) ? GasPalette.ink : null),
                 items: const [
                   DropdownMenuItem(
                       value: 'single', child: Text('Single Phase')),
@@ -4122,7 +4716,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   Widget _buildBasicInfoFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4146,7 +4740,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4184,7 +4778,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   Widget _buildTechnicalFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4208,7 +4802,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4232,7 +4826,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4278,12 +4872,10 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
         const SizedBox(height: 20),
         TextFormField(
           controller: _electricityRateController,
-          decoration: _buildInputDecoration(
-              'Electricity Rate (R/kWh)', Icons.bolt),
-          style: GoogleFonts.inter(
-              fontSize: 14, fontWeight: FontWeight.w500),
-          keyboardType:
-              const TextInputType.numberWithOptions(decimal: true),
+          decoration:
+              _buildInputDecoration('Electricity Rate (R/kWh)', Icons.bolt),
+          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           validator: (value) {
             if (value != null && value.isNotEmpty) {
               if (double.tryParse(value) == null) {
@@ -4301,7 +4893,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   Widget _buildServiceFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4345,7 +4937,7 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -4396,15 +4988,17 @@ class _EditDeviceDialogState extends State<EditDeviceDialog> {
   Widget _buildUnitConnectionFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: DropdownButtonFormField<String?>(
+                isExpanded: true,
                 value: _selectedUnitId,
                 decoration: _buildInputDecoration(
                     'Connected Unit (Optional)', Icons.link),
                 style: GoogleFonts.inter(
-                    fontSize: 14, fontWeight: FontWeight.w500),
+                    fontSize: 14, fontWeight: FontWeight.w500,
+                    color: isPhoneLayout(context) ? GasPalette.ink : null),
                 items: [
                   const DropdownMenuItem<String?>(
                     value: null,
@@ -4567,6 +5161,16 @@ class ApiService {
       [String? unitId]) async {
     Map<String, dynamic> deviceData = device.toJson();
     deviceData['business_id'] = businessId;
+    if (device.deviceType == 'gas_cylinder') {
+      for (final key in [
+        'phase_type',
+        'target_temp_min',
+        'target_temp_max',
+        'capacity'
+      ]) {
+        deviceData.remove(key);
+      }
+    }
     if (unitId != null) {
       deviceData['connected_unit_id'] = unitId;
     }
@@ -4719,9 +5323,293 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   bool _isActive = true;
   bool _isLoading = false;
 
+  final _gasCapacity = TextEditingController();
+  final _gasTare = TextEditingController();
+  final _gasPrice = TextEditingController(text: '0');
+  final _gasLow = TextEditingController(text: '20');
+  final _gasWarning = TextEditingController(text: '40');
+  Device? _createdDevice;
+  String? _mobileError;
+  bool get _isGas => _selectedDeviceType == 'gas_cylinder';
+
+  InputDecoration _mobileDecoration(String label, {String? helper}) =>
+      mobileInputDecoration(
+          context, InputDecoration(labelText: label, helperText: helper));
+
+  Widget _mobileField(String label, TextEditingController controller,
+          {bool required = false,
+          bool numeric = false,
+          bool positive = false,
+          String? helper,
+          VoidCallback? onTap}) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 18),
+        child: TextFormField(
+          key: ValueKey(label),
+          controller: controller,
+          style: const TextStyle(color: Color(0xFF252C44), fontSize: 16),
+          decoration: _mobileDecoration(label, helper: helper),
+          keyboardType: numeric
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.text,
+          readOnly: onTap != null,
+          onTap: onTap,
+          validator: (value) {
+            final text = value?.trim() ?? '';
+            if (required && text.isEmpty) return 'Enter ${label.toLowerCase()}';
+            if (numeric && text.isNotEmpty) {
+              final number = double.tryParse(text);
+              if (number != null &&
+                  (controller == _gasCapacity || controller == _gasTare) &&
+                  number > 200) return 'Enter a weight up to 200 kg';
+              if (number == null ||
+                  !number.isFinite ||
+                  number < 0 ||
+                  (positive && number == 0))
+                return positive
+                    ? 'Enter a number greater than zero'
+                    : 'Enter zero or a positive number';
+            }
+            return null;
+          },
+        ),
+      );
+
+  Widget _mobileSection(String title, List<Widget> fields) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 18),
+              child: Text(title,
+                  style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF252C44)))),
+          ...fields
+        ],
+      );
+
+  Widget _buildMobileForm() => MobileDialog(
+        child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 8, 12),
+                    child: Row(children: [
+                      Expanded(
+                          child: Text(
+                              _isGas ? 'Add gas cylinder' : 'Add device',
+                              style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF252C44)))),
+                      IconButton(
+                          tooltip: 'Close',
+                          onPressed: _isLoading
+                              ? null
+                              : () => Navigator.of(context)
+                                  .pop(_createdDevice != null),
+                          icon: const Icon(Icons.close)),
+                    ])),
+                const Divider(height: 1),
+                Expanded(
+                    child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (_mobileError != null)
+                                Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: Text(_mobileError!,
+                                        style: const TextStyle(
+                                            color: Color(0xFFB42318)))),
+                              if (_createdDevice == null) ...[
+                                DropdownButtonFormField<String>(
+                                  key: const ValueKey('mobile-device-type'),
+                                  value: _selectedDeviceType,
+                                  isExpanded: true,
+                                  decoration: _mobileDecoration('Device type'),
+                                  style: const TextStyle(
+                                      color: Color(0xFF252C44), fontSize: 16),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: 'chiller',
+                                        child: Text('Chiller')),
+                                    DropdownMenuItem(
+                                        value: 'freezer',
+                                        child: Text('Freezer')),
+                                    DropdownMenuItem(
+                                        value: 'gas_cylinder',
+                                        child: Text('Gas cylinder'))
+                                  ],
+                                  onChanged: _isLoading
+                                      ? null
+                                      : (v) => setState(() {
+                                            _selectedDeviceType = v!;
+                                            _mobileError = null;
+                                          }),
+                                ),
+                                const SizedBox(height: 22),
+                                _mobileField(
+                                    _isGas ? 'Cylinder name' : 'Device name',
+                                    _nameController,
+                                    required: true),
+                                _mobileField(
+                                    _isGas ? 'Scale / device ID' : 'Device ID',
+                                    _deviceIdController,
+                                    required: true,
+                                    helper: _isGas
+                                        ? 'Use the ID reported by the connected scale.'
+                                        : null),
+                                _mobileField('Location', _locationController),
+                              ],
+                              if (_isGas)
+                                _mobileSection('Cylinder setup', [
+                                  const Padding(
+                                      padding: EdgeInsets.only(bottom: 18),
+                                      child: Text(
+                                          'The scale measures cylinder and gas together. Enter the empty cylinder weight stamped on your cylinder.',
+                                          style: TextStyle(
+                                              color: Color(0xFF50586B),
+                                              height: 1.5))),
+                                  _mobileField(
+                                      'Gas capacity (kg)', _gasCapacity,
+                                      required: true,
+                                      numeric: true,
+                                      positive: true),
+                                  _mobileField(
+                                      'Empty cylinder weight (kg)', _gasTare,
+                                      required: true,
+                                      numeric: true,
+                                      positive: true),
+                                  _mobileField('Price per kg (R)', _gasPrice,
+                                      required: true, numeric: true),
+                                  _mobileField('Low gas threshold (%)', _gasLow,
+                                      required: true, numeric: true),
+                                  _mobileField(
+                                      'Warning threshold (%)', _gasWarning,
+                                      required: true, numeric: true),
+                                ])
+                              else ...[
+                                _mobileSection('Equipment', [
+                                  DropdownButtonFormField<String>(
+                                      value: _selectedPhaseType,
+                                      isExpanded: true,
+                                      decoration:
+                                          _mobileDecoration('Phase type'),
+                                      style: const TextStyle(
+                                          color: Color(0xFF252C44),
+                                          fontSize: 16),
+                                      items: const [
+                                        DropdownMenuItem(
+                                            value: 'single',
+                                            child: Text('Single phase')),
+                                        DropdownMenuItem(
+                                            value: 'three',
+                                            child: Text('Three phase'))
+                                      ],
+                                      onChanged: (v) => setState(
+                                          () => _selectedPhaseType = v!)),
+                                  const SizedBox(height: 18),
+                                  _mobileField(
+                                      'Manufacturer', _manufacturerController),
+                                  _mobileField('Model', _modelController),
+                                  _mobileField(
+                                      'Serial number', _serialNumberController),
+                                  _mobileField('Capacity', _capacityController),
+                                  _mobileField('Minimum temperature (°C)',
+                                      _targetTempMinController),
+                                  _mobileField('Maximum temperature (°C)',
+                                      _targetTempMaxController),
+                                ]),
+                              ],
+                              if (_createdDevice == null) ...[
+                                ExpansionTile(
+                                    tilePadding: EdgeInsets.zero,
+                                    title:
+                                        const Text('More details (optional)'),
+                                    children: [
+                                      _mobileField(
+                                          'Product ID', _productIdController),
+                                      _mobileField(
+                                          'Building', _buildingController),
+                                      _mobileField('Floor', _floorController),
+                                      _mobileField('Room', _roomController),
+                                      _mobileField('Installation date',
+                                          _installationDateController,
+                                          onTap: () => _selectDate(context,
+                                              _installationDateController)),
+                                      _mobileField('Warranty expiry',
+                                          _warrantyExpiryController,
+                                          onTap: () => _selectDate(context,
+                                              _warrantyExpiryController)),
+                                      _mobileField('Last service date',
+                                          _lastServiceDateController,
+                                          onTap: () => _selectDate(context,
+                                              _lastServiceDateController)),
+                                      _mobileField('Next service date',
+                                          _nextServiceDateController,
+                                          onTap: () => _selectDate(context,
+                                              _nextServiceDateController)),
+                                    ]),
+                                const SizedBox(height: 18),
+                                DropdownButtonFormField<String>(
+                                    value: _selectedUnitId,
+                                    isExpanded: true,
+                                    decoration: _mobileDecoration(
+                                        'Connected unit (optional)'),
+                                    style: const TextStyle(
+                                        color: Color(0xFF252C44), fontSize: 16),
+                                    items: [
+                                      const DropdownMenuItem<String>(
+                                          value: null, child: Text('No unit')),
+                                      ...widget.availableUnits.map((u) =>
+                                          DropdownMenuItem(
+                                              value: u.id,
+                                              child: Text(u.displayName,
+                                                  overflow:
+                                                      TextOverflow.ellipsis)))
+                                    ],
+                                    onChanged: (v) =>
+                                        setState(() => _selectedUnitId = v)),
+                                SwitchListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: const Text('Device active'),
+                                    value: _isActive,
+                                    onChanged: (v) =>
+                                        setState(() => _isActive = v)),
+                              ],
+                            ]))),
+                const Divider(height: 1),
+                Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: SizedBox(
+                        height: 54,
+                        child: FilledButton(
+                            style: FilledButton.styleFrom(
+                                backgroundColor: GasPalette.primary,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                        isPhoneLayout(context) ? 32 : 32))),
+                            onPressed: _isLoading ? null : _addDevice,
+                            child: Text(_isLoading
+                                ? 'Saving…'
+                                : _createdDevice != null
+                                    ? 'Retry cylinder setup'
+                                    : _isGas
+                                        ? 'Add gas cylinder'
+                                        : 'Add device')))),
+              ],
+            )),
+      );
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    if (isPhoneLayout(context)) return _buildMobileForm();
+    return MobileDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 20,
       child: Container(
@@ -4851,7 +5739,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
                     ),
                   ),
                 ),
-                child: Row(
+                child: MobileFormRow(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Container(
@@ -4868,7 +5756,8 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                isPhoneLayout(context) ? 32 : 12),
                           ),
                         ),
                         child: Text(
@@ -4898,7 +5787,8 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                isPhoneLayout(context) ? 32 : 12),
                           ),
                         ),
                         child: Text(
@@ -4913,22 +5803,24 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
                     ),
                     const SizedBox(width: 16),
                     Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        gradient: LinearGradient(
-                          colors: [
-                            Constants.ctaColorLight,
-                            Constants.ctaColorLight.withOpacity(0.8),
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Constants.ctaColorLight.withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
+                      decoration: mobileFlatDecoration(
+                          context,
+                          BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              colors: [
+                                Constants.ctaColorLight,
+                                Constants.ctaColorLight.withOpacity(0.8),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Constants.ctaColorLight.withOpacity(0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          )),
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _addDevice,
                         style: ElevatedButton.styleFrom(
@@ -4938,7 +5830,8 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 32, vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(
+                                isPhoneLayout(context) ? 32 : 12),
                           ),
                         ),
                         child: _isLoading
@@ -4993,13 +5886,39 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   Future<void> _addDevice() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_isGas && isPhoneLayout(context)) {
+      final low = double.tryParse(_gasLow.text),
+          warning = double.tryParse(_gasWarning.text);
+      if (low == null ||
+          warning == null ||
+          low <= 0 ||
+          low >= warning ||
+          warning >= 100) {
+        setState(() =>
+            _mobileError = 'Thresholds must satisfy 0 < low < warning < 100.');
+        return;
+      }
+    }
+    if (!_isGas) {
+      final min = double.tryParse(_targetTempMinController.text),
+          max = double.tryParse(_targetTempMaxController.text);
+      if ((_targetTempMinController.text.isNotEmpty && min == null) ||
+          (_targetTempMaxController.text.isNotEmpty && max == null) ||
+          (min != null && max != null && min > max)) {
+        setState(() => _mobileError =
+            'Enter valid minimum and maximum temperatures, with minimum no greater than maximum.');
+        return;
+      }
+    }
     setState(() {
       _isLoading = true;
+      _mobileError = null;
     });
 
     try {
       int? businessId = await Sharedprefs.getBusinessUidSharedPreference();
-      if (businessId != null) {
+      if (businessId == null) throw Exception('Sign in again to add a device.');
+      {
         Device newDevice = Device(
           name: _nameController.text,
           deviceId: _deviceIdController.text,
@@ -5027,10 +5946,10 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           capacity: _capacityController.text.isNotEmpty
               ? _capacityController.text
               : null,
-          targetTempMin: _targetTempMinController.text.isNotEmpty
+          targetTempMin: !_isGas && _targetTempMinController.text.isNotEmpty
               ? double.tryParse(_targetTempMinController.text)
               : null,
-          targetTempMax: _targetTempMaxController.text.isNotEmpty
+          targetTempMax: !_isGas && _targetTempMaxController.text.isNotEmpty
               ? double.tryParse(_targetTempMaxController.text)
               : null,
           phaseType: _selectedPhaseType,
@@ -5049,9 +5968,24 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           isActive: _isActive,
         );
 
-        await ApiService.addDevice(businessId, newDevice, _selectedUnitId);
+        _createdDevice ??=
+            await ApiService.addDevice(businessId, newDevice, _selectedUnitId);
+        if (_isGas && isPhoneLayout(context)) {
+          await GasApi.saveConfig(
+              deviceId: _createdDevice!.id!,
+              config: GasConfig(
+                  gasCapacityKg: double.parse(_gasCapacity.text),
+                  tareKg: double.parse(_gasTare.text),
+                  pricePerKg: double.parse(_gasPrice.text),
+                  lowPct: double.parse(_gasLow.text),
+                  warningPct: double.parse(_gasWarning.text),
+                  isDefault: false));
+        }
+        if (!mounted) return;
 
-        Navigator.of(context).pop();
+        // A new gas cylinder goes back to the list screen, which offers to
+        // connect its scale straight away.
+        Navigator.of(context).pop(_isGas ? _createdDevice : null);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -5073,6 +6007,13 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
+      if (isPhoneLayout(context)) {
+        setState(() => _mobileError = _createdDevice != null
+            ? 'Device created. Cylinder setup could not be saved: $e. Retry below without creating another device.'
+            : 'Could not add device: $e');
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -5094,9 +6035,10 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+        });
     }
   }
 
@@ -5166,41 +6108,44 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   // Modern text form field styling
   InputDecoration _buildInputDecoration(
       String label, IconData icon, Color iconColor) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: iconColor, size: 20),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-      ),
-      filled: true,
-      fillColor: const Color(0xFFFAFAFA),
-      labelStyle: GoogleFonts.inter(
-        fontSize: 14,
-        color: const Color(0xFF6B7280),
-        fontWeight: FontWeight.w500,
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    );
+    return mobileInputDecoration(
+        context,
+        InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: iconColor, size: 20),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+          ),
+          filled: true,
+          fillColor: const Color(0xFFFAFAFA),
+          labelStyle: GoogleFonts.inter(
+            fontSize: 14,
+            color: const Color(0xFF6B7280),
+            fontWeight: FontWeight.w500,
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ));
   }
 
   // Required fields section
   Widget _buildRequiredFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5236,18 +6181,22 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: _selectedDeviceType,
                 decoration: _buildInputDecoration(
                     'Device Type *', Icons.category, const Color(0xFFEF4444)),
                 style: GoogleFonts.inter(
-                    fontSize: 14, fontWeight: FontWeight.w500),
+                    fontSize: 14, fontWeight: FontWeight.w500,
+                    color: isPhoneLayout(context) ? GasPalette.ink : null),
                 items: const [
                   DropdownMenuItem(value: 'chiller', child: Text('Chiller')),
                   DropdownMenuItem(value: 'freezer', child: Text('Freezer')),
+                  DropdownMenuItem(
+                      value: 'gas_cylinder', child: Text('Gas Cylinder')),
                 ],
                 onChanged: (value) {
                   setState(() {
@@ -5265,11 +6214,13 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
             const SizedBox(width: 20),
             Expanded(
               child: DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: _selectedPhaseType,
                 decoration: _buildInputDecoration('Phase Type',
                     Icons.electrical_services, const Color(0xFF3B82F6)),
                 style: GoogleFonts.inter(
-                    fontSize: 14, fontWeight: FontWeight.w500),
+                    fontSize: 14, fontWeight: FontWeight.w500,
+                    color: isPhoneLayout(context) ? GasPalette.ink : null),
                 items: const [
                   DropdownMenuItem(
                       value: 'single', child: Text('Single Phase')),
@@ -5292,7 +6243,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   Widget _buildBasicInfoFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5324,7 +6275,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5373,7 +6324,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   Widget _buildTechnicalFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5397,7 +6348,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5437,7 +6388,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5508,7 +6459,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   Widget _buildServiceFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5564,7 +6515,7 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: TextFormField(
@@ -5627,15 +6578,17 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
   Widget _buildUnitConnectionFields() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: DropdownButtonFormField<String?>(
+                isExpanded: true,
                 value: _selectedUnitId,
                 decoration: _buildInputDecoration('Connected Unit (Optional)',
                     Icons.link, const Color(0xFF8B5CF6)),
                 style: GoogleFonts.inter(
-                    fontSize: 14, fontWeight: FontWeight.w500),
+                    fontSize: 14, fontWeight: FontWeight.w500,
+                    color: isPhoneLayout(context) ? GasPalette.ink : null),
                 items: [
                   const DropdownMenuItem<String?>(
                     value: null,
@@ -5736,6 +6689,15 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
 
   @override
   void dispose() {
+    for (final controller in [
+      _gasCapacity,
+      _gasTare,
+      _gasPrice,
+      _gasLow,
+      _gasWarning
+    ]) {
+      controller.dispose();
+    }
     _nameController.dispose();
     _deviceIdController.dispose();
     _productIdController.dispose();
@@ -5756,3 +6718,25 @@ class _AddDeviceDialogState extends State<AddDeviceDialog> {
     super.dispose();
   }
 }
+
+Widget _phoneDeviceFormHeader(BuildContext context, String title,
+        String subtitle, VoidCallback? onClose) =>
+    Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 8, 12),
+      decoration: const BoxDecoration(
+          color: GasPalette.panel,
+          border: Border(bottom: BorderSide(color: GasPalette.border))),
+      child: Row(children: [
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: gasTitle(context)),
+          const SizedBox(height: 4),
+          Text(subtitle, style: gasSmall(context)),
+        ])),
+        IconButton(
+            tooltip: 'Close',
+            onPressed: onClose,
+            icon: const Icon(Icons.close_rounded, color: GasPalette.ink2)),
+      ]),
+    );

@@ -1,6 +1,10 @@
+import 'settings/mobile_account_widgets.dart';
+import '../gasmon/gas_theme.dart';
+import '../gasmon/gas_widgets.dart';
+import '../widgets/mobile_forms.dart';
+import '../widgets/mobile_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/Constants.dart';
 import '../custom_widgets/customCard.dart';
@@ -29,6 +33,7 @@ class _HelpSupportState extends State<HelpSupport> {
 
   @override
   Widget build(BuildContext context) {
+    if (isPhoneLayout(context)) return _buildMobileHelp();
     return Container(
       height: 1000,
       // backgroundColor: const Color(0xFFF8FAFC),
@@ -71,7 +76,67 @@ class _HelpSupportState extends State<HelpSupport> {
     );
   }
 
+  Widget _buildMobileHelp() {
+    return ColoredBox(
+      color: GasPalette.page,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        children: [
+          const MobileScreenHeader(title: 'Help & support', padding: EdgeInsets.zero),
+          const SizedBox(height: 16),
+          _buildQuickActionsGrid(),
+          const SizedBox(height: 14),
+          GPanel(padding: const EdgeInsets.all(14), child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text('Contact', style: gasTitle(context).copyWith(fontSize: 14)),
+              const SizedBox(height: 12),
+              _buildContactMethod('Email support', Constants.myBusinessSupportEmail,
+                  'Send us an email anytime', Icons.email_outlined, GasPalette.ink2),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(height: 1, color: GasPalette.border)),
+              _buildContactMethod('Phone support', Constants.myBusinessSupportContactNumber,
+                  'Call us during business hours', Icons.phone_outlined, GasPalette.ink2),
+            ],
+          )),
+          const SizedBox(height: 14),
+          GPanel(padding: const EdgeInsets.all(14), child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text('Business hours', style: gasTitle(context).copyWith(fontSize: 14)),
+              const SizedBox(height: 8),
+              for (final hours in tradingList)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(children: [
+                    Expanded(child: Text(hours.day, style: gasBody(context).copyWith(
+                        color: GasPalette.ink,
+                        fontWeight: _isToday(hours.day_id) ? FontWeight.w700 : FontWeight.w400))),
+                    const SizedBox(width: 12),
+                    Flexible(child: Text(hours.times, textAlign: TextAlign.end, style: gasBody(context))),
+                  ]),
+                ),
+            ],
+          )),
+          const SizedBox(height: 14),
+          _buildFAQSection(),
+        ],
+      ),
+    );
+  }
+
   Widget _buildQuickActionsGrid() {
+    if (isPhoneLayout(context)) {
+      return GPanel(padding: EdgeInsets.zero, child: Column(children: [
+        _buildActionCard('Live Chat', 'Get instant help',
+            Icons.chat_bubble_outline_rounded, GasPalette.ink, () {
+          // Handle live chat
+        }),
+        const Divider(height: 1, color: GasPalette.border),
+        _buildActionCard('Submit Ticket', 'Report an issue',
+            Icons.support_agent_rounded, GasPalette.ink, () {
+          // Handle ticket submission
+        }),
+      ]));
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -92,7 +157,8 @@ class _HelpSupportState extends State<HelpSupport> {
             const SizedBox(width: 12),
             Text(
               "Quick Actions",
-              style: GoogleFonts.inter(
+              style: accountInter(
+                context,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF1E293B),
@@ -101,7 +167,7 @@ class _HelpSupportState extends State<HelpSupport> {
           ],
         ),
         const SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildActionCard(
@@ -134,22 +200,42 @@ class _HelpSupportState extends State<HelpSupport> {
 
   Widget _buildActionCard(String title, String subtitle, IconData icon,
       Color color, VoidCallback onTap) {
+    if (isPhoneLayout(context)) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14), onTap: onTap,
+          child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [
+            Icon(icon, size: 20, color: GasPalette.ink2),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: gasTitle(context).copyWith(fontSize: 14)),
+              const SizedBox(height: 3),
+              Text(subtitle, style: gasSmall(context)),
+            ])),
+            const Icon(Icons.chevron_right, size: 18, color: GasPalette.muted),
+          ])),
+        ),
+      );
+    }
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+        decoration: accountSurface(
+            context,
+            BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withOpacity(0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            )),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -168,7 +254,8 @@ class _HelpSupportState extends State<HelpSupport> {
             const SizedBox(height: 16),
             Text(
               title,
-              style: GoogleFonts.inter(
+              style: accountInter(
+                context,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF1E293B),
@@ -177,7 +264,8 @@ class _HelpSupportState extends State<HelpSupport> {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: GoogleFonts.inter(
+              style: accountInter(
+                context,
                 fontSize: 13,
                 color: const Color(0xFF64748B),
               ),
@@ -190,37 +278,41 @@ class _HelpSupportState extends State<HelpSupport> {
 
   Widget _buildContactCard() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 15,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Constants.ctaColorGreen.withOpacity(0.1),
-                  Constants.ctaColorGreen.withOpacity(0.05),
-                ],
-              ),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
+            decoration: mobileFlatDecoration(
+                context,
+                BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Constants.ctaColorGreen.withOpacity(0.1),
+                      Constants.ctaColorGreen.withOpacity(0.05),
+                    ],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                )),
             child: Row(
               children: [
                 Container(
@@ -249,7 +341,8 @@ class _HelpSupportState extends State<HelpSupport> {
                     children: [
                       Text(
                         "Get In Touch",
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF1E293B),
@@ -258,7 +351,8 @@ class _HelpSupportState extends State<HelpSupport> {
                       const SizedBox(height: 4),
                       Text(
                         "Providing expert livestock solutions to help farmers thrive",
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 14,
                           color: const Color(0xFF64748B),
                           fontWeight: FontWeight.w500,
@@ -317,7 +411,8 @@ class _HelpSupportState extends State<HelpSupport> {
                       Expanded(
                         child: Text(
                           "We typically respond within 2-4 business hours",
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFF0284C7),
@@ -337,6 +432,18 @@ class _HelpSupportState extends State<HelpSupport> {
 
   Widget _buildContactMethod(String title, String contact, String description,
       IconData icon, Color color) {
+    if (isPhoneLayout(context)) {
+      return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(icon, size: 18, color: GasPalette.muted),
+        const SizedBox(width: 10),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: gasSmall(context)),
+          const SizedBox(height: 4),
+          SelectableText(contact.trim().isEmpty ? 'Not provided' : contact,
+              style: gasBody(context).copyWith(color: GasPalette.ink, height: 1.4)),
+        ])),
+      ]);
+    }
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -365,7 +472,8 @@ class _HelpSupportState extends State<HelpSupport> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF1E293B),
@@ -374,7 +482,8 @@ class _HelpSupportState extends State<HelpSupport> {
                 const SizedBox(height: 4),
                 Text(
                   contact,
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: color,
@@ -383,7 +492,8 @@ class _HelpSupportState extends State<HelpSupport> {
                 const SizedBox(height: 2),
                 Text(
                   description,
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 13,
                     color: const Color(0xFF64748B),
                   ),
@@ -398,17 +508,19 @@ class _HelpSupportState extends State<HelpSupport> {
 
   Widget _buildTradingHoursCard() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 15,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -439,7 +551,8 @@ class _HelpSupportState extends State<HelpSupport> {
                 const SizedBox(width: 16),
                 Text(
                   "Business Hours",
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E293B),
@@ -488,7 +601,8 @@ class _HelpSupportState extends State<HelpSupport> {
                         flex: 2,
                         child: Text(
                           hours.day,
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 15,
                             fontWeight:
                                 isToday ? FontWeight.w600 : FontWeight.w500,
@@ -514,7 +628,8 @@ class _HelpSupportState extends State<HelpSupport> {
                               ),
                               child: Text(
                                 hours.times,
-                                style: GoogleFonts.inter(
+                                style: accountInter(
+                                  context,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: isWeekend
@@ -556,18 +671,33 @@ class _HelpSupportState extends State<HelpSupport> {
       ),
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
+    if (isPhoneLayout(context)) {
+      return GPanel(padding: EdgeInsets.zero, child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(padding: const EdgeInsets.all(14),
+              child: Text('Common questions', style: gasTitle(context).copyWith(fontSize: 14))),
+          for (final faq in faqs) ...[
+            const Divider(height: 1, color: GasPalette.border),
+            _buildFAQItem(faq),
+          ],
         ],
-      ),
+      ));
+    }
+    return Container(
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 15,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -596,14 +726,16 @@ class _HelpSupportState extends State<HelpSupport> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Text(
+                Expanded(
+                    child: Text(
                   "Frequently Asked Questions",
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E293B),
                   ),
-                ),
+                )),
               ],
             ),
           ),
@@ -621,35 +753,49 @@ class _HelpSupportState extends State<HelpSupport> {
   }
 
   Widget _buildFAQItem(FAQItem faq) {
+    if (isPhoneLayout(context)) {
+      return Material(color: Colors.transparent, child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 14),
+        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        shape: const Border(), collapsedShape: const Border(),
+        iconColor: GasPalette.ink2, collapsedIconColor: GasPalette.muted,
+        title: Text(faq.question, style: gasBody(context).copyWith(color: GasPalette.ink)),
+        children: [Text(faq.answer, style: gasBody(context).copyWith(height: 1.5))],
+      ));
+    }
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         border: Border.all(color: const Color(0xFFE2E8F0)),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: ExpansionTile(
-        title: Text(
-          faq.question,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF1E293B),
-          ),
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Text(
-              faq.answer,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF64748B),
-                height: 1.5,
+      child: Material(
+          color: Colors.transparent,
+          child: ExpansionTile(
+            title: Text(
+              faq.question,
+              style: accountInter(
+                context,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1E293B),
               ),
             ),
-          ),
-        ],
-      ),
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Text(
+                  faq.answer,
+                  style: accountInter(
+                    context,
+                    fontSize: 14,
+                    color: const Color(0xFF64748B),
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          )),
     );
   }
 

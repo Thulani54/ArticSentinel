@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -273,7 +274,7 @@ class _AIChatPanelState extends State<AIChatPanel> {
                   controller: _controller,
                   enabled: !_busy,
                   onSubmitted: (_) => _send(),
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     hintText: hasDevice
                         ? 'Ask anything about this unit…'
                         : 'Select a device first…',
@@ -292,7 +293,7 @@ class _AIChatPanelState extends State<AIChatPanel> {
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     isDense: true,
-                  ),
+                  )),
                   style: GoogleFonts.inter(fontSize: 13),
                 ),
               ),

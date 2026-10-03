@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 import 'dart:math';
 
@@ -55,7 +56,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
         ),
         Padding(
           padding: const EdgeInsets.only(left: 24, right: 24),
-          child: Row(
+          child: MobileFormRow(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
@@ -69,7 +70,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                       elevation: 10,
                       child: TextFormField(
                         autofocus: false,
-                        decoration: InputDecoration(
+                        decoration: mobileInputDecoration(context, InputDecoration(
                           suffixIcon: InkWell(
                             onTap: () {},
                             child: Container(
@@ -113,7 +114,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                 BorderSide(color: Constants.ctaColorGreen),
                             borderRadius: BorderRadius.circular(360),
                           ),
-                        ),
+                        )),
                         controller: _searchMemorialController,
                       ),
                     ),
@@ -147,7 +148,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                   ),
                 ),
                 onTap: () {
-                  showDialog(
+                  showMobileDialog(
                       context: context,
                       barrierDismissible: false,
                       // set to false if you want to force a rating
@@ -718,7 +719,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                             .ctaColorGreen)),
                                                 onPressed: () {
                                                   tableColorIndex = index;
-                                                  showDialog(
+                                                  showMobileDialog(
                                                       context: context,
                                                       barrierDismissible: false,
                                                       // set to false if you want to force a rating
@@ -775,7 +776,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                        ),
                                               );*/
 
-                                                  showDialog(
+                                                  showMobileDialog(
                                                       context: context,
                                                       barrierDismissible: false,
                                                       // set to false if you want to force a rating
@@ -827,7 +828,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                             .ctaColorGreen)),
                                                 onPressed: () {
                                                   tableColorIndex2 = index;
-                                                  showDialog(
+                                                  showMobileDialog(
                                                       context: context,
                                                       barrierDismissible: false,
                                                       // set to false if you want to force a rating
@@ -835,7 +836,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                           StatefulBuilder(
                                                               builder: (context,
                                                                       setState) =>
-                                                                  Dialog(
+                                                                  MobileDialog(
                                                                     shape:
                                                                         RoundedRectangleBorder(
                                                                       borderRadius:
@@ -914,7 +915,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                                               ),
                                                                             ),
                                                                             SizedBox(height: 16),
-                                                                            Row(
+                                                                            MobileFormRow(
                                                                               crossAxisAlignment: CrossAxisAlignment.center,
                                                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                               children: [
@@ -1538,7 +1539,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
       home: Scaffold(
         backgroundColor: Colors.transparent,
         body: StatefulBuilder(
-            builder: (context1, setState) => Dialog(
+            builder: (context1, setState) => MobileDialog(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -2955,7 +2956,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                           SizedBox(height: 20),
                           Padding(
                             padding: const EdgeInsets.only(left: 24, right: 24),
-                            child: Row(
+                            child: MobileFormRow(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [

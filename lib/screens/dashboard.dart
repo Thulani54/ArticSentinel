@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -700,8 +701,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                 height: MediaQuery.of(context).size.height,
                 child: ArticDashboardTab(),
               ),
-              // Show refresh status indicator
-              Positioned(
+              // The phone dashboard shows its reading timestamp inline.
+              // Keep the desktop status badge clear of mobile header actions.
+              if (!isPhoneLayout(context)) Positioned(
                 top: 16,
                 right: 16,
                 child: Container(
@@ -1469,7 +1471,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                     });
                   },
                   onMapCreated: (GoogleMapController controller) {
-                    _map_controller.complete(controller);
+                    if (!_map_controller.isCompleted) {
+                      _map_controller.complete(controller);
+                    }
                   },
                 ),
               )),
@@ -1482,11 +1486,11 @@ class _ArticDashboardState extends State<ArticDashboard> {
   }
 
   void _showAlertDialog(NotificationModel notification) {
-    showDialog(
+    showMobileDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => StatefulBuilder(
-            builder: (context, setState) => Dialog(
+            builder: (context, setState) => MobileDialog(
                   insetAnimationDuration: Duration(milliseconds: 800),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(64),

@@ -1,3 +1,7 @@
+import '../widgets/mobile_screen.dart';
+import '../gasmon/gas_theme.dart';
+import '../gasmon/gas_widgets.dart';
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -39,7 +43,7 @@ class _UnitManagementState extends State<UnitManagement>
   bool _isLoading = true;
   String _selectedFilter = 'All';
   bool _isGridView = false;
-  
+
   // Auto-refresh timer
   Timer? _refreshTimer;
   DateTime? lastRefreshTime;
@@ -55,13 +59,13 @@ class _UnitManagementState extends State<UnitManagement>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    
+
     // Start animation immediately to avoid blank screen
     _animationController.forward();
-    
+
     _loadUnits();
     _searchController.addListener(_onSearchChanged);
-    
+
     // Start auto-refresh timer with a delay to avoid immediate refresh
     Timer(const Duration(seconds: 2), () {
       if (mounted) {
@@ -84,7 +88,8 @@ class _UnitManagementState extends State<UnitManagement>
   }
 
   void _startAutoRefresh() {
-    print('Starting auto-refresh timer for Unit Management at ${DateTime.now()}');
+    print(
+        'Starting auto-refresh timer for Unit Management at ${DateTime.now()}');
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       print('Auto-refresh triggered for Unit Management at ${DateTime.now()}');
       if (mounted) {
@@ -97,8 +102,9 @@ class _UnitManagementState extends State<UnitManagement>
   }
 
   Future<void> _loadUnits({bool showLoading = true}) async {
-    print('_loadUnits called for Unit Management with showLoading: $showLoading at ${DateTime.now()}');
-    
+    print(
+        '_loadUnits called for Unit Management with showLoading: $showLoading at ${DateTime.now()}');
+
     if (showLoading) {
       setState(() {
         _isLoading = true;
@@ -109,7 +115,7 @@ class _UnitManagementState extends State<UnitManagement>
       int? businessId = Constants.myBusiness.businessUid;
       if (businessId > 0) {
         final result = await UnitApiService.fetchUnitsManagement(businessId);
-        
+
         if (mounted) {
           setState(() {
             _allUnits = result['units'];
@@ -118,14 +124,15 @@ class _UnitManagementState extends State<UnitManagement>
             lastRefreshTime = DateTime.now();
             _isLoading = false;
           });
-          
+
           // Mark initial load as complete
           isInitialLoad = false;
-          
+
           // Apply current filters after loading
           _filterUnits();
-          
-          print('Unit Management data refreshed successfully at ${lastRefreshTime}');
+
+          print(
+              'Unit Management data refreshed successfully at ${lastRefreshTime}');
         }
       } else {
         if (mounted) {
@@ -207,7 +214,7 @@ class _UnitManagementState extends State<UnitManagement>
   String _formatRefreshTime(DateTime time) {
     final now = DateTime.now();
     final difference = now.difference(time);
-    
+
     if (difference.inSeconds < 60) {
       return '${difference.inSeconds}s ago';
     } else if (difference.inMinutes < 60) {
@@ -254,8 +261,10 @@ class _UnitManagementState extends State<UnitManagement>
 
   @override
   Widget build(BuildContext context) {
+    if (isPhoneLayout(context)) return _buildMobilePage();
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor:
+          isPhoneLayout(context) ? GasPalette.page : const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Stack(
           children: [
@@ -269,14 +278,18 @@ class _UnitManagementState extends State<UnitManagement>
                   // Main Content
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.fromLTRB(
+                          isPhoneLayout(context) ? 16 : 20,
+                          20,
+                          isPhoneLayout(context) ? 16 : 20,
+                          96),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Statistics Cards
                           _buildStatisticsSection(),
 
-                          const SizedBox(height: 32),
+                          SizedBox(height: isPhoneLayout(context) ? 24 : 32),
 
                           // Search and Controls
                           _buildSearchAndControls(),
@@ -292,14 +305,15 @@ class _UnitManagementState extends State<UnitManagement>
                 ],
               ),
             ),
-            
+
             // Refresh indicator
-            if (lastRefreshTime != null)
+            if (lastRefreshTime != null && !isPhoneLayout(context))
               Positioned(
                 top: 16,
                 right: 16,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.black87,
                     borderRadius: BorderRadius.circular(20),
@@ -336,8 +350,12 @@ class _UnitManagementState extends State<UnitManagement>
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        elevation: 0,
         onPressed: _addUnit,
-        backgroundColor: Constants.ctaColorLight,
+        backgroundColor: isPhoneLayout(context)
+            ? GasPalette.primary
+            : Constants.ctaColorLight,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: Text(
@@ -347,6 +365,132 @@ class _UnitManagementState extends State<UnitManagement>
       ),
     );
   }
+
+  Widget _buildMobilePage() => ColoredBox(
+    color: GasPalette.page,
+    child: SafeArea(
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          children: [
+            MobileScreenHeader(
+              padding: EdgeInsets.zero,
+              title: 'Units',
+              trailing: FilledButton(
+                onPressed: _addUnit,
+                style: FilledButton.styleFrom(
+                  backgroundColor: GasPalette.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(64, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                ),
+                child: const Text('Add Unit'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: unitRecordList.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, index) =>
+                    _buildStatCard(unitRecordList[index], index),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _searchController,
+              decoration: mobileInputDecoration(
+                context,
+                const InputDecoration(
+                  hintText: 'Search name, serial or location',
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: _showFilterDialog,
+                      icon: const Icon(Icons.tune_rounded, size: 18),
+                      label: Text(
+                        _selectedFilter == 'All'
+                            ? 'Filter'
+                            : _selectedFilter,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: GasPalette.ink,
+                        side: const BorderSide(color: GasPalette.border),
+                        minimumSize: const Size(0, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_selectedFilter != 'All')
+                  IconButton(
+                    tooltip: 'Clear filters',
+                    onPressed: () {
+                      setState(() => _selectedFilter = 'All');
+                      _filterUnits();
+                    },
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Tooltip(
+                    message: '${_filteredUnits.length} units shown',
+                    child: Semantics(
+                      label: '${_filteredUnits.length} units shown',
+                      excludeSemantics: true,
+                      child: Text(
+                        '${_filteredUnits.length}',
+                        key: const ValueKey('units-result-count'),
+                        style: gasSmall(context).copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'List view',
+                  onPressed: () => setState(() => _isGridView = false),
+                  icon: Icon(
+                    Icons.view_list_rounded,
+                    color: !_isGridView ? GasPalette.primary : GasPalette.ink2,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Grid view',
+                  onPressed: () => setState(() => _isGridView = true),
+                  icon: Icon(
+                    Icons.grid_view_rounded,
+                    color: _isGridView ? GasPalette.primary : GasPalette.ink2,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _isLoading
+                ? _buildLoadingState()
+                : _filteredUnits.isEmpty
+                ? _buildEmptyState()
+                : _buildMobileUnitList(),
+          ],
+        ),
+      ),
+    ),
+  );
 
   Widget _buildHeader() {
     return CompactHeader(
@@ -375,19 +519,22 @@ class _UnitManagementState extends State<UnitManagement>
               ),
             ),
             const SizedBox(width: 12),
-            Text(
+            Expanded(
+                child: Text(
               "Unit Overview",
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: isPhoneLayout(context)
+                    ? GasPalette.ink
+                    : const Color(0xFF1E293B),
               ),
-            ),
+            )),
           ],
         ),
         const SizedBox(height: 16),
         SizedBox(
-          height: 120,
+          height: isPhoneLayout(context) ? 132 : 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: unitRecordList.length,
@@ -425,59 +572,104 @@ class _UnitManagementState extends State<UnitManagement>
         _filterUnits();
       },
       child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(20),
+        width: isPhoneLayout(context) ? null : 160,
+        padding: isPhoneLayout(context)
+            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
+            : const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: record.cardColor.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color:
+              isPhoneLayout(context) &&
+                  _selectedFilter == (index == 0 ? 'All' : record.itemName)
+              ? GasPalette.primary
+              : Colors.white,
+          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 16),
+          border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : record.cardColor.withOpacity(0.2),
+          ),
+          boxShadow: isPhoneLayout(context)
+              ? const []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: record.cardColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+        child: isPhoneLayout(context)
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    index == 0 ? 'All' : record.itemName,
+                    style: gasSmall(context).copyWith(
+                      color:
+                          _selectedFilter ==
+                              (index == 0 ? 'All' : record.itemName)
+                          ? Colors.white
+                          : GasPalette.ink2,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  child: Icon(
-                    record.itemIcon,
-                    color: record.cardColor,
-                    size: 20,
+                  const SizedBox(width: 8),
+                  Text(
+                    record.itemCount.toString(),
+                    style: gasBody(context).copyWith(
+                      color:
+                          _selectedFilter ==
+                              (index == 0 ? 'All' : record.itemName)
+                          ? Colors.white
+                          : GasPalette.ink,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  record.itemCount.toString(),
-                  style: GoogleFonts.inter(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: record.cardColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          record.itemIcon,
+                          color: record.cardColor,
+                          size: 20,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        record.itemCount.toString(),
+                        style: GoogleFonts.inter(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: isPhoneLayout(context)
+                              ? GasPalette.ink
+                              : const Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              record.itemName,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
+                  const SizedBox(height: 12),
+                  Text(
+                    record.itemName,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -487,7 +679,10 @@ class _UnitManagementState extends State<UnitManagement>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -498,38 +693,42 @@ class _UnitManagementState extends State<UnitManagement>
       ),
       child: Column(
         children: [
-          Row(
+          MobileFormRow(
             children: [
               // Search Field
               Expanded(
                 child: TextField(
                   controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText:
-                        'Search units by name, serial, model, or location...',
-                    hintStyle: GoogleFonts.inter(
-                      color: const Color(0xFF9CA3AF),
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      color: Color(0xFF6B7280),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          BorderSide(color: Constants.ctaColorLight, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF9FAFB),
-                  ),
+                  decoration: mobileInputDecoration(
+                      context,
+                      InputDecoration(
+                        hintText:
+                            'Search units by name, serial, model, or location...',
+                        hintStyle: GoogleFonts.inter(
+                          color: const Color(0xFF9CA3AF),
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF6B7280),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                              color: Constants.ctaColorLight, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                      )),
                 ),
               ),
               const SizedBox(width: 12),
@@ -552,7 +751,8 @@ class _UnitManagementState extends State<UnitManagement>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius:
+                        BorderRadius.circular(isPhoneLayout(context) ? 32 : 12),
                   ),
                 ),
               ),
@@ -598,7 +798,9 @@ class _UnitManagementState extends State<UnitManagement>
                   'Active filter: ',
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: const Color(0xFF64748B),
+                    color: isPhoneLayout(context)
+                        ? GasPalette.ink2
+                        : const Color(0xFF64748B),
                   ),
                 ),
                 Chip(
@@ -641,14 +843,17 @@ class _UnitManagementState extends State<UnitManagement>
               ),
             ),
             const SizedBox(width: 12),
-            Text(
+            Expanded(
+                child: Text(
               "Units (${_filteredUnits.length})",
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: isPhoneLayout(context)
+                    ? GasPalette.ink
+                    : const Color(0xFF1E293B),
               ),
-            ),
+            )),
           ],
         ),
         const SizedBox(height: 16),
@@ -665,17 +870,23 @@ class _UnitManagementState extends State<UnitManagement>
 
   Widget _buildLoadingState() {
     return Container(
-      height: 300,
+      constraints: const BoxConstraints(minHeight: 240),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
       ),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorGreen),
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(Constants.ctaColorGreen),
             ),
             const SizedBox(height: 16),
             Text(
@@ -694,10 +905,16 @@ class _UnitManagementState extends State<UnitManagement>
 
   Widget _buildEmptyState() {
     return Container(
-      height: 300,
+      constraints: BoxConstraints(
+        minHeight: isPhoneLayout(context) ? 168 : 240,
+      ),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -709,25 +926,28 @@ class _UnitManagementState extends State<UnitManagement>
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.precision_manufacturing_rounded,
-              size: 64,
+              size: isPhoneLayout(context) ? 32 : 64,
               color: Colors.grey.shade400,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: isPhoneLayout(context) ? 12 : 16),
             Text(
               'No units found',
               style: GoogleFonts.inter(
-                fontSize: 18,
+                fontSize: isPhoneLayout(context) ? 16 : 18,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
+                color: isPhoneLayout(context)
+                    ? GasPalette.ink2
+                    : const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               _searchController.text.isNotEmpty || _selectedFilter != 'All'
-                  ? 'Try adjusting your search or filters'
+                  ? 'Try another search or clear the filters.'
                   : 'Get started by adding your first unit',
               style: GoogleFonts.inter(
                 fontSize: 14,
@@ -736,7 +956,7 @@ class _UnitManagementState extends State<UnitManagement>
             ),
             if (_searchController.text.isNotEmpty ||
                 _selectedFilter != 'All') ...[
-              const SizedBox(height: 16),
+              SizedBox(height: isPhoneLayout(context) ? 12 : 16),
               OutlinedButton(
                 onPressed: () {
                   _searchController.clear();
@@ -752,7 +972,84 @@ class _UnitManagementState extends State<UnitManagement>
     );
   }
 
+  Widget _buildMobileUnitCard(Unit unit) {
+    final statusColor = unit.isOperational
+        ? GasPalette.good
+        : (unit.isUnderMaintenance ? GasPalette.warnInk : GasPalette.critInk);
+    return Semantics(
+      button: true,
+      label: 'View ${unit.name}',
+      child: InkWell(
+        onTap: () => _showUnitDetails(unit),
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      unit.name,
+                      style: gasTitle(context)
+                          .copyWith(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  _buildQuickActions(unit),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${unit.modelNumber} · ${unit.serialNumber}',
+                style: gasSmall(context),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(unit.location ?? '', style: gasSmall(context)),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    unit.status,
+                    style: gasSmall(
+                      context,
+                    ).copyWith(color: statusColor, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileUnitList() => GPanel(
+    padding: EdgeInsets.zero,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var index = 0; index < _filteredUnits.length; index++) ...[
+          if (index > 0)
+            const Divider(
+              height: 1,
+              indent: 14,
+              endIndent: 14,
+              color: GasPalette.border,
+            ),
+          _buildMobileUnitCard(_filteredUnits[index]),
+        ],
+      ],
+    ),
+  );
+
   Widget _buildGridView() {
+    if (isPhoneLayout(context)) return _buildMobileUnitList();
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -777,7 +1074,7 @@ class _UnitManagementState extends State<UnitManagement>
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
           border: Border.all(
             color: unit.isOperational
                 ? Colors.green.withOpacity(0.3)
@@ -831,7 +1128,9 @@ class _UnitManagementState extends State<UnitManagement>
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E293B),
+                color: isPhoneLayout(context)
+                    ? GasPalette.ink
+                    : const Color(0xFF1E293B),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -841,7 +1140,9 @@ class _UnitManagementState extends State<UnitManagement>
               unit.modelNumber,
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: const Color(0xFF64748B),
+                color: isPhoneLayout(context)
+                    ? GasPalette.ink2
+                    : const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 8),
@@ -871,10 +1172,14 @@ class _UnitManagementState extends State<UnitManagement>
   }
 
   Widget _buildListView() {
+    if (isPhoneLayout(context)) return _buildMobileUnitList();
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -905,7 +1210,9 @@ class _UnitManagementState extends State<UnitManagement>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -915,7 +1222,9 @@ class _UnitManagementState extends State<UnitManagement>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -925,7 +1234,9 @@ class _UnitManagementState extends State<UnitManagement>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -935,7 +1246,9 @@ class _UnitManagementState extends State<UnitManagement>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -981,7 +1294,9 @@ class _UnitManagementState extends State<UnitManagement>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748B),
+                    color: isPhoneLayout(context)
+                        ? GasPalette.ink2
+                        : const Color(0xFF64748B),
                   ),
                 ),
               ),
@@ -999,7 +1314,9 @@ class _UnitManagementState extends State<UnitManagement>
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1E293B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink
+                          : const Color(0xFF1E293B),
                     ),
                   ),
                   if (unit.location?.isNotEmpty == true)
@@ -1007,7 +1324,9 @@ class _UnitManagementState extends State<UnitManagement>
                       unit.location!,
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: const Color(0xFF64748B),
+                        color: isPhoneLayout(context)
+                            ? GasPalette.ink2
+                            : const Color(0xFF64748B),
                       ),
                     ),
                 ],
@@ -1024,14 +1343,18 @@ class _UnitManagementState extends State<UnitManagement>
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF1E293B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink
+                          : const Color(0xFF1E293B),
                     ),
                   ),
                   Text(
                     'S/N: ${unit.serialNumber}',
                     style: GoogleFonts.inter(
                       fontSize: 11,
-                      color: const Color(0xFF64748B),
+                      color: isPhoneLayout(context)
+                          ? GasPalette.ink2
+                          : const Color(0xFF64748B),
                     ),
                   ),
                 ],
@@ -1166,108 +1489,167 @@ class _UnitManagementState extends State<UnitManagement>
   }
 
   void _showFilterDialog() {
-    showDialog(
+    showMobileDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Constants.ctaColorLight.withOpacity(0.1),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Constants.ctaColorLight,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.filter_list_rounded,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Filter Units',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Filter Options
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
+      builder: (context) => isPhoneLayout(context)
+          ? MobileDialog(
+              child: Scaffold(
+                backgroundColor: GasPalette.page,
+                appBar: AppBar(
+                    title: const Text('Filter units'),
+                    backgroundColor: GasPalette.panel,
+                    foregroundColor: GasPalette.ink,
+                    elevation: 0,
+                    surfaceTintColor: Colors.transparent,
+                    automaticallyImplyLeading: false,
+                    actions: [
+                      IconButton(
+                          tooltip: 'Close',
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close_rounded))
+                    ]),
+                body: ListView(padding: const EdgeInsets.all(16), children: [
+                  for (final filter in [
                     'All',
                     'Operational',
                     'Maintenance',
                     'Decommissioned',
                     'Maintenance Due'
-                  ].map((filter) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
+                  ])
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Material(
+                        color: GasPalette.panel,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                                color: _selectedFilter == filter
+                                    ? GasPalette.primary
+                                    : GasPalette.border)),
+                        child: ListTile(
+                          title: Text(filter,
+                              style: gasBody(context)
+                                  .copyWith(color: GasPalette.ink)),
+                          trailing: _selectedFilter == filter
+                              ? const Icon(Icons.check_rounded,
+                                  color: GasPalette.primary)
+                              : null,
+                          onTap: () {
+                            setState(() => _selectedFilter = filter);
+                            Navigator.pop(context);
+                            _filterUnits();
+                          },
+                        ),
+                      ),
+                    ),
+                ]),
+              ),
+            )
+          : MobileDialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius:
+                      BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: _selectedFilter == filter
-                              ? Constants.ctaColorLight
-                              : const Color(0xFFE2E8F0),
+                        color: Constants.ctaColorLight.withOpacity(0.1),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
                         ),
-                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: RadioListTile<String>(
-                        title: Text(
-                          filter,
-                          style: GoogleFonts.inter(
-                            fontWeight: _selectedFilter == filter
-                                ? FontWeight.w600
-                                : FontWeight.w500,
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Constants.ctaColorLight,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.filter_list_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
                           ),
-                        ),
-                        value: filter,
-                        groupValue: _selectedFilter,
-                        activeColor: Constants.ctaColorLight,
-                        onChanged: (value) {
-                          setState(() => _selectedFilter = value!);
-                          Navigator.pop(context);
-                          _filterUnits();
-                        },
+                          const SizedBox(width: 12),
+                          Text(
+                            'Filter Units',
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: isPhoneLayout(context)
+                                  ? GasPalette.ink
+                                  : const Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  }).toList(),
+                    ),
+
+                    // Filter Options
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          'All',
+                          'Operational',
+                          'Maintenance',
+                          'Decommissioned',
+                          'Maintenance Due'
+                        ].map((filter) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: _selectedFilter == filter
+                                    ? Constants.ctaColorLight
+                                    : const Color(0xFFE2E8F0),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Material(
+                                type: MaterialType.transparency,
+                                child: RadioListTile<String>(
+                                  title: Text(
+                                    filter,
+                                    style: GoogleFonts.inter(
+                                      fontWeight: _selectedFilter == filter
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                    ),
+                                  ),
+                                  value: filter,
+                                  groupValue: _selectedFilter,
+                                  activeColor: Constants.ctaColorLight,
+                                  onChanged: (value) {
+                                    setState(() => _selectedFilter = value!);
+                                    Navigator.pop(context);
+                                    _filterUnits();
+                                  },
+                                )),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
   void _addUnit() {
-    showDialog(
+    showMobileDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AddUnitDialog(),
@@ -1278,7 +1660,7 @@ class _UnitManagementState extends State<UnitManagement>
   }
 
   void _editUnit(Unit unit) {
-    showDialog(
+    showMobileDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => EditUnitDialog(unit: unit),
@@ -1286,7 +1668,7 @@ class _UnitManagementState extends State<UnitManagement>
   }
 
   void _showUnitDetails(Unit unit) {
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => UnitDetailsDialog(
         unit: unit,
@@ -1299,15 +1681,16 @@ class _UnitManagementState extends State<UnitManagement>
   }
 
   Future<void> _deleteUnit(String unitId) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showMobileDialog<bool>(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius:
+                BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1342,7 +1725,9 @@ class _UnitManagementState extends State<UnitManagement>
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                        color: isPhoneLayout(context)
+                            ? GasPalette.ink
+                            : const Color(0xFF1E293B),
                       ),
                     ),
                   ],
@@ -1358,13 +1743,15 @@ class _UnitManagementState extends State<UnitManagement>
                       'Are you sure you want to delete this unit? This action cannot be undone.',
                       style: GoogleFonts.inter(
                         fontSize: 14,
-                        color: const Color(0xFF64748B),
+                        color: isPhoneLayout(context)
+                            ? GasPalette.ink2
+                            : const Color(0xFF64748B),
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: OutlinedButton(
@@ -1372,7 +1759,8 @@ class _UnitManagementState extends State<UnitManagement>
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             child: const Text('Cancel'),
@@ -1387,7 +1775,8 @@ class _UnitManagementState extends State<UnitManagement>
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 8),
                               ),
                               elevation: 0,
                             ),
@@ -1608,12 +1997,16 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.all(16),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.95,
-        height: MediaQuery.of(context).size.height * 0.9,
+        width: isPhoneLayout(context)
+            ? double.infinity
+            : MediaQuery.of(context).size.width * 0.95,
+        height: isPhoneLayout(context)
+            ? double.infinity
+            : MediaQuery.of(context).size.height * 0.9,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -1628,111 +2021,125 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
         child: Column(
           children: [
             // Enhanced Header
-            Container(
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Constants.ctaColorGreen,
-                    Constants.ctaColorGreen.withOpacity(0.8)
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+            if (isPhoneLayout(context))
+              _phoneUnitFormHeader(
+                  context,
+                  'Add unit',
+                  'Step ${_currentStep + 1} of 4',
+                  _isLoading ? null : () => Navigator.of(context).pop())
+            else
+              Container(
+                padding: EdgeInsets.all(24),
+                decoration: mobileFlatDecoration(
+                    context,
+                    BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Constants.ctaColorGreen,
+                          Constants.ctaColorGreen.withOpacity(0.8)
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                    )),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child:
+                          Icon(Icons.add_circle, color: Colors.white, size: 24),
                     ),
-                    child:
-                        Icon(Icons.add_circle, color: Colors.white, size: 24),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Add New Unit',
-                          style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Add New Unit',
+                            style: GoogleFonts.inter(
+                              textStyle: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Create a new refrigeration unit',
-                          style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
+                          SizedBox(height: 4),
+                          Text(
+                            'Create a new refrigeration unit',
+                            style: GoogleFonts.inter(
+                              textStyle: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white.withOpacity(0.9),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  // Progress Indicator
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      'Step ${_currentStep + 1} of 4',
-                      style: GoogleFonts.inter(
-                        textStyle: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                    // Progress Indicator
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        'Step ${_currentStep + 1} of 4',
+                        style: GoogleFonts.inter(
+                          textStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 16),
-                  Material(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(25),
-                    child: InkWell(
+                    SizedBox(width: 16),
+                    Material(
+                      color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(25),
-                      onTap:
-                          _isLoading ? null : () => Navigator.of(context).pop(),
-                      child: Container(
-                        padding: EdgeInsets.all(8),
-                        child: Icon(Icons.close, color: Colors.white, size: 20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(25),
+                        onTap: _isLoading
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          child:
+                              Icon(Icons.close, color: Colors.white, size: 20),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
             // Welcome Message (only on first step)
-            if (_currentStep == 0) ...[
+            if (_currentStep == 0 && !isPhoneLayout(context)) ...[
               Container(
                 margin: EdgeInsets.all(20),
                 padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue[50]!, Colors.cyan[50]!],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue[200]!),
-                ),
+                decoration: mobileFlatDecoration(
+                    context,
+                    BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue[50]!, Colors.cyan[50]!],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue[200]!),
+                    )),
                 child: Row(
                   children: [
                     Icon(Icons.lightbulb,
@@ -1775,6 +2182,9 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
               child: Form(
                 key: _formKey,
                 child: Stepper(
+                  margin: isPhoneLayout(context)
+                      ? const EdgeInsets.only(left: 16, right: 16, bottom: 16)
+                      : null,
                   currentStep: _currentStep,
                   onStepTapped: (step) {
                     setState(() {
@@ -1782,7 +2192,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
                     });
                   },
                   controlsBuilder: (context, details) {
-                    return Row(
+                    return MobileFormRow(
                       children: [
                         if (details.stepIndex > 0)
                           TextButton(
@@ -1817,7 +2227,9 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
                               });
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Constants.ctaColorGreen,
+                              backgroundColor: isPhoneLayout(context)
+                                  ? GasPalette.primary
+                                  : Constants.ctaColorGreen,
                               foregroundColor: Colors.white,
                             ),
                             child: Text('Next'),
@@ -1826,7 +2238,9 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
                           ElevatedButton(
                             onPressed: _isLoading ? null : _addUnit,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Constants.ctaColorGreen,
+                              backgroundColor: isPhoneLayout(context)
+                                  ? GasPalette.primary
+                                  : Constants.ctaColorGreen,
                               foregroundColor: Colors.white,
                             ),
                             child: _isLoading
@@ -1911,7 +2325,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
         ),
         SizedBox(height: 20),
 
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -1945,7 +2359,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -1985,7 +2399,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2053,7 +2467,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
         // Refrigeration System
         _buildSectionHeader('Refrigeration System', Icons.opacity),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -2097,7 +2511,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
         // Control & Compressor System
         _buildSectionHeader('Control & Compressor System', Icons.settings),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -2136,7 +2550,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2174,7 +2588,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
       children: [
         // Power Specifications
         _buildSectionHeader('Power Specifications', Icons.power),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2201,7 +2615,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
         // Component Specifications
         _buildSectionHeader('Component Specifications', Icons.engineering),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2223,7 +2637,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2255,7 +2669,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
         // Fan Configuration
         _buildSectionHeader('Fan Configuration', Icons.air),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -2296,7 +2710,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -2346,7 +2760,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
           hintText: 'e.g., Standard Evaporator',
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -2389,15 +2803,17 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
         // Summary header
         Container(
           padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.green[50]!, Colors.blue[50]!],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.green[200]!),
-          ),
+          decoration: mobileFlatDecoration(
+              context,
+              BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.green[50]!, Colors.blue[50]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green[200]!),
+              )),
           child: Row(
             children: [
               Icon(Icons.check_circle, color: Colors.green[600], size: 32),
@@ -2436,7 +2852,7 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
 
         // Maintenance Information
         _buildSectionHeader('Maintenance Information', Icons.build),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDateField(
@@ -2537,6 +2953,10 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {
+    if (isPhoneLayout(context))
+      return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(title, style: gasTitle(context)));
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       child: Row(
@@ -2579,26 +2999,28 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
       keyboardType: keyboardType,
       validator: validator,
       maxLines: maxLines,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hintText,
-        prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Constants.ctaColorGreen, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
+      decoration: mobileInputDecoration(
+          context,
+          InputDecoration(
+            labelText: label,
+            hintText: hintText,
+            prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Constants.ctaColorGreen, width: 2),
+            ),
+            filled: true,
+            fillColor: Colors.grey[50],
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          )),
     );
   }
 
@@ -2610,30 +3032,34 @@ class _AddUnitDialogState extends State<AddUnitDialog> {
     required void Function(String?) onChanged,
   }) {
     return DropdownButtonFormField<String>(
+      isExpanded: true,
       value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Constants.ctaColorGreen, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
+      decoration: mobileInputDecoration(
+          context,
+          InputDecoration(
+            labelText: label,
+            prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Constants.ctaColorGreen, width: 2),
+            ),
+            filled: true,
+            fillColor: Colors.grey[50],
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          )),
       items: items.map((item) {
         return DropdownMenuItem<String>(
           value: item['value'],
-          child: Text(item['display']!),
+          child: Text(item['display']!,
+              maxLines: 1, overflow: TextOverflow.ellipsis),
         );
       }).toList(),
       onChanged: onChanged,
@@ -3019,12 +3445,16 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.all(16),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.95,
-        height: MediaQuery.of(context).size.height * 0.9,
+        width: isPhoneLayout(context)
+            ? double.infinity
+            : MediaQuery.of(context).size.width * 0.95,
+        height: isPhoneLayout(context)
+            ? double.infinity
+            : MediaQuery.of(context).size.height * 0.9,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -3039,101 +3469,116 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
         child: Column(
           children: [
             // Enhanced Header
-            Container(
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Constants.ctaColorGreen,
-                    Constants.ctaColorGreen.withOpacity(0.8)
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+            if (isPhoneLayout(context))
+              _phoneUnitFormHeader(
+                  context,
+                  'Edit unit',
+                  'Step ${_currentStep + 1} of 4',
+                  _isLoading ? null : () => Navigator.of(context).pop())
+            else
+              Container(
+                padding: EdgeInsets.all(24),
+                decoration: mobileFlatDecoration(
+                    context,
+                    BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Constants.ctaColorGreen,
+                          Constants.ctaColorGreen.withOpacity(0.8)
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                    )),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.edit, color: Colors.white, size: 24),
                     ),
-                    child: Icon(Icons.edit, color: Colors.white, size: 24),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Edit Unit',
-                          style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Edit Unit',
+                            style: GoogleFonts.inter(
+                              textStyle: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          '${widget.unit.name} (${widget.unit.serialNumber})',
-                          style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
+                          SizedBox(height: 4),
+                          Text(
+                            '${widget.unit.name} (${widget.unit.serialNumber})',
+                            style: GoogleFonts.inter(
+                              textStyle: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white.withOpacity(0.9),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  // Progress Indicator
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      'Step ${_currentStep + 1} of 4',
-                      style: GoogleFonts.inter(
-                        textStyle: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                    // Progress Indicator
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        'Step ${_currentStep + 1} of 4',
+                        style: GoogleFonts.inter(
+                          textStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 16),
-                  Material(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(25),
-                    child: InkWell(
+                    SizedBox(width: 16),
+                    Material(
+                      color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(25),
-                      onTap:
-                          _isLoading ? null : () => Navigator.of(context).pop(),
-                      child: Container(
-                        padding: EdgeInsets.all(8),
-                        child: Icon(Icons.close, color: Colors.white, size: 20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(25),
+                        onTap: _isLoading
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          child:
+                              Icon(Icons.close, color: Colors.white, size: 20),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
             // Stepper Content
             Expanded(
               child: Form(
                 key: _formKey,
                 child: Stepper(
+                  margin: isPhoneLayout(context)
+                      ? const EdgeInsets.only(left: 16, right: 16, bottom: 16)
+                      : null,
                   currentStep: _currentStep,
                   onStepTapped: (step) {
                     setState(() {
@@ -3141,7 +3586,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
                     });
                   },
                   controlsBuilder: (context, details) {
-                    return Row(
+                    return MobileFormRow(
                       children: [
                         if (details.stepIndex > 0)
                           TextButton(
@@ -3161,7 +3606,9 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
                               });
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Constants.ctaColorGreen,
+                              backgroundColor: isPhoneLayout(context)
+                                  ? GasPalette.primary
+                                  : Constants.ctaColorGreen,
                               foregroundColor: Colors.white,
                             ),
                             child: Text('Next'),
@@ -3170,7 +3617,9 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
                           ElevatedButton(
                             onPressed: _isLoading ? null : _saveUnit,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Constants.ctaColorGreen,
+                              backgroundColor: isPhoneLayout(context)
+                                  ? GasPalette.primary
+                                  : Constants.ctaColorGreen,
                               foregroundColor: Colors.white,
                             ),
                             child: _isLoading
@@ -3226,7 +3675,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
   Widget _buildBasicInformationStep() {
     return Column(
       children: [
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3258,7 +3707,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3297,7 +3746,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3335,7 +3784,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
       children: [
         // Refrigeration System
         _buildSectionHeader('Refrigeration System', Icons.opacity),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -3379,7 +3828,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
 
         // Control & Compressor System
         _buildSectionHeader('Control & Compressor System', Icons.settings),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -3418,7 +3867,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3455,7 +3904,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
       children: [
         // Power Specifications
         _buildSectionHeader('Power Specifications', Icons.power),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3480,7 +3929,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
 
         // Component Specifications
         _buildSectionHeader('Component Specifications', Icons.engineering),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3500,7 +3949,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3529,7 +3978,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
 
         // Fan Configuration
         _buildSectionHeader('Fan Configuration', Icons.air),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -3568,7 +4017,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDropdownField(
@@ -3610,7 +4059,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
 
         // Evaporator Dimensions
         _buildSectionHeader('Evaporator Dimensions', Icons.straighten),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3622,7 +4071,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
           ],
         ),
         SizedBox(height: 16),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildTextField(
@@ -3661,7 +4110,7 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
       children: [
         // Maintenance Dates
         _buildSectionHeader('Maintenance Dates', Icons.calendar_today),
-        Row(
+        MobileFormRow(
           children: [
             Expanded(
               child: _buildDateField(
@@ -3791,6 +4240,10 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {
+    if (isPhoneLayout(context))
+      return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(title, style: gasTitle(context)));
     return Padding(
       padding: EdgeInsets.only(bottom: 16),
       child: Row(
@@ -3830,24 +4283,26 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
   }) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hintText,
-        prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Constants.ctaColorGreen),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-      ),
+      decoration: mobileInputDecoration(
+          context,
+          InputDecoration(
+            labelText: label,
+            hintText: hintText,
+            prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Constants.ctaColorGreen),
+            ),
+            filled: true,
+            fillColor: Colors.grey[50],
+          )),
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
@@ -3862,28 +4317,32 @@ class _EditUnitDialogState extends State<EditUnitDialog> {
     required void Function(String?) onChanged,
   }) {
     return DropdownButtonFormField<String>(
+      isExpanded: true,
       value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Constants.ctaColorGreen),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-      ),
+      decoration: mobileInputDecoration(
+          context,
+          InputDecoration(
+            labelText: label,
+            prefixIcon: Icon(icon, color: Constants.ctaColorGreen),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Constants.ctaColorGreen),
+            ),
+            filled: true,
+            fillColor: Colors.grey[50],
+          )),
       items: items.map((item) {
         return DropdownMenuItem<String>(
           value: item['value']!,
-          child: Text(item['display']!),
+          child: Text(item['display']!,
+              maxLines: 1, overflow: TextOverflow.ellipsis),
         );
       }).toList(),
       onChanged: onChanged,
@@ -4012,9 +4471,155 @@ class UnitDetailsDialog extends StatelessWidget {
     this.onEditPressed,
   }) : super(key: key);
 
+  Widget _buildPhoneDetails(BuildContext context) {
+    Widget section(String title, Map<String, String?> values) => GPanel(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: gasTitle(context)),
+          const SizedBox(height: 12),
+          for (final entry in values.entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Text(entry.key, style: gasSmall(context)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 6,
+                    child: Text(
+                      (entry.value ?? '').isEmpty ? 'Not set' : entry.value!,
+                      style: gasBody(context).copyWith(color: GasPalette.ink),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    return MobileDialog(
+      child: Scaffold(
+        backgroundColor: GasPalette.page,
+        appBar: AppBar(
+          title: const Text('Unit details'),
+          backgroundColor: GasPalette.panel,
+          foregroundColor: GasPalette.ink,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              tooltip: 'Close',
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close_rounded),
+            ),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            MobileScreenHeader(
+              padding: EdgeInsets.zero,
+              title: unit.name,
+              description: 'S/N ${unit.serialNumber}',
+              bottom: Text(
+                unit.status,
+                style: gasSmall(context).copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(height: 12),
+            section('Unit information', {
+              'Model': unit.modelNumber,
+              'Year': unit.formattedYear,
+              'Location': unit.location,
+              'Company': unit.companyName,
+            }),
+            const SizedBox(height: 12),
+            section('Technical specifications', {
+              'Refrigerant': unit.refrigerantType,
+              'Expansion valve': unit.expansionValveType,
+              'Control': unit.controlType,
+              'Compressor type': unit.compressorType,
+              'Compressor model': unit.compressorModel,
+              'Compressor specifications': unit.compressorSpecs,
+              'Compressor power': unit.compressorHp == null
+                  ? null
+                  : '${unit.compressorHp} HP',
+              'Compressor rating': unit.compressorAmpRating == null
+                  ? null
+                  : '${unit.compressorAmpRating} A',
+              'Dryer type': unit.dryerType,
+            }),
+            const SizedBox(height: 12),
+            section('Fans and evaporator', {
+              'Condenser fan':
+                  '${unit.condenserFanCount} × ${unit.condenserFanType} · ${unit.condenserFanPower}',
+              'Evaporator fan':
+                  '${unit.evaporatorFanCount} × ${unit.evaporatorFanType} · ${unit.evaporatorFanPower}',
+              'Total fans': '${unit.totalFanCount}',
+              'Evaporator model': unit.evaporatorModel,
+              'Evaporator dimensions': unit.evaporatorDimensionsDisplay,
+            }),
+            const SizedBox(height: 12),
+            section('Components', {
+              'Orifice size': unit.orificeSize,
+              'Dryer size': unit.dryerSize,
+              'Oil separator': unit.oilSeparator,
+              'Liquid receiver': unit.liquidReceiver,
+              'Accumulator capacity': unit.accumulatorCapacity,
+            }),
+            const SizedBox(height: 12),
+            section('Maintenance', {
+              'Status': unit.maintenanceStatus,
+              'Last maintenance': unit.lastMaintenanceDate == null
+                  ? null
+                  : _formatDate(unit.lastMaintenanceDate!),
+              'Last repair': unit.lastRepairedDate == null
+                  ? null
+                  : _formatDate(unit.lastRepairedDate!),
+              'Next scheduled maintenance':
+                  unit.nextScheduledMaintenance == null
+                  ? null
+                  : _formatDate(unit.nextScheduledMaintenance!),
+            }),
+            const SizedBox(height: 12),
+            section('Notes', {'Notes': unit.notes}),
+            const SizedBox(height: 12),
+            section('System information', {
+              'Created': _formatDateTime(unit.dateCreated),
+              'Last updated': _formatDateTime(unit.dateUpdated),
+            }),
+            if (onEditPressed != null) ...[
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: onEditPressed,
+                style: FilledButton.styleFrom(
+                  backgroundColor: GasPalette.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                ),
+                child: const Text('Edit unit'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    if (isPhoneLayout(context)) return _buildPhoneDetails(context);
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: EdgeInsets.all(16),
       child: Container(
@@ -4036,20 +4641,22 @@ class UnitDetailsDialog extends StatelessWidget {
             // Enhanced Header with gradient background
             Container(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Constants.ctaColorGreen,
-                    Constants.ctaColorGreen.withOpacity(0.8)
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
+              decoration: mobileFlatDecoration(
+                  context,
+                  BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Constants.ctaColorGreen,
+                        Constants.ctaColorGreen.withOpacity(0.8)
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  )),
               child: Row(
                 children: [
                   Container(
@@ -4309,7 +4916,7 @@ class UnitDetailsDialog extends StatelessWidget {
                                   'Amp Rating',
                                   '${unit.compressorAmpRating} A',
                                   Icons.electrical_services),
-                            _buildCompressorSpecsCard(),
+                            _buildCompressorSpecsCard(context),
                           ],
                         ),
                       ),
@@ -4394,7 +5001,7 @@ class UnitDetailsDialog extends StatelessWidget {
                           children: [
                             _buildEnhancedInfoRow('Evaporator Model',
                                 unit.evaporatorModel, Icons.model_training),
-                            _buildEvaporatorDimensionsCard(),
+                            _buildEvaporatorDimensionsCard(context),
                           ],
                         ),
                       ),
@@ -4755,18 +5362,20 @@ class UnitDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildCompressorSpecsCard() {
+  Widget _buildCompressorSpecsCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.red[50]!, Colors.orange[50]!],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red[200]!),
-      ),
+      decoration: mobileFlatDecoration(
+          context,
+          BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.red[50]!, Colors.orange[50]!],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.red[200]!),
+          )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -4802,18 +5411,20 @@ class UnitDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildEvaporatorDimensionsCard() {
+  Widget _buildEvaporatorDimensionsCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue[50]!, Colors.cyan[50]!],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!),
-      ),
+      decoration: mobileFlatDecoration(
+          context,
+          BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue[50]!, Colors.cyan[50]!],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue[200]!),
+          )),
       child: Row(
         children: [
           Icon(Icons.straighten, size: 32, color: Constants.ctaColorLight),
@@ -5279,3 +5890,25 @@ class UnitApiService {
     }
   }
 }
+
+Widget _phoneUnitFormHeader(BuildContext context, String title, String subtitle,
+        VoidCallback? onClose) =>
+    Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 8, 12),
+      decoration: const BoxDecoration(
+          color: GasPalette.panel,
+          border: Border(bottom: BorderSide(color: GasPalette.border))),
+      child: Row(children: [
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: gasTitle(context)),
+          const SizedBox(height: 4),
+          Text(subtitle, style: gasSmall(context)),
+        ])),
+        IconButton(
+            tooltip: 'Close',
+            onPressed: onClose,
+            icon: const Icon(Icons.close_rounded, color: GasPalette.ink2)),
+      ]),
+    );

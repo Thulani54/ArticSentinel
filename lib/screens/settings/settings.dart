@@ -1,10 +1,13 @@
+import 'mobile_account_widgets.dart';
+import '../../gasmon/gas_theme.dart';
+import '../../widgets/mobile_forms.dart';
+import '../../widgets/mobile_screen.dart';
 import 'dart:convert';
 
 import 'package:artic_sentinel/screens/settings/security.dart';
 import 'package:artic_sentinel/screens/settings/terms.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../../constants/Constants.dart';
@@ -52,6 +55,7 @@ class _SettingsPageState extends State<SettingsPage>
   @override
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
+    if (isPhoneLayout(context)) return _buildMobileSettings();
     return Container(
       height: 1000,
       //backgroundColor: const Color(0xFFF8FAFC),
@@ -78,17 +82,19 @@ class _SettingsPageState extends State<SettingsPage>
                           // Section selector dropdown
                           Container(
                             padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
+                            decoration: accountSurface(
+                                context,
+                                BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                )),
                             child: DropdownButton<String>(
                               value: itemIdIndex,
                               isExpanded: true,
@@ -97,7 +103,8 @@ class _SettingsPageState extends State<SettingsPage>
                                 Icons.keyboard_arrow_down_rounded,
                                 color: Color(0xFF64748B),
                               ),
-                              style: GoogleFonts.inter(
+                              style: accountInter(
+                                context,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFF1E293B),
@@ -123,8 +130,8 @@ class _SettingsPageState extends State<SettingsPage>
                               onChanged: (value) {
                                 setState(() {
                                   itemIdIndex = value!;
-                                  sideColorIndex = sideBarList
-                                      .indexWhere((item) => item.item_id == value);
+                                  sideColorIndex = sideBarList.indexWhere(
+                                      (item) => item.item_id == value);
                                 });
                               },
                             ),
@@ -133,17 +140,19 @@ class _SettingsPageState extends State<SettingsPage>
                           // Content area (full width on mobile)
                           Expanded(
                             child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
+                              decoration: accountSurface(
+                                  context,
+                                  BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  )),
                               child: _buildContentArea(),
                             ),
                           ),
@@ -155,17 +164,19 @@ class _SettingsPageState extends State<SettingsPage>
                           // Sidebar Navigation
                           Container(
                             width: 280,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
+                            decoration: accountSurface(
+                                context,
+                                BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                )),
                             child: Column(
                               children: [
                                 // Navigation Header
@@ -188,7 +199,8 @@ class _SettingsPageState extends State<SettingsPage>
                                       const SizedBox(width: 12),
                                       Text(
                                         "Navigation",
-                                        style: GoogleFonts.inter(
+                                        style: accountInter(
+                                          context,
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: const Color(0xFF64748B),
@@ -204,13 +216,18 @@ class _SettingsPageState extends State<SettingsPage>
                                     padding: const EdgeInsets.all(12),
                                     child: Column(
                                       children: [
-                                        ...sideBarList.asMap().entries.map((entry) {
+                                        ...sideBarList
+                                            .asMap()
+                                            .entries
+                                            .map((entry) {
                                           int index = entry.key;
                                           SettingSideBar item = entry.value;
-                                          bool isSelected = sideColorIndex == index;
+                                          bool isSelected =
+                                              sideColorIndex == index;
 
                                           return Padding(
-                                            padding: const EdgeInsets.only(bottom: 8),
+                                            padding: const EdgeInsets.only(
+                                                bottom: 8),
                                             child: GestureDetector(
                                               onTap: () {
                                                 setState(() {
@@ -219,9 +236,10 @@ class _SettingsPageState extends State<SettingsPage>
                                                 });
                                               },
                                               child: AnimatedContainer(
-                                                duration:
-                                                    const Duration(milliseconds: 200),
-                                                padding: const EdgeInsets.symmetric(
+                                                duration: const Duration(
+                                                    milliseconds: 200),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
                                                   horizontal: 16,
                                                   vertical: 12,
                                                 ),
@@ -234,7 +252,8 @@ class _SettingsPageState extends State<SettingsPage>
                                                       BorderRadius.circular(12),
                                                   border: Border.all(
                                                     color: isSelected
-                                                        ? Constants.ctaColorGreen
+                                                        ? Constants
+                                                            .ctaColorGreen
                                                             .withOpacity(0.3)
                                                         : Colors.transparent,
                                                   ),
@@ -245,14 +264,17 @@ class _SettingsPageState extends State<SettingsPage>
                                                       item.icon,
                                                       size: 20,
                                                       color: isSelected
-                                                          ? Constants.ctaColorGreen
-                                                          : const Color(0xFF64748B),
+                                                          ? Constants
+                                                              .ctaColorGreen
+                                                          : const Color(
+                                                              0xFF64748B),
                                                     ),
                                                     const SizedBox(width: 12),
                                                     Expanded(
                                                       child: Text(
                                                         item.itemName,
-                                                        style: GoogleFonts.inter(
+                                                        style: accountInter(
+                                                          context,
                                                           fontSize: 14,
                                                           fontWeight: isSelected
                                                               ? FontWeight.w600
@@ -269,10 +291,12 @@ class _SettingsPageState extends State<SettingsPage>
                                                       Container(
                                                         width: 6,
                                                         height: 6,
-                                                        decoration: BoxDecoration(
-                                                          color:
-                                                              Constants.ctaColorGreen,
-                                                          shape: BoxShape.circle,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Constants
+                                                              .ctaColorGreen,
+                                                          shape:
+                                                              BoxShape.circle,
                                                         ),
                                                       ),
                                                   ],
@@ -286,11 +310,13 @@ class _SettingsPageState extends State<SettingsPage>
 
                                         // Delete Account Button
                                         Container(
-                                          margin: const EdgeInsets.only(top: 20),
+                                          margin:
+                                              const EdgeInsets.only(top: 20),
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFFEF2F2),
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                             border: Border.all(
                                               color: const Color(0xFFFECACA),
                                             ),
@@ -309,10 +335,12 @@ class _SettingsPageState extends State<SettingsPage>
                                                 const SizedBox(width: 8),
                                                 Text(
                                                   "Delete Account",
-                                                  style: GoogleFonts.inter(
+                                                  style: accountInter(
+                                                    context,
                                                     fontSize: 13,
                                                     fontWeight: FontWeight.w600,
-                                                    color: const Color(0xFFEF4444),
+                                                    color:
+                                                        const Color(0xFFEF4444),
                                                   ),
                                                 ),
                                               ],
@@ -332,17 +360,19 @@ class _SettingsPageState extends State<SettingsPage>
                           // Content Area
                           Expanded(
                             child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
+                              decoration: accountSurface(
+                                  context,
+                                  BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  )),
                               child: _buildContentArea(),
                             ),
                           ),
@@ -353,6 +383,159 @@ class _SettingsPageState extends State<SettingsPage>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMobileSettings() {
+    return ColoredBox(
+      color: GasPalette.page,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        MobileScreenHeader(
+          title: 'Settings',
+          bottom: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [
+              for (final item in sideBarList) ...[
+                TextButton(
+                  style: accountButtonStyle(
+                    context,
+                    TextButton.styleFrom(
+                      backgroundColor: itemIdIndex == item.item_id
+                          ? GasPalette.primary
+                          : Colors.transparent,
+                      foregroundColor: itemIdIndex == item.item_id
+                          ? Colors.white
+                          : GasPalette.ink2,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                    ),
+                  ),
+                  onPressed: () => setState(() {
+                    itemIdIndex = item.item_id;
+                    sideColorIndex = sideBarList.indexOf(item);
+                  }),
+                  child:
+                      Text(item.item_id == 'terms' ? 'Terms' : item.itemName),
+                ),
+                const SizedBox(width: 4),
+              ],
+            ]),
+          ),
+        ),
+        Expanded(child: _buildContentArea()),
+      ]),
+    );
+  }
+
+  Widget _buildMobileProfile() {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Container(
+          decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(32)),
+          padding: EdgeInsets.zero,
+          child: TabBar(
+            controller: _tabController,
+            dividerColor: Colors.transparent,
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicator: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: GasPalette.border),
+                borderRadius: BorderRadius.circular(32)),
+            labelColor: GasPalette.ink,
+            unselectedLabelColor: GasPalette.ink2,
+            labelStyle: gasBody(context).copyWith(fontWeight: FontWeight.w600),
+            tabs: const [Tab(height: 44, text: 'Personal'), Tab(height: 44, text: 'Business')],
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      Expanded(
+          child: TabBarView(
+              controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+            _buildMobileProfileDetails(false),
+            _buildMobileProfileDetails(true),
+          ])),
+    ]);
+  }
+
+  Widget _buildMobileProfileDetails(bool business) {
+    final name = business ? Constants.myBusinessName : Constants.myDisplayname;
+    final email =
+        business ? Constants.myBusinessSupportEmail : Constants.myEmail;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(2, 2, 2, 16),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(name.trim().isEmpty
+                  ? (business ? 'Your business' : 'Your profile') : name,
+                  style: gasTitle(context).copyWith(fontSize: 18, fontWeight: FontWeight.w600)),
+              if (email.trim().isNotEmpty) ...[
+                const SizedBox(height: 5),
+                SelectableText(email, style: gasBody(context).copyWith(height: 1.4)),
+              ],
+            ])),
+            const SizedBox(width: 8),
+            TextButton(
+              style: accountButtonStyle(context, TextButton.styleFrom(
+                  foregroundColor: GasPalette.ink,
+                  padding: const EdgeInsets.symmetric(horizontal: 14))),
+              onPressed: () => showMobileDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => business
+                      ? const EditBusinessInfo() : const EditMyProfile()),
+              child: const Text('Edit'),
+            ),
+          ]),
+        ),
+        AccountDetailSection(
+          title: business ? 'Contact details' : 'Personal details',
+          values: business
+              ? {
+                  'Business name': Constants.myBusinessName,
+                  'Business email': Constants.myBusinessSupportEmail,
+                  'Phone number': Constants.myBusinessSupportContactNumber,
+                }
+              : {
+                  'First name': Constants.myFirstname,
+                  'Last name': Constants.myLastname,
+                  'Email address': Constants.myEmail,
+                },
+        ),
+        const SizedBox(height: 12),
+        AccountDetailSection(
+          title: 'Address',
+          values: business
+              ? {
+                  'Address line 1': Constants.myBusinessAddressLine1,
+                  'Address line 2': Constants.myBusinessAddressLine2,
+                  'City': Constants.myBusinessCity,
+                  'Province': Constants.myBusinessProvince,
+                  'Postal code': Constants.myBusinessPostalCode,
+                  'Country': Constants.myBusinessNationality,
+                }
+              : {
+                  'Address': Constants.myAddress,
+                  'Province / city': Constants.myProvince,
+                  'Postal code': Constants.myPostalCode,
+                  'Country': Constants.myCountry,
+                },
+        ),
+        if (business) ...[
+          const SizedBox(height: 12),
+          AccountDetailSection(title: 'Registration', values: {
+            'VAT number': Constants.myBusinessVatNumber,
+            'Registration number': Constants.myBusinessRegistrationNumber,
+          }),
+        ],
+      ],
     );
   }
 
@@ -372,6 +555,7 @@ class _SettingsPageState extends State<SettingsPage>
   }
 
   Widget _buildProfileContent() {
+    if (isPhoneLayout(context)) return _buildMobileProfile();
     final isMobile = _isMobile(context);
     return Column(
       children: [
@@ -408,7 +592,8 @@ class _SettingsPageState extends State<SettingsPage>
                     children: [
                       Text(
                         "Profile Settings",
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: isMobile ? 18 : 20,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF1E293B),
@@ -416,7 +601,8 @@ class _SettingsPageState extends State<SettingsPage>
                       ),
                       Text(
                         "Manage your personal and business information",
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: isMobile ? 12 : 14,
                           color: const Color(0xFF64748B),
                           fontWeight: FontWeight.w500,
@@ -430,20 +616,24 @@ class _SettingsPageState extends State<SettingsPage>
               // Modern Tab Bar
               Container(
                 padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
+                decoration: accountSurface(
+                    context,
+                    BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    )),
                 child: TabBar(
                   controller: _tabController,
                   labelColor: Colors.white,
                   unselectedLabelColor: const Color(0xFF64748B),
-                  labelStyle: GoogleFonts.inter(
+                  labelStyle: accountInter(
+                    context,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
-                  unselectedLabelStyle: GoogleFonts.inter(
+                  unselectedLabelStyle: accountInter(
+                    context,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -488,18 +678,20 @@ class _SettingsPageState extends State<SettingsPage>
           // User Info Header
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Constants.ctaColorLight.withOpacity(0.1),
-                  Constants.ctaColorLight.withOpacity(0.05),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
+            decoration: mobileFlatDecoration(
+                context,
+                BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Constants.ctaColorLight.withOpacity(0.1),
+                      Constants.ctaColorLight.withOpacity(0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                )),
             child: isMobile
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -529,7 +721,8 @@ class _SettingsPageState extends State<SettingsPage>
                         children: [
                           Text(
                             Constants.myDisplayname,
-                            style: GoogleFonts.inter(
+                            style: accountInter(
+                              context,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF1E293B),
@@ -545,7 +738,8 @@ class _SettingsPageState extends State<SettingsPage>
                             ),
                             child: Text(
                               "Workplace Admin",
-                              style: GoogleFonts.inter(
+                              style: accountInter(
+                                context,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: Constants.ctaColorGreen,
@@ -583,7 +777,8 @@ class _SettingsPageState extends State<SettingsPage>
                         children: [
                           Text(
                             Constants.myDisplayname,
-                            style: GoogleFonts.inter(
+                            style: accountInter(
+                              context,
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF1E293B),
@@ -599,7 +794,8 @@ class _SettingsPageState extends State<SettingsPage>
                             ),
                             child: Text(
                               "Workplace Admin",
-                              style: GoogleFonts.inter(
+                              style: accountInter(
+                                context,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: Constants.ctaColorGreen,
@@ -634,7 +830,7 @@ class _SettingsPageState extends State<SettingsPage>
           // Action Buttons
           _buildActionButtons(
             onEdit: () {
-              showDialog(
+              showMobileDialog(
                 context: context,
                 barrierDismissible: false,
                 builder: (context) => EditMyProfile(),
@@ -659,18 +855,20 @@ class _SettingsPageState extends State<SettingsPage>
           // Business Info Header
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF10B981).withOpacity(0.1),
-                  const Color(0xFF10B981).withOpacity(0.05),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
+            decoration: mobileFlatDecoration(
+                context,
+                BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFF10B981).withOpacity(0.1),
+                      const Color(0xFF10B981).withOpacity(0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                )),
             child: isMobile
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -700,7 +898,8 @@ class _SettingsPageState extends State<SettingsPage>
                         children: [
                           Text(
                             Constants.myBusinessName,
-                            style: GoogleFonts.inter(
+                            style: accountInter(
+                              context,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF1E293B),
@@ -734,7 +933,8 @@ class _SettingsPageState extends State<SettingsPage>
                       const SizedBox(width: 16),
                       Text(
                         Constants.myBusinessName,
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF1E293B),
@@ -775,7 +975,7 @@ class _SettingsPageState extends State<SettingsPage>
           // Action Buttons
           _buildActionButtons(
             onEdit: () {
-              showDialog(
+              showMobileDialog(
                 context: context,
                 barrierDismissible: false,
                 builder: (context) => EditBusinessInfo(),
@@ -825,7 +1025,8 @@ class _SettingsPageState extends State<SettingsPage>
                 const SizedBox(width: 12),
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E293B),
@@ -853,7 +1054,8 @@ class _SettingsPageState extends State<SettingsPage>
         children: [
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: accountInter(
+              context,
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF64748B),
@@ -870,7 +1072,8 @@ class _SettingsPageState extends State<SettingsPage>
             ),
             child: Text(
               value,
-              style: GoogleFonts.inter(
+              style: accountInter(
+                context,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF1E293B),
@@ -902,19 +1105,23 @@ class _SettingsPageState extends State<SettingsPage>
                     icon: const Icon(Icons.edit_outlined, size: 18),
                     label: Text(
                       "Edit Information",
-                      style: GoogleFonts.inter(
+                      style: accountInter(
+                        context,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF64748B),
-                      side: const BorderSide(color: Color(0xFFE2E8F0)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                    style: accountButtonStyle(
+                        context,
+                        OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF64748B),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        primary: false),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -925,25 +1132,29 @@ class _SettingsPageState extends State<SettingsPage>
                     icon: const Icon(Icons.save_outlined, size: 18),
                     label: Text(
                       "Save Changes",
-                      style: GoogleFonts.inter(
+                      style: accountInter(
+                        context,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Constants.ctaColorGreen,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
+                    style: accountButtonStyle(
+                        context,
+                        ElevatedButton.styleFrom(
+                          backgroundColor: Constants.ctaColorGreen,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        primary: true),
                   ),
                 ),
               ],
             )
-          : Row(
+          : MobileFormRow(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
@@ -951,19 +1162,23 @@ class _SettingsPageState extends State<SettingsPage>
                     icon: const Icon(Icons.edit_outlined, size: 18),
                     label: Text(
                       "Edit Information",
-                      style: GoogleFonts.inter(
+                      style: accountInter(
+                        context,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF64748B),
-                      side: const BorderSide(color: Color(0xFFE2E8F0)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                    style: accountButtonStyle(
+                        context,
+                        OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF64748B),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        primary: false),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -973,20 +1188,24 @@ class _SettingsPageState extends State<SettingsPage>
                     icon: const Icon(Icons.save_outlined, size: 18),
                     label: Text(
                       "Save Changes",
-                      style: GoogleFonts.inter(
+                      style: accountInter(
+                        context,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Constants.ctaColorGreen,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
+                    style: accountButtonStyle(
+                        context,
+                        ElevatedButton.styleFrom(
+                          backgroundColor: Constants.ctaColorGreen,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        primary: true),
                   ),
                 ),
               ],
@@ -1055,7 +1274,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -1064,37 +1283,41 @@ class _EditMyProfileState extends State<EditMyProfile> {
           maxWidth: 600,
           maxHeight: 700,
         ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+        decoration: accountSurface(
+            context,
+            BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            )),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header Section
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Constants.ctaColorGreen.withOpacity(0.1),
-                    Constants.ctaColorGreen.withOpacity(0.05),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              ),
+              decoration: mobileFlatDecoration(
+                  context,
+                  BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Constants.ctaColorGreen.withOpacity(0.1),
+                        Constants.ctaColorGreen.withOpacity(0.05),
+                      ],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                  )),
               child: Row(
                 children: [
                   Container(
@@ -1123,7 +1346,8 @@ class _EditMyProfileState extends State<EditMyProfile> {
                       children: [
                         Text(
                           'Edit Profile',
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF1E293B),
@@ -1132,7 +1356,8 @@ class _EditMyProfileState extends State<EditMyProfile> {
                         const SizedBox(height: 4),
                         Text(
                           'Update your personal information',
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFF64748B),
@@ -1200,7 +1425,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                                 ),
                               ],
                             )
-                          : Row(
+                          : MobileFormRow(
                               children: [
                                 Expanded(
                                   child: _buildModernTextField(
@@ -1310,7 +1535,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                                 ),
                               ],
                             )
-                          : Row(
+                          : MobileFormRow(
                               children: [
                                 Expanded(
                                   child: _buildModernTextField(
@@ -1368,7 +1593,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
@@ -1377,19 +1602,23 @@ class _EditMyProfileState extends State<EditMyProfile> {
                       icon: const Icon(Icons.close_rounded, size: 18),
                       label: Text(
                         'Cancel',
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF64748B),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      style: accountButtonStyle(
+                          context,
+                          OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF64748B),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          primary: false),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -1409,20 +1638,24 @@ class _EditMyProfileState extends State<EditMyProfile> {
                           : const Icon(Icons.save_rounded, size: 18),
                       label: Text(
                         _isSaving ? 'Saving...' : 'Save Changes',
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Constants.ctaColorGreen,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
+                      style: accountButtonStyle(
+                          context,
+                          ElevatedButton.styleFrom(
+                            backgroundColor: Constants.ctaColorGreen,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          primary: true),
                     ),
                   ),
                 ],
@@ -1450,14 +1683,16 @@ class _EditMyProfileState extends State<EditMyProfile> {
           ),
         ),
         const SizedBox(width: 12),
-        Text(
+        Expanded(
+            child: Text(
           title,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF1E293B),
           ),
-        ),
+        )),
       ],
     );
   }
@@ -1476,7 +1711,8 @@ class _EditMyProfileState extends State<EditMyProfile> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF374151),
@@ -1488,47 +1724,53 @@ class _EditMyProfileState extends State<EditMyProfile> {
           focusNode: focusNode,
           keyboardType: keyboardType,
           validator: validator,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF9CA3AF),
-            ),
-            prefixIcon: Icon(
-              icon,
-              size: 20,
-              color: const Color(0xFF6B7280),
-            ),
-            filled: true,
-            fillColor: const Color(0xFFF9FAFB),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Constants.ctaColorGreen, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFEF4444)),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
+          decoration: mobileInputDecoration(
+              context,
+              InputDecoration(
+                hintText: hint,
+                hintStyle: accountInter(
+                  context,
+                  fontSize: 14,
+                  color: const Color(0xFF9CA3AF),
+                ),
+                prefixIcon: Icon(
+                  icon,
+                  size: 20,
+                  color: const Color(0xFF6B7280),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF9FAFB),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: Constants.ctaColorGreen, width: 2),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFEF4444)),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: Color(0xFFEF4444), width: 2),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              )),
         ),
       ],
     );
@@ -1540,7 +1782,8 @@ class _EditMyProfileState extends State<EditMyProfile> {
       children: [
         Text(
           'Province/State',
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF374151),
@@ -1555,22 +1798,26 @@ class _EditMyProfileState extends State<EditMyProfile> {
           ),
           child: DropdownButtonFormField<Province>(
             value: selectedProvince,
-            decoration: InputDecoration(
-              hintText: 'Select your province',
-              hintStyle: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF9CA3AF),
-              ),
-              prefixIcon: const Icon(
-                Icons.location_on_outlined,
-                size: 20,
-                color: Color(0xFF6B7280),
-              ),
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
-            style: GoogleFonts.inter(
+            decoration: mobileInputDecoration(
+                context,
+                InputDecoration(
+                  hintText: 'Select your province',
+                  hintStyle: accountInter(
+                    context,
+                    fontSize: 14,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.location_on_outlined,
+                    size: 20,
+                    color: Color(0xFF6B7280),
+                  ),
+                  border: InputBorder.none,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                )),
+            style: accountInter(
+              context,
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF1F2937),
@@ -1598,7 +1845,8 @@ class _EditMyProfileState extends State<EditMyProfile> {
                 value: province,
                 child: Text(
                   province.name,
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 14,
                     color: const Color(0xFF1F2937),
                   ),
@@ -1846,7 +2094,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -1855,37 +2103,41 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
           maxWidth: 700,
           maxHeight: 800,
         ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+        decoration: accountSurface(
+            context,
+            BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            )),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header Section
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF10B981).withOpacity(0.1),
-                    const Color(0xFF10B981).withOpacity(0.05),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              ),
+              decoration: mobileFlatDecoration(
+                  context,
+                  BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF10B981).withOpacity(0.1),
+                        const Color(0xFF10B981).withOpacity(0.05),
+                      ],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                  )),
               child: Row(
                 children: [
                   Container(
@@ -1914,7 +2166,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                       children: [
                         Text(
                           'Edit Business Profile',
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF1E293B),
@@ -1923,7 +2176,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                         const SizedBox(height: 4),
                         Text(
                           'Update your business information',
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFF64748B),
@@ -2004,7 +2258,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                                     if (value?.isEmpty ?? true) {
                                       return 'Email is required';
                                     }
-                                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                    if (!RegExp(
+                                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                                         .hasMatch(value!)) {
                                       return 'Please enter a valid email';
                                     }
@@ -2013,7 +2268,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                                 ),
                               ],
                             )
-                          : Row(
+                          : MobileFormRow(
                               children: [
                                 Expanded(
                                   child: _buildModernTextField(
@@ -2043,7 +2298,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                                       if (value?.isEmpty ?? true) {
                                         return 'Email is required';
                                       }
-                                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                      if (!RegExp(
+                                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                                           .hasMatch(value!)) {
                                         return 'Please enter a valid email';
                                       }
@@ -2128,7 +2384,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                                 _buildProvinceDropdown(),
                               ],
                             )
-                          : Row(
+                          : MobileFormRow(
                               children: [
                                 Expanded(
                                   child: _buildModernTextField(
@@ -2197,7 +2453,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                                 ),
                               ],
                             )
-                          : Row(
+                          : MobileFormRow(
                               children: [
                                 Expanded(
                                   child: _buildModernTextField(
@@ -2238,7 +2494,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
@@ -2247,19 +2503,23 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                       icon: const Icon(Icons.close_rounded, size: 18),
                       label: Text(
                         'Cancel',
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF64748B),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      style: accountButtonStyle(
+                          context,
+                          OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF64748B),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          primary: false),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -2279,20 +2539,24 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                           : const Icon(Icons.save_rounded, size: 18),
                       label: Text(
                         _isSaving ? 'Saving...' : 'Save Changes',
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
+                      style: accountButtonStyle(
+                          context,
+                          ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          primary: true),
                     ),
                   ),
                 ],
@@ -2320,14 +2584,16 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
           ),
         ),
         const SizedBox(width: 12),
-        Text(
+        Expanded(
+            child: Text(
           title,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF1E293B),
           ),
-        ),
+        )),
       ],
     );
   }
@@ -2346,7 +2612,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF374151),
@@ -2358,47 +2625,53 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
           focusNode: focusNode,
           keyboardType: keyboardType,
           validator: validator,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF9CA3AF),
-            ),
-            prefixIcon: Icon(
-              icon,
-              size: 20,
-              color: const Color(0xFF6B7280),
-            ),
-            filled: true,
-            fillColor: const Color(0xFFF9FAFB),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFEF4444)),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
+          decoration: mobileInputDecoration(
+              context,
+              InputDecoration(
+                hintText: hint,
+                hintStyle: accountInter(
+                  context,
+                  fontSize: 14,
+                  color: const Color(0xFF9CA3AF),
+                ),
+                prefixIcon: Icon(
+                  icon,
+                  size: 20,
+                  color: const Color(0xFF6B7280),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF9FAFB),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF10B981), width: 2),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFEF4444)),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: Color(0xFFEF4444), width: 2),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              )),
         ),
       ],
     );
@@ -2410,7 +2683,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
       children: [
         Text(
           'Province/State',
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF374151),
@@ -2425,22 +2699,26 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
           ),
           child: DropdownButtonFormField<Province>(
             value: selectedProvince,
-            decoration: InputDecoration(
-              hintText: 'Select province',
-              hintStyle: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF9CA3AF),
-              ),
-              prefixIcon: const Icon(
-                Icons.location_on_outlined,
-                size: 20,
-                color: Color(0xFF6B7280),
-              ),
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
-            style: GoogleFonts.inter(
+            decoration: mobileInputDecoration(
+                context,
+                InputDecoration(
+                  hintText: 'Select province',
+                  hintStyle: accountInter(
+                    context,
+                    fontSize: 14,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.location_on_outlined,
+                    size: 20,
+                    color: Color(0xFF6B7280),
+                  ),
+                  border: InputBorder.none,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                )),
+            style: accountInter(
+              context,
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF1F2937),
@@ -2468,7 +2746,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                 value: province,
                 child: Text(
                   province.name,
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 14,
                     color: const Color(0xFF1F2937),
                   ),

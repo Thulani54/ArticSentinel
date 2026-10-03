@@ -1,3 +1,6 @@
+import '../widgets/mobile_screen.dart';
+import '../gasmon/gas_widgets.dart';
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -16,6 +19,11 @@ import 'package:timeago/timeago.dart' as timeAgo;
 
 import '../constants/Constants.dart';
 import '../constants/models/device.dart';
+import '../gasmon/gas_core.dart' show isGasCylinderType;
+import '../gasmon/gas_dashboard_card.dart';
+import '../gasmon/gas_cylinders_panel.dart';
+import '../gasmon/gas_theme.dart';
+import '../models/device.dart' as app;
 import '../custom_widgets/customCard.dart';
 import '../models/animal_breed.dart';
 import '../models/average_temperature.dart';
@@ -600,36 +608,99 @@ Widget _buildLegendItem(String label, Color color) {
   );
 }
 
-Widget _buildAlertsSection() {
+/// Website-style panel surface (white card, hairline border, soft shadow).
+BoxDecoration _webPanelBox() => BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: GasPalette.border),
+      boxShadow: const [
+        BoxShadow(
+            color: Color(0x05133648), blurRadius: 3, offset: Offset(0, 2)),
+      ],
+    );
+
+Widget _buildAlertsSection(BuildContext context) {
+  if (isPhoneLayout(context)) {
+    return GPanel(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Expanded(child: Text('Recent warnings', style: TextStyle(
+              fontSize: 15, fontWeight: FontWeight.w600, color: GasPalette.ink))),
+          Text('${alertsList.length}', style: const TextStyle(
+              fontSize: 13, color: GasPalette.ink2)),
+        ]),
+        if (alertsList.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(top: 16, bottom: 4),
+            child: Row(children: [
+              Icon(Icons.check_circle_outline, size: 20, color: GasPalette.good),
+              SizedBox(width: 10),
+              Expanded(child: Text('No recent warnings', style: TextStyle(
+                  fontSize: 13, color: GasPalette.ink2))),
+            ]),
+          )
+        else
+          for (final alert in alertsList.take(5)) ...[
+            const Divider(height: 24),
+            Wrap(spacing: 8, runSpacing: 4, children: [
+              Text(alert.severity ?? 'Unknown', style: TextStyle(
+                  fontSize: 12, color: _getAlertSeverityColor(alert.severity),
+                  fontWeight: FontWeight.w600)),
+              Text(timeAgo.format(DateTime.parse(alert.timestamp!)),
+                  style: const TextStyle(fontSize: 12, color: GasPalette.ink2)),
+            ]),
+            const SizedBox(height: 6),
+            Text(alert.alertType ?? 'System alert', style: const TextStyle(
+                fontSize: 14, fontWeight: FontWeight.w600, color: GasPalette.ink)),
+            const SizedBox(height: 4),
+            Text(alert.message ?? 'No message available', style: const TextStyle(
+                fontSize: 13, height: 1.4, color: GasPalette.ink2)),
+            if (alert.details != null) ...[
+              const SizedBox(height: 4),
+              Text(alert.details!, style: const TextStyle(
+                  fontSize: 12, height: 1.4, color: GasPalette.ink2)),
+            ],
+            if (alert.recommendedAction != null) ...[
+              const SizedBox(height: 8),
+              Text(alert.recommendedAction!, style: const TextStyle(
+                  fontSize: 12, height: 1.4, color: GasPalette.ink)),
+            ],
+          ],
+      ]),
+    );
+  }
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text("Recent Warnings",
-              style:
-                  GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600)),
-          Spacer(),
-          Text("${alertsList.length} total warnings",
-              style:
-                  GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
-          SizedBox(
-            width: 12,
-          )
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Operations",
+                    style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: GasPalette.series)),
+                SizedBox(height: 2),
+                Text("Latest warnings",
+                    style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: GasPalette.ink)),
+              ],
+            ),
+          ),
+          Text("${alertsList.length} total",
+              style: GoogleFonts.inter(fontSize: 12, color: GasPalette.ink2)),
         ],
       ),
       SizedBox(height: 16),
       Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
-                spreadRadius: 1,
-                blurRadius: 5)
-          ],
-        ),
+        decoration: _webPanelBox(),
         child: alertsList.isEmpty
             ? Container(
                 height: 120,
@@ -638,13 +709,13 @@ Widget _buildAlertsSection() {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.check_circle,
-                          color: Constants.ctaColorLight, size: 48),
+                          color: GasPalette.good, size: 48),
                       SizedBox(height: 8),
                       Text("No active alerts",
                           style: GoogleFonts.inter(
                               fontSize: 16,
-                              color: Constants.ctaColorLight,
-                              fontWeight: FontWeight.w500)),
+                              color: GasPalette.ink,
+                              fontWeight: FontWeight.w600)),
                       Text("All systems operating normally",
                           style: GoogleFonts.inter(
                               fontSize: 12, color: Colors.grey.shade600)),
@@ -775,32 +846,38 @@ Color _getAlertSeverityColor(String? severity) {
   }
 }
 
-Widget _buildDeviceMapSection() {
+Widget _buildDeviceMapSection(BuildContext context) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text("Device Locations",
-          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600)),
-      SizedBox(height: 16),
+      if (!isPhoneLayout(context)) Text("Coverage",
+          style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: GasPalette.series)),
+      if (!isPhoneLayout(context)) const SizedBox(height: 2),
+      Text("Device locations",
+          style: GoogleFonts.inter(
+              fontSize: isPhoneLayout(context) ? 15 : 18,
+              fontWeight: FontWeight.w700,
+              color: GasPalette.ink)),
+      SizedBox(height: 14),
       Container(
-        height: 400,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 5)
-          ],
-        ),
+        height: isPhoneLayout(context) ? 260 : 400,
+        padding: EdgeInsets.all(6),
+        decoration: _webPanelBox(),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
           child: GoogleMap(
             mapType: MapType.normal,
             initialCameraPosition: initialCameraPosition,
             markers: markers.values.toSet(),
             onMapCreated: (GoogleMapController controller) {
-              _map_controller.complete(controller);
+              // The map remounts when the dashboard is reopened (sign out and
+              // back in); completing the shared Completer twice throws.
+              if (!_map_controller.isCompleted) {
+                _map_controller.complete(controller);
+              }
             },
           ),
         ),
@@ -945,17 +1022,17 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   /// Show rename dialog for a zone/compressor label.
   Future<void> _showRenameLabelDialog(String labelKey, String currentName, String deviceId) async {
     final controller = TextEditingController(text: currentName);
-    final result = await showDialog<String>(
+    final result = await showMobileDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => MobileAlertDialog(
         title: Text('Rename', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: InputDecoration(
+          decoration: mobileInputDecoration(context, InputDecoration(
             hintText: 'Enter new name',
             border: OutlineInputBorder(),
-          ),
+          )),
           onSubmitted: (val) => Navigator.of(ctx).pop(val.trim()),
         ),
         actions: [
@@ -2295,7 +2372,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         ],
                       ],
                     ))
-              : GridView.count(
+              : _readingGrid(
                   shrinkWrap: true,
                   physics: NeverScrollableScrollPhysics(),
                   crossAxisCount: isMobile ? 1 : (temperatureRanges!.length > 8 ? 4 : 3),
@@ -2460,14 +2537,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   size: 24,
                 ),
                 SizedBox(width: 12),
-                Text(
+                Flexible(child: Text(
                   'System Status: ${pressureMetrics!.status?.toUpperCase() ?? 'UNKNOWN'}',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: _getPressureStatusColor(pressureMetrics!.status),
                   ),
-                ),
+                )),
               ],
             ),
           ),
@@ -2584,6 +2661,16 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   Widget _buildDetailedTemperatureCard(TemperatureRange range) {
     final unitStr = range.unit ?? '°C';
     final unitSuffix = unitStr == '°C' ? '°C' : ' $unitStr';
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: range.sensor,
+        value: "${range.current?.toStringAsFixed(1) ?? '--'}$unitSuffix",
+        icon: _getUnitIcon(range.unit), color: _getTemperatureStatusColor(range.status),
+        details: [range.status?.toUpperCase() ?? 'UNKNOWN',
+          "Lowest: ${range.min?.toStringAsFixed(1) ?? '--'}$unitSuffix · ${range.minTimestamp != null ? _formatDateTime(range.minTimestamp!) : 'No data'}",
+          "Highest: ${range.max?.toStringAsFixed(1) ?? '--'}$unitSuffix · ${range.maxTimestamp != null ? _formatDateTime(range.maxTimestamp!) : 'No data'}",
+          "Average: ${range.avg?.toStringAsFixed(1) ?? '--'}$unitSuffix",
+        ]);
+    }
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
@@ -2781,6 +2868,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       DateTime? maxTimestamp,
       Color color,
       IconData icon) {
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: title,
+        value: "${current?.toStringAsFixed(1) ?? '--'} psi", icon: icon, color: color,
+        details: [
+          "Lowest: ${min?.toStringAsFixed(1) ?? '--'} psi · ${minTimestamp != null ? _formatDateTime(minTimestamp) : 'No data'}",
+          "Highest: ${max?.toStringAsFixed(1) ?? '--'} psi · ${maxTimestamp != null ? _formatDateTime(maxTimestamp) : 'No data'}",
+        ]);
+    }
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2802,14 +2897,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             children: [
               Icon(icon, color: color, size: 24),
               SizedBox(width: 8),
-              Text(
+              Flexible(child: Text(
                 title,
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade800,
                 ),
-              ),
+              )),
             ],
           ),
           SizedBox(height: 16),
@@ -2955,7 +3050,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 ),
               ),
               SizedBox(width: Constants.spacingMd),
-              Column(
+              Flexible(child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -2976,7 +3071,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     ),
                   ),
                 ],
-              ),
+              )),
             ],
           ),
           if (isCompressorOn) ...[
@@ -3021,7 +3116,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             ),
           ),
           SizedBox(height: 16),
-          Row(
+          MobileFormRow(
             children: [
               Expanded(
                 child: _buildPhaseCard(
@@ -3167,7 +3262,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration: mobileFlatDecoration(context, BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -3190,7 +3285,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               .withOpacity(0.3),
           width: 2,
         ),
-      ),
+      )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -3757,7 +3852,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             children: [
               Icon(Icons.history, color: Colors.grey.shade600, size: 20),
               SizedBox(width: 8),
-              Text(
+              Flexible(child: Text(
                 device?.lastOffTimestamp != null
                     ? 'Last Compressor Stop : ' +
                         _formatDateTime(device!.lastOffTimestamp!)
@@ -3767,7 +3862,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade800,
                 ),
-              ),
+              )),
             ],
           ),
           SizedBox(height: 12),
@@ -3775,13 +3870,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             children: [
               if (device?.lastOffTimestamp != null) ...[
                 SizedBox(height: 8),
-                Text(
+                Flexible(child: Text(
                   'Duration since last stop: ${_getTimeSinceLastOff(device!.lastOffTimestamp!)}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: Colors.grey.shade500,
                   ),
-                ),
+                )),
               ],
             ],
           ),
@@ -4086,6 +4181,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   // Helper method to build mobile section headers
   Widget _buildMobileSectionHeader(String title) {
+    if (isPhoneLayout(context)) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(title, style: const TextStyle(fontFamily: 'Inter',
+            fontSize: 15, fontWeight: FontWeight.w600, color: GasPalette.ink)),
+      );
+    }
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -4106,12 +4208,35 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     );
   }
 
+  /// The selected device when it's a gas cylinder, as the app's Device model.
+  app.Device? get _selectedGasDevice {
+    final d = availableDevices.where((d) => d.deviceId == selectedDeviceId).firstOrNull;
+    if (d == null || !isGasCylinderType(d.deviceType)) return null;
+    return _asAppDevice(d);
+  }
+
+  /// Every gas cylinder in the business, for the dashboard's cylinder panel.
+  List<app.Device> get _gasDevices => availableDevices
+      .where((d) => isGasCylinderType(d.deviceType))
+      .map(_asAppDevice)
+      .toList();
+
+  app.Device _asAppDevice(DeviceModel3 d) => app.Device(
+        id: d.id,
+        name: d.name,
+        deviceId: d.deviceId,
+        location: d.location,
+        deviceType: d.deviceType,
+        isOnline: d.isOnline,
+      );
+
   @override
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
     final padding = isMobile ? 16.0 : 24.0;
 
     return Container(
+      color: GasPalette.page,
       child: isLoading
           ? Container(
               height: MediaQuery.of(context).size.height / 2,
@@ -4130,26 +4255,48 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     children: [
                       _buildWelcomeHeader(),
                       SizedBox(height: isMobile ? 16 : 24),
-                      AIChatPanel(
-                        deviceId: selectedDeviceId,
-                        deviceName: availableDevices
-                            .where((d) => d.deviceId == selectedDeviceId)
-                            .map((d) => d.name)
-                            .firstOrNull,
-                      ),
+                      _buildFleetTiles(),
                       SizedBox(height: isMobile ? 16 : 24),
                       _buildPerformanceOverview(),
                       SizedBox(height: isMobile ? 16 : 24),
-                      _buildEnhancedSummaryCards2(),
+                      if (_gasDevices.isNotEmpty) ...[
+                        GasCylindersPanel(
+                          devices: _gasDevices,
+                          onOpened: () => _loadAllData(showLoading: false),
+                        ),
+                        SizedBox(height: isMobile ? 16 : 24),
+                      ],
+                      if (_selectedGasDevice != null) ...[
+                        GasDashboardCard(device: _selectedGasDevice!),
+                        SizedBox(height: isMobile ? 16 : 24),
+                      ] else ...[
+                        _buildEnhancedSummaryCards2(),
+                        SizedBox(height: isMobile ? 16 : 24),
+                        _buildMetricsTabView(),
+                        SizedBox(height: isMobile ? 16 : 24),
+                      ],
+                      _buildAlertsSection(context),
                       SizedBox(height: isMobile ? 16 : 24),
-                      _buildMetricsTabView(),
-                      SizedBox(height: isMobile ? 16 : 24),
-                      _buildAlertsSection(),
-                      SizedBox(height: isMobile ? 16 : 24),
-                      _buildDeviceMapSection(),
+                      _buildDeviceMapSection(context),
                     ],
                   ),
                 ),
+                if (isMobile && !isPhoneLayout(context))
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: FloatingActionButton.extended(
+                      heroTag: 'dashAssistant',
+                      backgroundColor: GasPalette.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 3,
+                      onPressed: _openAssistant,
+                      icon: Icon(Icons.forum_outlined, size: 18),
+                      label: Text('Assistant',
+                          style: GoogleFonts.inter(
+                              fontSize: 13, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
                 if (isRefreshing)
                   Positioned(
                     top: 16,
@@ -4304,22 +4451,30 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       case 'device5': return 'Relay Controller';
       case 'device6': return 'Pressure Monitor';
       case 'device7': return 'Bottle Vetting';
+      case 'gas_cylinder': return 'Gas Cylinder';
       default: return type;
     }
   }
 
   Widget _buildDeviceDropdown() {
     final filteredDevices = _getFilteredDevices();
+    // Only hand the dropdown a value it actually has an item for: during a
+    // refresh the selected device can briefly be missing from the list, and
+    // DropdownButton asserts (blank dashboard) if value has no item.
+    final dropdownValue =
+        filteredDevices.any((d) => d.deviceId == selectedDeviceId)
+            ? selectedDeviceId
+            : null;
     return Row(
       children: [
         Expanded(
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(36),
-              border: Border.all(color: Colors.grey.shade300),
-              boxShadow: [
+              color: isPhoneLayout(context) ? const Color(0xFFF7F8FA) : Colors.white,
+              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 36),
+              border: Border.all(color: isPhoneLayout(context) ? GasPalette.border : Colors.grey.shade300),
+              boxShadow: isPhoneLayout(context) ? [] : [
                 BoxShadow(
                     color: Colors.grey.withOpacity(0.1),
                     spreadRadius: 1,
@@ -4328,12 +4483,26 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
-                value: selectedDeviceId,
+                value: dropdownValue,
                 hint: Text("Select Device",
                     style:
                         GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
                 icon: Icon(Icons.keyboard_arrow_down, color: Constants.ctaColorLight),
                 isExpanded: true,
+                selectedItemBuilder: isPhoneLayout(context)
+                    ? (context) => [
+                          const Align(alignment: Alignment.centerLeft,
+                              child: Text('All devices', style: TextStyle(fontSize: 13))),
+                          ...filteredDevices.map((device) => Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(device.name,
+                                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: GasPalette.ink)),
+                              )),
+                        ]
+                    : null,
                 items: [
                   DropdownMenuItem<String>(
                     value: null,
@@ -4356,7 +4525,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                           ),
                           Expanded(
                             child: Text(
-                              "${device.name} - ${device.isOnline == true ? 'Online' : 'Offline'}",
+                              "${device.name} · ${_getDeviceTypeLabel(device.deviceType)} · ${device.isOnline == true ? 'Online' : 'Offline'}",
                               style: GoogleFonts.inter(fontSize: 11),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -4380,9 +4549,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(36),
-            border: Border.all(color: Colors.grey.shade300),
-            boxShadow: [
+            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 36),
+            border: Border.all(color: isPhoneLayout(context) ? GasPalette.border : Colors.grey.shade300),
+            boxShadow: isPhoneLayout(context) ? [] : [
               BoxShadow(
                   color: Colors.grey.withOpacity(0.1),
                   spreadRadius: 1,
@@ -4472,47 +4641,307 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   }
 
   Widget _buildWelcomeHeader() {
-    return Column(
+    final isMobile = _isMobile(context);
+    final name = Constants.myDisplayname.trim().split(' ').first;
+    final lastUpdated = latestDeviceDataList
+        .where((d) => d.deviceId == selectedDeviceId)
+        .map((d) => d.time)
+        .firstOrNull;
+    if (isPhoneLayout(context)) {
+      return MobileScreenHeader(
+        padding: EdgeInsets.zero,
+        title: 'Dashboard',
+        description: lastUpdated == null
+            ? DateFormat('EEEE d MMMM').format(DateTime.now())
+            : 'Latest reading ${DateFormat('d MMM, HH:mm').format(DateTime.parse(lastUpdated).add(const Duration(hours: 2)))}',
+        trailing: IconButton.outlined(
+          tooltip: 'Ask the assistant',
+          onPressed: _openAssistant,
+          style: IconButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: GasPalette.primary,
+              side: const BorderSide(color: GasPalette.border),
+              minimumSize: const Size(44, 44),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(32))),
+          icon: const Icon(Icons.forum_outlined, size: 20),
+        ),
+
+      );
+    }
+    final head = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RichText(
-          text: TextSpan(
-            text: 'Welcome ',
+        Text('Overview',
             style: GoogleFonts.inter(
-                fontSize: 16, color: Colors.black, fontWeight: FontWeight.w500),
-            children: [
-              TextSpan(
-                text: Constants.myDisplayname,
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: GasPalette.series)),
+        SizedBox(height: 4),
+        Text(name.isEmpty ? 'Welcome back' : 'Welcome back, $name',
+            style: GoogleFonts.inter(
+                fontSize: isMobile ? 24 : 30,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+                color: GasPalette.ink)),
+        SizedBox(height: 4),
+        Text('Your equipment, connections and gas supply in one place.',
+            style: GoogleFonts.inter(fontSize: 13, color: GasPalette.ink2)),
+        if (lastUpdated != null) ...[
+          SizedBox(height: 4),
+          Text(
+              'Last updated ${DateFormat('EEE, dd MMM · HH:mm').format(DateTime.parse(lastUpdated).add(Duration(hours: 2)))}',
+              style:
+                  GoogleFonts.inter(fontSize: 11.5, color: GasPalette.muted)),
+        ],
+      ],
+    );
+    final date = Text(DateFormat('EEEE d MMMM').format(DateTime.now()),
+        style: GoogleFonts.inter(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: GasPalette.ink2));
+    if (isMobile) {
+      // The floating Assistant button covers the opener on phones.
+      return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [head, SizedBox(height: 6), date]);
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(child: head),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            date,
+            SizedBox(height: 10),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: GasPalette.ink,
+                backgroundColor: Colors.white,
+                side: BorderSide(color: GasPalette.border),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(32)),
+                textStyle: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600, fontSize: 13),
               ),
-              TextSpan(
-                text: ' to ${Constants.business_name} Dashboard',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+              onPressed: _openAssistant,
+              icon: Icon(Icons.forum_outlined, size: 16),
+              label: Text('Ask the assistant'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Opens the AI assistant on demand: a bottom sheet on phones, a side
+  /// dialog on wide screens. It no longer sits inline on the dashboard.
+  void _openAssistant() {
+    final panel = AIChatPanel(
+      deviceId: selectedDeviceId,
+      deviceName: availableDevices
+          .where((d) => d.deviceId == selectedDeviceId)
+          .map((d) => d.name)
+          .firstOrNull,
+    );
+    if (_isMobile(context)) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (sheetContext) => Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+              child: panel,
+            ),
+          ),
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (_) => Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.all(24),
+          alignment: Alignment.topRight,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 560),
+            child: SingleChildScrollView(child: panel),
+          ),
+        ),
+      );
+    }
+  }
+
+  /// Fleet connectivity strip + stat tiles, like the website's dashboard top.
+  Widget _buildFleetTiles() {
+    final total = availableDevices.length;
+    if (total == 0) return SizedBox.shrink();
+    final online = availableDevices.where((d) => d.isOnline == true).length;
+    final gas =
+        availableDevices.where((d) => isGasCylinderType(d.deviceType)).length;
+    final pct = (online / total * 100).round();
+    if (isPhoneLayout(context)) {
+      Widget count(String label, int value, {Color? color}) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('$value', style: TextStyle(
+                  fontFamily: 'Inter', fontSize: 26, height: 1.15,
+                  fontWeight: FontWeight.w600, letterSpacing: -0.8,
+                  color: color ?? GasPalette.ink)),
+              const SizedBox(height: 4),
+              Text(label, style: const TextStyle(
+                  fontFamily: 'Inter', fontSize: 12, color: GasPalette.ink2)),
+            ],
+          );
+      return GPanel(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Equipment overview', style: TextStyle(
+              fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600,
+              color: GasPalette.ink)),
+          const SizedBox(height: 14),
+          Row(children: [
+            Expanded(child: count('Devices', total)),
+            Expanded(child: count('Online', online, color: GasPalette.good)),
+            Expanded(child: count('Offline', total - online)),
+          ]),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: LinearProgressIndicator(
+              value: online / total, minHeight: 3,
+              backgroundColor: GasPalette.page, color: GasPalette.good,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(spacing: 12, runSpacing: 4, children: [
+            Text('$pct% connected', style: const TextStyle(
+                fontSize: 11, color: GasPalette.ink2)),
+            Text('$gas gas cylinders', style: const TextStyle(
+                fontSize: 11, color: GasPalette.ink2)),
+            Text('${alertsList.length} recent warnings', style: const TextStyle(
+                fontSize: 11, color: GasPalette.ink2)),
+          ]),
+        ]),
+      );
+    }
+    Widget tile(String label, String value, String sub) => Container(
+          padding: EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: _webPanelBox(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: GasPalette.ink2)),
+              SizedBox(height: 6),
+              Text(value,
+                  style: GoogleFonts.inter(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      color: GasPalette.ink)),
+              SizedBox(height: 2),
+              Text(sub,
+                  style:
+                      GoogleFonts.inter(fontSize: 11, color: GasPalette.ink2)),
+            ],
+          ),
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          decoration: BoxDecoration(
+            color: Color(0xFFE9F0F5),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Every connection counts.',
+                        style: GoogleFonts.inter(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: GasPalette.ink)),
+                    SizedBox(height: 2),
+                    Text(
+                        '$online of $total devices are online. Review offline equipment to restore visibility.',
+                        style: GoogleFonts.inter(
+                            fontSize: 12, color: GasPalette.ink2)),
+                  ],
+                ),
+              ),
+              SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('Fleet connectivity',
+                      style: GoogleFonts.inter(
+                          fontSize: 11, color: GasPalette.ink2)),
+                  SizedBox(height: 4),
+                  Row(children: [
+                    SizedBox(
+                      width: 90,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(99),
+                        child: LinearProgressIndicator(
+                          value: online / total,
+                          minHeight: 6,
+                          backgroundColor: Colors.white,
+                          color: GasPalette.series,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text('$pct%',
+                        style: GoogleFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            color: GasPalette.ink)),
+                  ]),
+                ],
               ),
             ],
           ),
         ),
-        SizedBox(height: 8),
-        Divider(thickness: 0.5, color: Colors.grey.shade300),
-        if (latestDeviceDataList.isNotEmpty && selectedDeviceId != null)
-          Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Builder(
-              builder: (context) {
-                final selectedDevice = latestDeviceDataList
-                    .where((device) => device.deviceId == selectedDeviceId)
-                    .firstOrNull;
-                if (selectedDevice?.time == null) {
-                  return SizedBox.shrink();
-                }
-                return Text(
-                  "Last Updated: ${DateFormat('EEE, dd MMM - HH:mm').format(DateTime.parse(selectedDevice!.time!).add(Duration(hours: 2)))}",
-                  style: GoogleFonts.inter(
-                      fontSize: 12, color: Colors.grey.shade600),
-                );
-              },
-            ),
-          ),
+        SizedBox(height: 14),
+        LayoutBuilder(builder: (context, c) {
+          const gap = 12.0;
+          final cols = c.maxWidth >= 680 ? 4 : 2;
+          final w = (c.maxWidth - gap * (cols - 1)) / cols;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              SizedBox(
+                  width: w,
+                  child: tile('Devices', '$total', 'across all types')),
+              SizedBox(
+                  width: w,
+                  child: tile('Online now', '$online', 'reporting telemetry')),
+              SizedBox(
+                  width: w,
+                  child: tile('Gas cylinders', '$gas', 'monitored cylinders')),
+              SizedBox(
+                  width: w,
+                  child: tile(
+                      'Warnings', '${alertsList.length}', 'recent alerts')),
+            ],
+          );
+        }),
       ],
     );
   }
@@ -4522,17 +4951,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     final isMobile = _isMobile(context);
 
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: _webPanelBox(),
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 16 : 20),
         child: Column(
@@ -4542,82 +4961,60 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("System Performance Overview",
+                      Text("Equipment readings",
                           style: GoogleFonts.inter(
-                              fontSize: 16, fontWeight: FontWeight.w600)),
-                      SizedBox(height: 12),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: GasPalette.ink)),
+                      const SizedBox(height: 12),
                       _buildDeviceDropdown(),
                     ],
                   )
                 : Row(
                     children: [
-                      Text("System Performance Overview",
-                          style: GoogleFonts.inter(
-                              fontSize: 18, fontWeight: FontWeight.w600)),
-                      Spacer(),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Inside your operation",
+                                style: GoogleFonts.inter(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: GasPalette.ink)),
+                            SizedBox(height: 2),
+                            Text(
+                                "Readings and activity for the selected equipment.",
+                                style: GoogleFonts.inter(
+                                    fontSize: 12, color: GasPalette.ink2)),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 16),
                       Container(width: 350, child: _buildDeviceDropdown()),
                     ],
                   ),
-            SizedBox(height: 16),
-            isMobile
-                ? Column(
-                    children: [
-                      _buildPerformanceMetric(
-                        "Performance Score",
-                        "${currentPerformanceMetrics!.performanceScore}/100",
-                        _getPerformanceScoreColor(
-                            currentPerformanceMetrics!.performanceScore ?? 0),
-                        Icons.speed,
-                      ),
-                      SizedBox(height: 8),
-                      _buildPerformanceMetric(
-                        "System Status2",
-                        (currentPerformanceMetrics!.systemStatus
-                                    ?.replaceAll('_', ' ') ??
-                                'Unknown')
-                            .split(' ')
-                            .map((word) {
-                          if (word.isEmpty) return '';
-                          return word[0].toUpperCase() + word.substring(1);
-                        }).join(' '),
-                        _getSystemStatusColor(
-                            currentPerformanceMetrics!.systemStatus),
-                        Icons.stadium_outlined,
-                      ),
-                      SizedBox(height: 8),
-                      _buildPerformanceMetric(
-                        "Uptime Today",
-                        dailyAggregatesList.where((d) => d.deviceId == selectedDeviceId).firstOrNull == null
-                            ? "-"
-                            : "${dailyAggregatesList.where((d) => d.deviceId == selectedDeviceId).first.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
-                        Constants.ctaColorLight,
-                        Icons.timer,
-                      ),
-                      SizedBox(height: 8),
-                      _buildPerformanceMetric(
-                        "Active Alerts",
-                        "${currentPerformanceMetrics!.totalAlerts}",
-                        currentPerformanceMetrics!.criticalAlerts! > 0
-                            ? Colors.red
-                            : Constants.ctaColorLight,
-                        Icons.warning,
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Expanded(
-                        child: _buildPerformanceMetric(
+            if (_selectedGasDevice != null) ...[
+              SizedBox(height: 12),
+              Text(
+                  'Gas cylinders report weight, not compressor performance. '
+                  'The cylinder\'s level and usage are shown below.',
+                  style: GoogleFonts.inter(
+                      fontSize: 12, color: Colors.grey.shade600)),
+            ] else ...[
+              SizedBox(height: 16),
+              isMobile
+                  ? Column(
+                      children: [
+                        _buildPerformanceMetric(
                           "Performance Score",
                           "${currentPerformanceMetrics!.performanceScore}/100",
                           _getPerformanceScoreColor(
                               currentPerformanceMetrics!.performanceScore ?? 0),
                           Icons.speed,
                         ),
-                      ),
-                      Expanded(
-                        child: _buildPerformanceMetric(
-                          "System Status",
+                        SizedBox(height: 8),
+                        _buildPerformanceMetric(
+                          "System status",
                           (currentPerformanceMetrics!.systemStatus
                                       ?.replaceAll('_', ' ') ??
                                   'Unknown')
@@ -4630,19 +5027,21 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                               currentPerformanceMetrics!.systemStatus),
                           Icons.stadium_outlined,
                         ),
-                      ),
-                      Expanded(
-                        child: _buildPerformanceMetric(
+                        SizedBox(height: 8),
+                        _buildPerformanceMetric(
                           "Uptime Today",
-                          dailyAggregatesList.isEmpty
+                          dailyAggregatesList
+                                      .where(
+                                          (d) => d.deviceId == selectedDeviceId)
+                                      .firstOrNull ==
+                                  null
                               ? "-"
-                              : "${dailyAggregatesList.first.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
+                              : "${dailyAggregatesList.where((d) => d.deviceId == selectedDeviceId).first.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
                           Constants.ctaColorLight,
                           Icons.timer,
                         ),
-                      ),
-                      Expanded(
-                        child: _buildPerformanceMetric(
+                        SizedBox(height: 8),
+                        _buildPerformanceMetric(
                           "Active Alerts",
                           "${currentPerformanceMetrics!.totalAlerts}",
                           currentPerformanceMetrics!.criticalAlerts! > 0
@@ -4650,9 +5049,59 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                               : Constants.ctaColorLight,
                           Icons.warning,
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: _buildPerformanceMetric(
+                            "Performance Score",
+                            "${currentPerformanceMetrics!.performanceScore}/100",
+                            _getPerformanceScoreColor(
+                                currentPerformanceMetrics!.performanceScore ??
+                                    0),
+                            Icons.speed,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildPerformanceMetric(
+                            "System Status",
+                            (currentPerformanceMetrics!.systemStatus
+                                        ?.replaceAll('_', ' ') ??
+                                    'Unknown')
+                                .split(' ')
+                                .map((word) {
+                              if (word.isEmpty) return '';
+                              return word[0].toUpperCase() + word.substring(1);
+                            }).join(' '),
+                            _getSystemStatusColor(
+                                currentPerformanceMetrics!.systemStatus),
+                            Icons.stadium_outlined,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildPerformanceMetric(
+                            "Uptime Today",
+                            dailyAggregatesList.isEmpty
+                                ? "-"
+                                : "${dailyAggregatesList.first.dataTransmissionPercentage?.toStringAsFixed(1) ?? '0.0'}%",
+                            Constants.ctaColorLight,
+                            Icons.timer,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildPerformanceMetric(
+                            "Active Alerts",
+                            "${currentPerformanceMetrics!.totalAlerts}",
+                            currentPerformanceMetrics!.criticalAlerts! > 0
+                                ? Colors.red
+                                : Constants.ctaColorLight,
+                            Icons.warning,
+                          ),
+                        ),
+                      ],
+                    ),
+            ],
           ],
         ),
       ),
@@ -4662,6 +5111,33 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   Widget _buildPerformanceMetric(
       String title, String value, Color color, IconData icon) {
     final isMobile = _isMobile(context);
+    if (isPhoneLayout(context)) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: GasPalette.border))),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(
+              child: Text(title,
+                  style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      height: 1.4,
+                      color: GasPalette.ink2))),
+          const SizedBox(width: 12),
+          Flexible(
+              child: Text(value,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      height: 1.3,
+                      fontWeight: FontWeight.w600,
+                      color: color))),
+        ]),
+      );
+    }
     return Container(
       width: isMobile ? double.infinity : null,
       padding: EdgeInsets.all(12),
@@ -4670,7 +5146,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2))
+        ],
       ),
       child: Column(
         children: [
@@ -4720,6 +5201,57 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   Widget _buildEnhancedSummaryCards2() {
     final isMobile = _isMobile(context);
 
+    if (isPhoneLayout(context)) {
+      if (enhancedSummaryCards.isEmpty) return const SizedBox.shrink();
+      return GPanel(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Key readings', style: TextStyle(fontFamily: 'Inter',
+              fontSize: 15, fontWeight: FontWeight.w600, color: GasPalette.ink)),
+          const SizedBox(height: 4),
+          for (var i = 0; i < enhancedSummaryCards.length; i++) ...[
+            if (i > 0) const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Expanded(child: Text(enhancedSummaryCards[i].title,
+                      style: const TextStyle(fontSize: 13, height: 1.4,
+                          color: GasPalette.ink))),
+                  const SizedBox(width: 12),
+                  Flexible(child: Text(
+                      '${enhancedSummaryCards[i].value}${enhancedSummaryCards[i].unit}',
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(fontSize: 16, height: 1.3,
+                          fontWeight: FontWeight.w600, color: GasPalette.ink))),
+                  if (enhancedSummaryCards[i].trendDirection != 'stable') ...[
+                    const SizedBox(width: 4),
+                    Icon(enhancedSummaryCards[i].trendDirection == 'up'
+                        ? Icons.trending_up : Icons.trending_down,
+                        size: 16, color: enhancedSummaryCards[i].trendDirection == 'up'
+                            ? GasPalette.primary : Colors.red),
+                  ],
+                ]),
+                if (enhancedSummaryCards[i].subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(enhancedSummaryCards[i].subtitle!, style: const TextStyle(
+                      fontSize: 12, color: GasPalette.ink2)),
+                ],
+                if (enhancedSummaryCards[i].trend != null)
+                  Text(enhancedSummaryCards[i].trend!, style: TextStyle(
+                      fontSize: 12, color: enhancedSummaryCards[i].accentColor)),
+                if (enhancedSummaryCards[i].alerts?.isNotEmpty ?? false) ...[
+                  const SizedBox(height: 4),
+                  Text('${enhancedSummaryCards[i].alerts!.length} alerts',
+                      style: const TextStyle(fontSize: 12, color: GasPalette.warn,
+                          fontWeight: FontWeight.w500)),
+                ],
+              ]),
+            ),
+          ],
+        ]),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -5100,15 +5632,26 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return Center(child: Text('No device data available'));
     }
 
+    final zoneCards = <Widget>[
+
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_1", "Zone 1"), selectedDevice.temp1, selectedDevice.temp1Min, selectedDevice.temp1Max, selectedDevice.temp1MinTime, selectedDevice.temp1MaxTime, -25, 5, labelKey: "zone_1", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_2", "Zone 2"), selectedDevice.temp2, selectedDevice.temp2Min, selectedDevice.temp2Max, selectedDevice.temp2MinTime, selectedDevice.temp2MaxTime, -25, 5, labelKey: "zone_2", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_3", "Zone 3"), selectedDevice.temp3, selectedDevice.temp3Min, selectedDevice.temp3Max, selectedDevice.temp3MinTime, selectedDevice.temp3MaxTime, -25, 5, labelKey: "zone_3", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_4", "Zone 4"), selectedDevice.temp4, selectedDevice.temp4Min, selectedDevice.temp4Max, selectedDevice.temp4MinTime, selectedDevice.temp4MaxTime, -25, 5, labelKey: "zone_4", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_5", "Zone 5"), selectedDevice.temp5, selectedDevice.temp5Min, selectedDevice.temp5Max, selectedDevice.temp5MinTime, selectedDevice.temp5MaxTime, -25, 5, labelKey: "zone_5", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_6", "Zone 6"), selectedDevice.temp6, selectedDevice.temp6Min, selectedDevice.temp6Max, selectedDevice.temp6MinTime, selectedDevice.temp6MaxTime, -25, 5, labelKey: "zone_6", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_7", "Zone 7"), selectedDevice.temp7, selectedDevice.temp7Min, selectedDevice.temp7Max, selectedDevice.temp7MinTime, selectedDevice.temp7MaxTime, -25, 5, labelKey: "zone_7", deviceId: selectedDevice.deviceId),
+                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_8", "Zone 8"), selectedDevice.temp8, selectedDevice.temp8Min, selectedDevice.temp8Max, selectedDevice.temp8MinTime, selectedDevice.temp8MaxTime, -25, 5, labelKey: "zone_8", deviceId: selectedDevice.deviceId),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Detailed Metrics - Multi-Zone Temperature Monitor",
+        Text(isPhoneLayout(context) ? "Temperature zones" : "Detailed Metrics - Multi-Zone Temperature Monitor",
             style: GoogleFonts.inter(
                 fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600)),
         SizedBox(height: 16),
         Container(
-          decoration: BoxDecoration(
+          decoration: isPhoneLayout(context) ? _webPanelBox() : BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
@@ -5123,7 +5666,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Average Temperature Card
-              Container(
+              if (!isPhoneLayout(context)) Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -5162,10 +5705,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   ],
                 ),
               ),
-              SizedBox(height: 24),
+              if (!isPhoneLayout(context)) const SizedBox(height: 24),
 
               // Zone Temperature Bar Chart
-              Text("Zone Temperature Comparison",
+              Text(isPhoneLayout(context) ? "Zone comparison" : "Zone Temperature Comparison",
                   style: GoogleFonts.inter(
                       fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
@@ -5177,32 +5720,22 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               SizedBox(height: 24),
 
               // Zone Temperature Grid
-              Text("Zone Temperatures",
+              Text(isPhoneLayout(context) ? "Zone readings" : "Zone Temperatures",
                   style: GoogleFonts.inter(
                       fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
-              GridView.count(
+              _readingGrid(
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: isMobile ? 2 : 4,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
+                mainAxisSpacing: 12, crossAxisSpacing: 12,
                 childAspectRatio: isMobile ? 1.4 : 1.8,
-                children: [
-                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_1", "Zone 1"), selectedDevice.temp1, selectedDevice.temp1Min, selectedDevice.temp1Max, selectedDevice.temp1MinTime, selectedDevice.temp1MaxTime, -25, 5, labelKey: "zone_1", deviceId: selectedDevice.deviceId),
-                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_2", "Zone 2"), selectedDevice.temp2, selectedDevice.temp2Min, selectedDevice.temp2Max, selectedDevice.temp2MinTime, selectedDevice.temp2MaxTime, -25, 5, labelKey: "zone_2", deviceId: selectedDevice.deviceId),
-                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_3", "Zone 3"), selectedDevice.temp3, selectedDevice.temp3Min, selectedDevice.temp3Max, selectedDevice.temp3MinTime, selectedDevice.temp3MaxTime, -25, 5, labelKey: "zone_3", deviceId: selectedDevice.deviceId),
-                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_4", "Zone 4"), selectedDevice.temp4, selectedDevice.temp4Min, selectedDevice.temp4Max, selectedDevice.temp4MinTime, selectedDevice.temp4MaxTime, -25, 5, labelKey: "zone_4", deviceId: selectedDevice.deviceId),
-                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_5", "Zone 5"), selectedDevice.temp5, selectedDevice.temp5Min, selectedDevice.temp5Max, selectedDevice.temp5MinTime, selectedDevice.temp5MaxTime, -25, 5, labelKey: "zone_5", deviceId: selectedDevice.deviceId),
-                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_6", "Zone 6"), selectedDevice.temp6, selectedDevice.temp6Min, selectedDevice.temp6Max, selectedDevice.temp6MinTime, selectedDevice.temp6MaxTime, -25, 5, labelKey: "zone_6", deviceId: selectedDevice.deviceId),
-                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_7", "Zone 7"), selectedDevice.temp7, selectedDevice.temp7Min, selectedDevice.temp7Max, selectedDevice.temp7MinTime, selectedDevice.temp7MaxTime, -25, 5, labelKey: "zone_7", deviceId: selectedDevice.deviceId),
-                  _buildZoneTemperatureCard(_getLabel(selectedDevice, "zone_8", "Zone 8"), selectedDevice.temp8, selectedDevice.temp8Min, selectedDevice.temp8Max, selectedDevice.temp8MinTime, selectedDevice.temp8MaxTime, -25, 5, labelKey: "zone_8", deviceId: selectedDevice.deviceId),
-                ],
+                children: zoneCards,
               ),
               SizedBox(height: 24),
 
               // Temperature Distribution Pie Chart
-              Text("Temperature Distribution",
+              Text(isPhoneLayout(context) ? "Temperature distribution" : "Temperature Distribution",
                   style: GoogleFonts.inter(
                       fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
@@ -5410,16 +5943,28 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       }
     }
 
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: zoneName,
+        value: "${temperature?.toStringAsFixed(1) ?? '--'}°C",
+        icon: Icons.thermostat_outlined, color: statusColor,
+        onLongPress: labelKey != null && deviceId != null
+          ? () => _showRenameLabelDialog(labelKey, zoneName, deviceId) : null,
+        details: [
+          status,
+          "Min: ${minTemp?.toStringAsFixed(1) ?? '--'}° · ${_formatTimestamp(minTime)}",
+          "Max: ${maxTemp?.toStringAsFixed(1) ?? '--'}° · ${_formatTimestamp(maxTime)}",
+        ]);
+    }
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: EdgeInsets.all(isPhoneLayout(context) ? 12 : 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
         border: Border.all(
-          color: status == "Normal" ? const Color(0xFFF1F5F9) : statusColor,
-          width: status == "Normal" ? 1 : 2,
+          color: isPhoneLayout(context) ? GasPalette.border : (status == "Normal" ? const Color(0xFFF1F5F9) : statusColor),
+          width: isPhoneLayout(context) ? 1 : (status == "Normal" ? 1 : 2),
         ),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: isPhoneLayout(context) ? [] : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -5428,7 +5973,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             onLongPress: labelKey != null && deviceId != null
                 ? () => _showRenameLabelDialog(labelKey, zoneName, deviceId)
                 : null,
-            child: Text(zoneName,
+            child: Text(zoneName, textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                     fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
           ),
@@ -5472,6 +6017,98 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     );
   }
 
+  // Phone readings take their natural height; larger screens retain the grid.
+  Widget _readingGrid({
+    required int crossAxisCount,
+    required List<Widget> children,
+    bool shrinkWrap = false,
+    ScrollPhysics? physics,
+    double mainAxisSpacing = 0,
+    double crossAxisSpacing = 0,
+    double childAspectRatio = 1,
+    double? mainAxisExtent,
+  }) {
+    if (isPhoneLayout(context)) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) SizedBox(height: mainAxisSpacing),
+          children[i],
+        ],
+      ]);
+    }
+    return GridView.count(
+      crossAxisCount: crossAxisCount,
+      shrinkWrap: shrinkWrap, physics: physics,
+      mainAxisSpacing: mainAxisSpacing, crossAxisSpacing: crossAxisSpacing,
+      childAspectRatio: childAspectRatio, mainAxisExtent: mainAxisExtent,
+      children: children,
+    );
+  }
+
+  Widget _phoneReadingCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    List<String> details = const [],
+    VoidCallback? onLongPress,
+  }) {
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: GasPalette.panel,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: GasPalette.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: color, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: GasPalette.ink2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: GasPalette.ink,
+              ),
+            ),
+            for (final detail in details) ...[
+              const SizedBox(height: 6),
+              Text(
+                detail,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  height: 1.4,
+                  color: GasPalette.ink2,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   // Device 3 Metrics View (Ice machine monitoring)
   Widget _buildDevice3MetricsView(bool isMobile) {
     final selectedDevice = latestDeviceDataList
@@ -5509,7 +6146,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   style: GoogleFonts.inter(
                       fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
-              GridView.count(
+              _readingGrid(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
                 crossAxisCount: isMobile ? 2 : 4,
@@ -5571,7 +6208,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
               // Amps + Power + Energy row
-              GridView.count(
+              _readingGrid(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
                 crossAxisCount: isMobile ? 2 : 3,
@@ -5629,7 +6266,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   style: GoogleFonts.inter(
                       fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
-              Row(
+              MobileFormRow(
                 children: [
                   Expanded(
                     child: _buildDevice3HarvestCard(
@@ -5659,7 +6296,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
               Container(
-                height: 180,
+                height: isPhoneLayout(context) ? null : 180,
                 child: _buildDevice3WaterLevelGauge(selectedDevice),
               ),
               SizedBox(height: 24),
@@ -5670,7 +6307,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
               Container(
-                height: 180,
+                height: isPhoneLayout(context) ? null : 180,
                 child: _buildDevice3StatusPieChart(selectedDevice),
               ),
             ],
@@ -5793,6 +6430,43 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       }
     }
 
+    if (isPhoneLayout(context)) {
+      return Container(
+        key: const ValueKey('phone-water-level-gauge'),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: GasPalette.panel,
+          borderRadius: BorderRadius.circular(14), border: Border.all(color: GasPalette.border)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('Water Level', style: gasBody(context).copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 14),
+          LayoutBuilder(builder: (context, constraints) {
+            final size = constraints.maxWidth.clamp(0.0, 144.0);
+            return Center(child: SizedBox.square(dimension: size, child: PieChart(
+              PieChartData(startDegreeOffset: 180, sectionsSpace: 0,
+                centerSpaceRadius: size * 0.30,
+                sections: [
+                  PieChartSectionData(value: waterLevel.clamp(0, 100).toDouble(),
+                    color: color, title: '', radius: size * 0.16),
+                  PieChartSectionData(value: 100 - waterLevel.clamp(0, 100).toDouble(),
+                    color: GasPalette.border, title: '', radius: size * 0.16),
+                ],
+              ),
+            )));
+          }),
+          const SizedBox(height: 14),
+          Text('${waterLevel.toStringAsFixed(1)}%', textAlign: TextAlign.center,
+            style: gasData(context).copyWith(fontSize: 28, color: GasPalette.ink)),
+          const SizedBox(height: 4),
+          Text(waterLevel < 20 ? 'Low - Refill Needed' : waterLevel > 90 ? 'High' : 'Normal',
+            textAlign: TextAlign.center, style: gasBody(context).copyWith(color: color)),
+          const SizedBox(height: 14),
+          Text('Empty: ${formatTimestamp(device.wtrlvlLastEmpty)}', style: gasBody(context)),
+          const SizedBox(height: 6),
+          Text('Full: ${formatTimestamp(device.wtrlvlLastFull)}', style: gasBody(context)),
+        ]),
+      );
+    }
+
     return Row(
       children: [
         Expanded(
@@ -5903,6 +6577,27 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
     final healthPercent = totalMetrics > 0 ? (healthyMetrics / totalMetrics * 100) : 0.0;
 
+    if (isPhoneLayout(context)) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: GasPalette.panel,
+          borderRadius: BorderRadius.circular(14), border: Border.all(color: GasPalette.border)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('${healthPercent.toStringAsFixed(0)}% healthy readings', style: gasTitle(context)),
+          const SizedBox(height: 12),
+          ClipRRect(borderRadius: BorderRadius.circular(8), child: LinearProgressIndicator(
+            value: healthPercent / 100, minHeight: 8,
+            backgroundColor: GasPalette.border, color: Constants.ctaColorLight)),
+          const SizedBox(height: 14),
+          _buildStatusIndicator('Harvest', harvestActive ? 'Active' : 'Idle', harvestActive ? Colors.orange : Colors.grey),
+          const SizedBox(height: 10),
+          _buildStatusIndicator('Water', waterOk ? 'Normal' : 'Alert', waterOk ? Constants.ctaColorLight : Colors.red),
+          const SizedBox(height: 10),
+          _buildStatusIndicator('System', healthPercent >= 75 ? 'Healthy' : 'Check', healthPercent >= 75 ? Constants.ctaColorLight : Colors.orange),
+        ]),
+      );
+    }
+
     return Row(
       children: [
         Expanded(
@@ -5947,6 +6642,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   }
 
   Widget _buildStatusIndicator(String label, String status, Color color) {
+    if (isPhoneLayout(context)) {
+      return Wrap(spacing: 6, runSpacing: 4, children: [
+        Text('$label:', style: gasBody(context)),
+        Text(status, style: gasBody(context).copyWith(color: color, fontWeight: FontWeight.w600)),
+      ]);
+    }
     return Row(
       children: [
         Container(
@@ -5988,6 +6689,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       }
     }
 
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: title,
+        value: "${value?.toStringAsFixed(1) ?? '--'}$unit", icon: icon, color: color,
+        details: [if (minValue != null || maxValue != null) ...[
+          "Min: ${minValue?.toStringAsFixed(1) ?? '--'}$unit · ${formatDateTime(minTime)}",
+          "Max: ${maxValue?.toStringAsFixed(1) ?? '--'}$unit · ${formatDateTime(maxTime)}",
+        ]]);
+    }
     return Container(
       padding: EdgeInsets.all(isMobile ? 8 : 12),
       decoration: BoxDecoration(
@@ -6115,6 +6824,22 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       );
     }
 
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: label ?? "Comp $compNum",
+        value: "${avgAmp?.toStringAsFixed(1) ?? '--'} A",
+        icon: Icons.electric_bolt_outlined, color: color,
+        onLongPress: labelKey != null && deviceId != null
+          ? () => _showRenameLabelDialog(labelKey, label ?? "Comp $compNum", deviceId) : null,
+        details: [isOn ? 'ON' : 'OFF',
+          "Ph1: ${ph1?.toStringAsFixed(1) ?? '--'}A",
+          "Ph2: ${ph2?.toStringAsFixed(1) ?? '--'}A",
+          "Ph3: ${ph3?.toStringAsFixed(1) ?? '--'}A",
+          if (minValue != null || maxValue != null) ...[
+            "Min: ${minValue?.toStringAsFixed(1) ?? '--'}A · ${formatDateTime(minTime)}",
+            "Max: ${maxValue?.toStringAsFixed(1) ?? '--'}A · ${formatDateTime(maxTime)}",
+          ],
+        ]);
+    }
     return Container(
       padding: EdgeInsets.all(isMobile ? 6 : 8),
       decoration: BoxDecoration(
@@ -6250,7 +6975,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             children: [
               Text("Compressor Averages", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
-              GridView.count(
+              _readingGrid(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
                 crossAxisCount: isMobile ? 2 : 4,
@@ -6331,7 +7056,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Summary row
-              Row(
+              MobileFormRow(
                 children: [
                   Expanded(
                     child: _buildDevice3MetricCard("Relays ON", onCount.toDouble(), "", FontAwesomeIcons.toggleOn, Colors.green),
@@ -6353,7 +7078,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               SizedBox(height: 24),
               Text("Relay Status & Duty Cycle", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
-              GridView.count(
+              _readingGrid(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
                 crossAxisCount: isMobile ? 4 : 8,
@@ -6374,6 +7099,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   Widget _buildRelayCard(int relayNum, bool? isOn, double? dutyPct) {
     final isMobile = _isMobile(context);
     final color = isOn == true ? Colors.green : Colors.grey.shade400;
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: "Relay $relayNum",
+        value: isOn == true ? 'ON' : 'OFF',
+        icon: Icons.toggle_on_outlined, color: color,
+        details: [if (dutyPct != null) "Duty cycle: ${dutyPct.toStringAsFixed(0)}%"]);
+    }
     return Container(
       padding: EdgeInsets.all(isMobile ? 6 : 8),
       decoration: BoxDecoration(
@@ -6438,6 +7169,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       }
     }
 
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: "Pressure $sensorNum",
+        value: "${current?.toStringAsFixed(2) ?? '--'} psi", icon: Icons.speed, color: color,
+        details: [
+          "Min: ${minValue?.toStringAsFixed(2) ?? '--'} psi${minTime != null ? ' · ${formatDateTime(minTime)}' : ''}",
+          "Max: ${maxValue?.toStringAsFixed(2) ?? '--'} psi${maxTime != null ? ' · ${formatDateTime(maxTime)}' : ''}",
+        ]);
+    }
     return Container(
       padding: EdgeInsets.all(isMobile ? 6 : 8),
       decoration: BoxDecoration(
@@ -6538,7 +7277,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             children: [
               Text("Pressure Sensor Analysis", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(height: 12),
-              GridView.count(
+              _readingGrid(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
                 crossAxisCount: isMobile ? 2 : 4,
@@ -6634,14 +7373,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              MobileFormRow(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text("Tray Weight Analysis",
                     style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
                 Text("Total: ${totalWeight.toStringAsFixed(1)} kg",
                     style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.indigo)),
               ]),
               SizedBox(height: 12),
-              GridView.count(
+              _readingGrid(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
                 crossAxisCount: isMobile ? 2 : 4,
@@ -6650,6 +7389,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 childAspectRatio: isMobile ? 1.2 : 1.5,
                 children: List.generate(4, (i) {
                   final weight = trayWeights[i];
+                  if (isPhoneLayout(context)) {
+                    return _phoneReadingCard(title: trayLabels[i],
+                      value: weight != null ? "${weight.toStringAsFixed(2)} kg" : '--',
+                      icon: Icons.scale_outlined, color: Colors.indigo);
+                  }
                   return Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -6717,6 +7461,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   }
 
   Widget _buildDevice7MetricTile(String title, String value, IconData icon, Color color) {
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: title, value: value, icon: icon, color: color);
+    }
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -6744,6 +7491,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   // Helper widget for Device 3 status card
   Widget _buildDevice3StatusCard(String title, String value, Color color, IconData icon) {
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: title, value: value, icon: icon, color: color);
+    }
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -6800,6 +7550,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       }
     }
 
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: 'Harvest Status', value: isActive ? 'Active' : 'Idle',
+        icon: Iconsax.activity, color: isActive ? Colors.orange : Colors.grey,
+        details: ['Last: $lastHarvestDisplay', 'Harvests (24h): ${harvestCount ?? 0}']);
+    }
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -6963,6 +7718,29 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         ? dailyCost / harvestCount
         : null;
 
+    if (isPhoneLayout(context)) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('Cost Estimates · R${rate.toStringAsFixed(2)}/kWh', style: gasBody(context)),
+        const SizedBox(height: 10),
+        _phoneReadingCard(title: 'Daily', value: dailyCost != null ? 'R${dailyCost.toStringAsFixed(2)}' : '--',
+          icon: Icons.payments_outlined, color: Colors.green),
+        const SizedBox(height: 10),
+        _phoneReadingCard(title: 'Monthly', value: monthlyCost != null ? 'R${monthlyCost.toStringAsFixed(2)}' : '--',
+          icon: Icons.payments_outlined, color: Colors.green.shade600),
+        const SizedBox(height: 10),
+        _phoneReadingCard(title: 'Annual', value: annualCost != null ? 'R${annualCost.toStringAsFixed(2)}' : '--',
+          icon: Icons.payments_outlined, color: Colors.green.shade800),
+        if (costPerHarvest != null) ...[
+          const SizedBox(height: 10),
+          Text('R${costPerHarvest.toStringAsFixed(2)}/harvest', style: gasBody(context)),
+        ],
+        if (energyKwh != null) ...[
+          const SizedBox(height: 10),
+          Text('${energyKwh.toStringAsFixed(1)} kWh (24h)', style: gasBody(context)),
+          if (energyCost24h != null) Text('R${energyCost24h.toStringAsFixed(2)} spent', style: gasBody(context)),
+        ],
+      ]);
+    }
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(

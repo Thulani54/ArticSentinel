@@ -1,3 +1,7 @@
+import '../gasmon/gas_widgets.dart';
+import '../widgets/mobile_screen.dart';
+import '../gasmon/gas_theme.dart';
+import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
@@ -1226,9 +1230,11 @@ class Device2Analytics {
   factory Device2Analytics.fromJson(Map<String, dynamic> json) {
     return Device2Analytics(
       deviceType: json['device_type'] ?? 'device2',
-      temperatureAnalytics: Device2TemperatureAnalytics.fromJson(json['temperature_analytics'] ?? {}),
+      temperatureAnalytics: Device2TemperatureAnalytics.fromJson(
+          json['temperature_analytics'] ?? {}),
       zoneSummary: Device2ZoneSummary.fromJson(json['zone_summary'] ?? {}),
-      realTimeInsights: RealTimeInsights.fromJson(json['real_time_insights'] ?? {}),
+      realTimeInsights:
+          RealTimeInsights.fromJson(json['real_time_insights'] ?? {}),
     );
   }
 }
@@ -1271,22 +1277,33 @@ class Device2TemperatureAnalytics {
       zone6: _fromDynamicList(json['zone6'], (e) => (e ?? 0.0).toDouble()),
       zone7: _fromDynamicList(json['zone7'], (e) => (e ?? 0.0).toDouble()),
       zone8: _fromDynamicList(json['zone8'], (e) => (e ?? 0.0).toDouble()),
-      minTemperature: _fromDynamicList(json['min_temperature'], (e) => (e ?? 0.0).toDouble()),
-      maxTemperature: _fromDynamicList(json['max_temperature'], (e) => (e ?? 0.0).toDouble()),
+      minTemperature: _fromDynamicList(
+          json['min_temperature'], (e) => (e ?? 0.0).toDouble()),
+      maxTemperature: _fromDynamicList(
+          json['max_temperature'], (e) => (e ?? 0.0).toDouble()),
     );
   }
 
   List<double> getZone(int zoneNumber) {
     switch (zoneNumber) {
-      case 1: return zone1;
-      case 2: return zone2;
-      case 3: return zone3;
-      case 4: return zone4;
-      case 5: return zone5;
-      case 6: return zone6;
-      case 7: return zone7;
-      case 8: return zone8;
-      default: return [];
+      case 1:
+        return zone1;
+      case 2:
+        return zone2;
+      case 3:
+        return zone3;
+      case 4:
+        return zone4;
+      case 5:
+        return zone5;
+      case 6:
+        return zone6;
+      case 7:
+        return zone7;
+      case 8:
+        return zone8;
+      default:
+        return [];
     }
   }
 }
@@ -1299,7 +1316,8 @@ class Device2ZoneSummary {
 
   factory Device2ZoneSummary.fromJson(Map<String, dynamic> json) {
     return Device2ZoneSummary(
-      zones: _fromDynamicList(json['zones'] ?? [], (e) => ZoneStats.fromJson(e)),
+      zones:
+          _fromDynamicList(json['zones'] ?? [], (e) => ZoneStats.fromJson(e)),
       totalReadings: json['total_readings'] ?? 0,
     );
   }
@@ -1313,7 +1331,13 @@ class ZoneStats {
   final String? minTime;
   final String? maxTime;
 
-  ZoneStats({required this.zone, this.min, this.max, this.avg, this.minTime, this.maxTime});
+  ZoneStats(
+      {required this.zone,
+      this.min,
+      this.max,
+      this.avg,
+      this.minTime,
+      this.maxTime});
 
   factory ZoneStats.fromJson(Map<String, dynamic> json) {
     return ZoneStats(
@@ -1350,12 +1374,18 @@ class Device3Analytics {
   factory Device3Analytics.fromJson(Map<String, dynamic> json) {
     return Device3Analytics(
       deviceType: json['device_type'] ?? 'device3',
-      temperatureAnalytics: Device3TemperatureAnalytics.fromJson(json['temperature_analytics'] ?? {}),
-      waterAnalytics: Device3WaterAnalytics.fromJson(json['water_analytics'] ?? {}),
-      harvestAnalytics: Device3HarvestAnalytics.fromJson(json['harvest_analytics'] ?? {}),
-      ampsAnalytics: Device3AmpsAnalytics.fromJson(json['amps_analytics'] ?? {}),
-      iceMachineSummary: Device3Summary.fromJson(json['ice_machine_summary'] ?? {}),
-      realTimeInsights: RealTimeInsights.fromJson(json['real_time_insights'] ?? {}),
+      temperatureAnalytics: Device3TemperatureAnalytics.fromJson(
+          json['temperature_analytics'] ?? {}),
+      waterAnalytics:
+          Device3WaterAnalytics.fromJson(json['water_analytics'] ?? {}),
+      harvestAnalytics:
+          Device3HarvestAnalytics.fromJson(json['harvest_analytics'] ?? {}),
+      ampsAnalytics:
+          Device3AmpsAnalytics.fromJson(json['amps_analytics'] ?? {}),
+      iceMachineSummary:
+          Device3Summary.fromJson(json['ice_machine_summary'] ?? {}),
+      realTimeInsights:
+          RealTimeInsights.fromJson(json['real_time_insights'] ?? {}),
     );
   }
 }
@@ -1395,7 +1425,8 @@ class Device3WaterAnalytics {
   factory Device3WaterAnalytics.fromJson(Map<String, dynamic> json) {
     return Device3WaterAnalytics(
       labels: _fromDynamicList(json['labels'], (e) => e.toString()),
-      waterLevel: _fromDynamicList(json['water_level'], (e) => (e ?? 0.0).toDouble()),
+      waterLevel:
+          _fromDynamicList(json['water_level'], (e) => (e ?? 0.0).toDouble()),
     );
   }
 }
@@ -1405,12 +1436,16 @@ class Device3HarvestAnalytics {
   final List<int> harvestCount;
   final List<int> readings;
 
-  Device3HarvestAnalytics({required this.labels, required this.harvestCount, required this.readings});
+  Device3HarvestAnalytics(
+      {required this.labels,
+      required this.harvestCount,
+      required this.readings});
 
   factory Device3HarvestAnalytics.fromJson(Map<String, dynamic> json) {
     return Device3HarvestAnalytics(
       labels: _fromDynamicList(json['labels'], (e) => e.toString()),
-      harvestCount: _fromDynamicList(json['harvest_count'], (e) => (e ?? 0) as int),
+      harvestCount:
+          _fromDynamicList(json['harvest_count'], (e) => (e ?? 0) as int),
       readings: _fromDynamicList(json['readings'], (e) => (e ?? 0) as int),
     );
   }
@@ -1453,11 +1488,21 @@ class Device3Summary {
 
   factory Device3Summary.fromJson(Map<String, dynamic> json) {
     return Device3Summary(
-      highSideTemp: json['high_side_temp'] != null ? TempStats.fromJson(json['high_side_temp']) : null,
-      lowSideTemp: json['low_side_temp'] != null ? TempStats.fromJson(json['low_side_temp']) : null,
-      iceTemp: json['ice_temp'] != null ? TempStats.fromJson(json['ice_temp']) : null,
-      airTemp: json['air_temp'] != null ? TempStats.fromJson(json['air_temp']) : null,
-      waterLevel: json['water_level'] != null ? TempStats.fromJson(json['water_level']) : null,
+      highSideTemp: json['high_side_temp'] != null
+          ? TempStats.fromJson(json['high_side_temp'])
+          : null,
+      lowSideTemp: json['low_side_temp'] != null
+          ? TempStats.fromJson(json['low_side_temp'])
+          : null,
+      iceTemp: json['ice_temp'] != null
+          ? TempStats.fromJson(json['ice_temp'])
+          : null,
+      airTemp: json['air_temp'] != null
+          ? TempStats.fromJson(json['air_temp'])
+          : null,
+      waterLevel: json['water_level'] != null
+          ? TempStats.fromJson(json['water_level'])
+          : null,
       amps: json['amps'] != null ? TempStats.fromJson(json['amps']) : null,
       totalHarvests: json['total_harvests'] ?? 0,
       totalReadings: json['total_readings'] ?? 0,
@@ -1499,10 +1544,12 @@ class Device4Analytics {
   factory Device4Analytics.fromJson(Map<String, dynamic> json) {
     return Device4Analytics(
       deviceType: json['device_type'] ?? 'device4',
-      overallStatistics: Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
+      overallStatistics:
+          Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
       dailyData: (json['daily_data'] as List?)
-          ?.map((e) => Map<String, dynamic>.from(e))
-          .toList() ?? [],
+              ?.map((e) => Map<String, dynamic>.from(e))
+              .toList() ??
+          [],
     );
   }
 }
@@ -1527,13 +1574,16 @@ class Device5Analytics {
   factory Device5Analytics.fromJson(Map<String, dynamic> json) {
     return Device5Analytics(
       deviceType: json['device_type'] ?? 'device5',
-      overallStatistics: Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
+      overallStatistics:
+          Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
       dailyData: (json['daily_data'] as List?)
-          ?.map((e) => Map<String, dynamic>.from(e))
-          .toList() ?? [],
+              ?.map((e) => Map<String, dynamic>.from(e))
+              .toList() ??
+          [],
       hourlyRelayDistribution: (json['hourly_relay_distribution'] as List?)
-          ?.map((e) => Map<String, dynamic>.from(e))
-          .toList() ?? [],
+              ?.map((e) => Map<String, dynamic>.from(e))
+              .toList() ??
+          [],
     );
   }
 }
@@ -1558,11 +1608,13 @@ class Device6Analytics {
   factory Device6Analytics.fromJson(Map<String, dynamic> json) {
     return Device6Analytics(
       deviceType: json['device_type'] ?? 'device6',
-      overallStatistics: Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
+      overallStatistics:
+          Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
       sensorRanges: Map<String, dynamic>.from(json['sensor_ranges'] ?? {}),
       dailyData: (json['daily_data'] as List?)
-          ?.map((e) => Map<String, dynamic>.from(e))
-          .toList() ?? [],
+              ?.map((e) => Map<String, dynamic>.from(e))
+              .toList() ??
+          [],
     );
   }
 }
@@ -1584,7 +1636,8 @@ class Device7Analytics {
   factory Device7Analytics.fromJson(Map<String, dynamic> json) {
     return Device7Analytics(
       deviceType: json['device_type'] ?? 'device7',
-      overallStatistics: Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
+      overallStatistics:
+          Map<String, dynamic>.from(json['overall_statistics'] ?? {}),
       dailyData: (json['daily_data'] as List?)
               ?.map((e) => Map<String, dynamic>.from(e))
               .toList() ??
@@ -1816,7 +1869,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
       // Discard stale response if user switched devices during the API call
       if (selectedDevice?.deviceId != targetDeviceId) {
-        print('Device changed during analytics load ($targetDeviceId -> ${selectedDevice?.deviceId}), discarding stale response');
+        print(
+            'Device changed during analytics load ($targetDeviceId -> ${selectedDevice?.deviceId}), discarding stale response');
         return;
       }
 
@@ -1865,14 +1919,20 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF8FAFC),
+      color: isPhoneLayout(context) ? GasPalette.page : const Color(0xFFF8FAFC),
       child: Column(
         children: [
-          const CompactHeader(
-            title: "Device Performance",
-            description: "Monitor and analyze device analytics in real-time",
-            icon: Icons.analytics_rounded,
-          ),
+          if (isPhoneLayout(context))
+            const MobileScreenHeader(
+              title: 'Performance',
+              padding: EdgeInsets.fromLTRB(16, 20, 16, 12),
+            )
+          else
+            const CompactHeader(
+              title: "Device Performance",
+              description: "Monitor and analyze device analytics in real-time",
+              icon: Icons.analytics_rounded,
+            ),
           _buildControlPanel(),
           Expanded(
             child: isLoading && isInitialLoad
@@ -1918,7 +1978,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           ],
                         ),
                       )
-                    : (analyticsData != null || device2AnalyticsData != null || device3AnalyticsData != null || device4AnalyticsData != null || device5AnalyticsData != null || device6AnalyticsData != null || device7AnalyticsData != null)
+                    : (analyticsData != null ||
+                            device2AnalyticsData != null ||
+                            device3AnalyticsData != null ||
+                            device4AnalyticsData != null ||
+                            device5AnalyticsData != null ||
+                            device6AnalyticsData != null ||
+                            device7AnalyticsData != null)
                         ? Stack(
                             children: [
                               _buildDashboard(),
@@ -1997,31 +2063,42 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       filtered = filtered.where((d) => !d.isOnline).toList();
     }
     if (deviceTypeFilter != null) {
-      filtered = filtered.where((d) => d.deviceType == deviceTypeFilter).toList();
+      filtered =
+          filtered.where((d) => d.deviceType == deviceTypeFilter).toList();
     }
     return filtered;
   }
 
   String _getDeviceTypeLabel(String type) {
     switch (type) {
-      case 'device1': return 'Refrigeration Units';
-      case 'device2': return 'Multi-Zone Temp';
-      case 'device3': return 'Ice Machine';
-      case 'device4': return 'Multi-Compressor';
-      case 'device5': return 'Relay Controller';
-      case 'device6': return 'Pressure Monitor';
-      case 'device7': return 'Bottle Vetting';
-      default: return type;
+      case 'device1':
+        return 'Refrigeration Units';
+      case 'device2':
+        return 'Multi-Zone Temp';
+      case 'device3':
+        return 'Ice Machine';
+      case 'device4':
+        return 'Multi-Compressor';
+      case 'device5':
+        return 'Relay Controller';
+      case 'device6':
+        return 'Pressure Monitor';
+      case 'device7':
+        return 'Bottle Vetting';
+      default:
+        return type;
     }
   }
 
   Widget _buildFilterButton() {
-    final hasActiveFilter = deviceTypeFilter != null || onlineStatusFilter != null;
+    final hasActiveFilter =
+        deviceTypeFilter != null || onlineStatusFilter != null;
     return PopupMenuButton<String>(
       icon: Stack(
         clipBehavior: Clip.none,
         children: [
-          Icon(Icons.filter_list_rounded, color: Constants.ctaColorLight, size: 22),
+          Icon(Icons.filter_list_rounded,
+              color: Constants.ctaColorLight, size: 22),
           if (hasActiveFilter)
             Positioned(
               right: -4,
@@ -2040,15 +2117,27 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       offset: Offset(0, 40),
       itemBuilder: (context) {
-        final deviceTypes = devices.map((d) => d.deviceType).toSet().toList()..sort();
+        final deviceTypes = devices.map((d) => d.deviceType).toSet().toList()
+          ..sort();
         return [
           PopupMenuItem(
             value: 'all',
             child: Row(
               children: [
-                Icon(Icons.devices, size: 18, color: deviceTypeFilter == null && onlineStatusFilter == null ? Constants.ctaColorLight : Colors.grey),
+                Icon(Icons.devices,
+                    size: 18,
+                    color:
+                        deviceTypeFilter == null && onlineStatusFilter == null
+                            ? Constants.ctaColorLight
+                            : Colors.grey),
                 SizedBox(width: 8),
-                Text('All Devices', style: GoogleFonts.inter(fontSize: 13, fontWeight: deviceTypeFilter == null && onlineStatusFilter == null ? FontWeight.w600 : FontWeight.w400)),
+                Text('All Devices',
+                    style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: deviceTypeFilter == null &&
+                                onlineStatusFilter == null
+                            ? FontWeight.w600
+                            : FontWeight.w400)),
               ],
             ),
           ),
@@ -2057,9 +2146,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             value: 'online',
             child: Row(
               children: [
-                Icon(Icons.wifi, size: 18, color: onlineStatusFilter == 'online' ? Colors.green : Colors.grey),
+                Icon(Icons.wifi,
+                    size: 18,
+                    color: onlineStatusFilter == 'online'
+                        ? Colors.green
+                        : Colors.grey),
                 SizedBox(width: 8),
-                Text('Online', style: GoogleFonts.inter(fontSize: 13, fontWeight: onlineStatusFilter == 'online' ? FontWeight.w600 : FontWeight.w400)),
+                Text('Online',
+                    style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: onlineStatusFilter == 'online'
+                            ? FontWeight.w600
+                            : FontWeight.w400)),
               ],
             ),
           ),
@@ -2067,9 +2165,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             value: 'offline',
             child: Row(
               children: [
-                Icon(Icons.wifi_off, size: 18, color: onlineStatusFilter == 'offline' ? Colors.red : Colors.grey),
+                Icon(Icons.wifi_off,
+                    size: 18,
+                    color: onlineStatusFilter == 'offline'
+                        ? Colors.red
+                        : Colors.grey),
                 SizedBox(width: 8),
-                Text('Offline', style: GoogleFonts.inter(fontSize: 13, fontWeight: onlineStatusFilter == 'offline' ? FontWeight.w600 : FontWeight.w400)),
+                Text('Offline',
+                    style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: onlineStatusFilter == 'offline'
+                            ? FontWeight.w600
+                            : FontWeight.w400)),
               ],
             ),
           ),
@@ -2081,9 +2188,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 value: 'type_$type',
                 child: Row(
                   children: [
-                    Icon(Icons.memory, size: 18, color: deviceTypeFilter == type ? Constants.ctaColorLight : Colors.grey),
+                    Icon(Icons.memory,
+                        size: 18,
+                        color: deviceTypeFilter == type
+                            ? Constants.ctaColorLight
+                            : Colors.grey),
                     SizedBox(width: 8),
-                    Text(typeLabel, style: GoogleFonts.inter(fontSize: 13, fontWeight: deviceTypeFilter == type ? FontWeight.w600 : FontWeight.w400)),
+                    Text(typeLabel,
+                        style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: deviceTypeFilter == type
+                                ? FontWeight.w600
+                                : FontWeight.w400)),
                   ],
                 ),
               );
@@ -2097,16 +2213,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             deviceTypeFilter = null;
             onlineStatusFilter = null;
           } else if (value == 'online') {
-            onlineStatusFilter = onlineStatusFilter == 'online' ? null : 'online';
+            onlineStatusFilter =
+                onlineStatusFilter == 'online' ? null : 'online';
           } else if (value == 'offline') {
-            onlineStatusFilter = onlineStatusFilter == 'offline' ? null : 'offline';
+            onlineStatusFilter =
+                onlineStatusFilter == 'offline' ? null : 'offline';
           } else if (value.startsWith('type_')) {
             final type = value.substring(5);
             deviceTypeFilter = deviceTypeFilter == type ? null : type;
           }
           // Reset selected device if it's no longer in filtered list
           final filtered = _getFilteredDevices();
-          if (selectedDevice != null && !filtered.any((d) => d.deviceId == selectedDevice!.deviceId)) {
+          if (selectedDevice != null &&
+              !filtered.any((d) => d.deviceId == selectedDevice!.deviceId)) {
             selectedDevice = filtered.isNotEmpty ? filtered.first : null;
           }
         });
@@ -2117,15 +2236,119 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     );
   }
 
+  Widget _buildPhoneControls() {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
+        Expanded(
+            child: DropdownButtonFormField<String>(
+          key: ValueKey(selectedDevice?.deviceId),
+          initialValue: selectedDevice?.deviceId,
+          isExpanded: true,
+          style: gasBody(context).copyWith(color: GasPalette.ink),
+          decoration: mobileInputDecoration(
+              context,
+              const InputDecoration(
+                  labelText: 'Equipment', hintText: 'Select a device')),
+          items: _getFilteredDevices()
+              .map((device) => DropdownMenuItem(
+                    value: device.deviceId,
+                    child: Text(
+                        '${device.name} · ${device.isOnline ? 'Online' : 'Offline'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                  ))
+              .toList(),
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() {
+              selectedDevice =
+                  devices.firstWhere((device) => device.deviceId == value);
+            });
+            _loadAnalytics();
+          },
+        )),
+        const SizedBox(width: 6),
+        Tooltip(message: 'Filter devices', child: _buildFilterButton()),
+      ]),
+      const SizedBox(height: 4),
+      Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: Material(
+            type: MaterialType.transparency,
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(bottom: 8),
+              dense: true,
+              minTileHeight: 44,
+              title: Text(
+                  '${DateFormat('d MMM').format(startDate)} – ${DateFormat('d MMM yyyy').format(endDate)}',
+                  style:
+                      gasSmall(context).copyWith(fontWeight: FontWeight.w600)),
+              children: [
+                _phoneDateField(
+                    'Start date', startDate, () => _selectDate(true)),
+                const SizedBox(height: 12),
+                _phoneDateField('End date', endDate, () => _selectDate(false)),
+                const SizedBox(height: 12),
+                SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _loadAnalytics,
+                      style: FilledButton.styleFrom(
+                          backgroundColor: GasPalette.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 48),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(32))),
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: const Text('Refresh readings'),
+                    )),
+              ],
+            )),
+      ),
+    ]);
+  }
+
+  Widget _phoneDateField(String label, DateTime date, VoidCallback onTap) =>
+      InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(32),
+        child: InputDecorator(
+          decoration:
+              mobileInputDecoration(context, InputDecoration(labelText: label)),
+          child: Text(DateFormat('d MMM yyyy').format(date),
+              style: gasBody(context).copyWith(color: GasPalette.ink)),
+        ),
+      );
+
   Widget _buildControlPanel() {
+    if (isPhoneLayout(context)) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * .45,
+          ),
+          child: SingleChildScrollView(child: _buildPhoneControls()),
+        ),
+      );
+    }
+
     final isMobile = _isMobile(context);
 
     return Container(
-      margin: EdgeInsets.all(isMobile ? 12 : 16),
-      padding: EdgeInsets.all(isMobile ? 16 : 20),
+      margin: isPhoneLayout(context)
+          ? const EdgeInsets.fromLTRB(16, 0, 16, 12)
+          : EdgeInsets.all(isMobile ? 12 : 16),
+      padding: EdgeInsets.all(
+        isPhoneLayout(context) ? 12 : (isMobile ? 16 : 20),
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -2134,260 +2357,50 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ),
         ],
       ),
-      child: Column(children: [
-        isMobile
-            ? Column(
-                children: [
-                  // ───────── Device selector + filter ─────────
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(36),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedDevice?.deviceId,
-                              hint: Text(
-                                'Select Device',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: const Color(0xFF64748B),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              icon: Icon(Icons.keyboard_arrow_down,
-                                  color: Constants.ctaColorLight),
-                              isExpanded: true,
-                              items: [
-                                ..._getFilteredDevices().map((device) => DropdownMenuItem<String>(
-                                      value: device.deviceId,
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            width: 8,
-                                            height: 8,
-                                            margin: const EdgeInsets.only(right: 8),
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: device.isOnline ? Colors.green : Colors.grey,
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Text(
-                                              '${device.name} - ${device.isOnline ? 'Online' : 'Offline'}',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )),
-                              ],
-                              onChanged: (String? newValue) {
-                                if (newValue == null) return;
-                                setState(() {
-                                  selectedDevice = devices.firstWhere((d) => d.deviceId == newValue);
-                                });
-                                _loadAnalytics();
-                              },
-                            ),
-                          ),
+      child: Column(
+        children: [
+          isMobile
+              ? ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(context).height * .45,
+                  ),
+                  child: SingleChildScrollView(child: _buildPhoneControls()),
+                )
+              : Row(
+                  children: [
+                    // ───────── Device selector ─────────
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(36),
+                          borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 : 36,
+                          ),
                           border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
-                        child: _buildFilterButton(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // ───────── Start date ─────────
-                  Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(36),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: InkWell(
-                  onTap: () => _selectDate(true),
-                  borderRadius: BorderRadius.circular(36),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today_rounded,
-                          size: 18,
-                          color: Constants.ctaColorLight,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Start Date',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: const Color(0xFF64748B),
-                                  fontWeight: FontWeight.w500,
-                                ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: selectedDevice?.deviceId,
+                            hint: Text(
+                              'Select Device',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: const Color(0xFF64748B),
+                                fontWeight: FontWeight.w500,
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                DateFormat('MMM dd, yyyy').format(startDate),
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: const Color(0xFF1E293B),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Constants.ctaColorLight,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-                  const SizedBox(height: 12),
-
-                  // ───────── End date ─────────
-                  Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(36),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: InkWell(
-                  onTap: () => _selectDate(false),
-                  borderRadius: BorderRadius.circular(36),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today_rounded,
-                          size: 18,
-                          color: Constants.ctaColorLight,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'End Date',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: const Color(0xFF64748B),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                DateFormat('MMM dd, yyyy').format(endDate),
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: const Color(0xFF1E293B),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Constants.ctaColorLight,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-                  const SizedBox(height: 12),
-
-                  // ───────── Refresh button ─────────
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-              onPressed: _loadAnalytics,
-              icon: Icon(
-                Icons.refresh_rounded,
-                size: 18,
-              ),
-              label: Text('Refresh'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.ctaColorLight,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(36),
-                ),
-                elevation: 0,
-                shadowColor: Colors.transparent,
-                textStyle: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-                    ),
-                  ),
-                ],
-              )
-            : Row(
-                children: [
-                  // ───────── Device selector ─────────
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(36),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: selectedDevice?.deviceId,
-                          hint: Text(
-                            'Select Device',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: const Color(0xFF64748B),
-                              fontWeight: FontWeight.w500,
                             ),
-                          ),
-                          icon: Icon(Icons.keyboard_arrow_down,
-                              color: Constants.ctaColorLight),
-                          isExpanded: true,
-                          items: [
-                            ..._getFilteredDevices().map((device) => DropdownMenuItem<String>(
+                            icon: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Constants.ctaColorLight,
+                            ),
+                            isExpanded: true,
+                            items: [
+                              ..._getFilteredDevices().map(
+                                (device) => DropdownMenuItem<String>(
                                   value: device.deviceId,
                                   child: Row(
                                     children: [
@@ -2397,7 +2410,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                         margin: const EdgeInsets.only(right: 8),
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: device.isOnline ? Colors.green : Colors.grey,
+                                          color: device.isOnline
+                                              ? Colors.green
+                                              : Colors.grey,
                                         ),
                                       ),
                                       Expanded(
@@ -2412,178 +2427,200 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                       ),
                                     ],
                                   ),
-                                )),
-                          ],
-                          onChanged: (String? newValue) {
-                            if (newValue == null) return;
-                            setState(() {
-                              selectedDevice = devices.firstWhere((d) => d.deviceId == newValue);
-                            });
-                            _loadAnalytics();
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(36),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: _buildFilterButton(),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // ───────── Start date ─────────
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(36),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: InkWell(
-                        onTap: () => _selectDate(true),
-                        borderRadius: BorderRadius.circular(36),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today_rounded,
-                                size: 18,
-                                color: Constants.ctaColorLight,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Start Date',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: const Color(0xFF64748B),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      DateFormat('MMM dd, yyyy')
-                                          .format(startDate),
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        color: const Color(0xFF1E293B),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ),
-                              Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                color: Constants.ctaColorLight,
-                                size: 18,
-                              ),
                             ],
+                            onChanged: (String? newValue) {
+                              if (newValue == null) return;
+                              setState(() {
+                                selectedDevice = devices.firstWhere(
+                                  (d) => d.deviceId == newValue,
+                                );
+                              });
+                              _loadAnalytics();
+                            },
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // ───────── End date ─────────
-                  Expanded(
-                    child: Container(
+                    const SizedBox(width: 8),
+                    Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(36),
+                        borderRadius: BorderRadius.circular(
+                          isPhoneLayout(context) ? 32 : 36,
+                        ),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
-                      child: InkWell(
-                        onTap: () => _selectDate(false),
-                        borderRadius: BorderRadius.circular(36),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today_rounded,
-                                size: 18,
-                                color: Constants.ctaColorLight,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'End Date',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: const Color(0xFF64748B),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      DateFormat('MMM dd, yyyy').format(endDate),
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        color: const Color(0xFF1E293B),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
+                      child: _buildFilterButton(),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // ───────── Start date ─────────
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 : 36,
+                          ),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: InkWell(
+                          onTap: () => _selectDate(true),
+                          borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 : 36,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 18,
+                                  color: Constants.ctaColorLight,
                                 ),
-                              ),
-                              Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                color: Constants.ctaColorLight,
-                                size: 18,
-                              ),
-                            ],
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Start Date',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: const Color(0xFF64748B),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        DateFormat('MMM dd, yyyy')
+                                            .format(startDate),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          color: const Color(0xFF1E293B),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: Constants.ctaColorLight,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                    const SizedBox(width: 12),
 
-                  // ───────── Refresh button ─────────
-                  ElevatedButton.icon(
-                    onPressed: _loadAnalytics,
-                    icon: Icon(
-                      Icons.refresh_rounded,
-                      size: 18,
-                    ),
-                    label: Text('Refresh'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Constants.ctaColorLight,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(36),
+                    // ───────── End date ─────────
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 : 36,
+                          ),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: InkWell(
+                          onTap: () => _selectDate(false),
+                          borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 : 36,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 18,
+                                  color: Constants.ctaColorLight,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'End Date',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          color: const Color(0xFF64748B),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        DateFormat('MMM dd, yyyy')
+                                            .format(endDate),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          color: const Color(0xFF1E293B),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: Constants.ctaColorLight,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
-                      textStyle: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                    ),
+                    const SizedBox(width: 12),
+
+                    // ───────── Refresh button ─────────
+                    ElevatedButton.icon(
+                      onPressed: _loadAnalytics,
+                      icon: Icon(Icons.refresh_rounded, size: 18),
+                      label: Text('Refresh'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Constants.ctaColorLight,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 : 36,
+                          ),
+                        ),
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        textStyle: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-      ]),
+                  ],
+                ),
+        ],
+      ),
     );
   }
 
@@ -2788,14 +2825,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             children: [
               Icon(icon, size: 16, color: const Color(0xFF64748B)),
               const SizedBox(width: 6),
-              Text(
+              Expanded(
+                  child: Text(
                 title,
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF64748B),
                 ),
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 8),
@@ -3015,12 +3053,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                       color: Constants.ctaColorLight,
                                     ),
                                   ),
-                                  if (pressureAnalytics.minPressureLowTimestamp !=
+                                  if (pressureAnalytics
+                                          .minPressureLowTimestamp !=
                                       null)
                                     Text(
-                                      _formatTimestamp(
-                                          pressureAnalytics.minPressureLowTimestamp ??
-                                              ""),
+                                      _formatTimestamp(pressureAnalytics
+                                              .minPressureLowTimestamp ??
+                                          ""),
                                       style: GoogleFonts.inter(
                                         fontSize: 10,
                                         color: const Color(0xFF94A3B8),
@@ -3055,7 +3094,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                       color: Constants.ctaColorLight,
                                     ),
                                   ),
-                                  if (pressureAnalytics.maxPressureHighTimestamp !=
+                                  if (pressureAnalytics
+                                          .maxPressureHighTimestamp !=
                                       null)
                                     Text(
                                       _formatTimestamp(pressureAnalytics
@@ -3093,12 +3133,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                         color: Constants.ctaColorLight,
                                       ),
                                     ),
-                                    if (pressureAnalytics.minPressureLowTimestamp !=
+                                    if (pressureAnalytics
+                                            .minPressureLowTimestamp !=
                                         null)
                                       Text(
-                                        _formatTimestamp(
-                                            pressureAnalytics.minPressureLowTimestamp ??
-                                                ""),
+                                        _formatTimestamp(pressureAnalytics
+                                                .minPressureLowTimestamp ??
+                                            ""),
                                         style: GoogleFonts.inter(
                                           fontSize: 10,
                                           color: const Color(0xFF94A3B8),
@@ -3134,7 +3175,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                         color: Constants.ctaColorLight,
                                       ),
                                     ),
-                                    if (pressureAnalytics.maxPressureHighTimestamp !=
+                                    if (pressureAnalytics
+                                            .maxPressureHighTimestamp !=
                                         null)
                                       Text(
                                         _formatTimestamp(pressureAnalytics
@@ -3177,12 +3219,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                       color: Constants.ctaColorLight,
                                     ),
                                   ),
-                                  if (pressureAnalytics.maxPressureLowTimestamp !=
+                                  if (pressureAnalytics
+                                          .maxPressureLowTimestamp !=
                                       null)
                                     Text(
-                                      _formatTimestamp(
-                                          pressureAnalytics.maxPressureLowTimestamp ??
-                                              ""),
+                                      _formatTimestamp(pressureAnalytics
+                                              .maxPressureLowTimestamp ??
+                                          ""),
                                       style: GoogleFonts.inter(
                                         fontSize: 10,
                                         color: const Color(0xFF94A3B8),
@@ -3217,7 +3260,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                       color: Constants.ctaColorLight,
                                     ),
                                   ),
-                                  if (pressureAnalytics.minPressureHighTimestamp !=
+                                  if (pressureAnalytics
+                                          .minPressureHighTimestamp !=
                                       null)
                                     Text(
                                       _formatTimestamp(pressureAnalytics
@@ -3255,12 +3299,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                         color: Constants.ctaColorLight,
                                       ),
                                     ),
-                                    if (pressureAnalytics.maxPressureLowTimestamp !=
+                                    if (pressureAnalytics
+                                            .maxPressureLowTimestamp !=
                                         null)
                                       Text(
-                                        _formatTimestamp(
-                                            pressureAnalytics.maxPressureLowTimestamp ??
-                                                ""),
+                                        _formatTimestamp(pressureAnalytics
+                                                .maxPressureLowTimestamp ??
+                                            ""),
                                         style: GoogleFonts.inter(
                                           fontSize: 10,
                                           color: const Color(0xFF94A3B8),
@@ -3296,7 +3341,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                         color: Constants.ctaColorLight,
                                       ),
                                     ),
-                                    if (pressureAnalytics.minPressureHighTimestamp !=
+                                    if (pressureAnalytics
+                                            .minPressureHighTimestamp !=
                                         null)
                                       Text(
                                         _formatTimestamp(pressureAnalytics
@@ -3502,7 +3548,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         _buildMetricCard(
                           'Runtime',
                           '${analytics.currentStateDurationMinutes.toStringAsFixed(0)} min',
-                          status.isRunning ? 'Current session' : 'Since stopped',
+                          status.isRunning
+                              ? 'Current session'
+                              : 'Since stopped',
                         ),
                       ],
                     )
@@ -3523,7 +3571,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         _buildMetricCard(
                           'Runtime',
                           '${analytics.currentStateDurationMinutes.toStringAsFixed(0)} min',
-                          status.isRunning ? 'Current session' : 'Since stopped',
+                          status.isRunning
+                              ? 'Current session'
+                              : 'Since stopped',
                         ),
                       ],
                     ),
@@ -3752,15 +3802,16 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final deviceType = selectedDevice?.deviceType ?? 'device1';
 
     Widget _noDataWidget() => Center(
-      child: isLoading
-          ? CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
-            )
-          : Text(
-              'No data available for this device',
-              style: GoogleFonts.inter(color: Colors.grey[600]),
-            ),
-    );
+          child: isLoading
+              ? CircularProgressIndicator(
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
+                )
+              : Text(
+                  'No data available for this device',
+                  style: GoogleFonts.inter(color: Colors.grey[600]),
+                ),
+        );
 
     if (deviceType == 'device2') {
       if (device2AnalyticsData == null) return _noDataWidget();
@@ -3789,7 +3840,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   // Device 2 Dashboard (Multi-zone temperature monitoring)
   Widget _buildDevice2Dashboard() {
     final isMobile = _isMobile(context);
-    final padding = isMobile ? 12.0 : 16.0;
+    final padding = isPhoneLayout(context) ? 16.0 : (isMobile ? 12.0 : 16.0);
     final spacing = isMobile ? 8.0 : 12.0;
 
     return SingleChildScrollView(
@@ -3806,15 +3857,24 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           SizedBox(height: spacing),
 
           // All Zones Temperature Trends Chart
-          _buildChart('All Zones Temperature Trends', _buildDevice2AllZonesChart()),
+          _buildChart(
+            'All Zones Temperature Trends',
+            _buildDevice2AllZonesChart(),
+          ),
           SizedBox(height: spacing),
 
           // Min/Max Temperature Range Chart
-          _buildChart('Temperature Range (Min/Max)', _buildDevice2MinMaxChart()),
+          _buildChart(
+            'Temperature Range (Min/Max)',
+            _buildDevice2MinMaxChart(),
+          ),
           SizedBox(height: spacing),
 
           // Zone Comparison Bar Chart
-          _buildChart('Zone Temperature Comparison', _buildDevice2ZoneComparisonChart()),
+          _buildChart(
+            'Zone Temperature Comparison',
+            _buildDevice2ZoneComparisonChart(),
+          ),
           SizedBox(height: spacing),
 
           // Zone Statistics Summary
@@ -3826,16 +3886,52 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice2Header() {
     final data = device2AnalyticsData;
-    final healthScore = data?.realTimeInsights.deviceHealthScore.overallScore ?? 0.0;
-    final healthGrade = data?.realTimeInsights.deviceHealthScore.healthGrade ?? 'N/A';
+    final healthScore =
+        data?.realTimeInsights.deviceHealthScore.overallScore ?? 0.0;
+    final healthGrade =
+        data?.realTimeInsights.deviceHealthScore.healthGrade ?? 'N/A';
     final totalReadings = data?.zoneSummary.totalReadings ?? 0;
+
+    if (isPhoneLayout(context)) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('8 temperature zones', style: gasTitle(context)),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              children: [
+                Text('$totalReadings readings', style: gasSmall(context)),
+                Text(
+                  'Health ${healthScore.toStringAsFixed(0)}% · $healthGrade',
+                  style: gasSmall(context)
+                      .copyWith(color: _getHealthColor(healthScore)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -3843,11 +3939,21 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Multi-Zone Temperature Monitor',
-                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  'Multi-Zone Temperature Monitor',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 SizedBox(height: 8),
-                Text('Monitoring 8 temperature zones | $totalReadings readings',
-                    style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600])),
+                Text(
+                  'Monitoring 8 temperature zones | $totalReadings readings',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
               ],
             ),
           ),
@@ -3856,14 +3962,34 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             decoration: BoxDecoration(
               color: _getHealthColor(healthScore).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _getHealthColor(healthScore).withOpacity(0.3)),
+              border: Border.all(
+                color: _getHealthColor(healthScore).withOpacity(0.3),
+              ),
             ),
             child: Column(
               children: [
-                Text('Health', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
-                Text('${healthScore.toStringAsFixed(0)}%',
-                    style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: _getHealthColor(healthScore))),
-                Text(healthGrade, style: GoogleFonts.inter(fontSize: 10, color: _getHealthColor(healthScore))),
+                Text(
+                  'Health',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Text(
+                  '${healthScore.toStringAsFixed(0)}%',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: _getHealthColor(healthScore),
+                  ),
+                ),
+                Text(
+                  healthGrade,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    color: _getHealthColor(healthScore),
+                  ),
+                ),
               ],
             ),
           ),
@@ -3888,7 +4014,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       for (int i = 1; i <= 8; i++) {
         final zoneValues = tempData.getZone(i);
         final currentTemp = zoneValues.isNotEmpty ? zoneValues.last : 0.0;
-        final zoneStat = data.zoneSummary.zones.length >= i ? data.zoneSummary.zones[i - 1] : null;
+        final zoneStat = data.zoneSummary.zones.length >= i
+            ? data.zoneSummary.zones[i - 1]
+            : null;
         zones.add({
           'zone': i,
           'name': 'Zone $i',
@@ -3902,29 +4030,67 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       }
     } else {
       for (int i = 1; i <= 8; i++) {
-        zones.add({'zone': i, 'name': 'Zone $i', 'current': 0.0, 'avg': 0.0, 'min': 0.0, 'max': 0.0, 'minTime': null, 'maxTime': null});
+        zones.add({
+          'zone': i,
+          'name': 'Zone $i',
+          'current': 0.0,
+          'avg': 0.0,
+          'min': 0.0,
+          'max': 0.0,
+          'minTime': null,
+          'maxTime': null,
+        });
       }
+    }
+
+    if (isPhoneLayout(context)) {
+      return GPanel(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Column(
+          children: [
+            for (var index = 0; index < zones.length; index++) ...[
+              if (index > 0) const Divider(height: 1, color: GasPalette.border),
+              _buildZoneCard(zones[index]),
+            ],
+          ],
+        ),
+      );
     }
 
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Current Zone Temperatures', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(
+            'Current Zone Temperatures',
+            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
           SizedBox(height: 16),
-          GridView.builder(
+          _readingGridBuilder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isMobile ? 2 : 4,
+              crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 4),
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
+              mainAxisExtent: MediaQuery.sizeOf(context).width < 1024
+                  ? 144
+                  : null,
               childAspectRatio: isMobile ? 1.4 : 1.8,
             ),
             itemCount: 8,
@@ -3954,6 +4120,58 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final isNormal = temp < 5 && temp > -25;
     final color = isNormal ? Constants.ctaColorLight : Colors.red;
 
+    if (isPhoneLayout(context)) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    zone['name'],
+                    style: gasBody(context).copyWith(color: GasPalette.ink),
+                  ),
+                ),
+                Icon(
+                  isNormal
+                      ? Icons.check_circle_outline
+                      : Icons.warning_amber_rounded,
+                  color: isNormal ? GasPalette.good : GasPalette.critInk,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${temp.toStringAsFixed(1)}°C',
+                  style: gasData(
+                    context,
+                    size: 18,
+                    color: isNormal ? GasPalette.ink : GasPalette.critInk,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 5),
+            Wrap(
+              spacing: 14,
+              runSpacing: 4,
+              children: [
+                Text(
+                  'Min ${minTemp.toStringAsFixed(1)}°  ${_formatZoneTimestamp(minTime)}',
+                  style: gasSmall(context),
+                ),
+                Text(
+                  'Max ${maxTemp.toStringAsFixed(1)}°  ${_formatZoneTimestamp(maxTime)}',
+                  style: gasSmall(context),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -3977,13 +4195,29 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(zone['name'], style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
-              Icon(isNormal ? Icons.check_circle : Icons.warning, color: color, size: 12),
+              Text(
+                zone['name'],
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Icon(
+                isNormal ? Icons.check_circle : Icons.warning,
+                color: color,
+                size: 12,
+              ),
             ],
           ),
           SizedBox(height: 2),
-          Text('${temp.toStringAsFixed(1)}°C',
-              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+          Text(
+            '${temp.toStringAsFixed(1)}°C',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
           SizedBox(height: 4),
           // Min/Max row with timestamps
           Row(
@@ -3991,11 +4225,28 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             children: [
               Column(
                 children: [
-                  Text("Min", style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
-                  Text("${minTemp.toStringAsFixed(1)}°",
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.blue)),
-                  Text(_formatZoneTimestamp(minTime),
-                      style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[400])),
+                  Text(
+                    "Min",
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                  Text(
+                    "${minTemp.toStringAsFixed(1)}°",
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  Text(
+                    _formatZoneTimestamp(minTime),
+                    style: GoogleFonts.inter(
+                      fontSize: 8,
+                      color: Colors.grey[400],
+                    ),
+                  ),
                 ],
               ),
               Container(
@@ -4006,11 +4257,28 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
               Column(
                 children: [
-                  Text("Max", style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
-                  Text("${maxTemp.toStringAsFixed(1)}°",
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.red)),
-                  Text(_formatZoneTimestamp(maxTime),
-                      style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[400])),
+                  Text(
+                    "Max",
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                  Text(
+                    "${maxTemp.toStringAsFixed(1)}°",
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
+                    ),
+                  ),
+                  Text(
+                    _formatZoneTimestamp(maxTime),
+                    style: GoogleFonts.inter(
+                      fontSize: 8,
+                      color: Colors.grey[400],
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -4025,7 +4293,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data == null || data.temperatureAnalytics.labels.isEmpty) {
       return Container(
         height: 300,
-        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No data available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
@@ -4034,8 +4304,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     // Zone colors
     final zoneColors = [
-      Colors.blue, Colors.green, Colors.orange, Colors.purple,
-      Colors.red, Colors.teal, Colors.pink, Colors.indigo,
+      Colors.blue,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.red,
+      Colors.teal,
+      Colors.pink,
+      Colors.indigo,
     ];
 
     List<LineChartBarData> lineBars = [];
@@ -4043,7 +4319,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       final zoneValues = tempData.getZone(i);
       if (zoneValues.isNotEmpty) {
         lineBars.add(LineChartBarData(
-          spots: List.generate(zoneValues.length, (index) => FlSpot(index.toDouble(), zoneValues[index])),
+          spots: List.generate(zoneValues.length,
+              (index) => FlSpot(index.toDouble(), zoneValues[index])),
           isCurved: true,
           color: zoneColors[i - 1],
           barWidth: 2,
@@ -4062,22 +4339,29 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             show: true,
             drawVerticalLine: false,
             horizontalInterval: 5,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                interval: labels.length > 12
+                    ? (labels.length / 6).ceil().toDouble()
+                    : 1,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < labels.length) {
                     final label = labels[index];
-                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    final time = label.split(' ').length > 1
+                        ? label.split(' ')[1].substring(0, 5)
+                        : label;
                     return Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                      child: Text(time,
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: Colors.grey[600])),
                     );
                   }
                   return Text('');
@@ -4089,7 +4373,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    style: GoogleFonts.inter(
+                        fontSize: 10, color: Colors.grey[600])),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4099,9 +4384,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           lineBarsData: lineBars,
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (spots) => spots.map((spot) =>
-                LineTooltipItem('Zone ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(1)}°C',
-                    TextStyle(color: zoneColors[spot.barIndex], fontSize: 12))).toList(),
+              getTooltipItems: (spots) => spots
+                  .map((spot) => LineTooltipItem(
+                      'Zone ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(1)}°C',
+                      TextStyle(
+                          color: zoneColors[spot.barIndex], fontSize: 12)))
+                  .toList(),
             ),
           ),
         ),
@@ -4114,7 +4402,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data == null || data.temperatureAnalytics.labels.isEmpty) {
       return Container(
         height: 250,
-        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No data available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
@@ -4132,22 +4422,29 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             show: true,
             drawVerticalLine: false,
             horizontalInterval: 5,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                interval: labels.length > 12
+                    ? (labels.length / 6).ceil().toDouble()
+                    : 1,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < labels.length) {
                     final label = labels[index];
-                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    final time = label.split(' ').length > 1
+                        ? label.split(' ')[1].substring(0, 5)
+                        : label;
                     return Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                      child: Text(time,
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: Colors.grey[600])),
                     );
                   }
                   return Text('');
@@ -4159,7 +4456,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    style: GoogleFonts.inter(
+                        fontSize: 10, color: Colors.grey[600])),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4168,29 +4466,39 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           borderData: FlBorderData(show: false),
           lineBarsData: [
             LineChartBarData(
-              spots: List.generate(maxTemp.length, (i) => FlSpot(i.toDouble(), maxTemp[i])),
+              spots: List.generate(
+                  maxTemp.length, (i) => FlSpot(i.toDouble(), maxTemp[i])),
               isCurved: true,
               color: Colors.red,
               barWidth: 2,
               dotData: FlDotData(show: false),
-              belowBarData: BarAreaData(show: true, color: Colors.red.withOpacity(0.1)),
+              belowBarData:
+                  BarAreaData(show: true, color: Colors.red.withOpacity(0.1)),
             ),
             LineChartBarData(
-              spots: List.generate(minTemp.length, (i) => FlSpot(i.toDouble(), minTemp[i])),
+              spots: List.generate(
+                  minTemp.length, (i) => FlSpot(i.toDouble(), minTemp[i])),
               isCurved: true,
               color: Colors.blue,
               barWidth: 2,
               dotData: FlDotData(show: false),
-              belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.1)),
+              belowBarData:
+                  BarAreaData(show: true, color: Colors.blue.withOpacity(0.1)),
             ),
           ],
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (spots) => spots.map((spot) =>
-                LineTooltipItem(
-                  spot.barIndex == 0 ? 'Max: ${spot.y.toStringAsFixed(1)}°C' : 'Min: ${spot.y.toStringAsFixed(1)}°C',
-                  TextStyle(color: spot.barIndex == 0 ? Colors.red : Colors.blue, fontSize: 12),
-                )).toList(),
+              getTooltipItems: (spots) => spots
+                  .map((spot) => LineTooltipItem(
+                        spot.barIndex == 0
+                            ? 'Max: ${spot.y.toStringAsFixed(1)}°C'
+                            : 'Min: ${spot.y.toStringAsFixed(1)}°C',
+                        TextStyle(
+                            color:
+                                spot.barIndex == 0 ? Colors.red : Colors.blue,
+                            fontSize: 12),
+                      ))
+                  .toList(),
             ),
           ),
         ),
@@ -4203,7 +4511,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data == null || data.zoneSummary.zones.isEmpty) {
       return Container(
         height: 250,
-        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No data available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
@@ -4216,8 +4526,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       child: BarChart(
         BarChartData(
           alignment: BarChartAlignment.spaceAround,
-          maxY: zones.map((z) => z.max ?? 0.0).reduce((a, b) => a > b ? a : b) + 5,
-          minY: zones.map((z) => z.min ?? 0.0).reduce((a, b) => a < b ? a : b) - 5,
+          maxY: zones.map((z) => z.max ?? 0.0).reduce((a, b) => a > b ? a : b) +
+              5,
+          minY: zones.map((z) => z.min ?? 0.0).reduce((a, b) => a < b ? a : b) -
+              5,
           barTouchData: BarTouchData(
             touchTooltipData: BarTouchTooltipData(
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -4239,7 +4551,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   if (index >= 0 && index < zones.length) {
                     return Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text('Z${zones[index].zone}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                      child: Text('Z${zones[index].zone}',
+                          style: GoogleFonts.inter(
+                              fontSize: 11, fontWeight: FontWeight.w500)),
                     );
                   }
                   return Text('');
@@ -4251,7 +4565,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    style: GoogleFonts.inter(
+                        fontSize: 10, color: Colors.grey[600])),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4261,7 +4576,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             show: true,
             drawVerticalLine: false,
             horizontalInterval: 5,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
           ),
           borderData: FlBorderData(show: false),
           barGroups: List.generate(zones.length, (index) {
@@ -4293,9 +4609,20 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
-        child: Center(child: Text('No zone statistics available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+          child: Text(
+            'No zone statistics available',
+            style: GoogleFonts.inter(color: Colors.grey[600]),
+          ),
+        ),
       );
     }
 
@@ -4305,8 +4632,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4314,8 +4650,20 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Zone Statistics', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
-              Text('${data.zoneSummary.totalReadings} readings', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
+              Expanded(
+                child: Text(
+                  'Zone Statistics',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${data.zoneSummary.totalReadings} readings',
+                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+              ),
             ],
           ),
           SizedBox(height: 16),
@@ -4328,11 +4676,56 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             ),
             child: Row(
               children: [
-                Expanded(flex: 2, child: Text('Zone', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
-                Expanded(flex: 2, child: Text('Min', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
-                Expanded(flex: 2, child: Text('Max', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
-                Expanded(flex: 2, child: Text('Avg', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
-                Expanded(flex: 2, child: Text('Status', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Zone',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Min',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Max',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Avg',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Status',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -4346,18 +4739,60 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
               child: Row(
                 children: [
-                  Expanded(flex: 2, child: Text('Zone ${zone.zone}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500))),
-                  Expanded(flex: 2, child: Text('${zone.min?.toStringAsFixed(1) ?? '--'}°C', style: GoogleFonts.inter(fontSize: 12, color: Colors.blue))),
-                  Expanded(flex: 2, child: Text('${zone.max?.toStringAsFixed(1) ?? '--'}°C', style: GoogleFonts.inter(fontSize: 12, color: Colors.red))),
-                  Expanded(flex: 2, child: Text('${zone.avg?.toStringAsFixed(1) ?? '--'}°C', style: GoogleFonts.inter(fontSize: 12))),
-                  Expanded(flex: 2, child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isNormal ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Zone ${zone.zone}',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    child: Text(isNormal ? 'OK' : 'Alert', style: GoogleFonts.inter(fontSize: 10, color: isNormal ? Colors.green : Colors.red, fontWeight: FontWeight.w500)),
-                  )),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${zone.min?.toStringAsFixed(1) ?? '--'}°C',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${zone.max?.toStringAsFixed(1) ?? '--'}°C',
+                      style: GoogleFonts.inter(fontSize: 12, color: Colors.red),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      '${zone.avg?.toStringAsFixed(1) ?? '--'}°C',
+                      style: GoogleFonts.inter(fontSize: 12),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isNormal
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        isNormal ? 'OK' : 'Alert',
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: isNormal ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -4368,6 +4803,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   }
 
   // Device 3 Dashboard (Ice machine monitoring)
+
   Widget _buildDevice3Dashboard() {
     final isMobile = _isMobile(context);
     final padding = isMobile ? 12.0 : 16.0;
@@ -4391,7 +4827,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           SizedBox(height: spacing),
 
           // High Side vs Low Side Comparison
-          _buildChart('Refrigerant Pressure Temps (HS vs LS)', _buildDevice3PressureTempsChart()),
+          _buildChart('Refrigerant Pressure Temps (HS vs LS)',
+              _buildDevice3PressureTempsChart()),
           SizedBox(height: spacing),
 
           // Water Level Chart
@@ -4423,8 +4860,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice3Header() {
     final data = device3AnalyticsData;
-    final healthScore = data?.realTimeInsights.deviceHealthScore.overallScore ?? 0.0;
-    final healthGrade = data?.realTimeInsights.deviceHealthScore.healthGrade ?? 'N/A';
+    final healthScore =
+        data?.realTimeInsights.deviceHealthScore.overallScore ?? 0.0;
+    final healthGrade =
+        data?.realTimeInsights.deviceHealthScore.healthGrade ?? 'N/A';
     final totalReadings = data?.iceMachineSummary.totalReadings ?? 0;
     final totalHarvests = data?.iceMachineSummary.totalHarvests ?? 0;
 
@@ -4432,8 +4871,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))
+        ],
       ),
       child: Row(
         children: [
@@ -4442,10 +4887,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Ice Machine Monitor',
-                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: GoogleFonts.inter(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
                 Text('$totalReadings readings | $totalHarvests harvest cycles',
-                    style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600])),
+                    style: GoogleFonts.inter(
+                        fontSize: 14, color: Colors.grey[600])),
               ],
             ),
           ),
@@ -4454,19 +4901,142 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             decoration: BoxDecoration(
               color: _getHealthColor(healthScore).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _getHealthColor(healthScore).withOpacity(0.3)),
+              border: Border.all(
+                  color: _getHealthColor(healthScore).withOpacity(0.3)),
             ),
             child: Column(
               children: [
-                Text('Health', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
+                Text('Health',
+                    style: GoogleFonts.inter(
+                        fontSize: 11, color: Colors.grey[600])),
                 Text('${healthScore.toStringAsFixed(0)}%',
-                    style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: _getHealthColor(healthScore))),
-                Text(healthGrade, style: GoogleFonts.inter(fontSize: 10, color: _getHealthColor(healthScore))),
+                    style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: _getHealthColor(healthScore))),
+                Text(healthGrade,
+                    style: GoogleFonts.inter(
+                        fontSize: 10, color: _getHealthColor(healthScore))),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // Phone readings take their natural height; larger screens retain the grid.
+  Widget _readingGrid({
+    required int crossAxisCount,
+    required List<Widget> children,
+    bool shrinkWrap = false,
+    ScrollPhysics? physics,
+    double mainAxisSpacing = 0,
+    double crossAxisSpacing = 0,
+    double childAspectRatio = 1,
+    double? mainAxisExtent,
+  }) {
+    if (isPhoneLayout(context)) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) SizedBox(height: mainAxisSpacing),
+          children[i],
+        ],
+      ]);
+    }
+    return GridView.count(
+      crossAxisCount: crossAxisCount,
+      shrinkWrap: shrinkWrap, physics: physics,
+      mainAxisSpacing: mainAxisSpacing, crossAxisSpacing: crossAxisSpacing,
+      childAspectRatio: childAspectRatio, mainAxisExtent: mainAxisExtent,
+      children: children,
+    );
+  }
+
+  Widget _phoneReadingCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    List<String> details = const [],
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: GasPalette.panel,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: GasPalette.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: GasPalette.ink2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: GasPalette.ink,
+            ),
+          ),
+          for (final detail in details) ...[
+            const SizedBox(height: 6),
+            Text(
+              detail,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                height: 1.4,
+                color: GasPalette.ink2,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _readingGridBuilder({
+    required SliverGridDelegateWithFixedCrossAxisCount gridDelegate,
+    required int itemCount,
+    required IndexedWidgetBuilder itemBuilder,
+    bool shrinkWrap = false,
+    ScrollPhysics? physics,
+  }) {
+    if (isPhoneLayout(context)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < itemCount; i++) ...[
+            if (i > 0) SizedBox(height: gridDelegate.mainAxisSpacing),
+            itemBuilder(context, i),
+          ],
+        ],
+      );
+    }
+    return GridView.builder(
+      gridDelegate: gridDelegate,
+      itemCount: itemCount,
+      itemBuilder: itemBuilder,
+      shrinkWrap: shrinkWrap,
+      physics: physics,
     );
   }
 
@@ -4478,42 +5048,89 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final waterData = data?.waterAnalytics;
 
     // Get current values (last in series)
-    final iceTemp = tempData?.iceTemp.isNotEmpty == true ? tempData!.iceTemp.last : 0.0;
-    final hsTemp = tempData?.hsTemp.isNotEmpty == true ? tempData!.hsTemp.last : 0.0;
-    final lsTemp = tempData?.lsTemp.isNotEmpty == true ? tempData!.lsTemp.last : 0.0;
-    final airTemp = tempData?.airTemp.isNotEmpty == true ? tempData!.airTemp.last : 0.0;
-    final waterLevel = waterData?.waterLevel.isNotEmpty == true ? waterData!.waterLevel.last : 0.0;
+    final iceTemp =
+        tempData?.iceTemp.isNotEmpty == true ? tempData!.iceTemp.last : 0.0;
+    final hsTemp =
+        tempData?.hsTemp.isNotEmpty == true ? tempData!.hsTemp.last : 0.0;
+    final lsTemp =
+        tempData?.lsTemp.isNotEmpty == true ? tempData!.lsTemp.last : 0.0;
+    final airTemp =
+        tempData?.airTemp.isNotEmpty == true ? tempData!.airTemp.last : 0.0;
+    final waterLevel = waterData?.waterLevel.isNotEmpty == true
+        ? waterData!.waterLevel.last
+        : 0.0;
     final ampsData = data?.ampsAnalytics;
-    final currentAmps = ampsData?.amps.isNotEmpty == true ? ampsData!.amps.last : 0.0;
+    final currentAmps =
+        ampsData?.amps.isNotEmpty == true ? ampsData!.amps.last : 0.0;
     final totalHarvests = summary?.totalHarvests ?? 0;
 
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Current Readings', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text('Current Readings',
+              style:
+                  GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
           SizedBox(height: 16),
-          GridView.count(
+          _readingGrid(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
-            crossAxisCount: isMobile ? 2 : 3,
+            crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 3),
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
+            mainAxisExtent: isPhoneLayout(context) ? 140 : null,
             childAspectRatio: 1.4,
             children: [
-              _buildDevice3MetricCard('Ice Temp', '${iceTemp.toStringAsFixed(1)}°C', Icons.ac_unit, Colors.blue, summary?.iceTemp),
-              _buildDevice3MetricCard('High Side', '${hsTemp.toStringAsFixed(1)}°C', Icons.arrow_upward, Colors.orange, summary?.highSideTemp),
-              _buildDevice3MetricCard('Low Side', '${lsTemp.toStringAsFixed(1)}°C', Icons.arrow_downward, Colors.cyan, summary?.lowSideTemp),
-              _buildDevice3MetricCard('Air Temp', '${airTemp.toStringAsFixed(1)}°C', Icons.air, Colors.green, summary?.airTemp),
-              _buildDevice3MetricCard('Water Level', '${waterLevel.toStringAsFixed(1)}%', Icons.water_drop, Colors.indigo, summary?.waterLevel),
-              _buildDevice3MetricCard('Amps', '${currentAmps.toStringAsFixed(1)}A', Icons.bolt, Colors.amber, summary?.amps),
-              _buildDevice3MetricCard('Harvests', '$totalHarvests', Icons.cyclone, Colors.purple, null),
+              _buildDevice3MetricCard(
+                  'Ice Temp',
+                  '${iceTemp.toStringAsFixed(1)}°C',
+                  Icons.ac_unit,
+                  Colors.blue,
+                  summary?.iceTemp),
+              _buildDevice3MetricCard(
+                  'High Side',
+                  '${hsTemp.toStringAsFixed(1)}°C',
+                  Icons.arrow_upward,
+                  Colors.orange,
+                  summary?.highSideTemp),
+              _buildDevice3MetricCard(
+                  'Low Side',
+                  '${lsTemp.toStringAsFixed(1)}°C',
+                  Icons.arrow_downward,
+                  Colors.cyan,
+                  summary?.lowSideTemp),
+              _buildDevice3MetricCard(
+                  'Air Temp',
+                  '${airTemp.toStringAsFixed(1)}°C',
+                  Icons.air,
+                  Colors.green,
+                  summary?.airTemp),
+              _buildDevice3MetricCard(
+                  'Water Level',
+                  '${waterLevel.toStringAsFixed(1)}%',
+                  Icons.water_drop,
+                  Colors.indigo,
+                  summary?.waterLevel),
+              _buildDevice3MetricCard(
+                  'Amps',
+                  '${currentAmps.toStringAsFixed(1)}A',
+                  Icons.bolt,
+                  Colors.amber,
+                  summary?.amps),
+              _buildDevice3MetricCard('Harvests', '$totalHarvests',
+                  Icons.cyclone, Colors.purple, null),
             ],
           ),
         ],
@@ -4521,7 +5138,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     );
   }
 
-  Widget _buildDevice3MetricCard(String title, String value, IconData icon, Color color, TempStats? stats) {
+  Widget _buildDevice3MetricCard(String title, String value, IconData icon,
+      Color color, TempStats? stats) {
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: title, value: value, icon: icon, color: color,
+        details: [if (stats != null) 'Avg: ${stats.avg?.toStringAsFixed(1) ?? '--'}']);
+    }
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -4545,12 +5167,16 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               Icon(icon, color: color, size: 20),
               if (stats != null)
                 Text('Avg: ${stats.avg?.toStringAsFixed(1) ?? '--'}',
-                    style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[600])),
+                    style: GoogleFonts.inter(
+                        fontSize: 9, color: Colors.grey[600])),
             ],
           ),
           SizedBox(height: 4),
-          Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-          Text(title, style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
+          Text(value,
+              style: GoogleFonts.inter(
+                  fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+          Text(title,
+              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
         ],
       ),
     );
@@ -4561,7 +5187,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data == null || data.temperatureAnalytics.labels.isEmpty) {
       return Container(
         height: 300,
-        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No data available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
@@ -4577,22 +5205,29 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             show: true,
             drawVerticalLine: false,
             horizontalInterval: 10,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                interval: labels.length > 12
+                    ? (labels.length / 6).ceil().toDouble()
+                    : 1,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < labels.length) {
                     final label = labels[index];
-                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    final time = label.split(' ').length > 1
+                        ? label.split(' ')[1].substring(0, 5)
+                        : label;
                     return Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                      child: Text(time,
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: Colors.grey[600])),
                     );
                   }
                   return Text('');
@@ -4604,7 +5239,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    style: GoogleFonts.inter(
+                        fontSize: 10, color: Colors.grey[600])),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4613,28 +5249,32 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           borderData: FlBorderData(show: false),
           lineBarsData: [
             LineChartBarData(
-              spots: List.generate(tempData.hsTemp.length, (i) => FlSpot(i.toDouble(), tempData.hsTemp[i])),
+              spots: List.generate(tempData.hsTemp.length,
+                  (i) => FlSpot(i.toDouble(), tempData.hsTemp[i])),
               isCurved: true,
               color: Colors.orange,
               barWidth: 2,
               dotData: FlDotData(show: false),
             ),
             LineChartBarData(
-              spots: List.generate(tempData.lsTemp.length, (i) => FlSpot(i.toDouble(), tempData.lsTemp[i])),
+              spots: List.generate(tempData.lsTemp.length,
+                  (i) => FlSpot(i.toDouble(), tempData.lsTemp[i])),
               isCurved: true,
               color: Colors.cyan,
               barWidth: 2,
               dotData: FlDotData(show: false),
             ),
             LineChartBarData(
-              spots: List.generate(tempData.iceTemp.length, (i) => FlSpot(i.toDouble(), tempData.iceTemp[i])),
+              spots: List.generate(tempData.iceTemp.length,
+                  (i) => FlSpot(i.toDouble(), tempData.iceTemp[i])),
               isCurved: true,
               color: Colors.blue,
               barWidth: 2,
               dotData: FlDotData(show: false),
             ),
             LineChartBarData(
-              spots: List.generate(tempData.airTemp.length, (i) => FlSpot(i.toDouble(), tempData.airTemp[i])),
+              spots: List.generate(tempData.airTemp.length,
+                  (i) => FlSpot(i.toDouble(), tempData.airTemp[i])),
               isCurved: true,
               color: Colors.green,
               barWidth: 2,
@@ -4645,10 +5285,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             touchTooltipData: LineTouchTooltipData(
               getTooltipItems: (spots) {
                 final labels = ['High Side', 'Low Side', 'Ice', 'Air'];
-                final colors = [Colors.orange, Colors.cyan, Colors.blue, Colors.green];
-                return spots.map((spot) =>
-                  LineTooltipItem('${labels[spot.barIndex]}: ${spot.y.toStringAsFixed(1)}°C',
-                      TextStyle(color: colors[spot.barIndex], fontSize: 11))).toList();
+                final colors = [
+                  Colors.orange,
+                  Colors.cyan,
+                  Colors.blue,
+                  Colors.green
+                ];
+                return spots
+                    .map((spot) => LineTooltipItem(
+                        '${labels[spot.barIndex]}: ${spot.y.toStringAsFixed(1)}°C',
+                        TextStyle(color: colors[spot.barIndex], fontSize: 11)))
+                    .toList();
               },
             ),
           ),
@@ -4662,7 +5309,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data == null || data.temperatureAnalytics.labels.isEmpty) {
       return Container(
         height: 250,
-        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No data available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
@@ -4678,22 +5327,29 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             show: true,
             drawVerticalLine: false,
             horizontalInterval: 10,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                interval: labels.length > 12
+                    ? (labels.length / 6).ceil().toDouble()
+                    : 1,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < labels.length) {
                     final label = labels[index];
-                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    final time = label.split(' ').length > 1
+                        ? label.split(' ')[1].substring(0, 5)
+                        : label;
                     return Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                      child: Text(time,
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: Colors.grey[600])),
                     );
                   }
                   return Text('');
@@ -4705,7 +5361,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    style: GoogleFonts.inter(
+                        fontSize: 10, color: Colors.grey[600])),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4714,29 +5371,40 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           borderData: FlBorderData(show: false),
           lineBarsData: [
             LineChartBarData(
-              spots: List.generate(tempData.hsTemp.length, (i) => FlSpot(i.toDouble(), tempData.hsTemp[i])),
+              spots: List.generate(tempData.hsTemp.length,
+                  (i) => FlSpot(i.toDouble(), tempData.hsTemp[i])),
               isCurved: true,
               color: Colors.orange,
               barWidth: 3,
               dotData: FlDotData(show: false),
-              belowBarData: BarAreaData(show: true, color: Colors.orange.withOpacity(0.1)),
+              belowBarData: BarAreaData(
+                  show: true, color: Colors.orange.withOpacity(0.1)),
             ),
             LineChartBarData(
-              spots: List.generate(tempData.lsTemp.length, (i) => FlSpot(i.toDouble(), tempData.lsTemp[i])),
+              spots: List.generate(tempData.lsTemp.length,
+                  (i) => FlSpot(i.toDouble(), tempData.lsTemp[i])),
               isCurved: true,
               color: Colors.cyan,
               barWidth: 3,
               dotData: FlDotData(show: false),
-              belowBarData: BarAreaData(show: true, color: Colors.cyan.withOpacity(0.1)),
+              belowBarData:
+                  BarAreaData(show: true, color: Colors.cyan.withOpacity(0.1)),
             ),
           ],
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (spots) => spots.map((spot) =>
-                LineTooltipItem(
-                  spot.barIndex == 0 ? 'High Side: ${spot.y.toStringAsFixed(1)}°C' : 'Low Side: ${spot.y.toStringAsFixed(1)}°C',
-                  TextStyle(color: spot.barIndex == 0 ? Colors.orange : Colors.cyan, fontSize: 12),
-                )).toList(),
+              getTooltipItems: (spots) => spots
+                  .map((spot) => LineTooltipItem(
+                        spot.barIndex == 0
+                            ? 'High Side: ${spot.y.toStringAsFixed(1)}°C'
+                            : 'Low Side: ${spot.y.toStringAsFixed(1)}°C',
+                        TextStyle(
+                            color: spot.barIndex == 0
+                                ? Colors.orange
+                                : Colors.cyan,
+                            fontSize: 12),
+                      ))
+                  .toList(),
             ),
           ),
         ),
@@ -4749,7 +5417,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data == null || data.waterAnalytics.labels.isEmpty) {
       return Container(
         height: 200,
-        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No data available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
@@ -4766,22 +5436,29 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             show: true,
             drawVerticalLine: false,
             horizontalInterval: 20,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                interval: labels.length > 12
+                    ? (labels.length / 6).ceil().toDouble()
+                    : 1,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < labels.length) {
                     final label = labels[index];
-                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    final time = label.split(' ').length > 1
+                        ? label.split(' ')[1].substring(0, 5)
+                        : label;
                     return Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                      child: Text(time,
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: Colors.grey[600])),
                     );
                   }
                   return Text('');
@@ -4793,7 +5470,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}%',
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    style: GoogleFonts.inter(
+                        fontSize: 10, color: Colors.grey[600])),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4804,7 +5482,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           maxY: 100,
           lineBarsData: [
             LineChartBarData(
-              spots: List.generate(levels.length, (i) => FlSpot(i.toDouble(), levels[i])),
+              spots: List.generate(
+                  levels.length, (i) => FlSpot(i.toDouble(), levels[i])),
               isCurved: true,
               color: Colors.indigo,
               barWidth: 3,
@@ -4812,7 +5491,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
-                  colors: [Colors.indigo.withOpacity(0.3), Colors.indigo.withOpacity(0.05)],
+                  colors: [
+                    Colors.indigo.withOpacity(0.3),
+                    Colors.indigo.withOpacity(0.05)
+                  ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -4821,9 +5503,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ],
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (spots) => spots.map((spot) =>
-                LineTooltipItem('Water Level: ${spot.y.toStringAsFixed(1)}%',
-                    TextStyle(color: Colors.indigo, fontSize: 12))).toList(),
+              getTooltipItems: (spots) => spots
+                  .map((spot) => LineTooltipItem(
+                      'Water Level: ${spot.y.toStringAsFixed(1)}%',
+                      TextStyle(color: Colors.indigo, fontSize: 12)))
+                  .toList(),
             ),
           ),
         ),
@@ -4836,7 +5520,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data == null || data.ampsAnalytics.labels.isEmpty) {
       return Container(
         height: 200,
-        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No data available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
@@ -4844,7 +5530,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final labels = ampsData.labels;
     final amps = ampsData.amps;
 
-    final maxAmps = amps.isEmpty ? 10.0 : (amps.reduce((a, b) => a > b ? a : b) * 1.2).clamp(1.0, 100.0);
+    final maxAmps = amps.isEmpty
+        ? 10.0
+        : (amps.reduce((a, b) => a > b ? a : b) * 1.2).clamp(1.0, 100.0);
 
     return Container(
       height: 200,
@@ -4854,22 +5542,29 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                interval: labels.length > 12
+                    ? (labels.length / 6).ceil().toDouble()
+                    : 1,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < labels.length) {
                     final label = labels[index];
-                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    final time = label.split(' ').length > 1
+                        ? label.split(' ')[1].substring(0, 5)
+                        : label;
                     return Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                      child: Text(time,
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: Colors.grey[600])),
                     );
                   }
                   return Text('');
@@ -4880,8 +5575,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 40,
-                getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(1)}A',
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                getTitlesWidget: (value, meta) => Text(
+                    '${value.toStringAsFixed(1)}A',
+                    style: GoogleFonts.inter(
+                        fontSize: 10, color: Colors.grey[600])),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4892,7 +5589,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           maxY: maxAmps,
           lineBarsData: [
             LineChartBarData(
-              spots: List.generate(amps.length, (i) => FlSpot(i.toDouble(), amps[i])),
+              spots: List.generate(
+                  amps.length, (i) => FlSpot(i.toDouble(), amps[i])),
               isCurved: true,
               color: Colors.amber,
               barWidth: 3,
@@ -4900,7 +5598,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
-                  colors: [Colors.amber.withOpacity(0.3), Colors.amber.withOpacity(0.05)],
+                  colors: [
+                    Colors.amber.withOpacity(0.3),
+                    Colors.amber.withOpacity(0.05)
+                  ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -4909,9 +5610,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ],
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (spots) => spots.map((spot) =>
-                LineTooltipItem('Amps: ${spot.y.toStringAsFixed(1)}A',
-                    TextStyle(color: Colors.amber.shade800, fontSize: 12))).toList(),
+              getTooltipItems: (spots) => spots
+                  .map((spot) => LineTooltipItem(
+                      'Amps: ${spot.y.toStringAsFixed(1)}A',
+                      TextStyle(color: Colors.amber.shade800, fontSize: 12)))
+                  .toList(),
             ),
           ),
         ),
@@ -4924,7 +5627,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data == null || data.harvestAnalytics.labels.isEmpty) {
       return Container(
         height: 200,
-        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No data available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
@@ -4938,11 +5643,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       child: BarChart(
         BarChartData(
           alignment: BarChartAlignment.spaceAround,
-          maxY: (counts.isNotEmpty ? counts.reduce((a, b) => a > b ? a : b).toDouble() : 10) + 2,
+          maxY: (counts.isNotEmpty
+                  ? counts.reduce((a, b) => a > b ? a : b).toDouble()
+                  : 10) +
+              2,
           barTouchData: BarTouchData(
             touchTooltipData: BarTouchTooltipData(
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                final label = groupIndex < labels.length ? labels[groupIndex] : '';
+                final label =
+                    groupIndex < labels.length ? labels[groupIndex] : '';
                 return BarTooltipItem(
                   '$label\n${rod.toY.toInt()} harvests',
                   GoogleFonts.inter(color: Colors.white, fontSize: 11),
@@ -4956,15 +5665,21 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                interval: labels.length > 12
+                    ? (labels.length / 6).ceil().toDouble()
+                    : 1,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < labels.length) {
                     final label = labels[index];
-                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    final time = label.split(' ').length > 1
+                        ? label.split(' ')[1].substring(0, 5)
+                        : label;
                     return Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text(time, style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[600])),
+                      child: Text(time,
+                          style: GoogleFonts.inter(
+                              fontSize: 9, color: Colors.grey[600])),
                     );
                   }
                   return Text('');
@@ -4976,7 +5691,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 showTitles: true,
                 reservedSize: 30,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}',
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    style: GoogleFonts.inter(
+                        fontSize: 10, color: Colors.grey[600])),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4986,7 +5702,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             show: true,
             drawVerticalLine: false,
             horizontalInterval: 2,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
           ),
           borderData: FlBorderData(show: false),
           barGroups: List.generate(counts.length, (index) {
@@ -5012,7 +5729,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data == null || data.ampsAnalytics.labels.isEmpty) {
       return Container(
         height: 200,
-        child: Center(child: Text('No data available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No data available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
@@ -5021,7 +5740,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     // Derive kW from amps: P = amps * 220 / 1000
     final powerKw = ampsData.amps.map((a) => (a * 220) / 1000).toList();
 
-    final maxPower = powerKw.isEmpty ? 5.0 : (powerKw.reduce((a, b) => a > b ? a : b) * 1.2).clamp(0.5, 50.0);
+    final maxPower = powerKw.isEmpty
+        ? 5.0
+        : (powerKw.reduce((a, b) => a > b ? a : b) * 1.2).clamp(0.5, 50.0);
 
     return Container(
       height: 200,
@@ -5031,22 +5752,29 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: labels.length > 12 ? (labels.length / 6).ceil().toDouble() : 1,
+                interval: labels.length > 12
+                    ? (labels.length / 6).ceil().toDouble()
+                    : 1,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < labels.length) {
                     final label = labels[index];
-                    final time = label.split(' ').length > 1 ? label.split(' ')[1].substring(0, 5) : label;
+                    final time = label.split(' ').length > 1
+                        ? label.split(' ')[1].substring(0, 5)
+                        : label;
                     return Padding(
                       padding: EdgeInsets.only(top: 8),
-                      child: Text(time, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                      child: Text(time,
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: Colors.grey[600])),
                     );
                   }
                   return Text('');
@@ -5057,8 +5785,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 45,
-                getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(2)}',
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                getTitlesWidget: (value, meta) => Text(
+                    '${value.toStringAsFixed(2)}',
+                    style: GoogleFonts.inter(
+                        fontSize: 10, color: Colors.grey[600])),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -5069,7 +5799,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           maxY: maxPower,
           lineBarsData: [
             LineChartBarData(
-              spots: List.generate(powerKw.length, (i) => FlSpot(i.toDouble(), powerKw[i])),
+              spots: List.generate(
+                  powerKw.length, (i) => FlSpot(i.toDouble(), powerKw[i])),
               isCurved: true,
               color: Colors.green,
               barWidth: 3,
@@ -5077,7 +5808,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
-                  colors: [Colors.green.withOpacity(0.3), Colors.green.withOpacity(0.05)],
+                  colors: [
+                    Colors.green.withOpacity(0.3),
+                    Colors.green.withOpacity(0.05)
+                  ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -5086,9 +5820,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ],
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipItems: (spots) => spots.map((spot) =>
-                LineTooltipItem('${spot.y.toStringAsFixed(3)} kW',
-                    TextStyle(color: Colors.green.shade800, fontSize: 12))).toList(),
+              getTooltipItems: (spots) => spots
+                  .map((spot) => LineTooltipItem(
+                      '${spot.y.toStringAsFixed(3)} kW',
+                      TextStyle(color: Colors.green.shade800, fontSize: 12)))
+                  .toList(),
             ),
           ),
         ),
@@ -5104,9 +5840,16 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.grey.shade200,
+                blurRadius: 8,
+                offset: Offset(0, 2))
+          ],
         ),
-        child: Center(child: Text('No insights available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No insights available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
@@ -5119,13 +5862,21 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Real-Time Insights', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text('Real-Time Insights',
+              style:
+                  GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
           SizedBox(height: 16),
 
           // Row 1: Health Score, Efficiency, Maintenance, Annual Cost
@@ -5139,7 +5890,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         '${insights.deviceHealthScore.overallScore.toStringAsFixed(0)}/100',
                         insights.deviceHealthScore.healthGrade,
                         Icons.favorite_rounded,
-                        _isHealthCritical(insights.deviceHealthScore.healthGrade),
+                        _isHealthCritical(
+                            insights.deviceHealthScore.healthGrade),
                       ),
                       const SizedBox(height: 12),
                       _buildInsightMetricCard(
@@ -5147,7 +5899,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         '${insights.efficiencyRating.efficiencyScore.toStringAsFixed(0)}/100',
                         insights.efficiencyRating.efficiencyGrade,
                         Icons.eco_rounded,
-                        _isEfficiencyCritical(insights.efficiencyRating.efficiencyGrade),
+                        _isEfficiencyCritical(
+                            insights.efficiencyRating.efficiencyGrade),
                       ),
                       const SizedBox(height: 12),
                       _buildInsightMetricCard(
@@ -5155,7 +5908,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         '${insights.maintenanceUrgency.totalAlerts} alerts',
                         insights.maintenanceUrgency.urgencyLevel,
                         Icons.build_rounded,
-                        _isMaintenanceCritical(insights.maintenanceUrgency.urgencyLevel),
+                        _isMaintenanceCritical(
+                            insights.maintenanceUrgency.urgencyLevel),
                       ),
                       const SizedBox(height: 12),
                       _buildInsightMetricCard(
@@ -5174,7 +5928,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         '${insights.deviceHealthScore.overallScore.toStringAsFixed(0)}/100',
                         insights.deviceHealthScore.healthGrade,
                         Icons.favorite_rounded,
-                        _isHealthCritical(insights.deviceHealthScore.healthGrade),
+                        _isHealthCritical(
+                            insights.deviceHealthScore.healthGrade),
                       ),
                       const SizedBox(width: 12),
                       _buildInsightMetricCard(
@@ -5182,7 +5937,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         '${insights.efficiencyRating.efficiencyScore.toStringAsFixed(0)}/100',
                         insights.efficiencyRating.efficiencyGrade,
                         Icons.eco_rounded,
-                        _isEfficiencyCritical(insights.efficiencyRating.efficiencyGrade),
+                        _isEfficiencyCritical(
+                            insights.efficiencyRating.efficiencyGrade),
                       ),
                       const SizedBox(width: 12),
                       _buildInsightMetricCard(
@@ -5190,7 +5946,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         '${insights.maintenanceUrgency.totalAlerts} alerts',
                         insights.maintenanceUrgency.urgencyLevel,
                         Icons.build_rounded,
-                        _isMaintenanceCritical(insights.maintenanceUrgency.urgencyLevel),
+                        _isMaintenanceCritical(
+                            insights.maintenanceUrgency.urgencyLevel),
                       ),
                       const SizedBox(width: 12),
                       _buildInsightMetricCard(
@@ -5307,7 +6064,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   Expanded(
                     child: Text(
                       insights.deviceHealthScore.recommendation,
-                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: const Color(0xFF64748B)),
                     ),
                   ),
                 ],
@@ -5329,20 +6087,49 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.grey.shade200,
+                blurRadius: 8,
+                offset: Offset(0, 2))
+          ],
         ),
-        child: Center(child: Text('No summary available', style: GoogleFonts.inter(color: Colors.grey[600]))),
+        child: Center(
+            child: Text('No summary available',
+                style: GoogleFonts.inter(color: Colors.grey[600]))),
       );
     }
 
     final summary = data.iceMachineSummary;
+    if (isPhoneLayout(context)) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('Statistics Summary', style: gasTitle(context)),
+        const SizedBox(height: 4),
+        Text('${summary.totalReadings} readings', style: gasBody(context)),
+        const SizedBox(height: 12),
+        _buildDevice3StatRow('High Side Temp', summary.highSideTemp, Colors.orange),
+        _buildDevice3StatRow('Low Side Temp', summary.lowSideTemp, Colors.cyan),
+        _buildDevice3StatRow('Ice Temp', summary.iceTemp, Colors.blue),
+        _buildDevice3StatRow('Air Temp', summary.airTemp, Colors.green),
+        _buildDevice3StatRow('Water Level', summary.waterLevel, Colors.indigo, unit: '%'),
+        _buildDevice3StatRow('Amps', summary.amps, Colors.amber, unit: 'A'),
+        _phoneReadingCard(title: 'Total Harvest Cycles', value: '${summary.totalHarvests}',
+          icon: Icons.cyclone, color: Colors.purple),
+      ]);
+    }
 
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))],
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -5350,8 +6137,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Statistics Summary', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
-              Text('${summary.totalReadings} readings', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
+              Text('Statistics Summary',
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600)),
+              Text('${summary.totalReadings} readings',
+                  style:
+                      GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
             ],
           ),
           SizedBox(height: 16),
@@ -5364,19 +6155,38 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             ),
             child: Row(
               children: [
-                Expanded(flex: 3, child: Text('Metric', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
-                Expanded(flex: 2, child: Text('Min', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
-                Expanded(flex: 2, child: Text('Max', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
-                Expanded(flex: 2, child: Text('Avg', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(
+                    flex: 3,
+                    child: Text('Metric',
+                        style: GoogleFonts.inter(
+                            fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(
+                    flex: 2,
+                    child: Text('Min',
+                        style: GoogleFonts.inter(
+                            fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(
+                    flex: 2,
+                    child: Text('Max',
+                        style: GoogleFonts.inter(
+                            fontSize: 12, fontWeight: FontWeight.w600))),
+                Expanded(
+                    flex: 2,
+                    child: Text('Avg',
+                        style: GoogleFonts.inter(
+                            fontSize: 12, fontWeight: FontWeight.w600))),
               ],
             ),
           ),
           SizedBox(height: 8),
-          _buildDevice3StatRow('High Side Temp', summary.highSideTemp, Colors.orange),
-          _buildDevice3StatRow('Low Side Temp', summary.lowSideTemp, Colors.cyan),
+          _buildDevice3StatRow(
+              'High Side Temp', summary.highSideTemp, Colors.orange),
+          _buildDevice3StatRow(
+              'Low Side Temp', summary.lowSideTemp, Colors.cyan),
           _buildDevice3StatRow('Ice Temp', summary.iceTemp, Colors.blue),
           _buildDevice3StatRow('Air Temp', summary.airTemp, Colors.green),
-          _buildDevice3StatRow('Water Level', summary.waterLevel, Colors.indigo, unit: '%'),
+          _buildDevice3StatRow('Water Level', summary.waterLevel, Colors.indigo,
+              unit: '%'),
           _buildDevice3StatRow('Amps', summary.amps, Colors.amber, unit: 'A'),
           SizedBox(height: 12),
           Container(
@@ -5391,8 +6201,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               children: [
                 Icon(Icons.cyclone, color: Colors.purple, size: 20),
                 SizedBox(width: 8),
-                Text('Total Harvest Cycles: ', style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700])),
-                Text('${summary.totalHarvests}', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.purple)),
+                Text('Total Harvest Cycles: ',
+                    style: GoogleFonts.inter(
+                        fontSize: 14, color: Colors.grey[700])),
+                Text('${summary.totalHarvests}',
+                    style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple)),
               ],
             ),
           ),
@@ -5401,7 +6217,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     );
   }
 
-  Widget _buildDevice3StatRow(String name, TempStats? stats, Color color, {String unit = '°C'}) {
+  Widget _buildDevice3StatRow(String name, TempStats? stats, Color color,
+      {String unit = '°C'}) {
+    if (isPhoneLayout(context)) {
+      return Padding(padding: const EdgeInsets.only(bottom: 10),
+        child: _phoneReadingCard(title: name,
+          value: "${stats?.avg?.toStringAsFixed(1) ?? '--'}$unit",
+          icon: Icons.analytics_outlined, color: color, details: ['Average',
+            "Min: ${stats?.min?.toStringAsFixed(1) ?? '--'}$unit",
+            "Max: ${stats?.max?.toStringAsFixed(1) ?? '--'}$unit",
+          ]));
+    }
     return Container(
       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
@@ -5409,16 +6235,33 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       ),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Row(
-            children: [
-              Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-              SizedBox(width: 8),
-              Text(name, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500)),
-            ],
-          )),
-          Expanded(flex: 2, child: Text('${stats?.min?.toStringAsFixed(1) ?? '--'}$unit', style: GoogleFonts.inter(fontSize: 12, color: Colors.blue))),
-          Expanded(flex: 2, child: Text('${stats?.max?.toStringAsFixed(1) ?? '--'}$unit', style: GoogleFonts.inter(fontSize: 12, color: Colors.red))),
-          Expanded(flex: 2, child: Text('${stats?.avg?.toStringAsFixed(1) ?? '--'}$unit', style: GoogleFonts.inter(fontSize: 12))),
+          Expanded(
+              flex: 3,
+              child: Row(
+                children: [
+                  Container(
+                      width: 8,
+                      height: 8,
+                      decoration:
+                          BoxDecoration(color: color, shape: BoxShape.circle)),
+                  SizedBox(width: 8),
+                  Text(name,
+                      style: GoogleFonts.inter(
+                          fontSize: 12, fontWeight: FontWeight.w500)),
+                ],
+              )),
+          Expanded(
+              flex: 2,
+              child: Text('${stats?.min?.toStringAsFixed(1) ?? '--'}$unit',
+                  style: GoogleFonts.inter(fontSize: 12, color: Colors.blue))),
+          Expanded(
+              flex: 2,
+              child: Text('${stats?.max?.toStringAsFixed(1) ?? '--'}$unit',
+                  style: GoogleFonts.inter(fontSize: 12, color: Colors.red))),
+          Expanded(
+              flex: 2,
+              child: Text('${stats?.avg?.toStringAsFixed(1) ?? '--'}$unit',
+                  style: GoogleFonts.inter(fontSize: 12))),
         ],
       ),
     );
@@ -5440,7 +6283,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       try {
         final dt = DateTime.parse(iso);
         return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-      } catch (_) { return '--'; }
+      } catch (_) {
+        return '--';
+      }
     }
 
     return SingleChildScrollView(
@@ -5455,7 +6300,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFF1F5F9)),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: Row(
               children: [
@@ -5465,15 +6315,23 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     color: Constants.ctaColorLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.electric_bolt, color: Colors.white, size: 20),
+                  child:
+                      Icon(Icons.electric_bolt, color: Colors.white, size: 20),
                 ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Multi-Compressor Amp Monitor', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
-                      Text('${stats['total_readings'] ?? 0} readings | ${compressors.length} compressors', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[600])),
+                      Text('Multi-Compressor Amp Monitor',
+                          style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF0F172A))),
+                      Text(
+                          '${stats['total_readings'] ?? 0} readings | ${compressors.length} compressors',
+                          style: GoogleFonts.inter(
+                              fontSize: 13, color: Colors.grey[600])),
                     ],
                   ),
                 ),
@@ -5483,49 +6341,89 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           SizedBox(height: spacing),
 
           // Summary Stats Row
-          GridView.count(
+          _readingGrid(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
-            crossAxisCount: isMobile ? 2 : 4,
+            crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 4),
             childAspectRatio: isMobile ? 2.2 : 2.5,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             children: [
-              _buildSummaryStatCard('Active Compressors', '${stats['active_compressors'] ?? 0} / 8', Icons.electric_bolt, Constants.ctaColorLight),
-              _buildSummaryStatCard('Avg Load', '${(stats['overall_avg_load'] ?? 0).toStringAsFixed(1)} A', Icons.speed, Colors.blue),
-              _buildSummaryStatCard('Max Load', '${(stats['overall_max_load'] ?? 0).toStringAsFixed(1)} A', Icons.arrow_upward, Colors.orange),
-              _buildSummaryStatCard('Min Load', '${(stats['overall_min_load'] ?? 0).toStringAsFixed(1)} A', Icons.arrow_downward, Colors.teal),
+              _buildSummaryStatCard(
+                  'Active Compressors',
+                  '${stats['active_compressors'] ?? 0} / 8',
+                  Icons.electric_bolt,
+                  Constants.ctaColorLight),
+              _buildSummaryStatCard(
+                  'Avg Load',
+                  '${(stats['overall_avg_load'] ?? 0).toStringAsFixed(1)} A',
+                  Icons.speed,
+                  Colors.blue),
+              _buildSummaryStatCard(
+                  'Max Load',
+                  '${(stats['overall_max_load'] ?? 0).toStringAsFixed(1)} A',
+                  Icons.arrow_upward,
+                  Colors.orange),
+              _buildSummaryStatCard(
+                  'Min Load',
+                  '${(stats['overall_min_load'] ?? 0).toStringAsFixed(1)} A',
+                  Icons.arrow_downward,
+                  Colors.teal),
             ],
           ),
           SizedBox(height: spacing),
 
           // Power Consumption Section
-          Text('Power Consumption', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          Text('Power Consumption',
+              style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800])),
           SizedBox(height: 8),
-          GridView.count(
+          _readingGrid(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
-            crossAxisCount: isMobile ? 2 : 4,
+            crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 4),
             childAspectRatio: isMobile ? 2.2 : 2.5,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             children: [
-              _buildSummaryStatCard('Total Power', '${(stats['total_power_kw'] ?? 0).toStringAsFixed(1)} kW', Icons.power, Colors.deepOrange),
-              _buildSummaryStatCard('Daily Energy', '${(stats['daily_energy_estimate_kwh'] ?? 0).toStringAsFixed(1)} kWh', Icons.battery_charging_full, Colors.amber),
-              _buildSummaryStatCard('Daily Cost', 'R${(stats['daily_cost_estimate'] ?? 0).toStringAsFixed(0)}', Icons.attach_money, Colors.green),
-              _buildSummaryStatCard('Power Factor', '${stats['power_factor'] ?? 0.85}', Icons.electric_meter, Colors.purple),
+              _buildSummaryStatCard(
+                  'Total Power',
+                  '${(stats['total_power_kw'] ?? 0).toStringAsFixed(1)} kW',
+                  Icons.power,
+                  Colors.deepOrange),
+              _buildSummaryStatCard(
+                  'Daily Energy',
+                  '${(stats['daily_energy_estimate_kwh'] ?? 0).toStringAsFixed(1)} kWh',
+                  Icons.battery_charging_full,
+                  Colors.amber),
+              _buildSummaryStatCard(
+                  'Daily Cost',
+                  'R${(stats['daily_cost_estimate'] ?? 0).toStringAsFixed(0)}',
+                  Icons.attach_money,
+                  Colors.green),
+              _buildSummaryStatCard(
+                  'Power Factor',
+                  '${stats['power_factor'] ?? 0.85}',
+                  Icons.electric_meter,
+                  Colors.purple),
             ],
           ),
           SizedBox(height: spacing),
 
           // Compressor Grid
-          Text('Compressor Overview', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          Text('Compressor Overview',
+              style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800])),
           SizedBox(height: 8),
-          GridView.builder(
+          _readingGridBuilder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isMobile ? 2 : 4,
+              crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 4),
               childAspectRatio: isMobile ? 0.72 : 0.82,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
@@ -5533,12 +6431,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             itemCount: 8,
             itemBuilder: (context, index) {
               final compKey = 'compressor${index + 1}';
-              final compData = compressors[compKey] as Map<String, dynamic>? ?? {};
+              final compData =
+                  compressors[compKey] as Map<String, dynamic>? ?? {};
               final avgAmp = (compData['average_amp'] ?? 0.0).toDouble();
               final phases = compData['phases'] as Map<String, dynamic>? ?? {};
               final minTime = compData['min_amp_time'] as String?;
               final maxTime = compData['max_amp_time'] as String?;
-              final phaseImbalance = (compData['phase_imbalance_pct'] ?? 0.0).toDouble();
+              final phaseImbalance =
+                  (compData['phase_imbalance_pct'] ?? 0.0).toDouble();
               // Compute min/max from phases
               double minAmp = double.infinity, maxAmp = 0;
               phases.forEach((_, v) {
@@ -5550,13 +6450,37 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               });
               if (minAmp == double.infinity) minAmp = 0;
 
+              if (isPhoneLayout(context)) {
+                return _phoneReadingCard(title: 'Comp ${index + 1}',
+                  value: '${avgAmp.toStringAsFixed(1)} A', icon: Icons.electric_bolt_outlined,
+                  color: avgAmp > 0.5 ? Constants.ctaColorLight : Colors.grey,
+                  details: [
+                    ...phases.entries.take(3).map((e) {
+                      final phaseData = e.value as Map<String, dynamic>? ?? {};
+                      return '${e.key}: ${(phaseData['avg'] ?? 0.0).toStringAsFixed(1)}A';
+                    }),
+                    if (phases.isNotEmpty) ...[
+                      'Min: ${minAmp.toStringAsFixed(1)}A${minTime != null ? ' · ${_fmtTime(minTime)}' : ''}',
+                      'Max: ${maxAmp.toStringAsFixed(1)}A${maxTime != null ? ' · ${_fmtTime(maxTime)}' : ''}',
+                    ],
+                    if (phaseImbalance > 10) '${phaseImbalance.toStringAsFixed(1)}% imbalance',
+                  ]);
+              }
               return Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: avgAmp > 0.5 ? Constants.ctaColorLight.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: Offset(0, 2))],
+                  border: Border.all(
+                      color: avgAmp > 0.5
+                          ? Constants.ctaColorLight.withOpacity(0.3)
+                          : Colors.grey.withOpacity(0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 4,
+                        offset: Offset(0, 2))
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -5564,38 +6488,69 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.electric_bolt, size: 16, color: avgAmp > 0.5 ? Constants.ctaColorLight : Colors.grey),
+                        Icon(Icons.electric_bolt,
+                            size: 16,
+                            color: avgAmp > 0.5
+                                ? Constants.ctaColorLight
+                                : Colors.grey),
                         SizedBox(width: 4),
-                        Text('Comp ${index + 1}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                        Text('Comp ${index + 1}',
+                            style: GoogleFonts.inter(
+                                fontSize: 12, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     SizedBox(height: 4),
-                    Text('${avgAmp.toStringAsFixed(1)} A', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: avgAmp > 0.5 ? Colors.black87 : Colors.grey)),
+                    Text('${avgAmp.toStringAsFixed(1)} A',
+                        style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                avgAmp > 0.5 ? Colors.black87 : Colors.grey)),
                     SizedBox(height: 4),
                     ...phases.entries.take(3).map((e) {
                       final phaseData = e.value as Map<String, dynamic>? ?? {};
-                      return Text('${e.key}: ${(phaseData['avg'] ?? 0.0).toStringAsFixed(1)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600]));
+                      return Text(
+                          '${e.key}: ${(phaseData['avg'] ?? 0.0).toStringAsFixed(1)}A',
+                          style: GoogleFonts.inter(
+                              fontSize: 10, color: Colors.grey[600]));
                     }),
                     if (phases.isNotEmpty) ...[
                       Divider(height: 8, thickness: 0.5),
                       Row(
                         children: [
-                          Icon(Icons.arrow_downward, size: 10, color: Colors.blue),
+                          Icon(Icons.arrow_downward,
+                              size: 10, color: Colors.blue),
                           SizedBox(width: 2),
-                          Expanded(child: Text('${minAmp.toStringAsFixed(1)}A', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.blue))),
+                          Expanded(
+                              child: Text('${minAmp.toStringAsFixed(1)}A',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.blue))),
                           Icon(Icons.arrow_upward, size: 10, color: Colors.red),
                           SizedBox(width: 2),
-                          Text('${maxAmp.toStringAsFixed(1)}A', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: Colors.red)),
+                          Text('${maxAmp.toStringAsFixed(1)}A',
+                              style: GoogleFonts.inter(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red)),
                         ],
                       ),
                       SizedBox(height: 2),
-                      if (minTime != null) Text('Min: ${_fmtTime(minTime)}', style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[500])),
-                      if (maxTime != null) Text('Max: ${_fmtTime(maxTime)}', style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[500])),
+                      if (minTime != null)
+                        Text('Min: ${_fmtTime(minTime)}',
+                            style: GoogleFonts.inter(
+                                fontSize: 8, color: Colors.grey[500])),
+                      if (maxTime != null)
+                        Text('Max: ${_fmtTime(maxTime)}',
+                            style: GoogleFonts.inter(
+                                fontSize: 8, color: Colors.grey[500])),
                     ],
                     if (phaseImbalance > 10) ...[
                       SizedBox(height: 4),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.orange.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(4),
@@ -5603,9 +6558,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.warning_amber, size: 10, color: Colors.orange),
+                            Icon(Icons.warning_amber,
+                                size: 10, color: Colors.orange),
                             SizedBox(width: 3),
-                            Text('${phaseImbalance.toStringAsFixed(1)}% imbalance', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: Colors.orange)),
+                            Text(
+                                '${phaseImbalance.toStringAsFixed(1)}% imbalance',
+                                style: GoogleFonts.inter(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.orange)),
                           ],
                         ),
                       ),
@@ -5618,22 +6579,24 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           SizedBox(height: spacing),
 
           // Compressor Load Comparison Bar Chart
-          _buildChart('Compressor Load Comparison (Avg Amps)', _buildDevice4CompressorBarChart()),
+          _buildChart('Compressor Load Comparison (Avg Amps)',
+              _buildDevice4CompressorBarChart(), naturalHeight: true),
           SizedBox(height: spacing),
 
           // Phase Balance Analysis Bar Chart
-          _buildChart('Phase Balance Analysis', _buildDevice4PhaseBalanceChart()),
+          _buildChart(
+              'Phase Balance Analysis', _buildDevice4PhaseBalanceChart()),
           SizedBox(height: spacing),
 
           // Daily Compressor Trends Line Chart
           if (data.dailyData.isNotEmpty)
             _buildChart('Daily Compressor Trends', _buildDevice4DailyChart()),
-          if (data.dailyData.isNotEmpty)
-            SizedBox(height: spacing),
+          if (data.dailyData.isNotEmpty) SizedBox(height: spacing),
 
           // Phase Current Detail Line Chart
           if (data.dailyData.isNotEmpty)
-            _buildChart('Daily Phase Current Detail', _buildDevice4PhaseDetailChart()),
+            _buildChart(
+                'Daily Phase Current Detail', _buildDevice4PhaseDetailChart()),
         ],
       ),
     );
@@ -5642,9 +6605,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Widget _buildDevice4CompressorBarChart() {
     final stats = device4AnalyticsData!.overallStatistics;
     final compressors = stats['compressors'] as Map<String, dynamic>? ?? {};
-    if (compressors.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+    if (compressors.isEmpty)
+      return SizedBox(height: 200, child: Center(child: Text('No data')));
 
-    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
+    final colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.cyan,
+      Colors.pink,
+      Colors.teal
+    ];
 
     // Compute min/max for y-axis
     double minVal = double.infinity, maxVal = 0;
@@ -5664,8 +6637,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Column(
       children: [
         Wrap(
-          spacing: 12, runSpacing: 4,
-          children: List.generate(8, (i) => _buildLegendItem(colors[i], 'Comp ${i + 1}')),
+          spacing: 12,
+          runSpacing: 4,
+          children: List.generate(
+              8, (i) => _buildLegendItem(colors[i], 'Comp ${i + 1}')),
         ),
         SizedBox(height: 12),
         SizedBox(
@@ -5678,37 +6653,60 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    final compData = compressors['compressor${groupIndex + 1}'] as Map<String, dynamic>? ?? {};
-                    final phases = compData['phases'] as Map<String, dynamic>? ?? {};
+                    final compData = compressors['compressor${groupIndex + 1}']
+                            as Map<String, dynamic>? ??
+                        {};
+                    final phases =
+                        compData['phases'] as Map<String, dynamic>? ?? {};
                     final avg = (compData['average_amp'] ?? 0.0).toDouble();
-                    String tip = 'Comp ${groupIndex + 1}\nAvg: ${avg.toStringAsFixed(1)}A';
+                    String tip =
+                        'Comp ${groupIndex + 1}\nAvg: ${avg.toStringAsFixed(1)}A';
                     phases.forEach((k, v) {
                       final pd = v as Map<String, dynamic>? ?? {};
-                      tip += '\n$k: ${(pd['min'] ?? 0).toStringAsFixed(1)}-${(pd['max'] ?? 0).toStringAsFixed(1)}A';
+                      tip +=
+                          '\n$k: ${(pd['min'] ?? 0).toStringAsFixed(1)}-${(pd['max'] ?? 0).toStringAsFixed(1)}A';
                     });
-                    return BarTooltipItem(tip, GoogleFonts.inter(color: Colors.white, fontSize: 11));
+                    return BarTooltipItem(tip,
+                        GoogleFonts.inter(color: Colors.white, fontSize: 11));
                   },
                 ),
               ),
               titlesData: FlTitlesData(
-                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
                   showTitles: true,
                   getTitlesWidget: (value, meta) => Padding(
                     padding: EdgeInsets.only(top: 8),
-                    child: Text('C${value.toInt() + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                    child: Text('C${value.toInt() + 1}',
+                        style: GoogleFonts.inter(
+                            fontSize: 11, fontWeight: FontWeight.w500)),
                   ),
                 )),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 40,
-                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(0)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text(
+                      '${value.toStringAsFixed(0)}A',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
-              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 2, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 2,
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(8, (c) {
-                final compData = compressors['compressor${c + 1}'] as Map<String, dynamic>? ?? {};
+                final compData = compressors['compressor${c + 1}']
+                        as Map<String, dynamic>? ??
+                    {};
                 final avg = (compData['average_amp'] ?? 0.0).toDouble();
                 return BarChartGroupData(
                   x: c,
@@ -5717,7 +6715,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       toY: avg,
                       color: colors[c],
                       width: 22,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(4)),
                       backDrawRodData: BackgroundBarChartRodData(
                         show: true,
                         toY: maxVal + 2,
@@ -5737,9 +6736,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Widget _buildDevice4PhaseBalanceChart() {
     final stats = device4AnalyticsData!.overallStatistics;
     final compressors = stats['compressors'] as Map<String, dynamic>? ?? {};
-    if (compressors.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+    if (compressors.isEmpty)
+      return SizedBox(height: 200, child: Center(child: Text('No data')));
 
-    final phaseColors = [Colors.blue.shade600, Colors.amber.shade600, Colors.red.shade500];
+    final phaseColors = [
+      Colors.blue.shade600,
+      Colors.amber.shade600,
+      Colors.red.shade500
+    ];
 
     double maxVal = 0;
     for (int c = 1; c <= 8; c++) {
@@ -5754,16 +6758,28 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(phaseColors[0], 'Phase 1'),
-            SizedBox(width: 16),
-            _buildLegendItem(phaseColors[1], 'Phase 2'),
-            SizedBox(width: 16),
-            _buildLegendItem(phaseColors[2], 'Phase 3'),
-          ],
-        ),
+        isPhoneLayout(context)
+            ? Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                    _buildLegendItem(phaseColors[0], 'Phase 1'),
+                    SizedBox(width: 16),
+                    _buildLegendItem(phaseColors[1], 'Phase 2'),
+                    SizedBox(width: 16),
+                    _buildLegendItem(phaseColors[2], 'Phase 3'),
+                  ])
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegendItem(phaseColors[0], 'Phase 1'),
+                  SizedBox(width: 16),
+                  _buildLegendItem(phaseColors[1], 'Phase 2'),
+                  SizedBox(width: 16),
+                  _buildLegendItem(phaseColors[2], 'Phase 3'),
+                ],
+              ),
         SizedBox(height: 12),
         SizedBox(
           height: 280,
@@ -5782,35 +6798,74 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 ),
               ),
               titlesData: FlTitlesData(
-                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
                   showTitles: true,
                   getTitlesWidget: (value, meta) => Padding(
                     padding: EdgeInsets.only(top: 8),
-                    child: Text('C${value.toInt() + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                    child: Text('C${value.toInt() + 1}',
+                        style: GoogleFonts.inter(
+                            fontSize: 11, fontWeight: FontWeight.w500)),
                   ),
                 )),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 40,
-                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(0)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text(
+                      '${value.toStringAsFixed(0)}A',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
-              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 2, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 2,
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(8, (c) {
-                final compData = compressors['compressor${c + 1}'] as Map<String, dynamic>? ?? {};
-                final phases = compData['phases'] as Map<String, dynamic>? ?? {};
-                final p1 = ((phases['phase1'] as Map<String, dynamic>?)?['avg'] ?? 0.0).toDouble();
-                final p2 = ((phases['phase2'] as Map<String, dynamic>?)?['avg'] ?? 0.0).toDouble();
-                final p3 = ((phases['phase3'] as Map<String, dynamic>?)?['avg'] ?? 0.0).toDouble();
+                final compData = compressors['compressor${c + 1}']
+                        as Map<String, dynamic>? ??
+                    {};
+                final phases =
+                    compData['phases'] as Map<String, dynamic>? ?? {};
+                final p1 =
+                    ((phases['phase1'] as Map<String, dynamic>?)?['avg'] ?? 0.0)
+                        .toDouble();
+                final p2 =
+                    ((phases['phase2'] as Map<String, dynamic>?)?['avg'] ?? 0.0)
+                        .toDouble();
+                final p3 =
+                    ((phases['phase3'] as Map<String, dynamic>?)?['avg'] ?? 0.0)
+                        .toDouble();
                 return BarChartGroupData(
                   x: c,
                   barsSpace: 2,
                   barRods: [
-                    BarChartRodData(toY: p1, color: phaseColors[0], width: 8, borderRadius: BorderRadius.vertical(top: Radius.circular(3))),
-                    BarChartRodData(toY: p2, color: phaseColors[1], width: 8, borderRadius: BorderRadius.vertical(top: Radius.circular(3))),
-                    BarChartRodData(toY: p3, color: phaseColors[2], width: 8, borderRadius: BorderRadius.vertical(top: Radius.circular(3))),
+                    BarChartRodData(
+                        toY: p1,
+                        color: phaseColors[0],
+                        width: 8,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(3))),
+                    BarChartRodData(
+                        toY: p2,
+                        color: phaseColors[1],
+                        width: 8,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(3))),
+                    BarChartRodData(
+                        toY: p3,
+                        color: phaseColors[2],
+                        width: 8,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(3))),
                   ],
                 );
               }),
@@ -5823,7 +6878,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice4DailyChart() {
     final data = device4AnalyticsData!.dailyData;
-    if (data.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No daily data')));
+    if (data.isEmpty)
+      return SizedBox(height: 200, child: Center(child: Text('No daily data')));
 
     final spots = <int, List<FlSpot>>{};
     for (int c = 1; c <= 8; c++) {
@@ -5837,58 +6893,91 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       }
     }
 
-    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
+    final colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.cyan,
+      Colors.pink,
+      Colors.teal
+    ];
 
     return Column(
       children: [
         Wrap(
-          spacing: 12, runSpacing: 4,
-          children: List.generate(8, (i) => _buildLegendItem(colors[i], 'Comp ${i + 1}')),
+          spacing: 12,
+          runSpacing: 4,
+          children: List.generate(
+              8, (i) => _buildLegendItem(colors[i], 'Comp ${i + 1}')),
         ),
         SizedBox(height: 12),
         SizedBox(
           height: 280,
           child: LineChart(
             LineChartData(
-              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 2, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 2,
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 30,
-                    interval: data.length > 12 ? (data.length / 6).ceil().toDouble() : 1,
+                    interval: data.length > 12
+                        ? (data.length / 6).ceil().toDouble()
+                        : 1,
                     getTitlesWidget: (value, meta) {
                       final idx = value.toInt();
                       if (idx >= 0 && idx < data.length) {
                         return Padding(
                           padding: EdgeInsets.only(top: 8),
-                          child: Text((data[idx]['date'] ?? '').toString().substring(5), style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                          child: Text(
+                              (data[idx]['date'] ?? '').toString().substring(5),
+                              style: GoogleFonts.inter(
+                                  fontSize: 10, color: Colors.grey[600])),
                         );
                       }
                       return Text('');
                     },
                   ),
                 ),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 40,
-                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(0)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text(
+                      '${value.toStringAsFixed(0)}A',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
-              lineBarsData: List.generate(8, (c) => LineChartBarData(
-                spots: spots[c + 1]!,
-                isCurved: true,
-                color: colors[c],
-                barWidth: 2,
-                dotData: FlDotData(show: false),
-              )),
+              lineBarsData: List.generate(
+                  8,
+                  (c) => LineChartBarData(
+                        spots: spots[c + 1]!,
+                        isCurved: true,
+                        color: colors[c],
+                        barWidth: 2,
+                        dotData: FlDotData(show: false),
+                      )),
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipItems: (spots) => spots.map((spot) =>
-                    LineTooltipItem('Comp ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(1)}A',
-                        TextStyle(color: colors[spot.barIndex], fontSize: 11))).toList(),
+                  getTooltipItems: (spots) => spots
+                      .map((spot) => LineTooltipItem(
+                          'Comp ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(1)}A',
+                          TextStyle(
+                              color: colors[spot.barIndex], fontSize: 11)))
+                      .toList(),
                 ),
               ),
             ),
@@ -5900,9 +6989,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice4PhaseDetailChart() {
     final data = device4AnalyticsData!.dailyData;
-    if (data.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No daily data')));
+    if (data.isEmpty)
+      return SizedBox(height: 200, child: Center(child: Text('No daily data')));
 
-    final phaseColors = [Colors.blue.shade600, Colors.amber.shade600, Colors.red.shade500];
+    final phaseColors = [
+      Colors.blue.shade600,
+      Colors.amber.shade600,
+      Colors.red.shade500
+    ];
 
     // Aggregate all compressor phase averages per day
     final p1Spots = <FlSpot>[];
@@ -5917,7 +7011,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         final v2 = (data[i]['comp${c}_phase2'] ?? 0.0).toDouble();
         final v3 = (data[i]['comp${c}_phase3'] ?? 0.0).toDouble();
         if (v1 > 0 || v2 > 0 || v3 > 0) {
-          sum1 += v1; sum2 += v2; sum3 += v3;
+          sum1 += v1;
+          sum2 += v2;
+          sum3 += v3;
           count++;
         }
       }
@@ -5930,59 +7026,111 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(phaseColors[0], 'Phase 1 Avg'),
-            SizedBox(width: 16),
-            _buildLegendItem(phaseColors[1], 'Phase 2 Avg'),
-            SizedBox(width: 16),
-            _buildLegendItem(phaseColors[2], 'Phase 3 Avg'),
-          ],
-        ),
+        isPhoneLayout(context)
+            ? Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                    _buildLegendItem(phaseColors[0], 'Phase 1 Avg'),
+                    SizedBox(width: 16),
+                    _buildLegendItem(phaseColors[1], 'Phase 2 Avg'),
+                    SizedBox(width: 16),
+                    _buildLegendItem(phaseColors[2], 'Phase 3 Avg'),
+                  ])
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegendItem(phaseColors[0], 'Phase 1 Avg'),
+                  SizedBox(width: 16),
+                  _buildLegendItem(phaseColors[1], 'Phase 2 Avg'),
+                  SizedBox(width: 16),
+                  _buildLegendItem(phaseColors[2], 'Phase 3 Avg'),
+                ],
+              ),
         SizedBox(height: 12),
         SizedBox(
           height: 280,
           child: LineChart(
             LineChartData(
-              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 2, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 2,
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 30,
-                    interval: data.length > 12 ? (data.length / 6).ceil().toDouble() : 1,
+                    interval: data.length > 12
+                        ? (data.length / 6).ceil().toDouble()
+                        : 1,
                     getTitlesWidget: (value, meta) {
                       final idx = value.toInt();
                       if (idx >= 0 && idx < data.length) {
                         return Padding(
                           padding: EdgeInsets.only(top: 8),
-                          child: Text((data[idx]['date'] ?? '').toString().substring(5), style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                          child: Text(
+                              (data[idx]['date'] ?? '').toString().substring(5),
+                              style: GoogleFonts.inter(
+                                  fontSize: 10, color: Colors.grey[600])),
                         );
                       }
                       return Text('');
                     },
                   ),
                 ),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 40,
-                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(0)}A', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text(
+                      '${value.toStringAsFixed(0)}A',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
               lineBarsData: [
-                LineChartBarData(spots: p1Spots, isCurved: true, color: phaseColors[0], barWidth: 2.5, dotData: FlDotData(show: false), belowBarData: BarAreaData(show: true, color: phaseColors[0].withOpacity(0.08))),
-                LineChartBarData(spots: p2Spots, isCurved: true, color: phaseColors[1], barWidth: 2.5, dotData: FlDotData(show: false), belowBarData: BarAreaData(show: true, color: phaseColors[1].withOpacity(0.08))),
-                LineChartBarData(spots: p3Spots, isCurved: true, color: phaseColors[2], barWidth: 2.5, dotData: FlDotData(show: false), belowBarData: BarAreaData(show: true, color: phaseColors[2].withOpacity(0.08))),
+                LineChartBarData(
+                    spots: p1Spots,
+                    isCurved: true,
+                    color: phaseColors[0],
+                    barWidth: 2.5,
+                    dotData: FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                        show: true, color: phaseColors[0].withOpacity(0.08))),
+                LineChartBarData(
+                    spots: p2Spots,
+                    isCurved: true,
+                    color: phaseColors[1],
+                    barWidth: 2.5,
+                    dotData: FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                        show: true, color: phaseColors[1].withOpacity(0.08))),
+                LineChartBarData(
+                    spots: p3Spots,
+                    isCurved: true,
+                    color: phaseColors[2],
+                    barWidth: 2.5,
+                    dotData: FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                        show: true, color: phaseColors[2].withOpacity(0.08))),
               ],
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
                   getTooltipItems: (spots) => spots.map((spot) {
                     final names = ['Phase 1', 'Phase 2', 'Phase 3'];
-                    return LineTooltipItem('${names[spot.barIndex]}: ${spot.y.toStringAsFixed(1)}A',
-                        TextStyle(color: phaseColors[spot.barIndex], fontSize: 11));
+                    return LineTooltipItem(
+                        '${names[spot.barIndex]}: ${spot.y.toStringAsFixed(1)}A',
+                        TextStyle(
+                            color: phaseColors[spot.barIndex], fontSize: 11));
                   }).toList(),
                 ),
               ),
@@ -6016,7 +7164,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFF1F5F9)),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: Row(
               children: [
@@ -6033,8 +7186,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Relay Controller', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
-                      Text('${stats['total_readings'] ?? 0} readings | 16 relays', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[600])),
+                      Text('Relay Controller',
+                          style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF0F172A))),
+                      Text(
+                          '${stats['total_readings'] ?? 0} readings | 16 relays',
+                          style: GoogleFonts.inter(
+                              fontSize: 13, color: Colors.grey[600])),
                     ],
                   ),
                 ),
@@ -6044,49 +7204,83 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           SizedBox(height: spacing),
 
           // Summary Stats Row
-          GridView.count(
+          _readingGrid(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
-            crossAxisCount: isMobile ? 2 : 4,
+            crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 4),
             childAspectRatio: isMobile ? 2.2 : 2.5,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             children: [
-              _buildSummaryStatCard('Relays ON', '${stats['relays_on'] ?? 0}', Icons.toggle_on, Colors.green),
-              _buildSummaryStatCard('Relays OFF', '${stats['relays_off'] ?? 0}', Icons.toggle_off, Colors.grey),
-              _buildSummaryStatCard('Avg Duty Cycle', '${(stats['avg_duty_cycle'] ?? 0).toStringAsFixed(1)}%', Icons.speed, Colors.indigo),
-              _buildSummaryStatCard('State Changes', '${stats['total_state_changes'] ?? 0}', Icons.swap_vert, Colors.orange),
+              _buildSummaryStatCard('Relays ON', '${stats['relays_on'] ?? 0}',
+                  Icons.toggle_on, Colors.green),
+              _buildSummaryStatCard('Relays OFF', '${stats['relays_off'] ?? 0}',
+                  Icons.toggle_off, Colors.grey),
+              _buildSummaryStatCard(
+                  'Avg Duty Cycle',
+                  '${(stats['avg_duty_cycle'] ?? 0).toStringAsFixed(1)}%',
+                  Icons.speed,
+                  Colors.indigo),
+              _buildSummaryStatCard(
+                  'State Changes',
+                  '${stats['total_state_changes'] ?? 0}',
+                  Icons.swap_vert,
+                  Colors.orange),
             ],
           ),
           SizedBox(height: spacing),
 
           // Runtime Overview Section
-          Text('Runtime Overview', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          Text('Runtime Overview',
+              style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800])),
           SizedBox(height: 8),
-          GridView.count(
+          _readingGrid(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
-            crossAxisCount: isMobile ? 2 : 4,
+            crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 4),
             childAspectRatio: isMobile ? 2.2 : 2.5,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             children: [
-              _buildSummaryStatCard('Active Relays', '${stats['active_relay_count'] ?? 0}', Icons.power, Colors.green),
-              _buildSummaryStatCard('Total Runtime', '${(stats['total_runtime_hours'] ?? 0).toStringAsFixed(1)} hrs', Icons.timer, Colors.blue),
-              _buildSummaryStatCard('Most Active', 'Relay ${stats['most_active_relay'] ?? '-'}', Icons.star, Colors.amber),
-              _buildSummaryStatCard('Least Active', 'Relay ${stats['least_active_relay'] ?? '-'}', Icons.star_border, Colors.grey),
+              _buildSummaryStatCard(
+                  'Active Relays',
+                  '${stats['active_relay_count'] ?? 0}',
+                  Icons.power,
+                  Colors.green),
+              _buildSummaryStatCard(
+                  'Total Runtime',
+                  '${(stats['total_runtime_hours'] ?? 0).toStringAsFixed(1)} hrs',
+                  Icons.timer,
+                  Colors.blue),
+              _buildSummaryStatCard(
+                  'Most Active',
+                  'Relay ${stats['most_active_relay'] ?? '-'}',
+                  Icons.star,
+                  Colors.amber),
+              _buildSummaryStatCard(
+                  'Least Active',
+                  'Relay ${stats['least_active_relay'] ?? '-'}',
+                  Icons.star_border,
+                  Colors.grey),
             ],
           ),
           SizedBox(height: spacing),
 
           // Relay Duty Cycle Grid
-          Text('Relay Duty Cycles & Status', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          Text('Relay Duty Cycles & Status',
+              style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800])),
           SizedBox(height: 8),
-          GridView.builder(
+          _readingGridBuilder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isMobile ? 2 : 4,
+              crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 4),
               childAspectRatio: isMobile ? 1.3 : 1.5,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
@@ -6098,16 +7292,34 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               final dutyCycle = (relayData['duty_cycle_pct'] ?? 0.0).toDouble();
               final currentState = relayData['current_state'] == true;
               final stateChanges = relayData['state_changes'] ?? 0;
-              final runtimeHours = (relayData['runtime_hours'] ?? 0.0).toDouble();
+              final runtimeHours =
+                  (relayData['runtime_hours'] ?? 0.0).toDouble();
               final isActive = dutyCycle > 50;
 
+              if (isPhoneLayout(context)) {
+                return _phoneReadingCard(title: 'Relay ${index + 1}',
+                  value: '${dutyCycle.toStringAsFixed(1)}%', icon: Icons.toggle_on_outlined,
+                  color: currentState ? Colors.green : Colors.grey,
+                  details: ['${currentState ? 'ON' : 'OFF'} · duty cycle',
+                    '$stateChanges transitions',
+                    if (runtimeHours > 0) '${runtimeHours.toStringAsFixed(1)} hrs runtime',
+                  ]);
+              }
               return Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: currentState ? Colors.green.withOpacity(0.3) : Colors.grey.withOpacity(0.2)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: Offset(0, 2))],
+                  border: Border.all(
+                      color: currentState
+                          ? Colors.green.withOpacity(0.3)
+                          : Colors.grey.withOpacity(0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 4,
+                        offset: Offset(0, 2))
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -6116,21 +7328,37 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     Row(
                       children: [
                         Container(
-                          width: 8, height: 8,
+                          width: 8,
+                          height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: currentState ? Colors.green : Colors.grey.shade400,
+                            color: currentState
+                                ? Colors.green
+                                : Colors.grey.shade400,
                           ),
                         ),
                         SizedBox(width: 6),
-                        Text('Relay ${index + 1}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                        Text('Relay ${index + 1}',
+                            style: GoogleFonts.inter(
+                                fontSize: 12, fontWeight: FontWeight.w600)),
                         Spacer(),
-                        Text(currentState ? 'ON' : 'OFF', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: currentState ? Colors.green : Colors.grey)),
+                        Text(currentState ? 'ON' : 'OFF',
+                            style: GoogleFonts.inter(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    currentState ? Colors.green : Colors.grey)),
                       ],
                     ),
                     SizedBox(height: 6),
-                    Text('${dutyCycle.toStringAsFixed(1)}%', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: isActive ? Colors.green[700] : Colors.grey)),
-                    Text('duty cycle', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[500])),
+                    Text('${dutyCycle.toStringAsFixed(1)}%',
+                        style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: isActive ? Colors.green[700] : Colors.grey)),
+                    Text('duty cycle',
+                        style: GoogleFonts.inter(
+                            fontSize: 10, color: Colors.grey[500])),
                     SizedBox(height: 4),
                     // Progress bar
                     ClipRRect(
@@ -6138,15 +7366,22 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       child: LinearProgressIndicator(
                         value: dutyCycle / 100,
                         backgroundColor: Colors.grey.shade200,
-                        valueColor: AlwaysStoppedAnimation<Color>(isActive ? Colors.green : Colors.orange),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            isActive ? Colors.green : Colors.orange),
                         minHeight: 4,
                       ),
                     ),
                     SizedBox(height: 4),
-                    Text('$stateChanges transitions', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                    Text('$stateChanges transitions',
+                        style: GoogleFonts.inter(
+                            fontSize: 9, color: Colors.grey[500])),
                     if (runtimeHours > 0) ...[
                       SizedBox(height: 2),
-                      Text('${runtimeHours.toStringAsFixed(1)} hrs runtime', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w500, color: Colors.indigo)),
+                      Text('${runtimeHours.toStringAsFixed(1)} hrs runtime',
+                          style: GoogleFonts.inter(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.indigo)),
                     ],
                   ],
                 ),
@@ -6156,7 +7391,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           SizedBox(height: spacing),
 
           // All Relays Duty Cycle Bar Chart
-          _buildChart('Relay Duty Cycle Overview', _buildDevice5DutyCycleBarChart()),
+          _buildChart(
+              'Relay Duty Cycle Overview', _buildDevice5DutyCycleBarChart()),
           SizedBox(height: spacing),
 
           // Hourly Activity Heatmap-style Bar Chart
@@ -6167,13 +7403,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
           // Daily Duty Cycle Trends (Relays 1-8)
           if (data.dailyData.isNotEmpty)
-            _buildChart('Daily Duty Trends (Relays 1-8)', _buildDevice5DailyChart(1, 8)),
-          if (data.dailyData.isNotEmpty)
-            SizedBox(height: spacing),
+            _buildChart('Daily Duty Trends (Relays 1-8)',
+                _buildDevice5DailyChart(1, 8)),
+          if (data.dailyData.isNotEmpty) SizedBox(height: spacing),
 
           // Daily Duty Cycle Trends (Relays 9-16)
           if (data.dailyData.isNotEmpty)
-            _buildChart('Daily Duty Trends (Relays 9-16)', _buildDevice5DailyChart(9, 16)),
+            _buildChart('Daily Duty Trends (Relays 9-16)',
+                _buildDevice5DailyChart(9, 16)),
         ],
       ),
     );
@@ -6182,18 +7419,29 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Widget _buildDevice5DutyCycleBarChart() {
     final stats = device5AnalyticsData!.overallStatistics;
     final relays = stats['relays'] as Map<String, dynamic>? ?? {};
-    if (relays.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+    if (relays.isEmpty)
+      return SizedBox(height: 200, child: Center(child: Text('No data')));
 
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(Colors.green.shade600, 'High Duty (>50%)'),
-            SizedBox(width: 16),
-            _buildLegendItem(Colors.orange, 'Low Duty (\u226450%)'),
-          ],
-        ),
+        isPhoneLayout(context)
+            ? Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                    _buildLegendItem(Colors.green.shade600, 'High Duty (>50%)'),
+                    SizedBox(width: 16),
+                    _buildLegendItem(Colors.orange, 'Low Duty (\u226450%)'),
+                  ])
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegendItem(Colors.green.shade600, 'High Duty (>50%)'),
+                  SizedBox(width: 16),
+                  _buildLegendItem(Colors.orange, 'Low Duty (\u226450%)'),
+                ],
+              ),
         SizedBox(height: 12),
         SizedBox(
           height: 300,
@@ -6212,28 +7460,44 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 ),
               ),
               titlesData: FlTitlesData(
-                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
                   showTitles: true,
                   getTitlesWidget: (value, meta) => Padding(
                     padding: EdgeInsets.only(top: 8),
-                    child: Text('R${value.toInt() + 1}', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w500)),
+                    child: Text('R${value.toInt() + 1}',
+                        style: GoogleFonts.inter(
+                            fontSize: 10, fontWeight: FontWeight.w500)),
                   ),
                 )),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 40,
-                  getTitlesWidget: (value, meta) => Text('${value.toInt()}%', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text('${value.toInt()}%',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               gridData: FlGridData(
-                show: true, drawVerticalLine: false,
+                show: true,
+                drawVerticalLine: false,
                 horizontalInterval: 25,
-                getDrawingHorizontalLine: (value) => FlLine(color: value == 50 ? Colors.grey.shade400 : Colors.grey.shade200, strokeWidth: value == 50 ? 1.5 : 1, dashArray: value == 50 ? [5, 5] : null),
+                getDrawingHorizontalLine: (value) => FlLine(
+                    color: value == 50
+                        ? Colors.grey.shade400
+                        : Colors.grey.shade200,
+                    strokeWidth: value == 50 ? 1.5 : 1,
+                    dashArray: value == 50 ? [5, 5] : null),
               ),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(16, (i) {
-                final relayData = relays['relay${i + 1}'] as Map<String, dynamic>? ?? {};
+                final relayData =
+                    relays['relay${i + 1}'] as Map<String, dynamic>? ?? {};
                 final duty = (relayData['duty_cycle_pct'] ?? 0.0).toDouble();
                 final isHigh = duty > 50;
                 return BarChartGroupData(
@@ -6243,8 +7507,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       toY: duty,
                       color: isHigh ? Colors.green.shade600 : Colors.orange,
                       width: 14,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
-                      backDrawRodData: BackgroundBarChartRodData(show: true, toY: 100, color: Colors.grey.shade100),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(3)),
+                      backDrawRodData: BackgroundBarChartRodData(
+                          show: true, toY: 100, color: Colors.grey.shade100),
                     ),
                   ],
                 );
@@ -6258,7 +7524,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice5HourlyChart() {
     final hourlyData = device5AnalyticsData!.hourlyRelayDistribution;
-    if (hourlyData.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No hourly data')));
+    if (hourlyData.isEmpty)
+      return SizedBox(
+          height: 200, child: Center(child: Text('No hourly data')));
 
     // Average all relay duty cycles per hour to get overall activity level
     final hourSpots = <FlSpot>[];
@@ -6280,14 +7548,25 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(Colors.indigo, 'Avg Relay Activity'),
-            SizedBox(width: 16),
-            _buildLegendItem(Colors.red.shade400, 'Peak Relay Activity'),
-          ],
-        ),
+        isPhoneLayout(context)
+            ? Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                    _buildLegendItem(Colors.indigo, 'Avg Relay Activity'),
+                    SizedBox(width: 16),
+                    _buildLegendItem(
+                        Colors.red.shade400, 'Peak Relay Activity'),
+                  ])
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegendItem(Colors.indigo, 'Avg Relay Activity'),
+                  SizedBox(width: 16),
+                  _buildLegendItem(Colors.red.shade400, 'Peak Relay Activity'),
+                ],
+              ),
         SizedBox(height: 12),
         SizedBox(
           height: 280,
@@ -6295,34 +7574,57 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             LineChartData(
               maxY: 105,
               minY: 0,
-              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 25, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 25,
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
               titlesData: FlTitlesData(
-                bottomTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 30,
+                bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 30,
                   interval: 2,
                   getTitlesWidget: (value, meta) => Padding(
                     padding: EdgeInsets.only(top: 8),
-                    child: Text('${value.toInt()}h', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                    child: Text('${value.toInt()}h',
+                        style: GoogleFonts.inter(
+                            fontSize: 10, color: Colors.grey[600])),
                   ),
                 )),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 40,
-                  getTitlesWidget: (value, meta) => Text('${value.toInt()}%', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text('${value.toInt()}%',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
               lineBarsData: [
                 LineChartBarData(
-                  spots: highRelaySpots, isCurved: true, color: Colors.red.shade400, barWidth: 2,
+                  spots: highRelaySpots,
+                  isCurved: true,
+                  color: Colors.red.shade400,
+                  barWidth: 2,
                   dotData: FlDotData(show: false),
-                  belowBarData: BarAreaData(show: true, color: Colors.red.withOpacity(0.06)),
+                  belowBarData: BarAreaData(
+                      show: true, color: Colors.red.withOpacity(0.06)),
                 ),
                 LineChartBarData(
-                  spots: hourSpots, isCurved: true, color: Colors.indigo, barWidth: 2.5,
+                  spots: hourSpots,
+                  isCurved: true,
+                  color: Colors.indigo,
+                  barWidth: 2.5,
                   dotData: FlDotData(show: false),
-                  belowBarData: BarAreaData(show: true, color: Colors.indigo.withOpacity(0.1)),
+                  belowBarData: BarAreaData(
+                      show: true, color: Colors.indigo.withOpacity(0.1)),
                 ),
               ],
               lineTouchData: LineTouchData(
@@ -6330,7 +7632,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTooltipItems: (spots) => spots.map((spot) {
                     final labels = ['Peak', 'Avg'];
                     final colors = [Colors.red.shade400, Colors.indigo];
-                    return LineTooltipItem('${labels[spot.barIndex]}: ${spot.y.toStringAsFixed(1)}%',
+                    return LineTooltipItem(
+                        '${labels[spot.barIndex]}: ${spot.y.toStringAsFixed(1)}%',
                         TextStyle(color: colors[spot.barIndex], fontSize: 11));
                   }).toList(),
                 ),
@@ -6344,7 +7647,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice5DailyChart(int fromRelay, int toRelay) {
     final data = device5AnalyticsData!.dailyData;
-    if (data.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No daily data')));
+    if (data.isEmpty)
+      return SizedBox(height: 200, child: Center(child: Text('No daily data')));
 
     final relayCount = toRelay - fromRelay + 1;
     final spots = <int, List<FlSpot>>{};
@@ -6359,13 +7663,26 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       }
     }
 
-    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
+    final colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.cyan,
+      Colors.pink,
+      Colors.teal
+    ];
 
     return Column(
       children: [
         Wrap(
-          spacing: 12, runSpacing: 4,
-          children: List.generate(relayCount, (i) => _buildLegendItem(colors[i % colors.length], 'R${fromRelay + i}')),
+          spacing: 12,
+          runSpacing: 4,
+          children: List.generate(
+              relayCount,
+              (i) => _buildLegendItem(
+                  colors[i % colors.length], 'R${fromRelay + i}')),
         ),
         SizedBox(height: 12),
         SizedBox(
@@ -6374,45 +7691,67 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             LineChartData(
               maxY: 105,
               minY: 0,
-              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 25, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 25,
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 30,
-                    interval: data.length > 12 ? (data.length / 6).ceil().toDouble() : 1,
+                    interval: data.length > 12
+                        ? (data.length / 6).ceil().toDouble()
+                        : 1,
                     getTitlesWidget: (value, meta) {
                       final idx = value.toInt();
                       if (idx >= 0 && idx < data.length) {
                         return Padding(
                           padding: EdgeInsets.only(top: 8),
-                          child: Text((data[idx]['date'] ?? '').toString().substring(5), style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                          child: Text(
+                              (data[idx]['date'] ?? '').toString().substring(5),
+                              style: GoogleFonts.inter(
+                                  fontSize: 10, color: Colors.grey[600])),
                         );
                       }
                       return Text('');
                     },
                   ),
                 ),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 40,
-                  getTitlesWidget: (value, meta) => Text('${value.toInt()}%', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, meta) => Text('${value.toInt()}%',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
-              lineBarsData: List.generate(relayCount, (i) => LineChartBarData(
-                spots: spots[fromRelay + i]!,
-                isCurved: true,
-                color: colors[i % colors.length],
-                barWidth: 2,
-                dotData: FlDotData(show: false),
-              )),
+              lineBarsData: List.generate(
+                  relayCount,
+                  (i) => LineChartBarData(
+                        spots: spots[fromRelay + i]!,
+                        isCurved: true,
+                        color: colors[i % colors.length],
+                        barWidth: 2,
+                        dotData: FlDotData(show: false),
+                      )),
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipItems: (touchedSpots) => touchedSpots.map((spot) =>
-                    LineTooltipItem('R${fromRelay + spot.barIndex}: ${spot.y.toStringAsFixed(1)}%',
-                        TextStyle(color: colors[spot.barIndex % colors.length], fontSize: 11))).toList(),
+                  getTooltipItems: (touchedSpots) => touchedSpots
+                      .map((spot) => LineTooltipItem(
+                          'R${fromRelay + spot.barIndex}: ${spot.y.toStringAsFixed(1)}%',
+                          TextStyle(
+                              color: colors[spot.barIndex % colors.length],
+                              fontSize: 11)))
+                      .toList(),
                 ),
               ),
             ),
@@ -6438,7 +7777,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       try {
         final dt = DateTime.parse(iso);
         return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-      } catch (_) { return '--'; }
+      } catch (_) {
+        return '--';
+      }
     }
 
     return SingleChildScrollView(
@@ -6453,7 +7794,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFF1F5F9)),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: Row(
               children: [
@@ -6470,9 +7816,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Pressure Monitor', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
-                      Text('${stats['total_readings'] ?? 0} readings | 8 sensors', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[600])),
-                      Text('Range: ${stats['min_overall'] ?? 0} - ${stats['max_overall'] ?? 0} psi', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500])),
+                      Text('Pressure Monitor',
+                          style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF0F172A))),
+                      Text(
+                          '${stats['total_readings'] ?? 0} readings | 8 sensors',
+                          style: GoogleFonts.inter(
+                              fontSize: 13, color: Colors.grey[600])),
+                      Text(
+                          'Range: ${stats['min_overall'] ?? 0} - ${stats['max_overall'] ?? 0} psi',
+                          style: GoogleFonts.inter(
+                              fontSize: 12, color: Colors.grey[500])),
                     ],
                   ),
                 ),
@@ -6482,49 +7838,89 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           SizedBox(height: spacing),
 
           // Summary Stats Row
-          GridView.count(
+          _readingGrid(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
-            crossAxisCount: isMobile ? 2 : 4,
+            crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 4),
             childAspectRatio: isMobile ? 2.2 : 2.5,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             children: [
-              _buildSummaryStatCard('Avg Pressure', '${(stats['avg_overall'] ?? 0).toStringAsFixed(2)} psi', Icons.speed, Colors.teal),
-              _buildSummaryStatCard('Min Overall', '${(stats['min_overall'] ?? 0).toStringAsFixed(2)} psi', Icons.arrow_downward, Colors.blue),
-              _buildSummaryStatCard('Max Overall', '${(stats['max_overall'] ?? 0).toStringAsFixed(2)} psi', Icons.arrow_upward, Colors.red),
-              _buildSummaryStatCard('Most Stable', 'Sensor ${stats['most_stable_sensor'] ?? '-'}', Icons.check_circle, Colors.green),
+              _buildSummaryStatCard(
+                  'Avg Pressure',
+                  '${(stats['avg_overall'] ?? 0).toStringAsFixed(2)} psi',
+                  Icons.speed,
+                  Colors.teal),
+              _buildSummaryStatCard(
+                  'Min Overall',
+                  '${(stats['min_overall'] ?? 0).toStringAsFixed(2)} psi',
+                  Icons.arrow_downward,
+                  Colors.blue),
+              _buildSummaryStatCard(
+                  'Max Overall',
+                  '${(stats['max_overall'] ?? 0).toStringAsFixed(2)} psi',
+                  Icons.arrow_upward,
+                  Colors.red),
+              _buildSummaryStatCard(
+                  'Most Stable',
+                  'Sensor ${stats['most_stable_sensor'] ?? '-'}',
+                  Icons.check_circle,
+                  Colors.green),
             ],
           ),
           SizedBox(height: spacing),
 
           // Stability Analysis Section
-          Text('Stability Analysis', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          Text('Stability Analysis',
+              style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800])),
           SizedBox(height: 8),
-          GridView.count(
+          _readingGrid(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
-            crossAxisCount: isMobile ? 2 : 4,
+            crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 4),
             childAspectRatio: isMobile ? 2.2 : 2.5,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             children: [
-              _buildSummaryStatCard('Stability Score', '${(stats['avg_stability_score'] ?? 0).toStringAsFixed(1)}%', Icons.verified, Colors.teal),
-              _buildSummaryStatCard('Most Stable', 'Sensor ${stats['most_stable_sensor'] ?? '-'}', Icons.check_circle, Colors.green),
-              _buildSummaryStatCard('Least Stable', 'Sensor ${stats['least_stable_sensor'] ?? '-'}', Icons.warning, Colors.orange),
-              _buildSummaryStatCard('Avg Pressure', '${(stats['avg_overall'] ?? 0).toStringAsFixed(2)} psi', Icons.speed, Colors.blue),
+              _buildSummaryStatCard(
+                  'Stability Score',
+                  '${(stats['avg_stability_score'] ?? 0).toStringAsFixed(1)}%',
+                  Icons.verified,
+                  Colors.teal),
+              _buildSummaryStatCard(
+                  'Most Stable',
+                  'Sensor ${stats['most_stable_sensor'] ?? '-'}',
+                  Icons.check_circle,
+                  Colors.green),
+              _buildSummaryStatCard(
+                  'Least Stable',
+                  'Sensor ${stats['least_stable_sensor'] ?? '-'}',
+                  Icons.warning,
+                  Colors.orange),
+              _buildSummaryStatCard(
+                  'Avg Pressure',
+                  '${(stats['avg_overall'] ?? 0).toStringAsFixed(2)} psi',
+                  Icons.speed,
+                  Colors.blue),
             ],
           ),
           SizedBox(height: spacing),
 
           // Sensor Grid
-          Text('Pressure Sensors', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+          Text('Pressure Sensors',
+              style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800])),
           SizedBox(height: 8),
-          GridView.builder(
+          _readingGridBuilder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isMobile ? 2 : 4,
+              crossAxisCount: isPhoneLayout(context) ? 1 : (isMobile ? 2 : 4),
               childAspectRatio: isMobile ? 0.8 : 0.9,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
@@ -6532,22 +7928,39 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             itemCount: 8,
             itemBuilder: (context, index) {
               final sensorKey = 'sensor${index + 1}';
-              final sensorData = sensors[sensorKey] as Map<String, dynamic>? ?? {};
+              final sensorData =
+                  sensors[sensorKey] as Map<String, dynamic>? ?? {};
               final avg = (sensorData['avg'] ?? 0.0).toDouble();
               final min = (sensorData['min'] ?? 0.0).toDouble();
               final max = (sensorData['max'] ?? 0.0).toDouble();
               final minTime = sensorData['min_time'] as String?;
               final maxTime = sensorData['max_time'] as String?;
-              final stabilityScore = (sensorData['stability_score'] ?? 0.0).toDouble();
+              final stabilityScore =
+                  (sensorData['stability_score'] ?? 0.0).toDouble();
               final range = max - min;
 
+              if (isPhoneLayout(context)) {
+                return _phoneReadingCard(title: 'Sensor ${index + 1}',
+                  value: '${avg.toStringAsFixed(2)} psi', icon: Icons.speed,
+                  color: Colors.teal, details: ['Average pressure',
+                    'Min: ${min.toStringAsFixed(2)}${minTime != null ? ' · ${_fmtTime(minTime)}' : ''}',
+                    'Max: ${max.toStringAsFixed(2)}${maxTime != null ? ' · ${_fmtTime(maxTime)}' : ''}',
+                    'Range: ${range.toStringAsFixed(3)} psi',
+                    '${stabilityScore.toStringAsFixed(0)}% stable',
+                  ]);
+              }
               return Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.teal.withOpacity(0.2)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: Offset(0, 2))],
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 4,
+                        offset: Offset(0, 2))
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -6557,45 +7970,91 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       children: [
                         Icon(Icons.speed, size: 16, color: Colors.teal),
                         SizedBox(width: 4),
-                        Text('Sensor ${index + 1}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                        Text('Sensor ${index + 1}',
+                            style: GoogleFonts.inter(
+                                fontSize: 12, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     SizedBox(height: 4),
-                    Text('${avg.toStringAsFixed(2)} psi', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87)),
-                    Text('average', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                    Text('${avg.toStringAsFixed(2)} psi',
+                        style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87)),
+                    Text('average',
+                        style: GoogleFonts.inter(
+                            fontSize: 9, color: Colors.grey[500])),
                     Divider(height: 10, thickness: 0.5),
                     Row(
                       children: [
-                        Icon(Icons.arrow_downward, size: 10, color: Colors.blue),
+                        Icon(Icons.arrow_downward,
+                            size: 10, color: Colors.blue),
                         SizedBox(width: 2),
-                        Expanded(child: Text('${min.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.blue))),
+                        Expanded(
+                            child: Text('${min.toStringAsFixed(2)}',
+                                style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blue))),
                         Icon(Icons.arrow_upward, size: 10, color: Colors.red),
                         SizedBox(width: 2),
-                        Text('${max.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.red)),
+                        Text('${max.toStringAsFixed(2)}',
+                            style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.red)),
                       ],
                     ),
                     SizedBox(height: 2),
-                    if (minTime != null) Text('Min: ${_fmtTime(minTime)}', style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[500])),
-                    if (maxTime != null) Text('Max: ${_fmtTime(maxTime)}', style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[500])),
+                    if (minTime != null)
+                      Text('Min: ${_fmtTime(minTime)}',
+                          style: GoogleFonts.inter(
+                              fontSize: 8, color: Colors.grey[500])),
+                    if (maxTime != null)
+                      Text('Max: ${_fmtTime(maxTime)}',
+                          style: GoogleFonts.inter(
+                              fontSize: 8, color: Colors.grey[500])),
                     SizedBox(height: 4),
-                    Text('Range: ${range.toStringAsFixed(3)} psi', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[600])),
+                    Text('Range: ${range.toStringAsFixed(3)} psi',
+                        style: GoogleFonts.inter(
+                            fontSize: 9, color: Colors.grey[600])),
                     SizedBox(height: 4),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: stabilityScore >= 80 ? Colors.green.withOpacity(0.1) : stabilityScore >= 50 ? Colors.orange.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                        color: stabilityScore >= 80
+                            ? Colors.green.withOpacity(0.1)
+                            : stabilityScore >= 50
+                                ? Colors.orange.withOpacity(0.1)
+                                : Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            stabilityScore >= 80 ? Icons.check_circle : stabilityScore >= 50 ? Icons.warning_amber : Icons.error,
+                            stabilityScore >= 80
+                                ? Icons.check_circle
+                                : stabilityScore >= 50
+                                    ? Icons.warning_amber
+                                    : Icons.error,
                             size: 10,
-                            color: stabilityScore >= 80 ? Colors.green : stabilityScore >= 50 ? Colors.orange : Colors.red,
+                            color: stabilityScore >= 80
+                                ? Colors.green
+                                : stabilityScore >= 50
+                                    ? Colors.orange
+                                    : Colors.red,
                           ),
                           SizedBox(width: 3),
-                          Text('${stabilityScore.toStringAsFixed(0)}% stable', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: stabilityScore >= 80 ? Colors.green : stabilityScore >= 50 ? Colors.orange : Colors.red)),
+                          Text('${stabilityScore.toStringAsFixed(0)}% stable',
+                              style: GoogleFonts.inter(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w600,
+                                  color: stabilityScore >= 80
+                                      ? Colors.green
+                                      : stabilityScore >= 50
+                                          ? Colors.orange
+                                          : Colors.red)),
                         ],
                       ),
                     ),
@@ -6607,7 +8066,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           SizedBox(height: spacing),
 
           // Sensor Comparison Bar Chart (avg/min/max)
-          _buildChart('Sensor Pressure Comparison', _buildDevice6SensorBarChart()),
+          _buildChart(
+              'Sensor Pressure Comparison', _buildDevice6SensorBarChart(), naturalHeight: true),
           SizedBox(height: spacing),
 
           // Pressure Range Envelope (min/max with area fill)
@@ -6617,11 +8077,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           // All Sensors Daily Trend
           if (data.dailyData.isNotEmpty)
             _buildChart('Daily Pressure Trends', _buildDevice6DailyChart()),
-          if (data.dailyData.isNotEmpty)
-            SizedBox(height: spacing),
+          if (data.dailyData.isNotEmpty) SizedBox(height: spacing),
 
           // Pressure Stability (spread per sensor)
-          _buildChart('Pressure Stability (Range per Sensor)', _buildDevice6StabilityChart()),
+          _buildChart('Pressure Stability (Range per Sensor)',
+              _buildDevice6StabilityChart()),
         ],
       ),
     );
@@ -6630,9 +8090,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Widget _buildDevice6SensorBarChart() {
     final stats = device6AnalyticsData!.overallStatistics;
     final sensors = stats['sensors'] as Map<String, dynamic>? ?? {};
-    if (sensors.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+    if (sensors.isEmpty)
+      return SizedBox(height: 200, child: Center(child: Text('No data')));
 
-    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
+    final colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.cyan,
+      Colors.pink,
+      Colors.teal
+    ];
 
     double maxVal = 0;
     for (int s = 1; s <= 8; s++) {
@@ -6644,8 +8114,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Column(
       children: [
         Wrap(
-          spacing: 12, runSpacing: 4,
-          children: List.generate(8, (i) => _buildLegendItem(colors[i], 'Sensor ${i + 1}')),
+          spacing: 12,
+          runSpacing: 4,
+          children: List.generate(
+              8, (i) => _buildLegendItem(colors[i], 'Sensor ${i + 1}')),
         ),
         SizedBox(height: 12),
         SizedBox(
@@ -6657,7 +8129,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    final sensorData = sensors['sensor${groupIndex + 1}'] as Map<String, dynamic>? ?? {};
+                    final sensorData = sensors['sensor${groupIndex + 1}']
+                            as Map<String, dynamic>? ??
+                        {};
                     return BarTooltipItem(
                       'Sensor ${groupIndex + 1}\nAvg: ${(sensorData['avg'] ?? 0).toStringAsFixed(2)} psi\nMin: ${(sensorData['min'] ?? 0).toStringAsFixed(2)} psi\nMax: ${(sensorData['max'] ?? 0).toStringAsFixed(2)} psi',
                       GoogleFonts.inter(color: Colors.white, fontSize: 11),
@@ -6666,24 +8140,40 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 ),
               ),
               titlesData: FlTitlesData(
-                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
                   showTitles: true,
                   getTitlesWidget: (value, meta) => Padding(
                     padding: EdgeInsets.only(top: 8),
-                    child: Text('S${value.toInt() + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                    child: Text('S${value.toInt() + 1}',
+                        style: GoogleFonts.inter(
+                            fontSize: 11, fontWeight: FontWeight.w500)),
                   ),
                 )),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 45,
-                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(1)}', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 45,
+                  getTitlesWidget: (value, meta) => Text(
+                      '${value.toStringAsFixed(1)}',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
-              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 1, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 1,
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(8, (i) {
-                final sensorData = sensors['sensor${i + 1}'] as Map<String, dynamic>? ?? {};
+                final sensorData =
+                    sensors['sensor${i + 1}'] as Map<String, dynamic>? ?? {};
                 final avg = (sensorData['avg'] ?? 0.0).toDouble();
                 return BarChartGroupData(
                   x: i,
@@ -6692,8 +8182,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       toY: avg,
                       color: colors[i],
                       width: 24,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                      backDrawRodData: BackgroundBarChartRodData(show: true, toY: maxVal + 1, color: colors[i].withOpacity(0.05)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(4)),
+                      backDrawRodData: BackgroundBarChartRodData(
+                          show: true,
+                          toY: maxVal + 1,
+                          color: colors[i].withOpacity(0.05)),
                     ),
                   ],
                 );
@@ -6709,7 +8203,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final sensorRanges = device6AnalyticsData!.sensorRanges;
     final stats = device6AnalyticsData!.overallStatistics;
     final sensors = stats['sensors'] as Map<String, dynamic>? ?? {};
-    if (sensors.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+    if (sensors.isEmpty)
+      return SizedBox(height: 200, child: Center(child: Text('No data')));
 
     // Build spots for min, avg, and max lines across 8 sensors
     final minSpots = <FlSpot>[];
@@ -6718,65 +8213,107 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     for (int s = 1; s <= 8; s++) {
       final sData = sensors['sensor$s'] as Map<String, dynamic>? ?? {};
-      minSpots.add(FlSpot((s - 1).toDouble(), (sData['min'] ?? 0.0).toDouble()));
-      avgSpots.add(FlSpot((s - 1).toDouble(), (sData['avg'] ?? 0.0).toDouble()));
-      maxSpots.add(FlSpot((s - 1).toDouble(), (sData['max'] ?? 0.0).toDouble()));
+      minSpots
+          .add(FlSpot((s - 1).toDouble(), (sData['min'] ?? 0.0).toDouble()));
+      avgSpots
+          .add(FlSpot((s - 1).toDouble(), (sData['avg'] ?? 0.0).toDouble()));
+      maxSpots
+          .add(FlSpot((s - 1).toDouble(), (sData['max'] ?? 0.0).toDouble()));
     }
 
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(Colors.red, 'Max'),
-            SizedBox(width: 16),
-            _buildLegendItem(Colors.teal, 'Average'),
-            SizedBox(width: 16),
-            _buildLegendItem(Colors.blue, 'Min'),
-          ],
-        ),
+        isPhoneLayout(context)
+            ? Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                    _buildLegendItem(Colors.red, 'Max'),
+                    SizedBox(width: 16),
+                    _buildLegendItem(Colors.teal, 'Average'),
+                    SizedBox(width: 16),
+                    _buildLegendItem(Colors.blue, 'Min'),
+                  ])
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegendItem(Colors.red, 'Max'),
+                  SizedBox(width: 16),
+                  _buildLegendItem(Colors.teal, 'Average'),
+                  SizedBox(width: 16),
+                  _buildLegendItem(Colors.blue, 'Min'),
+                ],
+              ),
         SizedBox(height: 12),
         SizedBox(
           height: 280,
           child: LineChart(
             LineChartData(
-              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 0.5, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 0.5,
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
               titlesData: FlTitlesData(
-                bottomTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 30,
+                bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 30,
                   getTitlesWidget: (value, meta) {
                     final idx = value.toInt();
                     if (idx >= 0 && idx < 8) {
                       return Padding(
                         padding: EdgeInsets.only(top: 8),
-                        child: Text('S${idx + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                        child: Text('S${idx + 1}',
+                            style: GoogleFonts.inter(
+                                fontSize: 11, fontWeight: FontWeight.w500)),
                       );
                     }
                     return Text('');
                   },
                 )),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 45,
-                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(1)}', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 45,
+                  getTitlesWidget: (value, meta) => Text(
+                      '${value.toStringAsFixed(1)}',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
               lineBarsData: [
                 LineChartBarData(
-                  spots: maxSpots, isCurved: true, color: Colors.red, barWidth: 2,
+                  spots: maxSpots,
+                  isCurved: true,
+                  color: Colors.red,
+                  barWidth: 2,
                   dotData: FlDotData(show: true),
-                  belowBarData: BarAreaData(show: true, color: Colors.red.withOpacity(0.08)),
+                  belowBarData: BarAreaData(
+                      show: true, color: Colors.red.withOpacity(0.08)),
                 ),
                 LineChartBarData(
-                  spots: avgSpots, isCurved: true, color: Colors.teal, barWidth: 2.5,
+                  spots: avgSpots,
+                  isCurved: true,
+                  color: Colors.teal,
+                  barWidth: 2.5,
                   dotData: FlDotData(show: true),
                 ),
                 LineChartBarData(
-                  spots: minSpots, isCurved: true, color: Colors.blue, barWidth: 2,
+                  spots: minSpots,
+                  isCurved: true,
+                  color: Colors.blue,
+                  barWidth: 2,
                   dotData: FlDotData(show: true),
-                  belowBarData: BarAreaData(show: true, color: Colors.blue.withOpacity(0.08)),
+                  belowBarData: BarAreaData(
+                      show: true, color: Colors.blue.withOpacity(0.08)),
                 ),
               ],
               lineTouchData: LineTouchData(
@@ -6784,7 +8321,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTooltipItems: (spots) => spots.map((spot) {
                     final names = ['Max', 'Avg', 'Min'];
                     final clrs = [Colors.red, Colors.teal, Colors.blue];
-                    return LineTooltipItem('${names[spot.barIndex]}: ${spot.y.toStringAsFixed(2)} psi',
+                    return LineTooltipItem(
+                        '${names[spot.barIndex]}: ${spot.y.toStringAsFixed(2)} psi',
                         TextStyle(color: clrs[spot.barIndex], fontSize: 11));
                   }).toList(),
                 ),
@@ -6798,7 +8336,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice6DailyChart() {
     final data = device6AnalyticsData!.dailyData;
-    if (data.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No daily data')));
+    if (data.isEmpty)
+      return SizedBox(height: 200, child: Center(child: Text('No daily data')));
 
     final spots = <int, List<FlSpot>>{};
     for (int s = 1; s <= 8; s++) {
@@ -6812,58 +8351,91 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       }
     }
 
-    final colors = [Colors.blue, Colors.red, Colors.green, Colors.orange, Colors.purple, Colors.cyan, Colors.pink, Colors.teal];
+    final colors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.cyan,
+      Colors.pink,
+      Colors.teal
+    ];
 
     return Column(
       children: [
         Wrap(
-          spacing: 12, runSpacing: 4,
-          children: List.generate(8, (i) => _buildLegendItem(colors[i], 'Sensor ${i + 1}')),
+          spacing: 12,
+          runSpacing: 4,
+          children: List.generate(
+              8, (i) => _buildLegendItem(colors[i], 'Sensor ${i + 1}')),
         ),
         SizedBox(height: 12),
         SizedBox(
           height: 280,
           child: LineChart(
             LineChartData(
-              gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: 0.5, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 0.5,
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 30,
-                    interval: data.length > 12 ? (data.length / 6).ceil().toDouble() : 1,
+                    interval: data.length > 12
+                        ? (data.length / 6).ceil().toDouble()
+                        : 1,
                     getTitlesWidget: (value, meta) {
                       final idx = value.toInt();
                       if (idx >= 0 && idx < data.length) {
                         return Padding(
                           padding: EdgeInsets.only(top: 8),
-                          child: Text((data[idx]['date'] ?? '').toString().substring(5), style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                          child: Text(
+                              (data[idx]['date'] ?? '').toString().substring(5),
+                              style: GoogleFonts.inter(
+                                  fontSize: 10, color: Colors.grey[600])),
                         );
                       }
                       return Text('');
                     },
                   ),
                 ),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 45,
-                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(1)}', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 45,
+                  getTitlesWidget: (value, meta) => Text(
+                      '${value.toStringAsFixed(1)}',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
               borderData: FlBorderData(show: false),
-              lineBarsData: List.generate(8, (s) => LineChartBarData(
-                spots: spots[s + 1]!,
-                isCurved: true,
-                color: colors[s],
-                barWidth: 2,
-                dotData: FlDotData(show: false),
-              )),
+              lineBarsData: List.generate(
+                  8,
+                  (s) => LineChartBarData(
+                        spots: spots[s + 1]!,
+                        isCurved: true,
+                        color: colors[s],
+                        barWidth: 2,
+                        dotData: FlDotData(show: false),
+                      )),
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipItems: (touchedSpots) => touchedSpots.map((spot) =>
-                    LineTooltipItem('Sensor ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(2)} psi',
-                        TextStyle(color: colors[spot.barIndex], fontSize: 11))).toList(),
+                  getTooltipItems: (touchedSpots) => touchedSpots
+                      .map((spot) => LineTooltipItem(
+                          'Sensor ${spot.barIndex + 1}: ${spot.y.toStringAsFixed(2)} psi',
+                          TextStyle(
+                              color: colors[spot.barIndex], fontSize: 11)))
+                      .toList(),
                 ),
               ),
             ),
@@ -6876,7 +8448,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Widget _buildDevice6StabilityChart() {
     final stats = device6AnalyticsData!.overallStatistics;
     final sensors = stats['sensors'] as Map<String, dynamic>? ?? {};
-    if (sensors.isEmpty) return SizedBox(height: 200, child: Center(child: Text('No data')));
+    if (sensors.isEmpty)
+      return SizedBox(height: 200, child: Center(child: Text('No data')));
 
     // Range = max - min per sensor (lower = more stable)
     final ranges = <double>[];
@@ -6890,14 +8463,24 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(Colors.green, 'Stable (low range)'),
-            SizedBox(width: 16),
-            _buildLegendItem(Colors.orange, 'Unstable (high range)'),
-          ],
-        ),
+        isPhoneLayout(context)
+            ? Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                    _buildLegendItem(Colors.green, 'Stable (low range)'),
+                    SizedBox(width: 16),
+                    _buildLegendItem(Colors.orange, 'Unstable (high range)'),
+                  ])
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegendItem(Colors.green, 'Stable (low range)'),
+                  SizedBox(width: 16),
+                  _buildLegendItem(Colors.orange, 'Unstable (high range)'),
+                ],
+              ),
         SizedBox(height: 12),
         SizedBox(
           height: 280,
@@ -6908,7 +8491,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    final sData = sensors['sensor${groupIndex + 1}'] as Map<String, dynamic>? ?? {};
+                    final sData = sensors['sensor${groupIndex + 1}']
+                            as Map<String, dynamic>? ??
+                        {};
                     return BarTooltipItem(
                       'Sensor ${groupIndex + 1}\nRange: ${rod.toY.toStringAsFixed(3)} psi\nMin: ${(sData['min'] ?? 0).toStringAsFixed(2)}\nMax: ${(sData['max'] ?? 0).toStringAsFixed(2)}',
                       GoogleFonts.inter(color: Colors.white, fontSize: 11),
@@ -6917,21 +8502,35 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 ),
               ),
               titlesData: FlTitlesData(
-                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
                   showTitles: true,
                   getTitlesWidget: (value, meta) => Padding(
                     padding: EdgeInsets.only(top: 8),
-                    child: Text('S${value.toInt() + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500)),
+                    child: Text('S${value.toInt() + 1}',
+                        style: GoogleFonts.inter(
+                            fontSize: 11, fontWeight: FontWeight.w500)),
                   ),
                 )),
-                leftTitles: AxisTitles(sideTitles: SideTitles(
-                  showTitles: true, reservedSize: 45,
-                  getTitlesWidget: (value, meta) => Text('${value.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 45,
+                  getTitlesWidget: (value, meta) => Text(
+                      '${value.toStringAsFixed(2)}',
+                      style: GoogleFonts.inter(
+                          fontSize: 10, color: Colors.grey[600])),
                 )),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
-              gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+              gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(8, (i) {
                 final range = ranges[i];
@@ -6944,7 +8543,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       toY: range,
                       color: isStable ? Colors.green : Colors.orange,
                       width: 24,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(4)),
                     ),
                   ],
                 );
@@ -6964,19 +8564,21 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final data = device7AnalyticsData!;
     final stats = data.overallStatistics;
 
-    final totalScans     = stats['total_scans'] as int? ?? 0;
-    final verifiedScans  = stats['verified_scans'] as int? ?? 0;
-    final failedScans    = stats['failed_scans'] as int? ?? 0;
-    final verifyRate     = (stats['verification_rate'] as num?)?.toDouble() ?? 0.0;
-    final scansIn        = stats['scans_in'] as int? ?? 0;
-    final scansOut       = stats['scans_out'] as int? ?? 0;
-    final activeScans    = stats['active_scans'] as int? ?? 0;
-    final totalBottles   = stats['total_bottles'] as int? ?? 0;
-    final tempMap        = Map<String, dynamic>.from(stats['temperature'] as Map? ?? {});
-    final avgTemp        = (tempMap['avg'] as num?)?.toDouble() ?? 0.0;
-    final minTemp        = (tempMap['min'] as num?)?.toDouble() ?? 0.0;
-    final maxTemp        = (tempMap['max'] as num?)?.toDouble() ?? 0.0;
-    final trayMap        = Map<String, dynamic>.from(stats['tray_weights'] as Map? ?? {});
+    final totalScans = stats['total_scans'] as int? ?? 0;
+    final verifiedScans = stats['verified_scans'] as int? ?? 0;
+    final failedScans = stats['failed_scans'] as int? ?? 0;
+    final verifyRate = (stats['verification_rate'] as num?)?.toDouble() ?? 0.0;
+    final scansIn = stats['scans_in'] as int? ?? 0;
+    final scansOut = stats['scans_out'] as int? ?? 0;
+    final activeScans = stats['active_scans'] as int? ?? 0;
+    final totalBottles = stats['total_bottles'] as int? ?? 0;
+    final tempMap =
+        Map<String, dynamic>.from(stats['temperature'] as Map? ?? {});
+    final avgTemp = (tempMap['avg'] as num?)?.toDouble() ?? 0.0;
+    final minTemp = (tempMap['min'] as num?)?.toDouble() ?? 0.0;
+    final maxTemp = (tempMap['max'] as num?)?.toDouble() ?? 0.0;
+    final trayMap =
+        Map<String, dynamic>.from(stats['tray_weights'] as Map? ?? {});
 
     Color _scanStatusColor(double rate) {
       if (rate >= 90) return Colors.green;
@@ -6994,12 +8596,20 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             padding: EdgeInsets.all(isMobile ? 16 : 20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.deepPurple.shade700, Colors.deepPurple.shade400],
+                colors: [
+                  Colors.deepPurple.shade700,
+                  Colors.deepPurple.shade400
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.deepPurple.shade200, blurRadius: 12, offset: Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.deepPurple.shade200,
+                    blurRadius: 12,
+                    offset: Offset(0, 4))
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -7007,29 +8617,73 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Row(children: [
                   Icon(Icons.qr_code_scanner, color: Colors.white, size: 22),
                   SizedBox(width: 8),
-                  Text('Bottle Vetting System', style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                  if (isPhoneLayout(context))
+                    Expanded(child: Text('Bottle Vetting System',
+                      style: GoogleFonts.inter(color: Colors.white,
+                        fontSize: 16, fontWeight: FontWeight.w700)))
+                  else
+                  Text('Bottle Vetting System',
+                      style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700)),
                 ]),
                 SizedBox(height: 16),
                 isMobile
                     ? Column(children: [
                         _device7ScansCard(scansIn, scansOut, activeScans),
                         SizedBox(height: 8),
-                        _device7StatCard('Auth Rate', '${verifyRate.toStringAsFixed(1)}%', Icons.security, _scanStatusColor(verifyRate).withOpacity(0.8)),
+                        _device7StatCard(
+                            'Auth Rate',
+                            '${verifyRate.toStringAsFixed(1)}%',
+                            Icons.security,
+                            _scanStatusColor(verifyRate).withOpacity(0.8)),
                         SizedBox(height: 8),
-                        _device7StatCard('Total Bottles', totalBottles.toString(), Icons.liquor, Colors.amber.shade300),
+                        _device7StatCard(
+                            'Total Bottles',
+                            totalBottles.toString(),
+                            Icons.liquor,
+                            Colors.amber.shade300),
                         SizedBox(height: 8),
-                        _device7StatCard('Fridge Temp', '${avgTemp.toStringAsFixed(1)}°C', Icons.thermostat,
-                            avgTemp <= 4 ? Colors.cyan.shade200 : avgTemp <= 8 ? Colors.orange.shade300 : Colors.red.shade300),
+                        _device7StatCard(
+                            'Fridge Temp',
+                            '${avgTemp.toStringAsFixed(1)}°C',
+                            Icons.thermostat,
+                            avgTemp <= 4
+                                ? Colors.cyan.shade200
+                                : avgTemp <= 8
+                                    ? Colors.orange.shade300
+                                    : Colors.red.shade300),
                       ])
                     : Row(children: [
-                        Expanded(child: _device7ScansCard(scansIn, scansOut, activeScans)),
+                        Expanded(
+                            child: _device7ScansCard(
+                                scansIn, scansOut, activeScans)),
                         SizedBox(width: 12),
-                        Expanded(child: _device7StatCard('Auth Rate', '${verifyRate.toStringAsFixed(1)}%', Icons.security, _scanStatusColor(verifyRate).withOpacity(0.8))),
+                        Expanded(
+                            child: _device7StatCard(
+                                'Auth Rate',
+                                '${verifyRate.toStringAsFixed(1)}%',
+                                Icons.security,
+                                _scanStatusColor(verifyRate).withOpacity(0.8))),
                         SizedBox(width: 12),
-                        Expanded(child: _device7StatCard('Total Bottles', totalBottles.toString(), Icons.liquor, Colors.amber.shade300)),
+                        Expanded(
+                            child: _device7StatCard(
+                                'Total Bottles',
+                                totalBottles.toString(),
+                                Icons.liquor,
+                                Colors.amber.shade300)),
                         SizedBox(width: 12),
-                        Expanded(child: _device7StatCard('Fridge Temp', '${avgTemp.toStringAsFixed(1)}°C', Icons.thermostat,
-                            avgTemp <= 4 ? Colors.cyan.shade200 : avgTemp <= 8 ? Colors.orange.shade300 : Colors.red.shade300)),
+                        Expanded(
+                            child: _device7StatCard(
+                                'Fridge Temp',
+                                '${avgTemp.toStringAsFixed(1)}°C',
+                                Icons.thermostat,
+                                avgTemp <= 4
+                                    ? Colors.cyan.shade200
+                                    : avgTemp <= 8
+                                        ? Colors.orange.shade300
+                                        : Colors.red.shade300)),
                       ]),
               ],
             ),
@@ -7041,33 +8695,42 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ? Column(children: [
                   _buildDevice7TempCard(avgTemp, minTemp, maxTemp),
                   SizedBox(height: spacing),
-                  _buildDevice7VerificationCard(verifyRate, verifiedScans, totalScans),
+                  _buildDevice7VerificationCard(
+                      verifyRate, verifiedScans, totalScans),
                 ])
               : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Expanded(child: _buildDevice7TempCard(avgTemp, minTemp, maxTemp)),
+                  Expanded(
+                      child: _buildDevice7TempCard(avgTemp, minTemp, maxTemp)),
                   SizedBox(width: spacing),
-                  Expanded(child: _buildDevice7VerificationCard(verifyRate, verifiedScans, totalScans)),
+                  Expanded(
+                      child: _buildDevice7VerificationCard(
+                          verifyRate, verifiedScans, totalScans)),
                 ]),
           SizedBox(height: spacing),
 
           // ── Tray grid with bottle counts ──────────────────────────────────
-          _buildDevice7TrayGrid(trayMap, isMobile, scansIn, scansOut, activeScans),
+          _buildDevice7TrayGrid(
+              trayMap, isMobile, scansIn, scansOut, activeScans),
           SizedBox(height: spacing),
 
           // ── Charts ───────────────────────────────────────────────────────
-          _buildChart('Daily Scan Activity (Total vs Verified)', _buildDevice7DailyScanChart()),
+          _buildChart('Daily Scan Activity (Total vs Verified)',
+              _buildDevice7DailyScanChart()),
           SizedBox(height: spacing),
 
           _buildChart('Hourly Scan Activity', _buildDevice7HourlyChart()),
           SizedBox(height: spacing),
 
-          _buildChart('Fridge Temperature Trend (Daily Avg)', _buildDevice7TempTrendChart()),
+          _buildChart('Fridge Temperature Trend (Daily Avg)',
+              _buildDevice7TempTrendChart()),
           SizedBox(height: spacing),
 
-          _buildChart('Daily Bottle Activity (In / Out / Active)', _buildDevice7DailyBottleChart()),
+          _buildChart('Daily Bottle Activity (In / Out / Active)',
+              _buildDevice7DailyBottleChart()),
           SizedBox(height: spacing),
 
-          _buildChart('Tray Weight Overview (avg kg)', _buildDevice7TrayBarChart(trayMap)),
+          _buildChart('Tray Weight Overview (avg kg)',
+              _buildDevice7TrayBarChart(trayMap)),
         ],
       ),
     );
@@ -7086,7 +8749,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Row(children: [
             Icon(Icons.document_scanner, color: Colors.blue.shade300, size: 20),
             SizedBox(width: 10),
-            Text("Today's Scans", style: GoogleFonts.inter(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text("Today's Scans",
+                style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600)),
           ]),
           SizedBox(height: 10),
           _scanRow('Total Scans (In)', scansIn, Colors.green.shade300),
@@ -7104,16 +8771,23 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
           SizedBox(width: 8),
-          Text(label, style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
+          Text(label,
+              style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
         ]),
-        Text('$value', style: GoogleFonts.inter(color: color, fontSize: 16, fontWeight: FontWeight.w700)),
+        Text('$value',
+            style: GoogleFonts.inter(
+                color: color, fontSize: 16, fontWeight: FontWeight.w700)),
       ],
     );
   }
 
-  Widget _device7StatCard(String label, String value, IconData icon, Color color) {
+  Widget _device7StatCard(
+      String label, String value, IconData icon, Color color) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -7125,8 +8799,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Icon(icon, color: color, size: 20),
           SizedBox(width: 10),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(value, style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-            Text(label, style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
+            Text(value,
+                style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700)),
+            Text(label,
+                style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
           ]),
         ],
       ),
@@ -7136,29 +8815,50 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Widget _buildDevice7TempCard(double avg, double min, double max) {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: Offset(0, 2))]),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8,
+                offset: Offset(0, 2))
+          ]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(Icons.thermostat, color: Colors.blue.shade600, size: 18),
           SizedBox(width: 6),
-          Text('Fridge Temperature', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+          Text('Fridge Temperature',
+              style:
+                  GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
         ]),
         SizedBox(height: 12),
         Center(
           child: Text('${avg.toStringAsFixed(1)}°C',
-              style: GoogleFonts.inter(fontSize: 36, fontWeight: FontWeight.w700,
-                  color: avg <= 4 ? Colors.blue.shade700 : avg <= 8 ? Colors.orange : Colors.red)),
+              style: GoogleFonts.inter(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w700,
+                  color: avg <= 4
+                      ? Colors.blue.shade700
+                      : avg <= 8
+                          ? Colors.orange
+                          : Colors.red)),
         ),
         SizedBox(height: 8),
         Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
           Column(children: [
-            Text('${min.toStringAsFixed(1)}°C', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.blue.shade700)),
-            Text('Min', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+            Text('${min.toStringAsFixed(1)}°C',
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600, color: Colors.blue.shade700)),
+            Text('Min',
+                style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
           ]),
           Column(children: [
-            Text('${max.toStringAsFixed(1)}°C', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.red.shade400)),
-            Text('Max', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+            Text('${max.toStringAsFixed(1)}°C',
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600, color: Colors.red.shade400)),
+            Text('Max',
+                style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
           ]),
         ]),
       ]),
@@ -7166,22 +8866,36 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   }
 
   Widget _buildDevice7VerificationCard(double rate, int verified, int total) {
-    final color = rate >= 90 ? Colors.green : rate >= 70 ? Colors.orange : Colors.red;
+    final color = rate >= 90
+        ? Colors.green
+        : rate >= 70
+            ? Colors.orange
+            : Colors.red;
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: Offset(0, 2))]),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8,
+                offset: Offset(0, 2))
+          ]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(Icons.verified_user, color: color, size: 18),
           SizedBox(width: 6),
-          Text('QR Verification Rate', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+          Text('QR Verification Rate',
+              style:
+                  GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
         ]),
         SizedBox(height: 12),
         Center(
           child: Stack(alignment: Alignment.center, children: [
             SizedBox(
-              width: 100, height: 100,
+              width: 100,
+              height: 100,
               child: CircularProgressIndicator(
                 value: rate / 100,
                 strokeWidth: 10,
@@ -7190,43 +8904,73 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
             ),
             Text('${rate.toStringAsFixed(0)}%',
-                style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, color: color)),
+                style: GoogleFonts.inter(
+                    fontSize: 22, fontWeight: FontWeight.w700, color: color)),
           ]),
         ),
         SizedBox(height: 8),
-        Center(child: Text('$verified / $total scans verified',
-            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600))),
+        Center(
+            child: Text('$verified / $total scans verified',
+                style: GoogleFonts.inter(
+                    fontSize: 12, color: Colors.grey.shade600))),
       ]),
     );
   }
 
-  Widget _buildDevice7TrayGrid(Map<String, dynamic> trayMap, bool isMobile, int scansIn, int scansOut, int activeScans) {
+  Widget _buildDevice7TrayGrid(Map<String, dynamic> trayMap, bool isMobile,
+      int scansIn, int scansOut, int activeScans) {
     final trays = ['tray1', 'tray2', 'tray3', 'tray4'];
     final labels = ['Tray 1', 'Tray 2', 'Tray 3', 'Tray 4'];
-    final colors = [Colors.blue.shade400, Colors.teal.shade400, Colors.purple.shade400, Colors.orange.shade400];
+    final colors = [
+      Colors.blue.shade400,
+      Colors.teal.shade400,
+      Colors.purple.shade400,
+      Colors.orange.shade400
+    ];
 
     List<Widget> cards = List.generate(trays.length, (i) {
       final t = Map<String, dynamic>.from(trayMap[trays[i]] as Map? ?? {});
       final avg = (t['avg'] as num?)?.toDouble() ?? 0.0;
       final min = (t['min'] as num?)?.toDouble() ?? 0.0;
       final max = (t['max'] as num?)?.toDouble() ?? 0.0;
+      if (isPhoneLayout(context)) {
+        return _phoneReadingCard(title: labels[i], value: '${avg.toStringAsFixed(3)} kg',
+          icon: Icons.scale_outlined, color: colors[i],
+          details: ['Average weight', 'Min: ${min.toStringAsFixed(2)}', 'Max: ${max.toStringAsFixed(2)}']);
+      }
       return Container(
         padding: EdgeInsets.all(14),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: Offset(0, 2))]),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 6,
+                  offset: Offset(0, 2))
+            ]),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(Icons.scale, color: colors[i], size: 16),
             SizedBox(width: 6),
-            Text(labels[i], style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+            Text(labels[i],
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600, fontSize: 13)),
           ]),
           SizedBox(height: 8),
-          Text('${avg.toStringAsFixed(3)} kg', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: colors[i])),
-          Text('avg weight', style: GoogleFonts.inter(fontSize: 10, color: Colors.grey)),
+          Text('${avg.toStringAsFixed(3)} kg',
+              style: GoogleFonts.inter(
+                  fontSize: 20, fontWeight: FontWeight.w700, color: colors[i])),
+          Text('avg weight',
+              style: GoogleFonts.inter(fontSize: 10, color: Colors.grey)),
           SizedBox(height: 4),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('↓ ${min.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 11, color: Colors.blue.shade600)),
-            Text('↑ ${max.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 11, color: Colors.red.shade400)),
+            Text('↓ ${min.toStringAsFixed(2)}',
+                style: GoogleFonts.inter(
+                    fontSize: 11, color: Colors.blue.shade600)),
+            Text('↑ ${max.toStringAsFixed(2)}',
+                style: GoogleFonts.inter(
+                    fontSize: 11, color: Colors.red.shade400)),
           ]),
         ]),
       );
@@ -7236,43 +8980,72 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final bottleSummary = Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: Offset(0, 2))],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 6,
+              offset: Offset(0, 2))
+        ],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Icon(Icons.liquor, color: Colors.deepPurple, size: 18),
           SizedBox(width: 6),
-          Text('Bottle Tracking', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+          Text('Bottle Tracking',
+              style:
+                  GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
         ]),
         SizedBox(height: 12),
-        Row(
+        MobileFormRow(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildBottleCountColumn('Scanned In', scansIn, Colors.green.shade600),
-            Container(width: 1, height: 40, color: Colors.grey.shade200),
-            _buildBottleCountColumn('Still Inside', activeScans, Colors.amber.shade700),
-            Container(width: 1, height: 40, color: Colors.grey.shade200),
-            _buildBottleCountColumn('Scanned Out', scansOut, Colors.red.shade400),
+            _buildBottleCountColumn(
+                'Scanned In', scansIn, Colors.green.shade600),
+            Container(width: isPhoneLayout(context) ? null : 1, height: isPhoneLayout(context) ? 1 : 40, color: Colors.grey.shade200),
+            _buildBottleCountColumn(
+                'Still Inside', activeScans, Colors.amber.shade700),
+            Container(width: isPhoneLayout(context) ? null : 1, height: isPhoneLayout(context) ? 1 : 40, color: Colors.grey.shade200),
+            _buildBottleCountColumn(
+                'Scanned Out', scansOut, Colors.red.shade400),
           ],
         ),
       ]),
     );
 
+    if (isPhoneLayout(context)) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        for (final card in cards) ...[card, const SizedBox(height: 8)],
+        bottleSummary,
+      ]);
+    }
     if (isMobile) {
       return Column(children: [
-        Row(children: [Expanded(child: cards[0]), SizedBox(width: 8), Expanded(child: cards[1])]),
+        Row(children: [
+          Expanded(child: cards[0]),
+          SizedBox(width: 8),
+          Expanded(child: cards[1])
+        ]),
         SizedBox(height: 8),
-        Row(children: [Expanded(child: cards[2]), SizedBox(width: 8), Expanded(child: cards[3])]),
+        Row(children: [
+          Expanded(child: cards[2]),
+          SizedBox(width: 8),
+          Expanded(child: cards[3])
+        ]),
         SizedBox(height: 8),
         bottleSummary,
       ]);
     }
     return Column(children: [
       Row(
-        children: List.generate(4, (i) => Expanded(
-          child: Padding(padding: EdgeInsets.only(right: i < 3 ? 10 : 0), child: cards[i]),
-        )),
+        children: List.generate(
+            4,
+            (i) => Expanded(
+                  child: Padding(
+                      padding: EdgeInsets.only(right: i < 3 ? 10 : 0),
+                      child: cards[i]),
+                )),
       ),
       SizedBox(height: 10),
       bottleSummary,
@@ -7281,24 +9054,34 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildBottleCountColumn(String label, int count, Color color) {
     return Column(children: [
-      Text('$count', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w700, color: color)),
+      Text('$count',
+          style: GoogleFonts.inter(
+              fontSize: 24, fontWeight: FontWeight.w700, color: color)),
       SizedBox(height: 2),
-      Text(label, style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600)),
+      Text(label,
+          style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600)),
     ]);
   }
 
   Widget _buildDevice7DailyScanChart() {
     final data = device7AnalyticsData!.dailyData;
-    if (data.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.bar_chart_outlined, size: 48, color: Colors.grey.shade300),
-      const SizedBox(height: 8),
-      Text('No scan data available', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
-    ]));
+    if (data.isEmpty)
+      return Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.bar_chart_outlined, size: 48, color: Colors.grey.shade300),
+        const SizedBox(height: 8),
+        Text('No scan data available',
+            style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+      ]));
 
-    final maxScans = data.map((d) => (d['scans'] as num?)?.toDouble() ?? 0.0).reduce((a, b) => a > b ? a : b);
+    final maxScans = data
+        .map((d) => (d['scans'] as num?)?.toDouble() ?? 0.0)
+        .reduce((a, b) => a > b ? a : b);
     final yMax = (maxScans * 1.3).clamp(5.0, double.infinity);
     final hInterval = (yMax / 4).clamp(1.0, double.infinity);
-    final labelInterval = data.length > 1 ? (data.length / 5).ceilToDouble().clamp(1.0, double.infinity) : 1.0;
+    final labelInterval = data.length > 1
+        ? (data.length / 5).ceilToDouble().clamp(1.0, double.infinity)
+        : 1.0;
 
     return Column(children: [
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -7311,31 +9094,47 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         child: Padding(
           padding: const EdgeInsets.only(right: 16, top: 4),
           child: LineChart(LineChartData(
-            minY: 0, maxY: yMax,
+            minY: 0,
+            maxY: yMax,
             gridData: FlGridData(
-              show: true, drawVerticalLine: false, horizontalInterval: hInterval,
-              getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+              show: true,
+              drawVerticalLine: false,
+              horizontalInterval: hInterval,
+              getDrawingHorizontalLine: (v) =>
+                  FlLine(color: Colors.grey.shade100, strokeWidth: 1),
             ),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              bottomTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, reservedSize: 28, interval: labelInterval,
+              bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 28,
+                interval: labelInterval,
                 getTitlesWidget: (value, meta) {
                   final idx = value.toInt();
                   if (idx < 0 || idx >= data.length) return const SizedBox();
                   final d = data[idx]['date']?.toString() ?? '';
                   final parts = d.split('-');
-                  return Padding(padding: const EdgeInsets.only(top: 4),
-                      child: Text(parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
-                          style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                  return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                          parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
+                          style: GoogleFonts.inter(
+                              fontSize: 9, color: Colors.grey[500])));
                 },
               )),
-              leftTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, reservedSize: 36, interval: hInterval,
-                getTitlesWidget: (v, m) => Text('${v.toInt()}', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+              leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 36,
+                interval: hInterval,
+                getTitlesWidget: (v, m) => Text('${v.toInt()}',
+                    style: GoogleFonts.inter(
+                        fontSize: 9, color: Colors.grey[500])),
               )),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
@@ -7346,42 +9145,79 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   return LineTooltipItem(
                     isTotal ? '${d['date']}\n' : '',
                     GoogleFonts.inter(color: Colors.white60, fontSize: 10),
-                    children: [TextSpan(
-                      text: isTotal ? 'Total: ${spot.y.toInt()} scans' : 'Verified: ${spot.y.toInt()} scans',
-                      style: TextStyle(
-                          color: isTotal ? Colors.purple.shade200 : Colors.green.shade300,
-                          fontWeight: FontWeight.w600, fontSize: 11),
-                    )],
+                    children: [
+                      TextSpan(
+                        text: isTotal
+                            ? 'Total: ${spot.y.toInt()} scans'
+                            : 'Verified: ${spot.y.toInt()} scans',
+                        style: TextStyle(
+                            color: isTotal
+                                ? Colors.purple.shade200
+                                : Colors.green.shade300,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11),
+                      )
+                    ],
                   );
                 }).toList(),
               ),
             ),
             lineBarsData: [
               LineChartBarData(
-                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['scans'] as num?)?.toDouble() ?? 0)),
-                isCurved: true, curveSmoothness: 0.3,
-                color: Colors.deepPurple, barWidth: 2.5,
+                spots: List.generate(
+                    data.length,
+                    (i) => FlSpot(i.toDouble(),
+                        (data[i]['scans'] as num?)?.toDouble() ?? 0)),
+                isCurved: true,
+                curveSmoothness: 0.3,
+                color: Colors.deepPurple,
+                barWidth: 2.5,
                 dotData: FlDotData(
                   show: data.length <= 7,
-                  getDotPainter: (s, p, b, i) => FlDotCirclePainter(radius: 3, color: Colors.deepPurple, strokeWidth: 0),
+                  getDotPainter: (s, p, b, i) => FlDotCirclePainter(
+                      radius: 3, color: Colors.deepPurple, strokeWidth: 0),
                 ),
-                shadow: Shadow(color: Colors.deepPurple.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2)),
-                belowBarData: BarAreaData(show: true, gradient: LinearGradient(
-                    colors: [Colors.deepPurple.withValues(alpha: 0.18), Colors.deepPurple.withValues(alpha: 0.01)],
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                shadow: Shadow(
+                    color: Colors.deepPurple.withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2)),
+                belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                        colors: [
+                          Colors.deepPurple.withValues(alpha: 0.18),
+                          Colors.deepPurple.withValues(alpha: 0.01)
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter)),
               ),
               LineChartBarData(
-                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['verified'] as num?)?.toDouble() ?? 0)),
-                isCurved: true, curveSmoothness: 0.3,
-                color: Colors.green.shade600, barWidth: 2.5,
+                spots: List.generate(
+                    data.length,
+                    (i) => FlSpot(i.toDouble(),
+                        (data[i]['verified'] as num?)?.toDouble() ?? 0)),
+                isCurved: true,
+                curveSmoothness: 0.3,
+                color: Colors.green.shade600,
+                barWidth: 2.5,
                 dotData: FlDotData(
                   show: data.length <= 7,
-                  getDotPainter: (s, p, b, i) => FlDotCirclePainter(radius: 3, color: Colors.green.shade600, strokeWidth: 0),
+                  getDotPainter: (s, p, b, i) => FlDotCirclePainter(
+                      radius: 3, color: Colors.green.shade600, strokeWidth: 0),
                 ),
-                shadow: Shadow(color: Colors.green.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2)),
-                belowBarData: BarAreaData(show: true, gradient: LinearGradient(
-                    colors: [Colors.green.withValues(alpha: 0.12), Colors.green.withValues(alpha: 0.01)],
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                shadow: Shadow(
+                    color: Colors.green.withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2)),
+                belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                        colors: [
+                          Colors.green.withValues(alpha: 0.12),
+                          Colors.green.withValues(alpha: 0.01)
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter)),
               ),
             ],
           )),
@@ -7392,21 +9228,27 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice7DailyBottleChart() {
     final data = device7AnalyticsData!.dailyData;
-    if (data.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.liquor_outlined, size: 48, color: Colors.grey.shade300),
-      const SizedBox(height: 8),
-      Text('No bottle data available', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
-    ]));
+    if (data.isEmpty)
+      return Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.liquor_outlined, size: 48, color: Colors.grey.shade300),
+        const SizedBox(height: 8),
+        Text('No bottle data available',
+            style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+      ]));
 
     final allValues = data.expand((d) => [
-      (d['scans_in'] as num?)?.toDouble() ?? 0.0,
-      (d['scans_out'] as num?)?.toDouble() ?? 0.0,
-      (d['active'] as num?)?.toDouble() ?? 0.0,
-    ]);
-    final maxVal = allValues.isEmpty ? 5.0 : allValues.reduce((a, b) => a > b ? a : b);
+          (d['scans_in'] as num?)?.toDouble() ?? 0.0,
+          (d['scans_out'] as num?)?.toDouble() ?? 0.0,
+          (d['active'] as num?)?.toDouble() ?? 0.0,
+        ]);
+    final maxVal =
+        allValues.isEmpty ? 5.0 : allValues.reduce((a, b) => a > b ? a : b);
     final yMax = (maxVal * 1.3).clamp(3.0, double.infinity);
     final hInterval = (yMax / 4).clamp(1.0, double.infinity);
-    final labelInterval = data.length > 1 ? (data.length / 5).ceilToDouble().clamp(1.0, double.infinity) : 1.0;
+    final labelInterval = data.length > 1
+        ? (data.length / 5).ceilToDouble().clamp(1.0, double.infinity)
+        : 1.0;
 
     return Column(children: [
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -7421,73 +9263,143 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         child: Padding(
           padding: const EdgeInsets.only(right: 16, top: 4),
           child: LineChart(LineChartData(
-            minY: 0, maxY: yMax,
-            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: hInterval,
-                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+            minY: 0,
+            maxY: yMax,
+            gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: hInterval,
+                getDrawingHorizontalLine: (v) =>
+                    FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              bottomTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, reservedSize: 28, interval: labelInterval,
+              bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 28,
+                interval: labelInterval,
                 getTitlesWidget: (value, meta) {
                   final idx = value.toInt();
                   if (idx < 0 || idx >= data.length) return const SizedBox();
                   final d = data[idx]['date']?.toString() ?? '';
                   final parts = d.split('-');
-                  return Padding(padding: const EdgeInsets.only(top: 4),
-                      child: Text(parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
-                          style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                  return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                          parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
+                          style: GoogleFonts.inter(
+                              fontSize: 9, color: Colors.grey[500])));
                 },
               )),
-              leftTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, reservedSize: 32, interval: hInterval,
-                getTitlesWidget: (v, m) => Text('${v.toInt()}', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+              leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 32,
+                interval: hInterval,
+                getTitlesWidget: (v, m) => Text('${v.toInt()}',
+                    style: GoogleFonts.inter(
+                        fontSize: 9, color: Colors.grey[500])),
               )),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
                 getTooltipColor: (_) => Colors.blueGrey.shade800,
                 getTooltipItems: (spots) => spots.map((spot) {
                   final d = data[spot.x.toInt()];
-                  final labels = ['In: ${spot.y.toInt()} bottles', 'Out: ${spot.y.toInt()} bottles', 'Active: ${spot.y.toInt()} bottles'];
-                  final colors = [Colors.green.shade300, Colors.red.shade300, Colors.amber.shade300];
+                  final labels = [
+                    'In: ${spot.y.toInt()} bottles',
+                    'Out: ${spot.y.toInt()} bottles',
+                    'Active: ${spot.y.toInt()} bottles'
+                  ];
+                  final colors = [
+                    Colors.green.shade300,
+                    Colors.red.shade300,
+                    Colors.amber.shade300
+                  ];
                   return LineTooltipItem(
                     spot.barIndex == 0 ? '${d['date']}\n' : '',
                     GoogleFonts.inter(color: Colors.white60, fontSize: 10),
-                    children: [TextSpan(
-                      text: labels[spot.barIndex],
-                      style: TextStyle(color: colors[spot.barIndex], fontWeight: FontWeight.w600, fontSize: 11),
-                    )],
+                    children: [
+                      TextSpan(
+                        text: labels[spot.barIndex],
+                        style: TextStyle(
+                            color: colors[spot.barIndex],
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11),
+                      )
+                    ],
                   );
                 }).toList(),
               ),
             ),
             lineBarsData: [
               LineChartBarData(
-                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['scans_in'] as num?)?.toDouble() ?? 0)),
-                isCurved: true, curveSmoothness: 0.3, color: Colors.green.shade500, barWidth: 2.5,
-                dotData: FlDotData(show: data.length <= 7,
-                    getDotPainter: (s, p, b, i) => FlDotCirclePainter(radius: 3, color: Colors.green.shade500, strokeWidth: 0)),
-                belowBarData: BarAreaData(show: true, gradient: LinearGradient(
-                    colors: [Colors.green.withValues(alpha: 0.15), Colors.green.withValues(alpha: 0.01)],
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                spots: List.generate(
+                    data.length,
+                    (i) => FlSpot(i.toDouble(),
+                        (data[i]['scans_in'] as num?)?.toDouble() ?? 0)),
+                isCurved: true,
+                curveSmoothness: 0.3,
+                color: Colors.green.shade500,
+                barWidth: 2.5,
+                dotData: FlDotData(
+                    show: data.length <= 7,
+                    getDotPainter: (s, p, b, i) => FlDotCirclePainter(
+                        radius: 3,
+                        color: Colors.green.shade500,
+                        strokeWidth: 0)),
+                belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                        colors: [
+                          Colors.green.withValues(alpha: 0.15),
+                          Colors.green.withValues(alpha: 0.01)
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter)),
               ),
               LineChartBarData(
-                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['scans_out'] as num?)?.toDouble() ?? 0)),
-                isCurved: true, curveSmoothness: 0.3, color: Colors.red.shade400, barWidth: 2.5,
-                dotData: FlDotData(show: data.length <= 7,
-                    getDotPainter: (s, p, b, i) => FlDotCirclePainter(radius: 3, color: Colors.red.shade400, strokeWidth: 0)),
+                spots: List.generate(
+                    data.length,
+                    (i) => FlSpot(i.toDouble(),
+                        (data[i]['scans_out'] as num?)?.toDouble() ?? 0)),
+                isCurved: true,
+                curveSmoothness: 0.3,
+                color: Colors.red.shade400,
+                barWidth: 2.5,
+                dotData: FlDotData(
+                    show: data.length <= 7,
+                    getDotPainter: (s, p, b, i) => FlDotCirclePainter(
+                        radius: 3, color: Colors.red.shade400, strokeWidth: 0)),
               ),
               LineChartBarData(
-                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), (data[i]['active'] as num?)?.toDouble() ?? 0)),
-                isCurved: true, curveSmoothness: 0.3, color: Colors.amber.shade700, barWidth: 2.5,
+                spots: List.generate(
+                    data.length,
+                    (i) => FlSpot(i.toDouble(),
+                        (data[i]['active'] as num?)?.toDouble() ?? 0)),
+                isCurved: true,
+                curveSmoothness: 0.3,
+                color: Colors.amber.shade700,
+                barWidth: 2.5,
                 dashArray: [6, 3],
-                dotData: FlDotData(show: data.length <= 7,
-                    getDotPainter: (s, p, b, i) => FlDotCirclePainter(radius: 3, color: Colors.amber.shade700, strokeWidth: 0)),
-                belowBarData: BarAreaData(show: true, gradient: LinearGradient(
-                    colors: [Colors.amber.withValues(alpha: 0.12), Colors.amber.withValues(alpha: 0.01)],
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                dotData: FlDotData(
+                    show: data.length <= 7,
+                    getDotPainter: (s, p, b, i) => FlDotCirclePainter(
+                        radius: 3,
+                        color: Colors.amber.shade700,
+                        strokeWidth: 0)),
+                belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                        colors: [
+                          Colors.amber.withValues(alpha: 0.12),
+                          Colors.amber.withValues(alpha: 0.01)
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter)),
               ),
             ],
           )),
@@ -7499,7 +9411,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Widget _buildDevice7TrayBarChart(Map<String, dynamic> trayMap) {
     final trays = ['tray1', 'tray2', 'tray3', 'tray4'];
     final labels = ['Tray 1', 'Tray 2', 'Tray 3', 'Tray 4'];
-    final colors = [Colors.blue.shade400, Colors.teal.shade400, Colors.purple.shade400, Colors.orange.shade400];
+    final colors = [
+      Colors.blue.shade400,
+      Colors.teal.shade400,
+      Colors.purple.shade400,
+      Colors.orange.shade400
+    ];
 
     final avgs = trays.map((t) {
       final d = Map<String, dynamic>.from(trayMap[t] as Map? ?? {});
@@ -7510,9 +9427,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     return Column(children: [
       Wrap(
-        spacing: 16, runSpacing: 4,
+        spacing: 16,
+        runSpacing: 4,
         alignment: WrapAlignment.center,
-        children: List.generate(4, (i) => _buildLegendItem(colors[i], labels[i])),
+        children:
+            List.generate(4, (i) => _buildLegendItem(colors[i], labels[i])),
       ),
       const SizedBox(height: 8),
       Expanded(
@@ -7520,12 +9439,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           padding: const EdgeInsets.only(right: 16, top: 4),
           child: BarChart(BarChartData(
             alignment: BarChartAlignment.spaceAround,
-            minY: 0, maxY: yMax,
+            minY: 0,
+            maxY: yMax,
             barTouchData: BarTouchData(
               touchTooltipData: BarTouchTooltipData(
                 getTooltipColor: (_) => Colors.blueGrey.shade800,
                 getTooltipItem: (group, gi, rod, ri) {
-                  final t = Map<String, dynamic>.from(trayMap[trays[gi]] as Map? ?? {});
+                  final t = Map<String, dynamic>.from(
+                      trayMap[trays[gi]] as Map? ?? {});
                   final avg = (t['avg'] as num?)?.toDouble() ?? 0.0;
                   final mn = (t['min'] as num?)?.toDouble() ?? 0.0;
                   final mx = (t['max'] as num?)?.toDouble() ?? 0.0;
@@ -7533,35 +9454,58 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     '${labels[gi]}\n',
                     GoogleFonts.inter(color: Colors.white60, fontSize: 10),
                     children: [
-                      TextSpan(text: 'Avg: ${avg.toStringAsFixed(3)} kg\n',
-                          style: TextStyle(color: colors[gi].withValues(alpha: 0.9), fontWeight: FontWeight.bold, fontSize: 12)),
-                      TextSpan(text: 'Min: ${mn.toStringAsFixed(3)} kg   Max: ${mx.toStringAsFixed(3)} kg',
-                          style: TextStyle(color: Colors.white54, fontSize: 10)),
+                      TextSpan(
+                          text: 'Avg: ${avg.toStringAsFixed(3)} kg\n',
+                          style: TextStyle(
+                              color: colors[gi].withValues(alpha: 0.9),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12)),
+                      TextSpan(
+                          text:
+                              'Min: ${mn.toStringAsFixed(3)} kg   Max: ${mx.toStringAsFixed(3)} kg',
+                          style:
+                              TextStyle(color: Colors.white54, fontSize: 10)),
                     ],
                   );
                 },
               ),
             ),
-            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: yMax / 4,
-                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+            gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: yMax / 4,
+                getDrawingHorizontalLine: (v) =>
+                    FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              bottomTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, reservedSize: 28,
+              bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 28,
                 getTitlesWidget: (value, meta) {
                   final idx = value.toInt();
                   if (idx < 0 || idx >= labels.length) return const SizedBox();
-                  return Padding(padding: const EdgeInsets.only(top: 6),
+                  return Padding(
+                      padding: const EdgeInsets.only(top: 6),
                       child: Text(labels[idx].replaceAll('Tray ', 'T'),
-                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: colors[idx])));
+                          style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: colors[idx])));
                 },
               )),
-              leftTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, reservedSize: 52, interval: yMax / 4,
-                getTitlesWidget: (v, m) => Text('${v.toStringAsFixed(2)} kg', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+              leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 52,
+                interval: yMax / 4,
+                getTitlesWidget: (v, m) => Text('${v.toStringAsFixed(2)} kg',
+                    style: GoogleFonts.inter(
+                        fontSize: 9, color: Colors.grey[500])),
               )),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             barGroups: List.generate(4, (i) {
               return BarChartGroupData(x: i, barRods: [
@@ -7569,8 +9513,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   toY: avgs[i],
                   color: colors[i],
                   width: 48,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                  backDrawRodData: BackgroundBarChartRodData(show: true, toY: yMax, color: colors[i].withValues(alpha: 0.06)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(8)),
+                  backDrawRodData: BackgroundBarChartRodData(
+                      show: true,
+                      toY: yMax,
+                      color: colors[i].withValues(alpha: 0.06)),
                 ),
               ]);
             }),
@@ -7582,20 +9530,30 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice7HourlyChart() {
     final data = device7AnalyticsData!.hourlyActivity;
-    if (data.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.access_time_outlined, size: 48, color: Colors.grey.shade300),
-      const SizedBox(height: 8),
-      Text('No hourly data available', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
-    ]));
+    if (data.isEmpty)
+      return Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.access_time_outlined, size: 48, color: Colors.grey.shade300),
+        const SizedBox(height: 8),
+        Text('No hourly data available',
+            style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+      ]));
 
     String formatHour(String h) {
-      try { final dt = DateTime.parse(h); return '${dt.hour.toString().padLeft(2, '0')}h'; }
-      catch (_) { return h.length >= 13 ? h.substring(11, 13) : h; }
+      try {
+        final dt = DateTime.parse(h);
+        return '${dt.hour.toString().padLeft(2, '0')}h';
+      } catch (_) {
+        return h.length >= 13 ? h.substring(11, 13) : h;
+      }
     }
 
-    final maxScans = data.map((d) => (d['scans'] as num?)?.toDouble() ?? 0.0).reduce((a, b) => a > b ? a : b);
+    final maxScans = data
+        .map((d) => (d['scans'] as num?)?.toDouble() ?? 0.0)
+        .reduce((a, b) => a > b ? a : b);
     final yMax = (maxScans * 1.3).clamp(2.0, double.infinity);
-    final labelInterval = data.length > 12 ? (data.length / 6).ceilToDouble() : 1.0;
+    final labelInterval =
+        data.length > 12 ? (data.length / 6).ceilToDouble() : 1.0;
     final barWidth = (220.0 / data.length.clamp(1, 30)).clamp(3.0, 18.0);
 
     return Column(children: [
@@ -7610,7 +9568,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           padding: const EdgeInsets.only(right: 16, top: 4),
           child: BarChart(BarChartData(
             alignment: BarChartAlignment.spaceAround,
-            minY: 0, maxY: yMax,
+            minY: 0,
+            maxY: yMax,
             barTouchData: BarTouchData(
               touchTooltipData: BarTouchTooltipData(
                 getTooltipColor: (_) => Colors.blueGrey.shade800,
@@ -7622,35 +9581,57 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     '${formatHour(d['hour']?.toString() ?? '')}\n',
                     GoogleFonts.inter(color: Colors.white60, fontSize: 10),
                     children: [
-                      TextSpan(text: ri == 0 ? 'Total: $scans scans' : 'Verified: $verified',
+                      TextSpan(
+                          text: ri == 0
+                              ? 'Total: $scans scans'
+                              : 'Verified: $verified',
                           style: TextStyle(
-                              color: ri == 0 ? Colors.indigo.shade200 : Colors.green.shade300,
-                              fontWeight: FontWeight.w600, fontSize: 11)),
+                              color: ri == 0
+                                  ? Colors.indigo.shade200
+                                  : Colors.green.shade300,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11)),
                     ],
                   );
                 },
               ),
             ),
-            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: yMax / 4,
-                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+            gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: yMax / 4,
+                getDrawingHorizontalLine: (v) =>
+                    FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              bottomTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, reservedSize: 28, interval: labelInterval,
+              bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 28,
+                interval: labelInterval,
                 getTitlesWidget: (value, meta) {
                   final idx = value.toInt();
                   if (idx < 0 || idx >= data.length) return const SizedBox();
-                  return Padding(padding: const EdgeInsets.only(top: 4),
-                      child: Text(formatHour(data[idx]['hour']?.toString() ?? ''),
-                          style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                  return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                          formatHour(data[idx]['hour']?.toString() ?? ''),
+                          style: GoogleFonts.inter(
+                              fontSize: 9, color: Colors.grey[500])));
                 },
               )),
-              leftTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, reservedSize: 32, interval: yMax / 4,
-                getTitlesWidget: (v, m) => Text('${v.toInt()}', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+              leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 32,
+                interval: yMax / 4,
+                getTitlesWidget: (v, m) => Text('${v.toInt()}',
+                    style: GoogleFonts.inter(
+                        fontSize: 9, color: Colors.grey[500])),
               )),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             barGroups: List.generate(data.length, (i) {
               final scans = (data[i]['scans'] as num?)?.toDouble() ?? 0.0;
@@ -7658,17 +9639,23 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               return BarChartGroupData(x: i, barsSpace: 2, barRods: [
                 BarChartRodData(
                   toY: scans,
-                  gradient: LinearGradient(colors: [Colors.indigo.shade400, Colors.indigo.shade200],
-                      begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                  gradient: LinearGradient(
+                      colors: [Colors.indigo.shade400, Colors.indigo.shade200],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter),
                   width: barWidth,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(3)),
                 ),
                 BarChartRodData(
                   toY: verified,
-                  gradient: LinearGradient(colors: [Colors.green.shade400, Colors.green.shade200],
-                      begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                  gradient: LinearGradient(
+                      colors: [Colors.green.shade400, Colors.green.shade200],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter),
                   width: barWidth,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(3)),
                 ),
               ]);
             }),
@@ -7680,20 +9667,27 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice7TempTrendChart() {
     final raw = device7AnalyticsData!.dailyData;
-    final data = raw.where((d) => (d['avg_temp'] as num?)?.toDouble() != null).toList();
-    if (data.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.thermostat_outlined, size: 48, color: Colors.grey.shade300),
-      const SizedBox(height: 8),
-      Text('No temperature data', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
-    ]));
+    final data =
+        raw.where((d) => (d['avg_temp'] as num?)?.toDouble() != null).toList();
+    if (data.isEmpty)
+      return Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.thermostat_outlined, size: 48, color: Colors.grey.shade300),
+        const SizedBox(height: 8),
+        Text('No temperature data',
+            style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+      ]));
 
-    final temps = data.map((d) => (d['avg_temp'] as num?)?.toDouble() ?? 0.0).toList();
+    final temps =
+        data.map((d) => (d['avg_temp'] as num?)?.toDouble() ?? 0.0).toList();
     final minT = temps.reduce((a, b) => a < b ? a : b);
     final maxT = temps.reduce((a, b) => a > b ? a : b);
     final yMin = (minT - 2.0).clamp(-20.0, 100.0);
     final yMax = (maxT + 2.0).clamp(yMin + 4.0, 100.0);
     final hInterval = ((yMax - yMin) / 4).clamp(0.5, double.infinity);
-    final labelInterval = data.length > 1 ? (data.length / 5).ceilToDouble().clamp(1.0, double.infinity) : 1.0;
+    final labelInterval = data.length > 1
+        ? (data.length / 5).ceilToDouble().clamp(1.0, double.infinity)
+        : 1.0;
 
     Color tempColor(double t) {
       if (t <= 4) return Colors.blue.shade500;
@@ -7702,39 +9696,60 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     }
 
     return Column(children: [
-      Wrap(spacing: 12, runSpacing: 4, alignment: WrapAlignment.center, children: [
-        _buildLegendItem(Colors.blue.shade500, '≤ 4°C Optimal'),
-        _buildLegendItem(Colors.orange.shade500, '4–8°C Warning'),
-        _buildLegendItem(Colors.red.shade500, '> 8°C Critical'),
-      ]),
+      Wrap(
+          spacing: 12,
+          runSpacing: 4,
+          alignment: WrapAlignment.center,
+          children: [
+            _buildLegendItem(Colors.blue.shade500, '≤ 4°C Optimal'),
+            _buildLegendItem(Colors.orange.shade500, '4–8°C Warning'),
+            _buildLegendItem(Colors.red.shade500, '> 8°C Critical'),
+          ]),
       const SizedBox(height: 8),
       Expanded(
         child: Padding(
           padding: const EdgeInsets.only(right: 16, top: 4),
           child: LineChart(LineChartData(
-            minY: yMin, maxY: yMax,
-            gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: hInterval,
-                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+            minY: yMin,
+            maxY: yMax,
+            gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: hInterval,
+                getDrawingHorizontalLine: (v) =>
+                    FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              bottomTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, reservedSize: 28, interval: labelInterval,
+              bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 28,
+                interval: labelInterval,
                 getTitlesWidget: (value, meta) {
                   final idx = value.toInt();
                   if (idx < 0 || idx >= data.length) return const SizedBox();
                   final d = data[idx]['date']?.toString() ?? '';
                   final parts = d.split('-');
-                  return Padding(padding: const EdgeInsets.only(top: 4),
-                      child: Text(parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
-                          style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                  return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                          parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
+                          style: GoogleFonts.inter(
+                              fontSize: 9, color: Colors.grey[500])));
                 },
               )),
-              leftTitles: AxisTitles(sideTitles: SideTitles(
-                showTitles: true, reservedSize: 42, interval: hInterval,
-                getTitlesWidget: (v, m) => Text('${v.toStringAsFixed(1)}°C', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+              leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 42,
+                interval: hInterval,
+                getTitlesWidget: (v, m) => Text('${v.toStringAsFixed(1)}°C',
+                    style: GoogleFonts.inter(
+                        fontSize: 9, color: Colors.grey[500])),
               )),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
@@ -7745,30 +9760,49 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   return LineTooltipItem(
                     '${d['date']}\n',
                     GoogleFonts.inter(color: Colors.white60, fontSize: 10),
-                    children: [TextSpan(
-                      text: '${spot.y.toStringAsFixed(1)}°C avg fridge temp',
-                      style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 11),
-                    )],
+                    children: [
+                      TextSpan(
+                        text: '${spot.y.toStringAsFixed(1)}°C avg fridge temp',
+                        style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11),
+                      )
+                    ],
                   );
                 }).toList(),
               ),
             ),
             lineBarsData: [
               LineChartBarData(
-                spots: List.generate(data.length, (i) => FlSpot(i.toDouble(), temps[i])),
-                isCurved: true, curveSmoothness: 0.3, barWidth: 2.5,
+                spots: List.generate(
+                    data.length, (i) => FlSpot(i.toDouble(), temps[i])),
+                isCurved: true,
+                curveSmoothness: 0.3,
+                barWidth: 2.5,
                 color: Colors.cyan.shade500,
                 dotData: FlDotData(
                   show: true,
                   getDotPainter: (spot, pct, bar, i) => FlDotCirclePainter(
-                    radius: 4, color: tempColor(spot.y), strokeWidth: 1.5,
+                    radius: 4,
+                    color: tempColor(spot.y),
+                    strokeWidth: 1.5,
                     strokeColor: Colors.white,
                   ),
                 ),
-                shadow: Shadow(color: Colors.cyan.withValues(alpha: 0.25), blurRadius: 6, offset: const Offset(0, 2)),
-                belowBarData: BarAreaData(show: true, gradient: LinearGradient(
-                    colors: [Colors.cyan.withValues(alpha: 0.15), Colors.cyan.withValues(alpha: 0.01)],
-                    begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                shadow: Shadow(
+                    color: Colors.cyan.withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2)),
+                belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                        colors: [
+                          Colors.cyan.withValues(alpha: 0.15),
+                          Colors.cyan.withValues(alpha: 0.01)
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter)),
               ),
             ],
           )),
@@ -7779,6 +9813,45 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   // Device 1 Dashboard (Original refrigeration unit dashboard)
   Widget _buildDevice1Dashboard() {
+    if (isPhoneLayout(context)) {
+      Widget chartPanel(String title, Widget chart) => GPanel(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(title, style: gasTitle(context)),
+                  const SizedBox(height: 16),
+                  chart,
+                ]),
+          );
+      return SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          _buildRealTimeInsightsCards(),
+          const SizedBox(height: 12),
+          _buildEnhancedAnalyticsCards(),
+          const SizedBox(height: 12),
+          _buildPeakPerformanceCard(),
+          _buildTemperatureChart(),
+          _buildTemperatureStabilityChart(),
+          _buildPowerConsumptionChart(),
+          _buildPhaseBalanceChart(),
+          _buildCompressorChart(),
+          _buildEfficiencyChart(),
+          _buildDoorAnalyticsChart(),
+          chartPanel('Ice detection', _buildIceAnalyticsChart()),
+          const SizedBox(height: 12),
+          chartPanel('Maintenance alerts', _buildMaintenanceChart()),
+          const SizedBox(height: 12),
+          chartPanel('Pressure analytics', _buildPressureChart()),
+          const SizedBox(height: 12),
+          _buildCorrelationsChart(),
+          chartPanel('Daily summary', _buildDailySummaryChart()),
+        ]),
+      );
+    }
+
     final isMobile = _isMobile(context);
     final padding = isMobile ? 12.0 : 16.0;
     final spacing = isMobile ? 8.0 : 12.0;
@@ -8507,7 +10580,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           '${insights.deviceHealthScore.overallScore.toStringAsFixed(0)}/100',
                           insights.deviceHealthScore.healthGrade,
                           Icons.favorite_rounded,
-                          _isHealthCritical(insights.deviceHealthScore.healthGrade),
+                          _isHealthCritical(
+                              insights.deviceHealthScore.healthGrade),
                         ),
                         const SizedBox(height: 12),
                         _buildInsightMetricCard(
@@ -8544,7 +10618,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           '${insights.deviceHealthScore.overallScore.toStringAsFixed(0)}/100',
                           insights.deviceHealthScore.healthGrade,
                           Icons.favorite_rounded,
-                          _isHealthCritical(insights.deviceHealthScore.healthGrade),
+                          _isHealthCritical(
+                              insights.deviceHealthScore.healthGrade),
                         ),
                         const SizedBox(width: 12),
                         _buildInsightMetricCard(
@@ -8734,8 +10809,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+        border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -8745,7 +10823,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -8765,27 +10843,39 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                Expanded(
+                    child: Text(
                   'Operational Cycles',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 20),
 
             // Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLegendItem(const Color(0xFF64748B), 'Compressor Starts'),
-                const SizedBox(width: 24),
-                _buildLegendItem(const Color(0xFF94A3B8), 'Door Opens'),
-              ],
-            ),
+            isPhoneLayout(context)
+                ? Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                        _buildLegendItem(
+                            const Color(0xFF64748B), 'Compressor Starts'),
+                        _buildLegendItem(const Color(0xFF94A3B8), 'Door Opens'),
+                      ])
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(
+                          const Color(0xFF64748B), 'Compressor Starts'),
+                      const SizedBox(width: 24),
+                      _buildLegendItem(const Color(0xFF94A3B8), 'Door Opens'),
+                    ],
+                  ),
             const SizedBox(height: 16),
 
             SizedBox(
@@ -8893,8 +10983,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+        border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -8904,7 +10997,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -8924,27 +11017,38 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                Expanded(
+                    child: Text(
                   'Performance Correlations',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 20),
 
             // Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLegendItem(const Color(0xFF64748B), 'Temp-Power'),
-                const SizedBox(width: 24),
-                _buildLegendItem(const Color(0xFF94A3B8), 'Door Impact'),
-              ],
-            ),
+            isPhoneLayout(context)
+                ? Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                        _buildLegendItem(const Color(0xFF64748B), 'Temp-Power'),
+                        _buildLegendItem(
+                            const Color(0xFF94A3B8), 'Door Impact'),
+                      ])
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(const Color(0xFF64748B), 'Temp-Power'),
+                      const SizedBox(width: 24),
+                      _buildLegendItem(const Color(0xFF94A3B8), 'Door Impact'),
+                    ],
+                  ),
             const SizedBox(height: 16),
 
             SizedBox(
@@ -9130,20 +11234,25 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             ),
             const SizedBox(height: 20),
 
-            Row(
+            Flex(
+              direction: _isMobile(context) ? Axis.vertical : Axis.horizontal,
               children: [
                 _buildMetricCard(
                   'Peak Power',
                   '${peak.peakPowerConsumption.toStringAsFixed(1)} A',
                   'Maximum consumption',
                 ),
-                const SizedBox(width: 12),
+                SizedBox(
+                    width: _isMobile(context) ? 0 : 12,
+                    height: _isMobile(context) ? 12 : 0),
                 _buildMetricCard(
                   'Lowest Air Temp',
                   '${peak.lowestTemperatureReached.toStringAsFixed(1)}°C',
                   'Minimum reached',
                 ),
-                const SizedBox(width: 12),
+                SizedBox(
+                    width: _isMobile(context) ? 0 : 12,
+                    height: _isMobile(context) ? 12 : 0),
                 _buildMetricCard(
                   'Highest Air Temp',
                   '${peak.highestTemperatureReached.toStringAsFixed(1)}°C',
@@ -9170,26 +11279,46 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ),
         ),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF64748B),
+        if (isPhoneLayout(context))
+          Flexible(
+              child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF64748B),
+            ),
+          ))
+        else
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF64748B),
+            ),
           ),
-        ),
       ],
     );
   }
 
-  Widget _buildSummaryStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildSummaryStatCard(
+      String title, String value, IconData icon, Color color) {
+    if (isPhoneLayout(context)) {
+      return _phoneReadingCard(title: title, value: value, icon: icon, color: color);
+    }
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withOpacity(0.2)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 4,
+              offset: Offset(0, 2))
+        ],
       ),
       child: Row(
         children: [
@@ -9200,9 +11329,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(title, style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                Text(title,
+                    style: GoogleFonts.inter(
+                        fontSize: 10,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500)),
                 SizedBox(height: 2),
-                Text(value, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87)),
+                Text(value,
+                    style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87)),
               ],
             ),
           ),
@@ -9211,13 +11348,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     );
   }
 
-  Widget _buildChart(String title, Widget chart) {
+  Widget _buildChart(String title, Widget chart, {bool naturalHeight = false}) {
+    final growWithContent = isPhoneLayout(context) && naturalHeight;
     return Container(
-      height: 500,
+      height: growWithContent ? null : 500,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -9238,7 +11379,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             ),
           ),
           const SizedBox(height: 16),
-          Expanded(child: chart),
+          if (growWithContent) chart else Expanded(child: chart),
         ],
       ),
     );
@@ -9250,7 +11391,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        border: isPhoneLayout(context)
+            ? Border.all(color: GasPalette.border)
+            : null,
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -9282,12 +11426,21 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Column(
       children: [
         // Legend
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(Colors.lightBlue, 'Ice Buildup Percentage'),
-          ],
-        ),
+        isPhoneLayout(context)
+            ? Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                    _buildLegendItem(
+                        Colors.lightBlue, 'Ice Buildup Percentage'),
+                  ])
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegendItem(Colors.lightBlue, 'Ice Buildup Percentage'),
+                ],
+              ),
         const SizedBox(height: 16),
         SizedBox(
           height: 190,
@@ -9377,16 +11530,26 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Column(
       children: [
         // Legend
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(Colors.red, 'High Temp'),
-            const SizedBox(width: 16),
-            _buildLegendItem(Colors.orange, 'High Pressure'),
-            const SizedBox(width: 16),
-            _buildLegendItem(Colors.purple, 'High Power'),
-          ],
-        ),
+        isPhoneLayout(context)
+            ? Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                    _buildLegendItem(Colors.red, 'High Temp'),
+                    _buildLegendItem(Colors.orange, 'High Pressure'),
+                    _buildLegendItem(Colors.purple, 'High Power'),
+                  ])
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegendItem(Colors.red, 'High Temp'),
+                  const SizedBox(width: 16),
+                  _buildLegendItem(Colors.orange, 'High Pressure'),
+                  const SizedBox(width: 16),
+                  _buildLegendItem(Colors.purple, 'High Power'),
+                ],
+              ),
         const SizedBox(height: 16),
         SizedBox(
           height: 190,
@@ -9488,14 +11651,23 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Column(
       children: [
         // Legend
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildLegendItem(Colors.red, 'High Pressure'),
-            const SizedBox(width: 16),
-            _buildLegendItem(Colors.blue, 'Low Pressure'),
-          ],
-        ),
+        isPhoneLayout(context)
+            ? Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                    _buildLegendItem(Colors.red, 'High Pressure'),
+                    _buildLegendItem(Colors.blue, 'Low Pressure'),
+                  ])
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegendItem(Colors.red, 'High Pressure'),
+                  const SizedBox(width: 16),
+                  _buildLegendItem(Colors.blue, 'Low Pressure'),
+                ],
+              ),
         const SizedBox(height: 16),
         SizedBox(
           height: 200,
@@ -9867,8 +12039,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+        border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -9878,7 +12053,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -9898,29 +12073,40 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                Expanded(
+                    child: Text(
                   'Temperature Trends',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 20),
 
             // Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLegendItem(Colors.blue, 'Drain Temperature'),
-                const SizedBox(width: 24),
-                _buildLegendItem(Colors.orange, 'Air Temp'),
-                const SizedBox(width: 24),
-                _buildLegendItem(Colors.green, 'Coil Temp'),
-              ],
-            ),
+            isPhoneLayout(context)
+                ? Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                        _buildLegendItem(Colors.blue, 'Drain Temperature'),
+                        _buildLegendItem(Colors.orange, 'Air Temp'),
+                        _buildLegendItem(Colors.green, 'Coil Temp'),
+                      ])
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(Colors.blue, 'Drain Temperature'),
+                      const SizedBox(width: 24),
+                      _buildLegendItem(Colors.orange, 'Air Temp'),
+                      const SizedBox(width: 24),
+                      _buildLegendItem(Colors.green, 'Coil Temp'),
+                    ],
+                  ),
             const SizedBox(height: 16),
 
             SizedBox(
@@ -10043,8 +12229,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+        border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -10054,7 +12243,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -10074,14 +12263,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                Expanded(
+                    child: Text(
                   'Temperature Stability',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 20),
@@ -10224,46 +12414,45 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             const SizedBox(height: 12),
 
             // Stats in single row
-            Row(
+            Flex(
+              direction: _isMobile(context) ? Axis.vertical : Axis.horizontal,
               children: [
-                Expanded(
-                  child: _buildMetricCard(
-                    'Total Spikes',
-                    data.tempSpikeCount
-                        .fold(0, (sum, count) => sum + count)
-                        .toString(),
-                    'Temperature spikes',
-                  ),
+                _buildMetricCard(
+                  'Total Spikes',
+                  data.tempSpikeCount
+                      .fold(0, (sum, count) => sum + count)
+                      .toString(),
+                  'Temperature spikes',
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildMetricCard(
-                    'Max Fluctuation',
-                    data.tempFluctuationRate.isNotEmpty
-                        ? '${data.tempFluctuationRate.reduce((a, b) => a > b ? a : b).toStringAsFixed(2)}°C/h'
-                        : '0.00°C/h',
-                    'Rate of change',
-                  ),
+                SizedBox(
+                    width: _isMobile(context) ? 0 : 12,
+                    height: _isMobile(context) ? 12 : 0),
+                _buildMetricCard(
+                  'Max Fluctuation',
+                  data.tempFluctuationRate.isNotEmpty
+                      ? '${data.tempFluctuationRate.reduce((a, b) => a > b ? a : b).toStringAsFixed(2)}°C/h'
+                      : '0.00°C/h',
+                  'Rate of change',
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildMetricCard(
-                    'Air Temp Diff',
-                    data.airTempDifference.isNotEmpty
-                        ? '${data.airTempDifference.reduce((a, b) => a > b ? a : b).toStringAsFixed(2)}°C'
-                        : '0.00°C',
-                    'Air temperature delta',
-                  ),
+                SizedBox(
+                    width: _isMobile(context) ? 0 : 12,
+                    height: _isMobile(context) ? 12 : 0),
+                _buildMetricCard(
+                  'Air Temp Diff',
+                  data.airTempDifference.isNotEmpty
+                      ? '${data.airTempDifference.reduce((a, b) => a > b ? a : b).toStringAsFixed(2)}°C'
+                      : '0.00°C',
+                  'Air temperature delta',
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildMetricCard(
-                    'Coil Temp Diff',
-                    data.coilTempDifference.isNotEmpty
-                        ? '${data.coilTempDifference.reduce((a, b) => a > b ? a : b).toStringAsFixed(2)}°C'
-                        : '0.00°C',
-                    'Coil temperature delta',
-                  ),
+                SizedBox(
+                    width: _isMobile(context) ? 0 : 12,
+                    height: _isMobile(context) ? 12 : 0),
+                _buildMetricCard(
+                  'Coil Temp Diff',
+                  data.coilTempDifference.isNotEmpty
+                      ? '${data.coilTempDifference.reduce((a, b) => a > b ? a : b).toStringAsFixed(2)}°C'
+                      : '0.00°C',
+                  'Coil temperature delta',
                 ),
               ],
             ),
@@ -10337,8 +12526,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+        border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -10348,7 +12540,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -10368,25 +12560,34 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                Expanded(
+                    child: Text(
                   'Power Consumption',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 20),
 
             // Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLegendItem(Colors.red, 'Total Power Consumption'),
-              ],
-            ),
+            isPhoneLayout(context)
+                ? Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                        _buildLegendItem(Colors.red, 'Total Power Consumption'),
+                      ])
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(Colors.red, 'Total Power Consumption'),
+                    ],
+                  ),
             const SizedBox(height: 16),
 
             SizedBox(
@@ -10487,8 +12688,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+        border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -10498,7 +12702,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -10518,29 +12722,40 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                Expanded(
+                    child: Text(
                   'Phase Balance',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 20),
 
             // Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLegendItem(Colors.red, 'Phase 1'),
-                const SizedBox(width: 24),
-                _buildLegendItem(Colors.yellow, 'Phase 2'),
-                const SizedBox(width: 24),
-                _buildLegendItem(Colors.blue, 'Phase 3'),
-              ],
-            ),
+            isPhoneLayout(context)
+                ? Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                        _buildLegendItem(Colors.red, 'Phase 1'),
+                        _buildLegendItem(Colors.yellow, 'Phase 2'),
+                        _buildLegendItem(Colors.blue, 'Phase 3'),
+                      ])
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(Colors.red, 'Phase 1'),
+                      const SizedBox(width: 24),
+                      _buildLegendItem(Colors.yellow, 'Phase 2'),
+                      const SizedBox(width: 24),
+                      _buildLegendItem(Colors.blue, 'Phase 3'),
+                    ],
+                  ),
             const SizedBox(height: 16),
 
             SizedBox(
@@ -10663,8 +12878,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+        border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -10674,7 +12892,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -10694,27 +12912,37 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                Expanded(
+                    child: Text(
                   'Compressor Activity',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 20),
 
             // Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLegendItem(Colors.green, 'Compressor On'),
-                const SizedBox(width: 24),
-                _buildLegendItem(Colors.red.shade400, 'Compressor Off'),
-              ],
-            ),
+            isPhoneLayout(context)
+                ? Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                        _buildLegendItem(Colors.green, 'Compressor On'),
+                        _buildLegendItem(Colors.red.shade400, 'Compressor Off'),
+                      ])
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(Colors.green, 'Compressor On'),
+                      const SizedBox(width: 24),
+                      _buildLegendItem(Colors.red.shade400, 'Compressor Off'),
+                    ],
+                  ),
             const SizedBox(height: 16),
 
             SizedBox(
@@ -10825,8 +13053,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+        border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -10836,7 +13067,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -10856,25 +13087,34 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                Expanded(
+                    child: Text(
                   'Energy Efficiency',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 20),
 
             // Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLegendItem(Colors.teal, 'Compressor Duty Cycle'),
-              ],
-            ),
+            isPhoneLayout(context)
+                ? Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                        _buildLegendItem(Colors.teal, 'Compressor Duty Cycle'),
+                      ])
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(Colors.teal, 'Compressor Duty Cycle'),
+                    ],
+                  ),
             const SizedBox(height: 16),
 
             SizedBox(
@@ -10975,8 +13215,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
+        border: Border.all(
+            color: isPhoneLayout(context)
+                ? GasPalette.border
+                : const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -10986,7 +13229,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -11006,27 +13249,37 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
+                Expanded(
+                    child: Text(
                   'Door Activity',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF0F172A),
                   ),
-                ),
+                )),
               ],
             ),
             const SizedBox(height: 20),
 
             // Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLegendItem(Colors.amber, 'Door Opens'),
-                const SizedBox(width: 24),
-                _buildLegendItem(Colors.blueGrey, 'Door Closes'),
-              ],
-            ),
+            isPhoneLayout(context)
+                ? Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                        _buildLegendItem(Colors.amber, 'Door Opens'),
+                        _buildLegendItem(Colors.blueGrey, 'Door Closes'),
+                      ])
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildLegendItem(Colors.amber, 'Door Opens'),
+                      const SizedBox(width: 24),
+                      _buildLegendItem(Colors.blueGrey, 'Door Closes'),
+                    ],
+                  ),
             const SizedBox(height: 16),
 
             SizedBox(

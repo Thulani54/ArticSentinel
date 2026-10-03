@@ -1,8 +1,11 @@
+import 'mobile_account_widgets.dart';
+import '../../gasmon/gas_theme.dart';
+import '../../gasmon/gas_widgets.dart';
+import '../../widgets/mobile_forms.dart';
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../../constants/Constants.dart';
@@ -250,6 +253,7 @@ class _BillManagementState extends State<BillManagement>
 
   @override
   Widget build(BuildContext context) {
+    if (isPhoneLayout(context)) return _buildMobileBills();
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
@@ -294,8 +298,87 @@ class _BillManagementState extends State<BillManagement>
         icon: const Icon(Icons.add_rounded),
         label: Text(
           'Send Bill',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: accountInter(context, fontWeight: FontWeight.w600),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMobileBills() {
+    return ColoredBox(
+      color: GasPalette.page,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        children: [
+          Row(children: [
+            Expanded(child: Text('Bills (${_filteredBills.length})', style: gasTitle(context))),
+            ElevatedButton(
+              onPressed: _sendBill,
+              style: accountButtonStyle(context, ElevatedButton.styleFrom(), primary: true),
+              child: const Text('Send bill'),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          GPanel(
+            padding: EdgeInsets.zero,
+            child: SizedBox(height: 28 + MediaQuery.textScalerOf(context).scale(68), child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: billStatistics.length,
+              separatorBuilder: (context, index) => const VerticalDivider(
+                  width: 1, indent: 14, endIndent: 14, color: GasPalette.border),
+              itemBuilder: (context, index) => _buildStatCard(billStatistics[index], index),
+            )),
+          ),
+          const SizedBox(height: 14),
+          Row(children: [
+            Expanded(child: TextField(
+              controller: _searchController,
+              decoration: mobileInputDecoration(context, const InputDecoration(
+                  labelText: 'Search bills', hintText: 'Description, recipient or amount')),
+            )),
+            const SizedBox(width: 8),
+            IconButton(
+              tooltip: 'Filter bills', onPressed: _showFilterDialog,
+              style: IconButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  backgroundColor: Colors.white, foregroundColor: GasPalette.ink2,
+                  side: const BorderSide(color: GasPalette.border),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32))),
+              icon: const Icon(Icons.tune_rounded, size: 20),
+            ),
+          ]),
+          if (_selectedFilter != 'All')
+            Row(children: [
+              Expanded(child: Text('Filtered by $_selectedFilter', style: gasSmall(context))),
+              TextButton(
+                style: accountButtonStyle(context, TextButton.styleFrom(foregroundColor: GasPalette.ink2)),
+                onPressed: () {
+                  setState(() => _selectedFilter = 'All');
+                  _filterBills();
+                },
+                child: const Text('Clear filter'),
+              ),
+            ]),
+          const SizedBox(height: 14),
+          if (_isLoading)
+            const GPanel(child: Center(child: Padding(
+                padding: EdgeInsets.all(24), child: CircularProgressIndicator())))
+          else if (_filteredBills.isEmpty)
+            GPanel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text('No bills found', style: gasTitle(context)),
+              const SizedBox(height: 8),
+              Text(_searchController.text.isNotEmpty || _selectedFilter != 'All'
+                  ? 'Try a different search or clear your filters.'
+                  : 'Your bills will appear here.', style: gasBody(context)),
+            ]))
+          else
+            GPanel(padding: EdgeInsets.zero, child: Column(children: [
+              for (var index = 0; index < _filteredBills.length; index++) ...[
+                if (index > 0) const Divider(height: 1, color: GasPalette.border),
+                _buildBillCard(_filteredBills[index]),
+              ],
+            ])),
+        ],
       ),
     );
   }
@@ -329,7 +412,8 @@ class _BillManagementState extends State<BillManagement>
             const SizedBox(width: 12),
             Text(
               "Billing Overview",
-              style: GoogleFonts.inter(
+              style: accountInter(
+                context,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF1E293B),
@@ -373,125 +457,153 @@ class _BillManagementState extends State<BillManagement>
         }
         _filterBills();
       },
-      child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: stat.color.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: stat.color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+      child: isPhoneLayout(context)
+          ? SizedBox(
+              width: stat.value.contains('R') ? 160 : 112,
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(stat.title, style: gasSmall(context)),
+                  const Spacer(),
+                  Text(stat.value, style: gasData(context, size: 20),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                ]),
+              ),
+            )
+          : Container(
+              width: 160,
+              padding: EdgeInsets.all(isPhoneLayout(context) ? 14 : 20),
+              decoration: accountSurface(
+                  context,
+                  BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: stat.color.withOpacity(0.2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  )),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: stat.color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          stat.icon,
+                          color: stat.color,
+                          size: 20,
+                        ),
+                      ),
+                      const Spacer(),
+                      Flexible(
+                          child: Text(
+                        stat.value.contains('R')
+                            ? stat.value.split('R')[1]
+                            : stat.value,
+                        style: accountInter(
+                          context,
+                          fontSize: stat.value.contains('R') ? 16 : 24,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      )),
+                    ],
                   ),
-                  child: Icon(
-                    stat.icon,
-                    color: stat.color,
-                    size: 20,
+                  const SizedBox(height: 12),
+                  Text(
+                    stat.title,
+                    style: accountInter(
+                      context,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF64748B),
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  stat.value.contains('R')
-                      ? stat.value.split('R')[1]
-                      : stat.value,
-                  style: GoogleFonts.inter(
-                    fontSize: stat.value.contains('R') ? 16 : 24,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              stat.title,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
+                  if (stat.value.contains('R')) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'R${stat.value.split('R')[1]}',
+                      style: accountInter(
+                        context,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: stat.color,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (stat.value.contains('R')) ...[
-              const SizedBox(height: 4),
-              Text(
-                'R${stat.value.split('R')[1]}',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: stat.color,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildSearchAndControls() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          )),
       child: Column(
         children: [
-          Row(
+          MobileFormRow(
             children: [
               // Search Field
               Expanded(
                 child: TextField(
                   controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText:
-                        'Search bills by description, recipient, or amount...',
-                    hintStyle: GoogleFonts.inter(
-                      color: const Color(0xFF9CA3AF),
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      color: Color(0xFF6B7280),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: Color(0xFF3B82F6), width: 2),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF9FAFB),
-                  ),
+                  decoration: mobileInputDecoration(
+                      context,
+                      InputDecoration(
+                        hintText:
+                            'Search bills by description, recipient, or amount...',
+                        hintStyle: accountInter(
+                          context,
+                          color: const Color(0xFF9CA3AF),
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF6B7280),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF3B82F6), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                      )),
                 ),
               ),
               const SizedBox(width: 12),
@@ -502,21 +614,24 @@ class _BillManagementState extends State<BillManagement>
                 icon: const Icon(Icons.filter_list_rounded, size: 18),
                 label:
                     Text(_selectedFilter == 'All' ? 'Filter' : _selectedFilter),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _selectedFilter == 'All'
-                      ? const Color(0xFF64748B)
-                      : const Color(0xFF3B82F6),
-                  side: BorderSide(
-                    color: _selectedFilter == 'All'
-                        ? const Color(0xFFE2E8F0)
-                        : const Color(0xFF3B82F6),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+                style: accountButtonStyle(
+                    context,
+                    OutlinedButton.styleFrom(
+                      foregroundColor: _selectedFilter == 'All'
+                          ? const Color(0xFF64748B)
+                          : const Color(0xFF3B82F6),
+                      side: BorderSide(
+                        color: _selectedFilter == 'All'
+                            ? const Color(0xFFE2E8F0)
+                            : const Color(0xFF3B82F6),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    primary: false),
               ),
 
               const SizedBox(width: 12),
@@ -558,7 +673,8 @@ class _BillManagementState extends State<BillManagement>
               children: [
                 Text(
                   'Active filter: ',
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 14,
                     color: const Color(0xFF64748B),
                   ),
@@ -570,7 +686,8 @@ class _BillManagementState extends State<BillManagement>
                     _filterBills();
                   },
                   backgroundColor: const Color(0xFF3B82F6).withOpacity(0.1),
-                  labelStyle: GoogleFonts.inter(
+                  labelStyle: accountInter(
+                    context,
                     color: const Color(0xFF3B82F6),
                     fontWeight: FontWeight.w600,
                   ),
@@ -605,7 +722,8 @@ class _BillManagementState extends State<BillManagement>
             const SizedBox(width: 12),
             Text(
               "Bills (${_filteredBills.length})",
-              style: GoogleFonts.inter(
+              style: accountInter(
+                context,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF1E293B),
@@ -628,10 +746,12 @@ class _BillManagementState extends State<BillManagement>
   Widget _buildLoadingState() {
     return Container(
       height: 300,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          )),
       child: const Center(
         child: CircularProgressIndicator(),
       ),
@@ -641,17 +761,19 @@ class _BillManagementState extends State<BillManagement>
   Widget _buildEmptyState() {
     return Container(
       height: 300,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          )),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -664,7 +786,8 @@ class _BillManagementState extends State<BillManagement>
             const SizedBox(height: 16),
             Text(
               'No bills found',
-              style: GoogleFonts.inter(
+              style: accountInter(
+                context,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF64748B),
@@ -675,7 +798,8 @@ class _BillManagementState extends State<BillManagement>
               _searchController.text.isNotEmpty || _selectedFilter != 'All'
                   ? 'Try adjusting your search or filters'
                   : 'Get started by sending your first bill',
-              style: GoogleFonts.inter(
+              style: accountInter(
+                context,
                 fontSize: 14,
                 color: const Color(0xFF9CA3AF),
               ),
@@ -717,22 +841,71 @@ class _BillManagementState extends State<BillManagement>
   }
 
   Widget _buildBillCard(BillingManagement bill) {
+    if (isPhoneLayout(context)) {
+      final statusInk = switch (bill.status.toLowerCase()) {
+        'paid' => GasPalette.goodInk,
+        'sent' => GasPalette.warnInk,
+        _ => GasPalette.ink2,
+      };
+      return Padding(
+        padding: const EdgeInsets.all(14),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(bill.description, style: gasTitle(context).copyWith(
+                      fontSize: 15, fontWeight: FontWeight.w600)),
+                ])),
+            _buildQuickActions(bill),
+          ]),
+          const SizedBox(height: 8),
+          Text(bill.recipients, style: gasBody(context).copyWith(height: 1.4)),
+          const SizedBox(height: 10),
+          Wrap(
+              spacing: 12,
+              runSpacing: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('R${bill.amount.toStringAsFixed(2)}',
+                    style: gasData(context, size: 20)),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                      color:
+                          _getStatusColor(bill.status).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(32)),
+                  child: Text(bill.status,
+                      style: gasSmall(context).copyWith(
+                          color: statusInk, fontWeight: FontWeight.w600)),
+                ),
+              ]),
+          const SizedBox(height: 8),
+          Text('${bill.type} · Due ${_formatDate(bill.dueDate)}', style: gasSmall(context)),
+        ]),
+      );
+    }
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _getStatusColor(bill.status).withOpacity(0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _getStatusColor(bill.status).withOpacity(0.3),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -759,7 +932,8 @@ class _BillManagementState extends State<BillManagement>
           const SizedBox(height: 12),
           Text(
             bill.description,
-            style: GoogleFonts.inter(
+            style: accountInter(
+              context,
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF1E293B),
@@ -770,7 +944,8 @@ class _BillManagementState extends State<BillManagement>
           const SizedBox(height: 4),
           Text(
             bill.recipients,
-            style: GoogleFonts.inter(
+            style: accountInter(
+              context,
               fontSize: 12,
               color: const Color(0xFF64748B),
             ),
@@ -780,7 +955,8 @@ class _BillManagementState extends State<BillManagement>
             children: [
               Text(
                 'R${bill.amount.toStringAsFixed(2)}',
-                style: GoogleFonts.inter(
+                style: accountInter(
+                  context,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF1E293B),
@@ -795,7 +971,8 @@ class _BillManagementState extends State<BillManagement>
                 ),
                 child: Text(
                   bill.status,
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -811,17 +988,19 @@ class _BillManagementState extends State<BillManagement>
 
   Widget _buildListView() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          )),
       child: Column(
         children: [
           // Table Header
@@ -840,7 +1019,8 @@ class _BillManagementState extends State<BillManagement>
                 Expanded(
                   child: Text(
                     'Type',
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF64748B),
@@ -850,7 +1030,8 @@ class _BillManagementState extends State<BillManagement>
                 Expanded(
                   child: Text(
                     'Description',
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF64748B),
@@ -860,7 +1041,8 @@ class _BillManagementState extends State<BillManagement>
                 Expanded(
                   child: Text(
                     'Recipients',
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF64748B),
@@ -870,7 +1052,8 @@ class _BillManagementState extends State<BillManagement>
                 Expanded(
                   child: Text(
                     'Amount',
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF64748B),
@@ -880,7 +1063,8 @@ class _BillManagementState extends State<BillManagement>
                 Expanded(
                   child: Text(
                     'Due Date',
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF64748B),
@@ -890,7 +1074,8 @@ class _BillManagementState extends State<BillManagement>
                 Expanded(
                   child: Text(
                     'Status',
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF64748B),
@@ -934,7 +1119,8 @@ class _BillManagementState extends State<BillManagement>
             child: Center(
               child: Text(
                 '${index + 1}',
-                style: GoogleFonts.inter(
+                style: accountInter(
+                  context,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF64748B),
@@ -972,7 +1158,8 @@ class _BillManagementState extends State<BillManagement>
                       const SizedBox(width: 4),
                       Text(
                         bill.type,
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: bill.type == 'Recurring'
@@ -994,7 +1181,8 @@ class _BillManagementState extends State<BillManagement>
               children: [
                 Text(
                   bill.description,
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF1E293B),
@@ -1004,7 +1192,8 @@ class _BillManagementState extends State<BillManagement>
                 ),
                 Text(
                   'Sent: ${_formatDate(bill.sentDate)}',
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 12,
                     color: const Color(0xFF64748B),
                   ),
@@ -1033,7 +1222,8 @@ class _BillManagementState extends State<BillManagement>
                 Expanded(
                   child: Text(
                     bill.recipients,
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF1E293B),
@@ -1050,7 +1240,8 @@ class _BillManagementState extends State<BillManagement>
           Expanded(
             child: Text(
               'R${bill.amount.toStringAsFixed(2)}',
-              style: GoogleFonts.inter(
+              style: accountInter(
+                context,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF1E293B),
@@ -1065,7 +1256,8 @@ class _BillManagementState extends State<BillManagement>
               children: [
                 Text(
                   _formatDate(bill.dueDate),
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF1E293B),
@@ -1073,7 +1265,8 @@ class _BillManagementState extends State<BillManagement>
                 ),
                 Text(
                   _getDueDateStatus(bill.dueDate),
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 11,
                     color: _getDueDateColor(bill.dueDate),
                     fontWeight: FontWeight.w500,
@@ -1093,7 +1286,8 @@ class _BillManagementState extends State<BillManagement>
               ),
               child: Text(
                 bill.status,
-                style: GoogleFonts.inter(
+                style: accountInter(
+                  context,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -1138,7 +1332,7 @@ class _BillManagementState extends State<BillManagement>
               const SizedBox(width: 8),
               Text(
                 'View Details',
-                style: GoogleFonts.inter(fontSize: 13),
+                style: accountInter(context, fontSize: 13),
               ),
             ],
           ),
@@ -1152,7 +1346,7 @@ class _BillManagementState extends State<BillManagement>
               const SizedBox(width: 8),
               Text(
                 'Edit Bill',
-                style: GoogleFonts.inter(fontSize: 13),
+                style: accountInter(context, fontSize: 13),
               ),
             ],
           ),
@@ -1166,7 +1360,7 @@ class _BillManagementState extends State<BillManagement>
               const SizedBox(width: 8),
               Text(
                 'Duplicate',
-                style: GoogleFonts.inter(fontSize: 13),
+                style: accountInter(context, fontSize: 13),
               ),
             ],
           ),
@@ -1180,7 +1374,7 @@ class _BillManagementState extends State<BillManagement>
               const SizedBox(width: 8),
               Text(
                 'Delete Bill',
-                style: GoogleFonts.inter(fontSize: 13),
+                style: accountInter(context, fontSize: 13),
               ),
             ],
           ),
@@ -1202,16 +1396,18 @@ class _BillManagementState extends State<BillManagement>
   }
 
   void _showFilterDialog() {
-    showDialog(
+    showMobileDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
+          decoration: accountSurface(
+              context,
+              BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              )),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1242,7 +1438,8 @@ class _BillManagementState extends State<BillManagement>
                     const SizedBox(width: 12),
                     Text(
                       'Filter Bills',
-                      style: GoogleFonts.inter(
+                      style: accountInter(
+                        context,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF1E293B),
@@ -1274,24 +1471,27 @@ class _BillManagementState extends State<BillManagement>
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: RadioListTile<String>(
-                        title: Text(
-                          filter,
-                          style: GoogleFonts.inter(
-                            fontWeight: _selectedFilter == filter
-                                ? FontWeight.w600
-                                : FontWeight.w500,
-                          ),
-                        ),
-                        value: filter,
-                        groupValue: _selectedFilter,
-                        activeColor: const Color(0xFF3B82F6),
-                        onChanged: (value) {
-                          setState(() => _selectedFilter = value!);
-                          Navigator.pop(context);
-                          _filterBills();
-                        },
-                      ),
+                      child: Material(
+                          color: Colors.transparent,
+                          child: RadioListTile<String>(
+                            title: Text(
+                              filter,
+                              style: accountInter(
+                                context,
+                                fontWeight: _selectedFilter == filter
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                            value: filter,
+                            groupValue: _selectedFilter,
+                            activeColor: const Color(0xFF3B82F6),
+                            onChanged: (value) {
+                              setState(() => _selectedFilter = value!);
+                              Navigator.pop(context);
+                              _filterBills();
+                            },
+                          )),
                     );
                   }).toList(),
                 ),
@@ -1367,16 +1567,18 @@ class _BillManagementState extends State<BillManagement>
   }
 
   void _deleteBill(BillingManagement bill) {
-    showDialog(
+    showMobileDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
+          decoration: accountSurface(
+              context,
+              BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              )),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1407,7 +1609,8 @@ class _BillManagementState extends State<BillManagement>
                     const SizedBox(width: 12),
                     Text(
                       'Confirm Delete',
-                      style: GoogleFonts.inter(
+                      style: accountInter(
+                        context,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF1E293B),
@@ -1424,7 +1627,8 @@ class _BillManagementState extends State<BillManagement>
                   children: [
                     Text(
                       'Are you sure you want to delete this bill? This action cannot be undone.',
-                      style: GoogleFonts.inter(
+                      style: accountInter(
+                        context,
                         fontSize: 14,
                         color: const Color(0xFF64748B),
                         height: 1.5,
@@ -1432,17 +1636,21 @@ class _BillManagementState extends State<BillManagement>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                            style: accountButtonStyle(
+                                context,
+                                OutlinedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                primary: false),
                             child: const Text('Cancel'),
                           ),
                         ),
@@ -1453,15 +1661,19 @@ class _BillManagementState extends State<BillManagement>
                               Navigator.of(context).pop();
                               _showSuccessSnackBar('Bill deleted successfully');
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
+                            style: accountButtonStyle(
+                                context,
+                                ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                primary: true),
                             child: const Text('Delete'),
                           ),
                         ),

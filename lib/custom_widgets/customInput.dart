@@ -1,3 +1,5 @@
+import '../gasmon/gas_theme.dart';
+import '../widgets/mobile_forms.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -60,29 +62,31 @@ class CustomInput extends StatelessWidget {
                 ? null
                 : "Please Enter Correct Email";
           },*/
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          hintText: hintText,
-          prefixIcon: prefix,
-          suffixIcon: suffix,
-          hintStyle: GoogleFonts.inter(
-            textStyle: const TextStyle(
-                fontSize: 13.5,
-                color: Colors.black,
-                letterSpacing: 0,
-                fontWeight: FontWeight.w500),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF161929)),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
+        decoration: mobileInputDecoration(
+            context,
+            InputDecoration(
+              border: InputBorder.none,
+              hintText: hintText,
+              prefixIcon: prefix,
+              suffixIcon: suffix,
+              hintStyle: GoogleFonts.inter(
+                textStyle: const TextStyle(
+                    fontSize: 13.5,
+                    color: Colors.black,
+                    letterSpacing: 0,
+                    fontWeight: FontWeight.w500),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF161929)),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            )),
         style: const TextStyle(
             color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13.5),
       ),
@@ -142,30 +146,32 @@ class CustomInputTransparent1 extends StatelessWidget {
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
               ]
             : null,
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          hintText: hintText,
-          prefixIcon: prefix,
-          suffixIcon: suffix,
-          filled: true,
-          fillColor: Colors.grey.withOpacity(0.1),
-          hintStyle: GoogleFonts.inter(
-            textStyle: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-                letterSpacing: 0,
-                fontWeight: FontWeight.normal),
-          ),
-          contentPadding: EdgeInsets.only(left: 16, top: 16),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey.withOpacity(0.0)),
-            borderRadius: BorderRadius.circular(32),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Constants.ctaColorLight),
-            borderRadius: BorderRadius.circular(32),
-          ),
-        ),
+        decoration: mobileInputDecoration(
+            context,
+            InputDecoration(
+              border: InputBorder.none,
+              hintText: hintText,
+              prefixIcon: prefix,
+              suffixIcon: suffix,
+              filled: true,
+              fillColor: Colors.grey.withOpacity(0.1),
+              hintStyle: GoogleFonts.inter(
+                textStyle: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    letterSpacing: 0,
+                    fontWeight: FontWeight.normal),
+              ),
+              contentPadding: EdgeInsets.only(left: 16, top: 16),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey.withOpacity(0.0)),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Constants.ctaColorLight),
+                borderRadius: BorderRadius.circular(32),
+              ),
+            )),
         style: TextStyle(
             color: Colors.black, fontWeight: FontWeight.normal, fontSize: 13.5),
       ),
@@ -219,37 +225,47 @@ class CustomInputTransparent extends StatelessWidget {
         onSubmitted: onSubmitted,
         controller: controller,
         textInputAction: textInputAction,
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          hintText: hintText,
-          prefixIcon: prefix,
-          suffixIcon: suffix,
-          hintStyle: GoogleFonts.inter(
-            textStyle: TextStyle(
+        decoration: mobileInputDecoration(
+            context,
+            InputDecoration(
+              border: InputBorder.none,
+              hintText: hintText,
+              prefixIcon: prefix,
+              suffixIcon: suffix,
+              hintStyle: GoogleFonts.inter(
+                textStyle: TextStyle(
+                    fontSize: 13.5,
+                    color: Colors.grey,
+                    letterSpacing: 0,
+                    fontWeight: FontWeight.w500),
+              ),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                    color: Colors.grey!.withOpacity(0.65), width: 0.7),
+                borderRadius: BorderRadius.circular(360),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Constants.ctaColorGreen),
+                borderRadius: BorderRadius.circular(360),
+              ),
+            )),
+        style: isPhoneLayout(context)
+            ? const TextStyle(
+                fontFamily: 'Inter',
                 fontSize: 13.5,
-                color: Colors.grey,
                 letterSpacing: 0,
-                fontWeight: FontWeight.w500),
-          ),
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
-          enabledBorder: OutlineInputBorder(
-            borderSide:
-                BorderSide(color: Colors.grey!.withOpacity(0.65), width: 0.7),
-            borderRadius: BorderRadius.circular(360),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Constants.ctaColorGreen),
-            borderRadius: BorderRadius.circular(360),
-          ),
-        ),
-        style: GoogleFonts.lato(
-          textStyle: TextStyle(
-              fontSize: 13.5,
-              letterSpacing: 0,
-              fontWeight: FontWeight.bold,
-              color: Colors.black),
-        ),
+                fontWeight: FontWeight.bold,
+                color: GasPalette.ink,
+              )
+            : GoogleFonts.lato(
+                textStyle: TextStyle(
+                    fontSize: 13.5,
+                    letterSpacing: 0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black),
+              ),
       ),
     );
   }
@@ -308,38 +324,48 @@ class CustomInputTransparentOption extends StatelessWidget {
                 ? null
                 : "Please Enter Correct Email";
           },*/
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          hintText: hintText,
-          labelText: labelText,
-          prefixIcon: prefix,
-          suffixIcon: suffix,
-          hintStyle: GoogleFonts.inter(
-            textStyle: TextStyle(
+        decoration: mobileInputDecoration(
+            context,
+            InputDecoration(
+              border: InputBorder.none,
+              hintText: hintText,
+              labelText: labelText,
+              prefixIcon: prefix,
+              suffixIcon: suffix,
+              hintStyle: GoogleFonts.inter(
+                textStyle: TextStyle(
+                    fontSize: 13.5,
+                    color: Colors.grey,
+                    letterSpacing: 0,
+                    fontWeight: FontWeight.w500),
+              ),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                    color: Colors.grey!.withOpacity(0.45), width: 0.5),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Constants.ctaColorGreen),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            )),
+        style: isPhoneLayout(context)
+            ? const TextStyle(
+                fontFamily: 'Inter',
                 fontSize: 13.5,
-                color: Colors.grey,
                 letterSpacing: 0,
-                fontWeight: FontWeight.w500),
-          ),
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
-          enabledBorder: OutlineInputBorder(
-            borderSide:
-                BorderSide(color: Colors.grey!.withOpacity(0.45), width: 0.5),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Constants.ctaColorGreen),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        style: GoogleFonts.lato(
-          textStyle: TextStyle(
-              fontSize: 13.5,
-              letterSpacing: 0,
-              fontWeight: FontWeight.bold,
-              color: Colors.black),
-        ),
+                fontWeight: FontWeight.bold,
+                color: GasPalette.ink,
+              )
+            : GoogleFonts.lato(
+                textStyle: TextStyle(
+                    fontSize: 13.5,
+                    letterSpacing: 0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black),
+              ),
       ),
     );
   }

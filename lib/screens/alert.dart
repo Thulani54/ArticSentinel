@@ -1,3 +1,7 @@
+import '../widgets/mobile_screen.dart';
+import '../gasmon/gas_theme.dart';
+import '../gasmon/gas_widgets.dart';
+import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
@@ -445,7 +449,7 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   void _showAlertDetails(Alert alert) {
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => AlertDetailsDialog(
         alert: alert,
@@ -457,6 +461,7 @@ class _NotificationPageState extends State<NotificationPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (isPhoneLayout(context)) return _buildPhoneAlerts(context);
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -864,6 +869,137 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
+  Widget _buildPhoneAlerts(BuildContext context) {
+    return ColoredBox(
+      color: GasPalette.page,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          MobileScreenHeader(
+            title: 'Alerts',
+            trailing: _isLoading ? null : Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child: Text('${currentAlerts.length} shown', style: gasSmall(context)),
+            ),
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+          ),
+          if (_isLoadingStatistics)
+            const LinearProgressIndicator(minHeight: 2)
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                for (final entry in notTopNavList.asMap().entries)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      selected: navIndex == entry.key,
+                      label: Text('${entry.value.itemName}  ${entry.value.itemTotal}'),
+                      selectedColor: const Color(0xFFE9EDF4),
+                      backgroundColor: GasPalette.panel,
+                      showCheckmark: false,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                      side: const BorderSide(color: GasPalette.border),
+                      labelStyle: gasSmall(context).copyWith(
+                        color: navIndex == entry.key ? GasPalette.primary : GasPalette.ink2,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      onSelected: (_) {
+                        setState(() {
+                          navIndex = entry.key;
+                          navStringId = entry.value.item_id;
+                        });
+                        _loadAlerts();
+                      },
+                    ),
+                  ),
+              ]),
+            ),
+          const SizedBox(height: 12),
+          if (_isLoading)
+            GPanel(child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Column(children: [
+                const CircularProgressIndicator(color: GasPalette.primary),
+                const SizedBox(height: 16),
+                Text('Loading alerts…', style: gasBody(context)),
+              ]),
+            ))
+          else if (currentAlerts.isEmpty)
+            GPanel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Icon(Icons.notifications_none_rounded, color: GasPalette.ink2, size: 28),
+              const SizedBox(height: 14),
+              Text('No alerts in this category', style: gasTitle(context)),
+              const SizedBox(height: 6),
+              Text('Reported equipment alerts will appear here.', style: gasBody(context)),
+            ]))
+          else
+            GPanel(padding: EdgeInsets.zero, child: Material(
+              type: MaterialType.transparency,
+              child: Column(children: [
+                for (final entry in currentAlerts.asMap().entries) ...[
+                  if (entry.key > 0) const Divider(height: 1, color: GasPalette.border),
+                  _phoneAlertRow(context, entry.value),
+                ],
+              ]),
+            )),
+          const SizedBox(height: 16),
+          GPanel(padding: EdgeInsets.zero, child: Material(
+            type: MaterialType.transparency,
+            child: ExpansionTile(
+              maintainState: true,
+              shape: const Border(),
+              collapsedShape: const Border(),
+              title: Text('AI alert preferences', style: gasBody(context).copyWith(color: GasPalette.ink, fontWeight: FontWeight.w600)),
+              children: const [AIAlertsSettingsTile()],
+            ),
+          )),
+          const SizedBox(height: 16),
+        ]),
+      ),
+    );
+  }
+
+  Widget _phoneAlertRow(BuildContext context, Alert alert) => InkWell(
+    onTap: () => _showAlertDetails(alert),
+    borderRadius: BorderRadius.circular(14),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: Text(alert.title, style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600))),
+          const SizedBox(width: 10),
+          const Icon(Icons.chevron_right_rounded, size: 20, color: GasPalette.ink2),
+        ]),
+        const SizedBox(height: 5),
+        Wrap(spacing: 8, runSpacing: 3, children: [
+          Text(alert.deviceName ?? 'Device ID: ${alert.deviceId}', style: gasSmall(context)),
+          Text('· ${timeAgo.format(alert.triggeredDateTime)}', style: gasSmall(context)),
+        ]),
+        const SizedBox(height: 8),
+        Text(alert.message, style: gasBody(context), maxLines: 2, overflow: TextOverflow.ellipsis),
+        const SizedBox(height: 12),
+        Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          _phoneAlertBadge(context, alert.severityDisplay, alert.severityColor),
+          _phoneAlertBadge(context, alert.statusDisplay, alert.statusColor),
+          Text('Duration: ${alert.duration}', style: gasSmall(context).copyWith(fontSize: 10.5)),
+        ]),
+      ]),
+    ),
+  );
+
+  Widget _phoneAlertBadge(BuildContext context, String label, Color color) =>
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+            color: color.withValues(alpha: .1),
+            borderRadius: BorderRadius.circular(32)),
+        child: Text(label,
+            style: gasSmall(context)
+                .copyWith(color: color, fontWeight: FontWeight.w500, fontSize: 10.5)),
+      );
+
   Color _getSeverityColor(String category) {
     switch (category.toLowerCase()) {
       case 'critical':
@@ -897,14 +1033,16 @@ class AlertDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    if (isPhoneLayout(context)) return _buildPhoneDetails(context);
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
         width: MediaQuery.of(context).size.width,
         constraints: BoxConstraints(
           maxWidth: 640,
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
+          maxHeight: MediaQuery.of(context).size.height *
+              (isPhoneLayout(context) ? 1 : 0.85),
         ),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -923,7 +1061,7 @@ class AlertDetailsDialog extends StatelessWidget {
             // Header Section
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
+              decoration: mobileFlatDecoration(context, BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -936,7 +1074,7 @@ class AlertDetailsDialog extends StatelessWidget {
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),
                 ),
-              ),
+              )),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1175,7 +1313,7 @@ class AlertDetailsDialog extends StatelessWidget {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   // Close Button
@@ -1185,7 +1323,8 @@ class AlertDetailsDialog extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 :12),
                       ),
                     ),
                     child: Text(
@@ -1215,12 +1354,13 @@ class AlertDetailsDialog extends StatelessWidget {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Constants.ctaColorLight,
+                        backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                              isPhoneLayout(context) ? 32 :12),
                         ),
                         elevation: 0,
                         shadowColor: Colors.transparent,
@@ -1245,12 +1385,13 @@ class AlertDetailsDialog extends StatelessWidget {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Constants.ctaColorLight,
+                        backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(
+                              isPhoneLayout(context) ? 32 :12),
                         ),
                         elevation: 0,
                         shadowColor: Colors.transparent,
@@ -1263,6 +1404,114 @@ class AlertDetailsDialog extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPhoneDetails(BuildContext context) {
+    Widget section(
+      String title, List<Widget> children) => GPanel(
+          padding: const EdgeInsets.all(16),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text(title, style: gasTitle(context)),
+            const SizedBox(height: 16),
+            ...children,
+          ]),
+        );
+    return MobileDialog(
+        child: Scaffold(
+      backgroundColor: GasPalette.page,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: GasPalette.panel,
+        foregroundColor: GasPalette.ink,
+        surfaceTintColor: Colors.transparent,
+        title: Text('Alert details', style: gasTitle(context)),
+        actions: [
+          IconButton(
+              tooltip: 'Close',
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close))
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text(alert.title, style: gasData(context, size: 22)),
+          const SizedBox(height: 16),
+          section('Alert information', [
+            _buildModernInfoRow(
+                'Message', alert.message, Icons.message_outlined),
+            _buildModernInfoRow(
+                'Severity', alert.severityDisplay, Icons.warning_amber,
+                valueColor: alert.severityColor),
+            _buildModernInfoRow('Status', alert.statusDisplay, Icons.circle,
+                valueColor: alert.statusColor),
+          ]),
+          const SizedBox(height: 12),
+          section('Equipment', [
+            _buildModernInfoRow(
+                'Device name', alert.deviceName ?? 'Unknown', Icons.devices),
+            _buildModernInfoRow(
+                'Device ID', '${alert.deviceId}', Icons.fingerprint),
+          ]),
+          const SizedBox(height: 12),
+          section('Timing', [
+            _buildModernInfoRow(
+                'Triggered at', alert.formattedTriggeredAt, Icons.schedule),
+            _buildModernInfoRow(
+                'Duration', alert.duration, Icons.timer_outlined),
+            if (alert.acknowledgedAt != null)
+              _buildModernInfoRow('Acknowledged at',
+                  _formatDateTime(alert.acknowledgedAt!), Icons.check),
+            if (alert.resolvedAt != null)
+              _buildModernInfoRow('Resolved at',
+                  _formatDateTime(alert.resolvedAt!), Icons.check),
+          ]),
+          const SizedBox(height: 12),
+          section('Notification status', [
+            _buildModernStatusRow(
+                'Email notification', alert.emailSent, Icons.email_outlined),
+            _buildModernStatusRow(
+                'SMS notification', alert.smsSent, Icons.sms_outlined),
+            if (alert.emailSentAt != null)
+              _buildModernInfoRow('Email sent at',
+                  _formatDateTime(alert.emailSentAt!), Icons.email_outlined),
+            if (alert.smsSentAt != null)
+              _buildModernInfoRow('SMS sent at',
+                  _formatDateTime(alert.smsSentAt!), Icons.sms_outlined),
+          ]),
+          if (alert.triggerData != null && alert.triggerData!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            section('Trigger data',
+                [Text(alert.triggerData.toString(), style: gasBody(context))]),
+          ],
+          const SizedBox(height: 20),
+          if (alert.isActive && onAcknowledge != null) ...[
+            FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onAcknowledge!();
+                },
+                child: const Text('Acknowledge')),
+            const SizedBox(height: 8),
+          ],
+          if (!alert.isResolved && onResolve != null) ...[
+            FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onResolve!();
+                },
+                child: const Text('Resolve')),
+            const SizedBox(height: 8),
+          ],
+          OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close')),
+        ]),
+      ),
+    )
     );
   }
 
@@ -1330,7 +1579,24 @@ class AlertDetailsDialog extends StatelessWidget {
 
   Widget _buildModernInfoRow(String label, String value, IconData icon,
       {Color? valueColor}) {
-    return Padding(
+    return LayoutBuilder(builder: (context, constraints) {
+      if (isPhoneLayout(context)) {
+        return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child:
+              Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+            Text(label, style: gasSmall(context)
+          ),
+          const SizedBox(height: 4), Text(value,
+              style: gasBody(context)
+                    .copyWith(
+                color: valueColor ?? GasPalette.ink)),
+          ]),
+        );
+      }
+      return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1366,8 +1632,24 @@ class AlertDetailsDialog extends StatelessWidget {
       ),
     );
   }
+    );
+  }
 
   Widget _buildModernStatusRow(String label, bool status, IconData icon) {
+    return LayoutBuilder(builder: (context, constraints) {
+      if (isPhoneLayout(context)) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: gasSmall(context)),
+            const SizedBox(height: 4),
+            Text(status ? 'Sent' : 'Not sent',
+                style: gasBody(context).copyWith(
+                    color: status ? GasPalette.good : GasPalette.ink2)),
+          ]),
+        );
+      }
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -1429,6 +1711,8 @@ class AlertDetailsDialog extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
     );
   }
 

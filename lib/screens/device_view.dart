@@ -1,3 +1,7 @@
+import '../widgets/mobile_screen.dart';
+import '../gasmon/gas_theme.dart';
+import '../gasmon/gas_widgets.dart';
+import '../widgets/mobile_forms.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,10 +18,110 @@ class DeviceViewDialog extends StatefulWidget {
 }
 
 class _DeviceViewDialogState extends State<DeviceViewDialog> {
+  Widget _mobileInformation(BuildContext context) {
+    final device = widget.deviceModel;
+    Widget section(String title, Map<String, String> values) => GPanel(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: gasTitle(context)),
+          const SizedBox(height: 12),
+          for (final entry in values.entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Text(entry.key, style: gasSmall(context)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 6,
+                    child: SelectableText(
+                      entry.value.isEmpty ? 'Not set' : entry.value,
+                      style: gasBody(context).copyWith(color: GasPalette.ink),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    return MobileDialog(
+      child: Scaffold(
+        backgroundColor: GasPalette.page,
+        appBar: AppBar(
+          backgroundColor: GasPalette.panel,
+          foregroundColor: GasPalette.ink,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          title: const Text('Device information'),
+          actions: [
+            IconButton(
+              tooltip: 'Close',
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close_rounded),
+            ),
+          ],
+          automaticallyImplyLeading: false,
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            MobileScreenHeader(
+              padding: EdgeInsets.zero,
+              title: device.deviceId,
+              description: device.currentStatus,
+            ),
+            const SizedBox(height: 12),
+            section('Business', {
+              'Created by': device.created_by.user_email,
+              'Owner': Constants.business_name,
+              'Attached by': device.deviceAttachedBy,
+            }),
+            const SizedBox(height: 12),
+            section('Device', {
+              'IMEI': device.imei,
+              'ICCID': device.iccid,
+              'Current status': device.currentStatus,
+              'PV power': '${device.pvPower} W',
+              'Battery capacity': '${device.batteryCapacity}%',
+              'Speed': '${device.speed} m/s',
+            }),
+            const SizedBox(height: 12),
+            section('Version', {
+              'Firmware': device.firmwareVersion,
+              'Hardware': device.hardwareVersion,
+              'Accuracy': device.accuracy,
+            }),
+            const SizedBox(height: 12),
+            section('Location and readings', {
+              'Longitude': device.longitude,
+              'Latitude': device.latitude,
+              'Last available': Constants.formatter.format(
+                device.lastAvailable,
+              ),
+              'GPS time': device.gpsTime,
+              'Temperature': '${device.temperature} °C',
+              'Humidity': '${device.humidity}%',
+            }),
+            const SizedBox(height: 12),
+            section('Notes', {'Notes': device.notes}),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (isPhoneLayout(context)) return _mobileInformation(context);
     return StatefulBuilder(
-        builder: (context1, setState) => Dialog(
+        builder: (context1, setState) => MobileDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

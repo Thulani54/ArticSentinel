@@ -1,13 +1,16 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'services/push_notifications.dart';
 import 'package:artic_sentinel/screens/dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'widgets/mobile_theme.dart';
 import 'package:url_strategy/url_strategy.dart';
 import 'package:uuid/uuid.dart';
 
 // Authentication screens
 import 'authentication/login.dart';
-import 'authentication/signup.dart';
+import 'authentication/signup_flow.dart';
 
 // Main screens
 import 'screens/alert.dart';
@@ -20,6 +23,8 @@ import 'screens/geo_fencing.dart';
 import 'screens/health_wellness.dart';
 import 'screens/help.dart';
 import 'screens/landing_page.dart';
+import 'screens/splash_screen.dart';
+import 'screens/welcome_screens.dart';
 import 'screens/livestock_management.dart';
 import 'screens/maintanance.dart';
 import 'screens/reports.dart';
@@ -64,9 +69,17 @@ Future<void> main() async {
   }
 
   // Determine initial route
-  final initialRoute = isLoggedIn ? '/dashboard' : '/';
+  // Phones open on the splash screen, which routes to the welcome tour on
+  // first launch; the web keeps its landing page.
+  final initialRoute = isLoggedIn ? '/dashboard' : (kIsWeb ? '/' : '/splash');
 
-  runApp(MyApp(initialRoute: initialRoute));
+  final app = MyApp(initialRoute: initialRoute);
+  runApp(app);
+  PushNotifications.instance.attachOpenHandler(() {
+    Sharedprefs.getUserLoggedInSharedPreference().then((loggedIn) =>
+        app._router.go(loggedIn == true ? '/device-management' : '/login'));
+  });
+  unawaited(PushNotifications.instance.initialize());
 }
 
 class MyApp extends StatelessWidget {
@@ -96,7 +109,19 @@ class MyApp extends StatelessWidget {
         path: '/signup',
         name: 'signup',
         builder: (BuildContext context, GoRouterState state) =>
-            const SignUpPage(),
+            const SignUpFlowPage(),
+      ),
+      GoRoute(
+        path: '/splash',
+        name: 'splash',
+        builder: (BuildContext context, GoRouterState state) =>
+            const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/welcome',
+        name: 'welcome',
+        builder: (BuildContext context, GoRouterState state) =>
+            const WelcomeScreens(),
       ),
 
       // Main shell route with persistent layout
@@ -257,10 +282,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Artic Sentinel',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: kIsWeb
+          ? ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+              useMaterial3: true,
+            )
+          : articMobileTheme(),
       routerConfig: _router,
     );
   }

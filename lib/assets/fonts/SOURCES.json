@@ -1,0 +1,53 @@
+{
+  "repository": "https://github.com/google/fonts",
+  "commit": "9710da1eacb3be272583c3224dcb70f9da6eadbb",
+  "downloaded": "2026-10-03",
+  "inter_source": "https://github.com/google/fonts/blob/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/inter/Inter%5Bopsz,wght%5D.ttf",
+  "inter_italic_source": "https://github.com/google/fonts/blob/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/inter/Inter-Italic%5Bopsz,wght%5D.ttf",
+  "lato_source": "https://github.com/google/fonts/blob/9710da1eacb3be272583c3224dcb70f9da6eadbb/ofl/lato/Lato-Light.ttf",
+  "inter_processing": "Static instances generated from the official variable fonts using fontTools 4.59.0; optical size 14. Outlines were not edited.",
+  "fonts": [
+    {
+      "file": "lib/assets/fonts/inter/Inter-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "sha256": "848ad22e5c23cd14f517f65fd655e2de21e4c6ee4f031b64bae44303c37b9e3b"
+    },
+    {
+      "file": "lib/assets/fonts/inter/Inter-Medium.ttf",
+      "weight": 500,
+      "style": "normal",
+      "sha256": "d602f4e416e22cea8d2329106a1383d55e536ba3d09fbbe73de8031f8e6d6b55"
+    },
+    {
+      "file": "lib/assets/fonts/inter/Inter-SemiBold.ttf",
+      "weight": 600,
+      "style": "normal",
+      "sha256": "87ef45c75556dc1953b58cf5542a71fd32daf294c0225e104309e4e07a88be2f"
+    },
+    {
+      "file": "lib/assets/fonts/inter/Inter-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "sha256": "3331afd139adc851f2f8b0991022df2b32d8f0ed3cba459c7ba09ccefeb3e18c"
+    },
+    {
+      "file": "lib/assets/fonts/inter/Inter-ExtraBold.ttf",
+      "weight": 800,
+      "style": "normal",
+      "sha256": "e3be4a16945119581175e26ca8c39ae59320c8b773079140f2954c0ddfd1c070"
+    },
+    {
+      "file": "lib/assets/fonts/inter/Inter-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "sha256": "346d2c37fbb356e9a2d4db3cc4fccc0c1c7851f99ac5c4a4ee6bbd0e6367fe89"
+    },
+    {
+      "file": "lib/assets/fonts/lato/Lato-Light.ttf",
+      "weight": 300,
+      "style": "normal",
+      "sha256": "cf2a774503baf418d584f49967bd160e1e03f087c13b25602f28024ec7788f08"
+    }
+  ]
+}

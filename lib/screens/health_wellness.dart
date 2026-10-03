@@ -1,3 +1,4 @@
+import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
 import 'package:fl_chart/fl_chart.dart';
@@ -281,13 +282,13 @@ class _HealthWellnessState extends State<HealthWellness> {
                                   ),
                                 ),
                                 onTap: () {
-                                  showDialog(
+                                  showMobileDialog(
                                       context: context,
                                       barrierDismissible: false,
                                       // set to false if you want to force a rating
                                       builder: (context) => StatefulBuilder(
                                           builder: (context, setState) =>
-                                              Dialog(
+                                              MobileDialog(
                                                 insetAnimationDuration:
                                                     Duration(milliseconds: 800),
                                                 shape: RoundedRectangleBorder(
@@ -758,7 +759,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                         SizedBox(
                           height: 16,
                         ),
-                        Row(
+                        MobileFormRow(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
@@ -772,7 +773,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                     elevation: 10,
                                     child: TextFormField(
                                       autofocus: false,
-                                      decoration: InputDecoration(
+                                      decoration: mobileInputDecoration(context, InputDecoration(
                                         suffixIcon: InkWell(
                                           onTap: () {},
                                           child: Container(
@@ -825,7 +826,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                           borderRadius:
                                               BorderRadius.circular(360),
                                         ),
-                                      ),
+                                      )),
                                       controller: _appointmentSearchController,
                                     ),
                                   ),
@@ -942,13 +943,13 @@ class _HealthWellnessState extends State<HealthWellness> {
                                   ),
                                 ),
                                 onTap: () {
-                                  showDialog(
+                                  showMobileDialog(
                                       context: context,
                                       barrierDismissible: false,
                                       // set to false if you want to force a rating
                                       builder: (context) => StatefulBuilder(
                                           builder: (context, setState) =>
-                                              Dialog(
+                                              MobileDialog(
                                                 insetAnimationDuration:
                                                     Duration(milliseconds: 800),
                                                 shape: RoundedRectangleBorder(
@@ -1210,7 +1211,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Row(
+                        MobileFormRow(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
@@ -1224,7 +1225,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                     elevation: 10,
                                     child: TextFormField(
                                       autofocus: false,
-                                      decoration: InputDecoration(
+                                      decoration: mobileInputDecoration(context, InputDecoration(
                                         errorStyle:
                                             TextStyle(color: Colors.red),
                                         suffixIcon: InkWell(
@@ -1284,7 +1285,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                           borderRadius:
                                               BorderRadius.circular(360),
                                         ),
-                                      ),
+                                      )),
                                       controller: _appointmentByController,
                                     ),
                                   ),

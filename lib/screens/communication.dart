@@ -1,7 +1,13 @@
+import '../widgets/mobile_screen.dart';
+import '../widgets/mobile_forms.dart';
+import '../gasmon/gas_theme.dart';
+import '../gasmon/gas_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:universal_html/html.dart' as html_dom;
+import 'package:universal_html/parsing.dart' as html_parser;
 
 import '../constants/Constants.dart';
 import '../widgets/compact_header.dart';
@@ -160,6 +166,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
 
   @override
   Widget build(BuildContext context) {
+    if (isPhoneLayout(context)) return _buildPhoneCommunication(context);
     return Container(
       height: 1000,
       child: SafeArea(
@@ -195,6 +202,255 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPhoneCommunication(BuildContext context) {
+    final totals = _stats['totals'] ?? {};
+    return LayoutBuilder(builder: (context, constraints) {
+      return SizedBox(
+        height: constraints.hasBoundedHeight
+            ? constraints.maxHeight
+            : MediaQuery.sizeOf(context).height - 100,
+        child: ColoredBox(
+          color: GasPalette.page,
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const MobileScreenHeader(
+              title: 'Communication',
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+                tabAlignment: TabAlignment.start,
+                dividerColor: Colors.transparent,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                    color: const Color(0xFFE9EDF4),
+                    borderRadius: BorderRadius.circular(32)),
+                labelColor: GasPalette.primary,
+                unselectedLabelColor: GasPalette.ink2,
+                labelStyle:
+                    gasBody(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+                tabs: const [
+                  Tab(height: 36, text: 'Overview'),
+                  Tab(height: 36, text: 'Providers'),
+                  Tab(height: 36, text: 'Templates'),
+                  Tab(height: 36, text: 'Logs'),
+                  Tab(height: 36, text: 'OTP'),
+                  Tab(height: 36, text: 'Queues')
+                ],
+              ),
+            ),
+            Expanded(
+                child: _isLoading
+                    ? Center(
+                        child: GPanel(
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                            const CircularProgressIndicator(
+                                color: GasPalette.primary),
+                            const SizedBox(height: 16),
+                            Text('Loading communication data…',
+                                style: gasBody(context)),
+                          ])))
+                    : _error.isNotEmpty
+                        ? SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: GPanel(
+                                child: Column(children: [
+                              const Icon(Icons.cloud_off_outlined,
+                                  color: GasPalette.ink2, size: 32),
+                              const SizedBox(height: 12),
+                              Text('Could not load communication data',
+                                  style: gasTitle(context),
+                                  textAlign: TextAlign.center),
+                              const SizedBox(height: 8),
+                              Text(_error,
+                                  style: gasBody(context),
+                                  textAlign: TextAlign.center),
+                              const SizedBox(height: 16),
+                              FilledButton(
+                                  onPressed: _loadData,
+                                  child: const Text('Try again')),
+                            ])))
+                        : TabBarView(controller: _tabController, children: [
+                            _phoneCommunicationList('Overview', [
+                              GPanel(padding: const EdgeInsets.all(16), child: Column(children: [
+                                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Expanded(child: _phoneCommunicationMetric('SMS sent', '${totals['sms_sent'] ?? 0}')),
+                                  const SizedBox(width: 16),
+                                  Expanded(child: _phoneCommunicationMetric('Emails sent', '${totals['email_sent'] ?? 0}')),
+                                ]),
+                                const Divider(height: 20, color: GasPalette.border),
+                                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Expanded(child: _phoneCommunicationMetric('OTP generated', '${totals['otp_generated'] ?? 0}')),
+                                  const SizedBox(width: 16),
+                                  Expanded(child: _phoneCommunicationMetric('Total cost', '\$${(totals['sms_cost'] ?? 0).toStringAsFixed(2)}')),
+                                ]),
+                              ])),
+                              const SizedBox(height: 16),
+                              Text('Recent activity', style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 12),
+                              if (_logs.isEmpty)
+                                _phoneCommunicationEmpty('No recent activity')
+                              else
+                                for (final log in _logs.take(5))
+                                  _phoneCommunicationLog(log),
+                            ]),
+                            _phoneCommunicationList('Providers', [
+                              for (final provider in _providers)
+                                _phoneCommunicationRecord(
+                                    provider['name'] ?? '',
+                                    '${provider['provider_type_display'] ?? ''} · ${provider['is_active'] == true ? 'Active' : 'Inactive'}',
+                                    {
+                                      'Sent': '${provider['total_sent'] ?? 0}',
+                                      'Failed':
+                                          '${provider['total_failed'] ?? 0}',
+                                      'Success rate':
+                                          '${provider['success_rate'] ?? 0}%',
+                                      if (provider['cost_per_message'] != null)
+                                        'Cost per message':
+                                            '\$${provider['cost_per_message'].toStringAsFixed(4)}',
+                                    }),
+                            ]),
+                            _phoneCommunicationList('Templates', [
+                              for (final template in _templates)
+                                _phoneCommunicationRecord(
+                                    template['name'] ?? '',
+                                    '${template['template_type_display'] ?? ''} · ${template['communication_type_display'] ?? ''}',
+                                    {
+                                      if (template['is_default'] == true)
+                                        'Template': 'Default',
+                                      if (template['subject'] != null &&
+                                          template['subject'].isNotEmpty)
+                                        'Subject': template['subject'],
+                                      'Message': template['message'] ?? '',
+                                      'Usage':
+                                          '${template['times_used'] ?? 0} times',
+                                    }),
+                            ]),
+                            _phoneCommunicationList('Logs', [
+                              for (final log in _logs)
+                                _phoneCommunicationLog(log)
+                            ]),
+                            _phoneCommunicationList('OTP codes', [
+                              for (final otp in _otpCodes)
+                                _phoneCommunicationRecord(
+                                    'User: ${otp['user'] ?? 'Unknown'}',
+                                    '${otp['otp_type_display'] ?? ''} · ${_getOTPStatusText(otp)}',
+                                    {
+                                      'Attempts':
+                                          '${otp['attempts']}/${otp['max_attempts']}',
+                                      'Created':
+                                          _formatDateTime(otp['created_at']),
+                                      'Expires':
+                                          _formatDateTime(otp['expires_at']),
+                                    }),
+                            ]),
+                            _phoneCommunicationList('Queues', [
+                              for (final queue in _queues)
+                                _phoneCommunicationRecord(queue['name'] ?? '',
+                                    queue['status_display'] ?? '', {
+                                  'Priority': queue['priority_display'] ?? '',
+                                  if (queue['description'] != null &&
+                                      queue['description'].isNotEmpty)
+                                    'Description': queue['description'],
+                                  'Recipients': '${queue['total_recipients']}',
+                                  'Successful': '${queue['successful_count']}',
+                                  'Failed': '${queue['failed_count']}',
+                                }),
+                            ]),
+                          ])),
+          ]),
+        ),
+      );
+    });
+  }
+
+  Widget _phoneCommunicationList(String title, List<Widget> children) =>
+      SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (children.isEmpty)
+            _phoneCommunicationEmpty('No ${title.toLowerCase()} available')
+          else
+            ...children,
+        ]),
+      );
+
+  Widget _phoneCommunicationEmpty(String message) => GPanel(
+          child: Column(children: [
+        const Icon(Icons.inbox_outlined, color: GasPalette.ink2, size: 32),
+        const SizedBox(height: 12),
+        Text(message, style: gasBody(context), textAlign: TextAlign.center),
+      ]));
+
+  Widget _phoneCommunicationMetric(String label, String value) => Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Expanded(child: Text(label, style: gasSmall(context).copyWith(fontSize: 10.5))),
+      const SizedBox(width: 8),
+      Flexible(child: Text(value, textAlign: TextAlign.end, style: gasData(context, size: 18))),
+    ],
+  );
+
+  Widget _phoneCommunicationValue(String label, String value) {
+    if (label == 'Message') return _PhoneMessagePreview(message: value);
+    final paragraph = ['Message', 'Subject', 'Description', 'Error'].contains(label);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: paragraph
+          ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label, style: gasSmall(context)),
+              const SizedBox(height: 3),
+              Text(value, style: gasBody(context).copyWith(color: GasPalette.ink, height: 1.4, fontSize: 12)),
+            ])
+          : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: Text(label, style: gasSmall(context))),
+              const SizedBox(width: 12),
+              Expanded(child: Text(value, textAlign: TextAlign.end,
+                style: gasBody(context).copyWith(color: GasPalette.ink, fontSize: 12, fontWeight: FontWeight.w600))),
+            ]),
+    );
+  }
+
+  Widget _phoneCommunicationRecord(
+          String title, String subtitle, Map<String, String> values) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: GPanel(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(title, style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: gasSmall(context)),
+                  const Divider(height: 16, color: GasPalette.border),
+                  for (final value in values.entries)
+                    _phoneCommunicationValue(value.key, value.value),
+                ])),
+      );
+
+  Widget _phoneCommunicationLog(Map<String, dynamic> log) {
+    final subject = log['subject'] as String?;
+    final hasSubject = subject != null && subject.isNotEmpty;
+    final status = '${log['communication_type_display'] ?? ''} · ${log['status_display'] ?? ''}';
+    return _phoneCommunicationRecord(
+      hasSubject ? subject : status,
+      hasSubject ? '$status · ${_formatDateTime(log['created_at'])}' : _formatDateTime(log['created_at']),
+      {
+        'Message': log['message'] ?? '',
+        if (log['error_message'] != null && log['error_message'].isNotEmpty)
+          'Error': log['error_message'],
+      },
     );
   }
 
@@ -376,12 +632,12 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.ctaColorLight,
+                backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 12),
                 ),
                 elevation: 0,
               ),
@@ -1543,6 +1799,95 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     } catch (e) {
       return '';
     }
+  }
+}
+
+class _PhoneMessagePreview extends StatefulWidget {
+  const _PhoneMessagePreview({required this.message});
+
+  final String message;
+
+  @override
+  State<_PhoneMessagePreview> createState() => _PhoneMessagePreviewState();
+}
+
+class _PhoneMessagePreviewState extends State<_PhoneMessagePreview> {
+  late String _text;
+  bool _expanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _text = _readableMessage(widget.message);
+  }
+
+  @override
+  void didUpdateWidget(covariant _PhoneMessagePreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.message != widget.message) {
+      _text = _readableMessage(widget.message);
+      _expanded = false;
+    }
+  }
+
+  String _readableMessage(String source) {
+    var text = source;
+    if (RegExp(r'</?[a-zA-Z][^>]*>').hasMatch(source)) {
+      final document = html_parser.parseHtmlDocument(source);
+      for (final element in document.querySelectorAll('script, style, head')) {
+        element.remove();
+      }
+      for (final element in document.querySelectorAll(
+          'br, p, div, li, tr, td, th, h1, h2, h3, h4, h5, h6, blockquote, section')) {
+        element.parent?.insertBefore(html_dom.Text('\n'), element);
+        if (element.localName != 'br') element.appendText('\n');
+      }
+      text = document.body?.text ?? '';
+    }
+    return text
+        .replaceAll(RegExp(r'[\t\r\f\v \u00a0]+'), ' ')
+        .split('\n')
+        .map((line) => line.trim())
+        .join('\n')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canExpand = _text.length > 120 || _text.split('\n').length > 3;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Message', style: gasSmall(context)),
+          const SizedBox(height: 5),
+          Text(
+            _text.isEmpty
+                ? (widget.message.trim().isEmpty
+                    ? 'No message content'
+                    : 'No text preview available')
+                : _text,
+            maxLines: canExpand && !_expanded ? 3 : null,
+            overflow: canExpand && !_expanded ? TextOverflow.ellipsis : null,
+            style: gasBody(context)
+                .copyWith(color: GasPalette.ink, height: 1.5),
+          ),
+          if (canExpand)
+            TextButton(
+              onPressed: () => setState(() => _expanded = !_expanded),
+              style: TextButton.styleFrom(
+                foregroundColor: GasPalette.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(32)),
+              ),
+              child: Text(_expanded ? 'Show less' : 'Show full message'),
+            ),
+        ],
+      ),
+    );
   }
 }
 

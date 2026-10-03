@@ -1,9 +1,14 @@
+import 'settings/mobile_account_widgets.dart';
+import '../gasmon/gas_theme.dart';
+import '../gasmon/gas_widgets.dart';
+import '../widgets/mobile_forms.dart';
+import '../widgets/mobile_screen.dart';
 import 'dart:async';
 import 'dart:io';
 
 import 'package:artic_sentinel/constants/Constants.dart';
+import 'team_members_tab.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../widgets/compact_header.dart';
@@ -328,7 +333,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _loadData();
   }
 
@@ -384,6 +389,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
 
   @override
   Widget build(BuildContext context) {
+    if (isPhoneLayout(context)) return _buildMobileRoles();
     return Container(
       height: 1000,
       //backgroundColor: const Color(0xFFF8FAFC),
@@ -410,35 +416,54 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 controller: _tabController,
                 isScrollable: true,
                 dividerColor: Colors.transparent,
-                indicator: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                    BoxShadow(
-                      color: Constants.ctaColorLight.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
+                indicator: accountSurface(
+                    context,
+                    BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                        BoxShadow(
+                          color: Constants.ctaColorLight.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    )),
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelColor: Constants.ctaColorLight,
                 unselectedLabelColor: const Color(0xFF64748B),
-                labelStyle: GoogleFonts.inter(
+                labelStyle: accountInter(
+                  context,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                 ),
-                unselectedLabelStyle: GoogleFonts.inter(
+                unselectedLabelStyle: accountInter(
+                  context,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
                 tabs: [
+                  Tab(
+                    height: 48,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.group_rounded, size: 18),
+                          SizedBox(width: 8),
+                          Text('Team'),
+                        ],
+                      ),
+                    ),
+                  ),
                   Tab(
                     height: 48,
                     child: Container(
@@ -510,6 +535,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                   : TabBarView(
                       controller: _tabController,
                       children: [
+                        const TeamMembersTab(),
                         _buildRolesTab(),
                         _buildPermissionsTab(),
                         _buildRequestsTab(),
@@ -521,6 +547,70 @@ class _RoleManagementPageState extends State<RoleManagementPage>
         ),
       ),
     );
+  }
+
+  Widget _buildMobileRoles() {
+    return ColoredBox(
+        color: GasPalette.page,
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const MobileScreenHeader(
+            title: 'Team & access',
+          ),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                dividerColor: Colors.transparent,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: GasPalette.border),
+                    borderRadius: BorderRadius.circular(32)),
+                labelColor: GasPalette.ink,
+                unselectedLabelColor: GasPalette.ink2,
+                labelStyle:
+                    gasBody(context).copyWith(fontWeight: FontWeight.w600),
+                tabs: const [
+                  Tab(height: 44, text: 'Team'),
+                  Tab(height: 44, text: 'Roles'),
+                  Tab(height: 44, text: 'Permissions'),
+                  Tab(height: 44, text: 'Requests'),
+                  Tab(height: 44, text: 'Audit logs')
+                ],
+              )),
+          const SizedBox(height: 12),
+          Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : TabBarView(controller: _tabController, children: [
+                      const TeamMembersTab(),
+                      _buildRolesTab(),
+                      _buildPermissionsTab(),
+                      _buildRequestsTab(),
+                      _buildAuditLogsTab()
+                    ])),
+        ]));
+  }
+
+  Widget _mobileEmpty(String title, String description, IconData icon) {
+    return Align(
+        alignment: Alignment.topCenter,
+        child: GPanel(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+              Icon(icon, size: 32, color: GasPalette.ink2),
+              const SizedBox(height: 12),
+              Text(title,
+                  style: gasTitle(context), textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Text(description,
+                  style: gasBody(context), textAlign: TextAlign.center),
+            ])));
   }
 
   Widget _buildStatsCards() {
@@ -569,18 +659,21 @@ class _RoleManagementPageState extends State<RoleManagementPage>
       String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.2)),
+          )),
       child: Column(
         children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 8),
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: accountInter(
+              context,
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: Constants.ctaColorLight,
@@ -588,7 +681,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
           ),
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: accountInter(
+              context,
               fontSize: 12,
               color: const Color(0xFF64748B),
             ),
@@ -611,14 +705,20 @@ class _RoleManagementPageState extends State<RoleManagementPage>
 
           // Roles List
           Expanded(
-            child: ListView.separated(
-              itemCount: roles.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final role = roles[index];
-                return _buildRoleCard(role);
-              },
-            ),
+            child: isPhoneLayout(context) && roles.isEmpty
+                ? _mobileEmpty(
+                    'No roles to display',
+                    'Roles available to your account will appear here.',
+                    Icons.admin_panel_settings_outlined)
+                : ListView.separated(
+                    itemCount: roles.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final role = roles[index];
+                      return _buildRoleCard(role);
+                    },
+                  ),
           ),
         ],
       ),
@@ -626,58 +726,86 @@ class _RoleManagementPageState extends State<RoleManagementPage>
   }
 
   Widget _buildSearchAndFilter() {
+    if (isPhoneLayout(context)) {
+      return Row(children: [
+        Expanded(child: TextField(
+          onChanged: (value) => setState(() => _searchQuery = value),
+          decoration: mobileInputDecoration(context,
+              const InputDecoration(labelText: 'Search access', hintText: 'Roles, permissions or users')),
+        )),
+        const SizedBox(width: 10),
+        ElevatedButton(
+          onPressed: () async {
+            final result = await showMobileDialog<bool>(
+              context: context, builder: (context) => const AddRoleDialog(),
+            );
+            if (result == true) _loadRoles();
+          },
+          style: accountButtonStyle(context, ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16)), primary: true),
+          child: const Text('Add Role'),
+        ),
+      ]);
+    }
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          )),
       child: Column(
         children: [
-          Row(
+          MobileFormRow(
             children: [
               Expanded(
                 child: TextField(
                   onChanged: (value) => setState(() => _searchQuery = value),
-                  decoration: InputDecoration(
-                    hintText: 'Search roles, permissions, or users...',
-                    hintStyle: GoogleFonts.inter(
-                      color: const Color(0xFF9CA3AF),
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      color: Color(0xFF6B7280),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          BorderSide(color: Constants.ctaColorLight, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF9FAFB),
-                  ),
+                  decoration: mobileInputDecoration(
+                      context,
+                      InputDecoration(
+                        hintText: 'Search roles, permissions, or users...',
+                        hintStyle: accountInter(
+                          context,
+                          color: const Color(0xFF9CA3AF),
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF6B7280),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFE5E7EB)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                              color: Constants.ctaColorLight, width: 2),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                      )),
                 ),
               ),
               const SizedBox(width: 12),
               // In your main widget button:
               ElevatedButton.icon(
                 onPressed: () async {
-                  final result = await showDialog<bool>(
+                  final result = await showMobileDialog<bool>(
                     context: context,
                     builder: (context) => const AddRoleDialog(),
                   );
@@ -688,16 +816,19 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 },
                 icon: const Icon(Icons.add_rounded, size: 18),
                 label: const Text("Add Role"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Constants.ctaColorLight,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
+                style: accountButtonStyle(
+                    context,
+                    ElevatedButton.styleFrom(
+                      backgroundColor: Constants.ctaColorLight,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    primary: true),
               ),
             ],
           ),
@@ -708,23 +839,26 @@ class _RoleManagementPageState extends State<RoleManagementPage>
 
   Widget _buildRoleCard(Role role) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.all(isPhoneLayout(context) ? 14 : 20),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              if (!isPhoneLayout(context)) ...[
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -738,33 +872,36 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 ),
               ),
               const SizedBox(width: 16),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       role.name,
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                      style: accountInter(
+                        context,
+                        fontSize: isPhoneLayout(context) ? 15 : 18,
+                        fontWeight: isPhoneLayout(context) ? FontWeight.w600 : FontWeight.w700,
                         color: Constants.ctaColorLight,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding: isPhoneLayout(context) ? EdgeInsets.zero : const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color:
-                            _getCategoryColor(role.category).withOpacity(0.1),
+                        color: isPhoneLayout(context) ? Colors.transparent
+                            : _getCategoryColor(role.category).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         role.categoryDisplay,
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: _getCategoryColor(role.category),
+                          color: isPhoneLayout(context) ? GasPalette.ink2 : _getCategoryColor(role.category),
                         ),
                       ),
                     ),
@@ -802,17 +939,18 @@ class _RoleManagementPageState extends State<RoleManagementPage>
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isPhoneLayout(context) ? 10 : 16),
           Text(
             role.description,
-            style: GoogleFonts.inter(
-              fontSize: 14,
+            style: accountInter(
+              context,
+              fontSize: isPhoneLayout(context) ? 13 : 14,
               color: const Color(0xFF64748B),
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
+          SizedBox(height: isPhoneLayout(context) ? 10 : 16),
+          AccountFlow(
             children: [
               _buildRoleMetric(
                   "Permissions", role.permissionCount, Icons.key_rounded),
@@ -829,7 +967,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 ),
                 child: Text(
                   role.isActive ? 'Active' : 'Inactive',
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: role.isActive ? Colors.green : Colors.red,
@@ -845,12 +984,16 @@ class _RoleManagementPageState extends State<RoleManagementPage>
 
   Widget _buildRoleMetric(String label, int value, IconData icon) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: const Color(0xFF64748B)),
-        const SizedBox(width: 6),
+        if (!isPhoneLayout(context)) ...[
+          Icon(icon, size: 16, color: const Color(0xFF64748B)),
+          const SizedBox(width: 6),
+        ],
         Text(
           '$value $label',
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF64748B),
@@ -868,14 +1011,20 @@ class _RoleManagementPageState extends State<RoleManagementPage>
           _buildSearchAndFilter(),
           const SizedBox(height: 20),
           Expanded(
-            child: ListView.separated(
-              itemCount: permissions.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final permission = permissions[index];
-                return _buildPermissionCard(permission);
-              },
-            ),
+            child: isPhoneLayout(context) && permissions.isEmpty
+                ? _mobileEmpty(
+                    'No permissions to display',
+                    'Permissions available to your account will appear here.',
+                    Icons.lock_outline)
+                : ListView.separated(
+                    itemCount: permissions.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final permission = permissions[index];
+                      return _buildPermissionCard(permission);
+                    },
+                  ),
           ),
         ],
       ),
@@ -884,23 +1033,26 @@ class _RoleManagementPageState extends State<RoleManagementPage>
 
   Widget _buildPermissionCard(Permission permission) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.all(isPhoneLayout(context) ? 14 : 20),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              if (!isPhoneLayout(context)) ...[
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -915,20 +1067,22 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 ),
               ),
               const SizedBox(width: 12),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       permission.name,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
+                      style: accountInter(
+                        context,
+                        fontSize: isPhoneLayout(context) ? 14 : 16,
                         fontWeight: FontWeight.w600,
                         color: Constants.ctaColorLight,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Row(
+                    AccountFlow(
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -940,8 +1094,9 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                           ),
                           child: Text(
                             permission.typeDisplay,
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
+                            style: accountInter(
+                              context,
+                              fontSize: isPhoneLayout(context) ? 11.5 : 10,
                               fontWeight: FontWeight.w600,
                               color: _getPermissionTypeColor(permission.type),
                             ),
@@ -950,7 +1105,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                         const SizedBox(width: 8),
                         Text(
                           permission.moduleDisplay,
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 12,
                             color: const Color(0xFF64748B),
                           ),
@@ -993,7 +1149,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
             const SizedBox(height: 12),
             Text(
               permission.description,
-              style: GoogleFonts.inter(
+              style: accountInter(
+                context,
                 fontSize: 13,
                 color: const Color(0xFF64748B),
                 height: 1.4,
@@ -1012,14 +1169,20 @@ class _RoleManagementPageState extends State<RoleManagementPage>
         children: [
           const SizedBox(height: 20),
           Expanded(
-            child: ListView.separated(
-              itemCount: pendingRequests.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final request = pendingRequests[index];
-                return _buildRequestCard(request);
-              },
-            ),
+            child: isPhoneLayout(context) && pendingRequests.isEmpty
+                ? _mobileEmpty(
+                    'No pending requests',
+                    'Access requests awaiting review will appear here.',
+                    Icons.task_alt)
+                : ListView.separated(
+                    itemCount: pendingRequests.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final request = pendingRequests[index];
+                      return _buildRequestCard(request);
+                    },
+                  ),
           ),
         ],
       ),
@@ -1029,23 +1192,25 @@ class _RoleManagementPageState extends State<RoleManagementPage>
   Widget _buildRequestCard(PermissionRequest request) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: request.emergencyRequest
-              ? Colors.red.withOpacity(0.3)
-              : Colors.transparent,
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: accountSurface(
+          context,
+          BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: request.emergencyRequest
+                  ? Colors.red.withOpacity(0.3)
+                  : Colors.transparent,
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1084,7 +1249,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                   children: [
                     Text(
                       'Request for ${request.userFullName}',
-                      style: GoogleFonts.inter(
+                      style: accountInter(
+                        context,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Constants.ctaColorLight,
@@ -1093,7 +1259,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                     const SizedBox(height: 4),
                     Text(
                       'Requested by ${request.requestedByName}',
-                      style: GoogleFonts.inter(
+                      style: accountInter(
+                        context,
                         fontSize: 13,
                         color: const Color(0xFF64748B),
                       ),
@@ -1110,7 +1277,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 ),
                 child: Text(
                   request.statusDisplay,
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: _getStatusColor(request.requestStatus),
@@ -1137,13 +1305,14 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                     color: const Color(0xFF64748B),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    '${request.roleName ?? request.permissionName}',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Constants.ctaColorLight,
-                    ),
+                  Expanded(
+                    child: Text('${request.roleName ?? request.permissionName}',
+                        style: accountInter(
+                          context,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Constants.ctaColorLight,
+                        )),
                   ),
                 ],
               ),
@@ -1151,18 +1320,20 @@ class _RoleManagementPageState extends State<RoleManagementPage>
           const SizedBox(height: 12),
           Text(
             request.justification,
-            style: GoogleFonts.inter(
+            style: accountInter(
+              context,
               fontSize: 13,
               color: const Color(0xFF64748B),
               height: 1.4,
             ),
           ),
           const SizedBox(height: 16),
-          Row(
+          MobileFormRow(
             children: [
               Text(
                 'Requested ${_formatTimeAgo(request.requestTimestamp)}',
-                style: GoogleFonts.inter(
+                style: accountInter(
+                  context,
                   fontSize: 12,
                   color: const Color(0xFF94A3B8),
                 ),
@@ -1171,30 +1342,36 @@ class _RoleManagementPageState extends State<RoleManagementPage>
               if (request.requestStatus == 'pending') ...[
                 OutlinedButton(
                   onPressed: () => _rejectRequest(request),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  style: accountButtonStyle(
+                      context,
+                      OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      primary: false),
                   child: const Text('Reject'),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () => _approveRequest(request),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
+                  style: accountButtonStyle(
+                      context,
+                      ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      primary: true),
                   child: const Text('Approve'),
                 ),
               ],
@@ -1206,6 +1383,14 @@ class _RoleManagementPageState extends State<RoleManagementPage>
   }
 
   Widget _buildAuditLogsTab() {
+    if (isPhoneLayout(context)) {
+      return Padding(
+          padding: const EdgeInsets.all(16),
+          child: _mobileEmpty(
+              'Audit logs',
+              'Audit history is not available in this view yet.',
+              Icons.history));
+    }
     return const Center(
       child: Text(
         'Audit Logs',
@@ -1345,7 +1530,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
 
   Future<void> _rejectRequest(PermissionRequest request) async {
     // Show dialog to get rejection reason
-    final reason = await showDialog<String>(
+    final reason = await showMobileDialog<String>(
       context: context,
       builder: (context) => _RejectRequestDialog(),
     );
@@ -1386,14 +1571,16 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       child: Container(
         constraints: const BoxConstraints(maxWidth: 400),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: accountSurface(
+            context,
+            BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            )),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1425,7 +1612,8 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                   const SizedBox(width: 12),
                   Text(
                     'Reject Request',
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: Constants.ctaColorLight,
@@ -1443,7 +1631,8 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                 children: [
                   Text(
                     'Please provide a reason for rejecting this request:',
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 14,
                       color: const Color(0xFF64748B),
                     ),
@@ -1452,27 +1641,32 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                   TextField(
                     controller: _reasonController,
                     maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: 'Enter rejection reason...',
-                      hintStyle: GoogleFonts.inter(
-                        color: const Color(0xFF9CA3AF),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Color(0xFFEF4444), width: 2),
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF9FAFB),
-                    ),
+                    decoration: mobileInputDecoration(
+                        context,
+                        InputDecoration(
+                          hintText: 'Enter rejection reason...',
+                          hintStyle: accountInter(
+                            context,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFE5E7EB)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFE5E7EB)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                                color: Color(0xFFEF4444), width: 2),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF9FAFB),
+                        )),
                   ),
                 ],
               ),
@@ -1488,19 +1682,22 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                   bottomRight: Radius.circular(16),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF64748B),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
+                      style: accountButtonStyle(
+                          context,
+                          OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF64748B),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          primary: false),
                       child: const Text('Cancel'),
                     ),
                   ),
@@ -1513,15 +1710,18 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                               .pop(_reasonController.text.trim());
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                      ),
+                      style: accountButtonStyle(
+                          context,
+                          ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          primary: true),
                       child: const Text('Reject'),
                     ),
                   ),
@@ -1549,41 +1749,45 @@ class RoleDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       child: Container(
         constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+        decoration: accountSurface(
+            context,
+            BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            )),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    _getCategoryColor(role.category).withOpacity(0.1),
-                    _getCategoryColor(role.category).withOpacity(0.05),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
+              decoration: mobileFlatDecoration(
+                  context,
+                  BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        _getCategoryColor(role.category).withOpacity(0.1),
+                        _getCategoryColor(role.category).withOpacity(0.05),
+                      ],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  )),
               child: Row(
                 children: [
                   Container(
@@ -1613,7 +1817,8 @@ class RoleDetailsDialog extends StatelessWidget {
                       children: [
                         Text(
                           role.name,
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: Constants.ctaColorLight,
@@ -1622,7 +1827,8 @@ class RoleDetailsDialog extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           role.categoryDisplay,
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 14,
                             color: const Color(0xFF64748B),
                             fontWeight: FontWeight.w500,
@@ -1651,23 +1857,23 @@ class RoleDetailsDialog extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Description
-                    _buildInfoSection('Description', role.description),
+                    _buildInfoSection(context, 'Description', role.description),
 
                     const SizedBox(height: 24),
 
                     // Statistics
-                    _buildInfoSection('Statistics', ''),
+                    _buildInfoSection(context, 'Statistics', ''),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
-                          child: _buildStatCard('Permissions',
+                          child: _buildStatCard(context, 'Permissions',
                               role.permissionCount, Icons.key_rounded),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: _buildStatCard(
-                              'Users', role.userCount, Icons.people_rounded),
+                          child: _buildStatCard(context, 'Users',
+                              role.userCount, Icons.people_rounded),
                         ),
                       ],
                     ),
@@ -1675,7 +1881,7 @@ class RoleDetailsDialog extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // Actions
-                    Row(
+                    MobileFormRow(
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
@@ -1684,12 +1890,16 @@ class RoleDetailsDialog extends StatelessWidget {
                             },
                             icon: const Icon(Icons.key_rounded, size: 18),
                             label: const Text('View Permissions'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
+                            style: accountButtonStyle(
+                                context,
+                                OutlinedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                primary: false),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1700,15 +1910,20 @@ class RoleDetailsDialog extends StatelessWidget {
                             },
                             icon: const Icon(Icons.edit_rounded, size: 18),
                             label: const Text('Edit Role'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _getCategoryColor(role.category),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 0,
-                            ),
+                            style: accountButtonStyle(
+                                context,
+                                ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      _getCategoryColor(role.category),
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                primary: true),
                           ),
                         ),
                       ],
@@ -1723,13 +1938,14 @@ class RoleDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoSection(String title, String content) {
+  Widget _buildInfoSection(BuildContext context, String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: Constants.ctaColorLight,
@@ -1739,7 +1955,8 @@ class RoleDetailsDialog extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             content,
-            style: GoogleFonts.inter(
+            style: accountInter(
+              context,
               fontSize: 14,
               color: const Color(0xFF64748B),
               height: 1.5,
@@ -1750,7 +1967,8 @@ class RoleDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String label, int value, IconData icon) {
+  Widget _buildStatCard(
+      BuildContext context, String label, int value, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1764,7 +1982,8 @@ class RoleDetailsDialog extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value.toString(),
-            style: GoogleFonts.inter(
+            style: accountInter(
+              context,
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: Constants.ctaColorLight,
@@ -1772,7 +1991,8 @@ class RoleDetailsDialog extends StatelessWidget {
           ),
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: accountInter(
+              context,
               fontSize: 12,
               color: const Color(0xFF64748B),
             ),
@@ -1877,7 +2097,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -1886,37 +2106,41 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
           maxWidth: 700,
           maxHeight: 800,
         ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+        decoration: accountSurface(
+            context,
+            BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            )),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header Section
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Constants.ctaColorLight.withOpacity(0.1),
-                    Constants.ctaColorLight.withOpacity(0.05),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              ),
+              decoration: mobileFlatDecoration(
+                  context,
+                  BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Constants.ctaColorLight.withOpacity(0.1),
+                        Constants.ctaColorLight.withOpacity(0.05),
+                      ],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                  )),
               child: Row(
                 children: [
                   Container(
@@ -1945,7 +2169,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       children: [
                         Text(
                           'Create New Role',
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: Constants.ctaColorLight,
@@ -1954,7 +2179,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                         const SizedBox(height: 4),
                         Text(
                           'Define a new role with specific permissions and access levels',
-                          style: GoogleFonts.inter(
+                          style: accountInter(
+                            context,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFF64748B),
@@ -2026,7 +2252,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       const SizedBox(height: 20),
 
                       // Category and Parent Role Row
-                      Row(
+                      MobileFormRow(
                         children: [
                           Expanded(
                             child: _buildDropdown(
@@ -2073,7 +2299,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       const SizedBox(height: 16),
                       Text(
                         'Select one or more role types that define this role\'s nature:',
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 14,
                           color: const Color(0xFF64748B),
                         ),
@@ -2112,7 +2339,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                   bottomRight: Radius.circular(24),
                 ),
               ),
-              child: Row(
+              child: MobileFormRow(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
@@ -2121,19 +2348,23 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       icon: const Icon(Icons.close_rounded, size: 18),
                       label: Text(
                         'Cancel',
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF64748B),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      style: accountButtonStyle(
+                          context,
+                          OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF64748B),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          primary: false),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -2153,20 +2384,24 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                           : const Icon(Icons.save_rounded, size: 18),
                       label: Text(
                         _isSaving ? 'Creating...' : 'Create Role',
-                        style: GoogleFonts.inter(
+                        style: accountInter(
+                          context,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Constants.ctaColorLight,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
+                      style: accountButtonStyle(
+                          context,
+                          ElevatedButton.styleFrom(
+                            backgroundColor: Constants.ctaColorLight,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          primary: true),
                     ),
                   ),
                 ],
@@ -2194,14 +2429,16 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
           ),
         ),
         const SizedBox(width: 12),
-        Text(
+        Expanded(
+            child: Text(
           title,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: Constants.ctaColorLight,
           ),
-        ),
+        )),
       ],
     );
   }
@@ -2219,7 +2456,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF374151),
@@ -2230,47 +2468,53 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
           controller: controller,
           maxLines: maxLines,
           validator: validator,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF9CA3AF),
-            ),
-            prefixIcon: Icon(
-              icon,
-              size: 20,
-              color: const Color(0xFF6B7280),
-            ),
-            filled: true,
-            fillColor: const Color(0xFFF9FAFB),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFEF4444)),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
+          decoration: mobileInputDecoration(
+              context,
+              InputDecoration(
+                hintText: hint,
+                hintStyle: accountInter(
+                  context,
+                  fontSize: 14,
+                  color: const Color(0xFF9CA3AF),
+                ),
+                prefixIcon: Icon(
+                  icon,
+                  size: 20,
+                  color: const Color(0xFF6B7280),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF9FAFB),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF3B82F6), width: 2),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFEF4444)),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: Color(0xFFEF4444), width: 2),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              )),
         ),
       ],
     );
@@ -2290,7 +2534,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: accountInter(
+            context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF374151),
@@ -2306,22 +2551,26 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
           child: DropdownButtonFormField<String>(
             value: value,
             validator: validator,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF9CA3AF),
-              ),
-              prefixIcon: Icon(
-                icon,
-                size: 20,
-                color: const Color(0xFF6B7280),
-              ),
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            ),
-            style: GoogleFonts.inter(
+            decoration: mobileInputDecoration(
+                context,
+                InputDecoration(
+                  hintText: hint,
+                  hintStyle: accountInter(
+                    context,
+                    fontSize: 14,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                  prefixIcon: Icon(
+                    icon,
+                    size: 20,
+                    color: const Color(0xFF6B7280),
+                  ),
+                  border: InputBorder.none,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                )),
+            style: accountInter(
+              context,
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF1F2937),
@@ -2338,7 +2587,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                 value: item['value'],
                 child: Text(
                   item['label']!,
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 14,
                     color: const Color(0xFF1F2937),
                   ),
@@ -2380,7 +2630,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                 color: isSelected
                     ? Constants.ctaColorLight.withOpacity(0.1)
                     : Colors.white,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius:
+                    BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                 border: Border.all(
                   color: isSelected
                       ? Constants.ctaColorLight
@@ -2401,9 +2652,11 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                         : const Color(0xFF64748B),
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  Flexible(
+                      child: Text(
                     roleType['label']!,
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 13,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -2411,7 +2664,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                           ? Constants.ctaColorLight
                           : const Color(0xFF64748B),
                     ),
-                  ),
+                  )),
                 ],
               ),
             ),
@@ -2489,7 +2742,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: accountInter(
+                  context,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Constants.ctaColorLight,
@@ -2497,7 +2751,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
               ),
               Text(
                 description,
-                style: GoogleFonts.inter(
+                style: accountInter(
+                  context,
                   fontSize: 12,
                   color: const Color(0xFF64748B),
                 ),
@@ -2535,7 +2790,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
               Expanded(
                 child: Text(
                   'Permissions can be assigned after creating the role',
-                  style: GoogleFonts.inter(
+                  style: accountInter(
+                    context,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF0284C7),
@@ -2552,11 +2808,14 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF0284C7)),
-              ),
+              decoration: accountSurface(
+                  context,
+                  BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF0284C7)),
+                  ),
+                  radius: 32),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -2566,14 +2825,16 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                     size: 18,
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  Flexible(
+                      child: Text(
                     'Select Permissions (${_selectedPermissions.length})',
-                    style: GoogleFonts.inter(
+                    style: accountInter(
+                      context,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF0284C7),
                     ),
-                  ),
+                  )),
                 ],
               ),
             ),
@@ -2752,7 +3013,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
       children: [
         Text(
           'Parent Role (Optional)',
-          style: GoogleFonts.inter(
+          style: accountInter(context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF374151),
@@ -2778,7 +3039,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       const SizedBox(width: 12),
                       Text(
                         'Loading available roles...',
-                        style: GoogleFonts.inter(
+                        style: accountInter(context,
                           fontSize: 14,
                           color: const Color(0xFF64748B),
                         ),
@@ -2788,11 +3049,11 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                 )
               : DropdownButtonFormField<String>(
                   value: _selectedParentRole,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     hintText: _parentRoles.isEmpty
                         ? 'No parent roles available'
                         : 'Select parent role',
-                    hintStyle: GoogleFonts.inter(
+                    hintStyle: accountInter(context,
                       fontSize: 14,
                       color: const Color(0xFF9CA3AF),
                     ),
@@ -2807,7 +3068,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       vertical: 16,
                     ),
                   ),
-                  style: GoogleFonts.inter(
+                  style: accountInter(context,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF1F2937),
@@ -2826,21 +3087,21 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       value: role['value'],
                       child: Text(
                         role['label']!,
-                        style: GoogleFonts.inter(
+                        style: accountInter(context,
                           fontSize: 14,
                           color: const Color(0xFF1F2937),
                         ),
                       ),
                     );
                   }).toList(),
-                ),
+                )),
         ),
         if (_parentRoles.isEmpty && !_loadingParentRoles)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               'No eligible parent roles found. Create management roles first.',
-              style: GoogleFonts.inter(
+              style: accountInter(context,
                 fontSize: 12,
                 color: const Color(0xFFF59E0B),
                 fontStyle: FontStyle.italic,
@@ -2853,7 +3114,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
 
   // Update the form to use the new parent role dropdown
   Widget build(BuildContext context) {
-    return Dialog(
+    return MobileDialog(
       // ... existing dialog code ...
       child: Column(
         children: [

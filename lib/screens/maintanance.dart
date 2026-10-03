@@ -1,3 +1,7 @@
+import '../widgets/mobile_screen.dart';
+import '../gasmon/gas_theme.dart';
+import '../gasmon/gas_widgets.dart';
+import '../widgets/mobile_forms.dart';
 import 'package:artic_sentinel/constants/Constants.dart';
 import 'package:artic_sentinel/custom_widgets/customCard.dart';
 import 'package:flutter/foundation.dart';
@@ -220,6 +224,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   @override
   Widget build(BuildContext context) {
+    if (isPhoneLayout(context)) return _buildPhoneMaintenance(context);
     return Container(
       height: 1000,
       child: Column(
@@ -250,6 +255,79 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPhoneMaintenance(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      return SizedBox(
+        height: constraints.hasBoundedHeight
+            ? constraints.maxHeight
+            : MediaQuery.sizeOf(context).height - 100,
+        child: ColoredBox(
+            color: GasPalette.page,
+            child: Column(children: [
+              const MobileScreenHeader(
+                title: 'Maintenance',
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  tabAlignment: TabAlignment.start,
+                  dividerColor: Colors.transparent,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                      color: const Color(0xFFE9EDF4),
+                      borderRadius: BorderRadius.circular(32)),
+                  labelColor: GasPalette.primary,
+                  unselectedLabelColor: GasPalette.ink2,
+                  labelStyle:
+                      gasBody(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+                  tabs: const [
+                    Tab(height: 36, text: 'Overview'),
+                    Tab(height: 36, text: 'Records'),
+                    Tab(height: 36, text: 'Scheduling'),
+                    Tab(height: 36, text: 'Reminders'),
+                    Tab(height: 36, text: 'Analytics'),
+                    Tab(height: 36, text: 'Settings')
+                  ],
+                ),
+              ),
+              Expanded(
+                  child: _isLoading
+                      ? _buildLoadingState()
+                      : _error.isNotEmpty
+                          ? _buildErrorState()
+                          : TabBarView(
+                              controller: _tabController,
+                              children: [
+                                _buildOverviewTab(),
+                                _buildMaintenanceListTab(),
+                                _buildSchedulingTab(),
+                                _buildRemindersTab(),
+                                _buildAnalyticsTab(),
+                                _buildSettingsTab()
+                              ],
+                            )),
+            ])),
+      );
+    });
+  }
+
+  BoxDecoration _phoneMaintenanceSurface(BoxDecoration original) {
+    if (!isPhoneLayout(context)) return original;
+    return BoxDecoration(
+      color: GasPalette.panel,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: GasPalette.border),
+      boxShadow: const [
+        BoxShadow(color: Color(0x05133648), blurRadius: 3, offset: Offset(0, 2))
+      ],
     );
   }
 
@@ -416,18 +494,18 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
           // Quick Actions at the top
           _buildCompactQuickActions(),
 
-          SizedBox(height: 24),
+          SizedBox(height: isPhoneLayout(context) ? 16 : 24),
 
           // Upcoming Maintenance
           _buildSectionHeader('Upcoming Maintenance', Icons.schedule),
-          SizedBox(height: 12),
+          SizedBox(height: isPhoneLayout(context) ? 8 : 12),
           _buildUpcomingMaintenanceList(),
 
-          SizedBox(height: 24),
+          SizedBox(height: isPhoneLayout(context) ? 16 : 24),
 
           // Recent Activity
           _buildSectionHeader('Recent Activity', Icons.history),
-          SizedBox(height: 12),
+          SizedBox(height: isPhoneLayout(context) ? 8 : 12),
           _buildRecentActivityList(),
         ],
       ),
@@ -467,13 +545,41 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   Widget _buildCompactQuickActions() {
+    if (isPhoneLayout(context)) {
+      final summary = _dashboardData['summary'] ?? {};
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        GPanel(padding: const EdgeInsets.all(16), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: _phoneMaintenanceMetric('Total', '${summary['total_maintenance'] ?? 0}')),
+          Expanded(child: _phoneMaintenanceMetric('Completed', '${summary['completed_maintenance'] ?? 0}')),
+          Expanded(child: _phoneMaintenanceMetric('Overdue', '${summary['overdue_maintenance'] ?? 0}')),
+        ])),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: _showCreateMaintenanceDialog,
+          icon: const Icon(Icons.add, size: 20),
+          label: const Text('Schedule maintenance'),
+          style: FilledButton.styleFrom(
+            backgroundColor: GasPalette.primary,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(48),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Wrap(spacing: 8, runSpacing: 4, children: [
+          TextButton(onPressed: _showReportsDialog, child: const Text('Reports')),
+          TextButton(onPressed: _showOverdueItems, child: const Text('Overdue')),
+          TextButton(onPressed: _showMaintenanceTypes, child: const Text('Types')),
+        ]),
+      ]);
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 500;
 
         return Container(
           padding: EdgeInsets.all(isMobile ? 12 : 16),
-          decoration: BoxDecoration(
+          decoration: mobileFlatDecoration(context, BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -487,7 +593,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               color: Constants.ctaColorLight.withOpacity(0.1),
               width: 1,
             ),
-          ),
+          )),
           child: Column(
             children: [
               Row(
@@ -621,6 +727,15 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     );
   }
 
+  Widget _phoneMaintenanceMetric(String label, String value) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(value, style: gasData(context, size: 20)),
+      const SizedBox(height: 4),
+      Text(label, style: gasSmall(context).copyWith(fontSize: 10.5)),
+    ],
+  );
+
   Widget _buildCompactActionButton(
       String label, IconData icon, Color color, VoidCallback onTap) {
     return Material(
@@ -703,7 +818,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
+        decoration: _phoneMaintenanceSurface( BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withOpacity(0.2)),
@@ -714,6 +829,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               offset: Offset(0, 2),
             ),
           ],
+        )
         ),
         child: Row(
           children: [
@@ -770,7 +886,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Widget _buildFiltersSection() {
     return Container(
       padding: EdgeInsets.all(16),
-      color: Colors.white,
+      color: isPhoneLayout(context) ? GasPalette.page : Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -781,7 +897,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               Text(
                 'Filters',
                 style: GoogleFonts.inter(
-                  fontSize: 16,
+                  fontSize: isPhoneLayout(context) ? 14 : 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
                 ),
@@ -835,7 +951,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
           color: _filters.containsKey(key)
               ? Constants.ctaColorLight.withOpacity(0.1)
               : Colors.grey[100],
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 20),
           border: Border.all(
             color: _filters.containsKey(key)
                 ? Constants.ctaColorLight
@@ -906,7 +1022,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
           color: _dateRange != null
               ? Constants.ctaColorLight.withOpacity(0.1)
               : Colors.grey[100],
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 20),
           border: Border.all(
             color: _dateRange != null
                 ? Constants.ctaColorLight
@@ -944,12 +1060,13 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Widget _buildMaintenanceCard(Map<String, dynamic> maintenance,
       {bool isCompact = false}) {
+    if (isPhoneLayout(context)) return _phoneMaintenanceRecord(maintenance, isCompact: isCompact);
     return InkWell(
       onTap: () => _showMaintenanceDetails(maintenance),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
+        decoration: _phoneMaintenanceSurface( BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
@@ -959,11 +1076,14 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               offset: Offset(0, 2),
             ),
           ],
-        ),
+        )),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            _MaintenanceMetadataRow(
+              spacing: 6,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -998,7 +1118,6 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                     ),
                   ),
                 ),
-                Spacer(),
                 if (maintenance['is_overdue'] == true)
                   Icon(Icons.warning, color: Colors.orange, size: 20),
               ],
@@ -1026,7 +1145,10 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             SizedBox(height: 8),
 
             // Date and Assignee
-            Row(
+            _MaintenanceMetadataRow(
+              spacing: 4,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Icon(Icons.schedule, size: 14, color: Colors.grey[500]),
                 SizedBox(width: 4),
@@ -1109,12 +1231,13 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Widget _buildUpCommingMaintenanceCard(Map<String, dynamic> maintenance,
       {bool isCompact = false}) {
+    if (isPhoneLayout(context)) return _phoneMaintenanceRecord(maintenance, isCompact: isCompact, upcoming: true);
     return InkWell(
       onTap: () => _showMaintenanceDetails(maintenance),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
+        decoration: _phoneMaintenanceSurface( BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
@@ -1124,6 +1247,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               offset: Offset(0, 2),
             ),
           ],
+        )
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1144,7 +1268,10 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             SizedBox(height: 8),
 
             // Date and Assignee
-            Row(
+            _MaintenanceMetadataRow(
+              spacing: 4,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Icon(Icons.schedule, size: 14, color: Colors.grey[500]),
                 SizedBox(width: 4),
@@ -1225,16 +1352,63 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     );
   }
 
+  Widget _phoneMaintenanceRecord(Map<String, dynamic> maintenance, {required bool isCompact, bool upcoming = false}) {
+    final deviceName = upcoming ? maintenance['device_name'] ?? 'Unknown Device' : maintenance['device']['name'] ?? 'Unknown Device';
+    final type = upcoming ? maintenance['maintenance_type'] ?? 'Unknown Type' : maintenance['maintenance_type']['name'] ?? 'Unknown Type';
+    final assignee = upcoming ? maintenance['assigned_to'] : maintenance['assigned_to']?['username'];
+    return GPanel(padding: EdgeInsets.zero, child: Material(type: MaterialType.transparency, child: InkWell(
+      onTap: () => _showMaintenanceDetails(maintenance),
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: Text('$deviceName', style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600))),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right_rounded, size: 20, color: GasPalette.ink2),
+        ]),
+        const SizedBox(height: 5),
+        Text('$type', style: gasSmall(context)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 6, runSpacing: 6, children: [
+          if (!upcoming) _phoneMaintenanceBadge(maintenance['status_display'] ?? '', _getStatusColor(maintenance['status'])),
+          _phoneMaintenanceBadge(upcoming ? maintenance['priority'] ?? 'normal' : maintenance['priority_display'] ?? '', _getPriorityColor(maintenance['priority'])),
+          if (maintenance['is_overdue'] == true) _phoneMaintenanceBadge('Overdue', GasPalette.critInk),
+        ]),
+        const SizedBox(height: 8),
+        Text(_formatDateTime(maintenance['scheduled_date']), style: gasSmall(context)),
+        if (assignee != null) ...[
+          const SizedBox(height: 4),
+          Text('Assigned to $assignee', style: gasSmall(context)),
+        ],
+        if (!isCompact) ...[
+          const SizedBox(height: 10),
+          Text(maintenance['work_description'] ?? '', style: gasBody(context), maxLines: 2, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            if (maintenance['status'] == 'scheduled') _buildActionButton('Start', Icons.play_arrow, GasPalette.primary, () => _updateMaintenanceStatus(maintenance['id'], 'start')),
+            if (maintenance['status'] == 'in_progress') _buildActionButton('Complete', Icons.check, GasPalette.primary, () => _updateMaintenanceStatus(maintenance['id'], 'complete')),
+            _buildActionButton('Details', Icons.info_outline, GasPalette.ink2, () => _showMaintenanceDetails(maintenance)),
+          ]),
+        ],
+      ])),
+    )));
+  }
+
+  Widget _phoneMaintenanceBadge(String label, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+    decoration: BoxDecoration(color: color.withValues(alpha: .08), borderRadius: BorderRadius.circular(32)),
+    child: Text(label, style: gasSmall(context).copyWith(color: color, fontSize: 10.5, fontWeight: FontWeight.w600)),
+  );
+
   Widget _buildActionButton(
       String label, IconData icon, Color color, VoidCallback onPressed) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 :6),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: isPhoneLayout(context) ? 12: 6),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 :6),
           border: Border.all(color: color.withOpacity(0.3)),
         ),
         child: Row(
@@ -1280,7 +1454,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Widget _buildSchedulesList() {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: _phoneMaintenanceSurface( BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1290,10 +1464,14 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
+      )
       ),
       child: Column(
         children: [
-          Row(
+          _MaintenanceMetadataRow(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Icon(Icons.schedule, color: Constants.ctaColorLight),
               SizedBox(width: 8),
@@ -1316,7 +1494,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                 icon: Icon(Icons.add, size: 16),
                 label: Text('New Schedule'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Constants.ctaColorLight,
+                  backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                   foregroundColor: Colors.white,
                 ),
               ),
@@ -1447,9 +1625,9 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   Future<void> _deleteSchedule(String scheduleId) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showMobileDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => MobileAlertDialog(
         title: Text('Delete Schedule'),
         content: Text('Are you sure you want to delete this schedule?'),
         actions: [
@@ -1484,7 +1662,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Widget _buildGenerateMaintenanceSection() {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: _phoneMaintenanceSurface( BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1494,10 +1672,14 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
+      )
       ),
       child: Column(
         children: [
-          Row(
+          _MaintenanceMetadataRow(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Icon(Icons.auto_awesome, color: Constants.ctaColorLight),
               SizedBox(width: 8),
@@ -1524,7 +1706,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             icon: Icon(Icons.play_arrow, size: 16),
             label: Text('Generate Now'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Constants.ctaColorLight,
+              backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
               foregroundColor: Colors.white,
               minimumSize: Size(double.infinity, 40),
             ),
@@ -1568,7 +1750,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: _phoneMaintenanceSurface( BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1578,10 +1760,10 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
-      ),
+      )),
       child: Column(
         children: [
-          Row(
+          MobileFormRow(
             children: [
               Expanded(
                 child: _buildAnalyticsCard(
@@ -1603,7 +1785,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             ],
           ),
           SizedBox(height: 12),
-          Row(
+          MobileFormRow(
             children: [
               Expanded(
                 child: _buildAnalyticsCard(
@@ -1638,7 +1820,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: _phoneMaintenanceSurface( BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1648,10 +1830,10 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
-      ),
+      )),
       child: Column(
         children: [
-          Row(
+          MobileFormRow(
             children: [
               Expanded(
                 child: _buildAnalyticsCard(
@@ -1673,7 +1855,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             ],
           ),
           SizedBox(height: 12),
-          Row(
+          MobileFormRow(
             children: [
               Expanded(
                 child: _buildAnalyticsCard(
@@ -1701,6 +1883,16 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Widget _buildAnalyticsCard(
       String title, String value, IconData icon, Color color) {
+    if (isPhoneLayout(context)) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(children: [
+          Expanded(child: Text(title, style: gasSmall(context))),
+          const SizedBox(width: 12),
+          Flexible(child: Text(value, textAlign: TextAlign.end, style: gasData(context, size: 18))),
+        ]),
+      );
+    }
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1754,7 +1946,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Widget _buildBreakdownCard(String title, List<dynamic>? data) {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: _phoneMaintenanceSurface( BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1764,6 +1956,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
+      )
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1832,7 +2025,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   Widget _buildRemindersTab() {
-    final summary = _remindersData['summary'] ?? {};
+    final summary = _remindersData['summary'] ?? <String, dynamic>{};
     final upcoming = _remindersData['upcoming'] ?? [];
     final overdue = _remindersData['overdue'] ?? [];
     final sentReminders = _remindersData['sent_reminders'] ?? [];
@@ -1870,9 +2063,16 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   Widget _buildReminderStats(Map<String, dynamic> summary) {
+    if (isPhoneLayout(context)) {
+      return GPanel(padding: const EdgeInsets.all(16), child: Row(children: [
+        Expanded(child: _phoneMaintenanceMetric('Upcoming', '${summary['upcoming_count'] ?? 0}')),
+        Expanded(child: _phoneMaintenanceMetric('Overdue', '${summary['overdue_count'] ?? 0}')),
+        Expanded(child: _phoneMaintenanceMetric('Sent today', '${(summary['reminders_sent_today'] ?? 0) + (summary['overdue_reminders_sent_today'] ?? 0)}')),
+      ]));
+    }
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: mobileFlatDecoration(context, BoxDecoration(
         gradient: LinearGradient(
           colors: [Constants.ctaColorLight, Constants.ctaColorLight.withOpacity(0.8)],
           begin: Alignment.topLeft,
@@ -1886,7 +2086,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 4),
           ),
         ],
-      ),
+      )),
       child: Row(
         children: [
           Expanded(
@@ -1947,7 +2147,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     }
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: _phoneMaintenanceSurface( BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1957,6 +2157,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
+      )
       ),
       child: ListView.separated(
         shrinkWrap: true,
@@ -2024,7 +2225,9 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[700]),
           ),
           SizedBox(height: 2),
-          Row(
+          _MaintenanceMetadataRow(
+            spacing: 4,
+            runSpacing: 6,
             children: [
               Icon(Icons.access_time, size: 12, color: isOverdue ? Colors.red : Colors.grey),
               SizedBox(width: 4),
@@ -2084,7 +2287,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     }
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: _phoneMaintenanceSurface( BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -2094,6 +2297,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
+      )
       ),
       child: ListView.separated(
         shrinkWrap: true,
@@ -2156,7 +2360,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Widget _buildMaintenanceTypesSection() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: _phoneMaintenanceSurface( BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -2166,12 +2370,15 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
+      )
       ),
       child: Column(
         children: [
           Container(
             padding: EdgeInsets.all(16),
-            child: Row(
+            child: _MaintenanceMetadataRow(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 Icon(Icons.category, color: Constants.ctaColorLight),
                 SizedBox(width: 8),
@@ -2273,7 +2480,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Widget _buildSystemSettingsSection() {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: _phoneMaintenanceSurface( BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -2283,6 +2490,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
+      )
       ),
       child: Column(
         children: [
@@ -2357,10 +2565,15 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   // Helper Widgets
   Widget _buildSectionHeader(String title, IconData icon) {
+    if (isPhoneLayout(context)) {
+      return Text(title, style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600));
+    }
     return Row(
       children: [
         Icon(icon, color: Constants.ctaColorLight, size: 20),
         SizedBox(width: 8),
+        Expanded(
+            child:
         Text(
           title,
           style: GoogleFonts.inter(
@@ -2368,12 +2581,22 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             fontWeight: FontWeight.bold,
             color: Colors.grey[800],
           ),
-        ),
+        )),
       ],
     );
   }
 
   Widget _buildEmptyState(String message) {
+    if (isPhoneLayout(context)) {
+      return GPanel(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(children: [
+          const Icon(Icons.event_available_outlined, color: GasPalette.ink2, size: 20),
+          const SizedBox(width: 12),
+          Expanded(child: Text(message, style: gasBody(context).copyWith(fontSize: 12))),
+        ]),
+      );
+    }
     return Container(
       padding: EdgeInsets.all(32),
       child: Column(
@@ -2591,21 +2814,21 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   void _showCreateMaintenanceDialog() {
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => CreateMaintenanceDialog(),
     );
   }
 
   void _showCreateScheduleDialog() {
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => CreateScheduleDialog(),
     );
   }
 
   void _showReportsDialog() {
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => MaintenanceReportsDialog(),
     );
@@ -3479,11 +3702,11 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               icon: Icon(Icons.add, size: 18),
               label: Text('Add First Item'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.ctaColorLight,
+                backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                 ),
               ),
             ),
@@ -3494,14 +3717,14 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   }
 
   Widget _buildQuickAddChecklistItem() {
-    return Row(
+    return MobileFormRow(
       children: [
         Icon(Icons.add_task, color: Constants.ctaColorLight, size: 20),
         SizedBox(width: 8),
         Expanded(
           child: TextField(
             controller: TextEditingController(),
-            decoration: InputDecoration(
+            decoration: mobileInputDecoration(context, InputDecoration(
               hintText: 'Type to quickly add a checklist item...',
               hintStyle: GoogleFonts.inter(
                 fontSize: 14,
@@ -3526,7 +3749,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 icon: Icon(Icons.add_circle, color: Constants.ctaColorLight),
                 tooltip: 'Add Item',
               ),
-            ),
+            )),
             onSubmitted: (value) {
               if (value.trim().isNotEmpty) {
                 _addChecklistItemQuick(value.trim());
@@ -3701,7 +3924,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         width: double.infinity,
         padding: EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(
+          MobileFormRow(
             children: [
               Container(
                 padding: EdgeInsets.all(8),
@@ -3744,7 +3967,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.add_photo_alternate, size: 16),
                   label: Text('Add Photo'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
+                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Colors.green[600],
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -3756,7 +3979,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.save, size: 16),
                   label: Text('Save'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Constants.ctaColorLight,
+                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -3931,12 +4154,12 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     ],
                   ),
                   SizedBox(height: 12),
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: controller,
-                          decoration: InputDecoration(
+                          decoration: mobileInputDecoration(context, InputDecoration(
                             hintText:
                                 'Enter part name or code (e.g., Air Filter #AF-100)',
                             filled: true,
@@ -3961,7 +4184,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                               color: Colors.grey[500],
                               size: 20,
                             ),
-                          ),
+                          )),
                           onSubmitted: (value) {
                             if (value.trim().isEmpty) return;
                             setState(() {
@@ -3987,7 +4210,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         icon: Icon(Icons.add, size: 18),
                         label: Text('Add Part'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Constants.ctaColorLight,
+                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
                               horizontal: 16, vertical: 14),
@@ -4020,7 +4243,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         width: double.infinity,
         padding: EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(
+          MobileFormRow(
             children: [
               Container(
                 padding: EdgeInsets.all(8),
@@ -4063,7 +4286,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.add_photo_alternate, size: 16),
                   label: Text('Add Photo'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
+                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Colors.green[600],
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -4075,7 +4298,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.save, size: 16),
                   label: Text('Save'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Constants.ctaColorLight,
+                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -4252,12 +4475,12 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     ],
                   ),
                   SizedBox(height: 12),
-                  Row(
+                  MobileFormRow(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: controller,
-                          decoration: InputDecoration(
+                          decoration: mobileInputDecoration(context, InputDecoration(
                             hintText:
                                 'Enter material name or type (e.g., Lubricant Oil 1L)',
                             filled: true,
@@ -4282,7 +4505,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                               color: Colors.grey[500],
                               size: 20,
                             ),
-                          ),
+                          )),
                           onSubmitted: (value) {
                             if (value.trim().isEmpty) return;
                             setState(() {
@@ -4308,7 +4531,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         icon: Icon(Icons.add, size: 18),
                         label: Text('Add Material'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Constants.ctaColorLight,
+                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
                               horizontal: 16, vertical: 14),
@@ -4344,7 +4567,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         padding: EdgeInsets.all(20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // Header with stats and upload buttons
-          Row(
+          MobileFormRow(
             children: [
               Container(
                 padding: EdgeInsets.all(8),
@@ -4387,7 +4610,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.add_photo_alternate, size: 16),
                   label: Text('Photos'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
+                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Colors.green[600],
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -4399,7 +4622,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.upload_file, size: 16),
                   label: Text('Documents'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Constants.ctaColorLight,
+                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -5009,12 +5232,12 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     icon: Icon(Icons.add, size: 18),
                     label: Text('Add Finding'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Constants.ctaColorLight,
+                      backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                       foregroundColor: Colors.white,
                       padding:
                           EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                       ),
                       elevation: 2,
                     ),
@@ -5331,10 +5554,10 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   void _showAddObservationDialog() {
     final TextEditingController controller = TextEditingController();
 
-    showDialog(
+    showMobileDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => AlertDialog(
+      builder: (context) => MobileAlertDialog(
         backgroundColor: Colors.white,
         title: Text(
           'Add Finding',
@@ -5348,7 +5571,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
           children: [
             TextField(
               controller: controller,
-              decoration: InputDecoration(
+              decoration: mobileInputDecoration(context, InputDecoration(
                 hintText: 'Enter your finding...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -5357,7 +5580,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: Constants.ctaColorLight),
                 ),
-              ),
+              )),
               maxLines: 3,
               minLines: 2,
             ),
@@ -5380,7 +5603,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Constants.ctaColorLight,
+              backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
               foregroundColor: Colors.white,
             ),
             child: Text('Add'),
@@ -5448,10 +5671,10 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
   // Upload Media Dialog and Functionality
   void _showUploadMediaDialog() {
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
+        return MobileDialog(
           backgroundColor: Colors.transparent,
           child: Container(
             width: 400,
@@ -5511,7 +5734,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   ),
                 ),
                 SizedBox(height: 24),
-                Row(
+                MobileFormRow(
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
@@ -5519,7 +5742,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         icon: Icon(Icons.image, size: 20),
                         label: Text('Select Images'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Constants.ctaColorLight,
+                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -5532,7 +5755,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         icon: Icon(Icons.videocam, size: 20),
                         label: Text('Select Videos'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Constants.ctaColorLight,
+                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -5552,10 +5775,10 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   void _showUploadDocumentDialog() {
     final TextEditingController descriptionController = TextEditingController();
 
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
+        return MobileDialog(
           backgroundColor: Colors.transparent,
           child: Container(
             width: 450,
@@ -5626,7 +5849,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 SizedBox(height: 8),
                 TextField(
                   controller: descriptionController,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     hintText: 'Enter document description...',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -5637,7 +5860,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       borderSide: BorderSide(color: Constants.ctaColorLight),
                     ),
                     contentPadding: EdgeInsets.all(12),
-                  ),
+                  )),
                   maxLines: 3,
                 ),
                 SizedBox(height: 20),
@@ -5649,7 +5872,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     icon: Icon(Icons.upload_file, size: 20),
                     label: Text('Select & Upload Document'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Constants.ctaColorLight,
+                      backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -6099,9 +6322,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
   // Show image preview dialog
   void _showImagePreview(String imageUrl, String title) {
-    showDialog(
+    showMobileDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => MobileDialog(
         backgroundColor: Colors.transparent,
         child: Container(
           constraints: BoxConstraints(maxWidth: 800, maxHeight: 600),
@@ -6546,11 +6769,11 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     bool _isCritical = false;
     bool _isSubmitting = false;
 
-    showDialog(
+    showMobileDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => Dialog(
+        builder: (context, setState) => MobileDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -6645,7 +6868,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       SizedBox(height: 8),
                       TextField(
                         controller: _descriptionController,
-                        decoration: InputDecoration(
+                        decoration: mobileInputDecoration(context, InputDecoration(
                           hintText: 'e.g., Check compressor oil levels',
                           hintStyle: GoogleFonts.inter(
                             color: Colors.grey[500],
@@ -6667,7 +6890,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: EdgeInsets.all(16),
-                        ),
+                        )),
                         style: GoogleFonts.inter(fontSize: 14),
                         maxLines: 2,
                       ),
@@ -6685,7 +6908,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       SizedBox(height: 8),
                       TextField(
                         controller: _notesController,
-                        decoration: InputDecoration(
+                        decoration: mobileInputDecoration(context, InputDecoration(
                           hintText: 'Additional details or instructions',
                           hintStyle: GoogleFonts.inter(
                             color: Colors.grey[500],
@@ -6707,7 +6930,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: EdgeInsets.all(16),
-                        ),
+                        )),
                         style: GoogleFonts.inter(fontSize: 14),
                         maxLines: 3,
                       ),
@@ -6777,7 +7000,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 SizedBox(height: 24),
 
                 // Action Buttons
-                Row(
+                MobileFormRow(
                   children: [
                     Expanded(
                       child: TextButton(
@@ -6787,7 +7010,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                           ),
                         ),
                         child: Text(
@@ -6838,11 +7061,11 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Constants.ctaColorLight,
+                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                           ),
                           elevation: 2,
                         ),
@@ -6937,9 +7160,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   }
 
   void _showChecklistItemOptions(Map<String, dynamic> item) {
-    showDialog(
+    showMobileDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => MobileAlertDialog(
         title: Text('Checklist Item Options'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -6994,10 +7217,10 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     bool _isCritical = item['is_critical'] ?? false;
     bool _isSubmitting = false;
 
-    showDialog(
+    showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (context, setState) => MobileAlertDialog(
           title: Text('Edit Checklist Item'),
           content: Container(
             width: MediaQuery.of(context).size.width * 0.8,
@@ -7006,7 +7229,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               children: [
                 TextField(
                   controller: _descriptionController,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     labelText: 'Item Description *',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -7015,13 +7238,13 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Constants.ctaColorLight),
                     ),
-                  ),
+                  )),
                   maxLines: 2,
                 ),
                 SizedBox(height: 16),
                 TextField(
                   controller: _notesController,
-                  decoration: InputDecoration(
+                  decoration: mobileInputDecoration(context, InputDecoration(
                     labelText: 'Notes (Optional)',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -7030,7 +7253,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Constants.ctaColorLight),
                     ),
-                  ),
+                  )),
                   maxLines: 3,
                 ),
                 SizedBox(height: 16),
@@ -7096,7 +7319,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.ctaColorLight,
+                backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                 foregroundColor: Colors.white,
               ),
               child: _isSubmitting
@@ -7158,9 +7381,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   }
 
   void _showDeleteChecklistItemDialog(Map<String, dynamic> item) {
-    showDialog(
+    showMobileDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => MobileAlertDialog(
         title: Text('Delete Checklist Item'),
         content: Text(
           'Are you sure you want to delete this checklist item?\n\n"${item['description']}"',
@@ -7177,7 +7400,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               await _deleteChecklistItem(item['id']);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Colors.red,
               foregroundColor: Colors.white,
             ),
             child: Text('Delete'),
@@ -7678,7 +7901,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
 
   InputDecoration _buildInputDecoration(String label,
       {String? hint, IconData? icon, Color? iconColor}) {
-    return InputDecoration(
+    return mobileInputDecoration(context, InputDecoration(
       labelText: label,
       hintText: hint,
       prefixIcon: icon != null
@@ -7710,7 +7933,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
       hintStyle:
           GoogleFonts.inter(fontSize: 14, color: const Color(0xFF9CA3AF)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    );
+    ));
   }
 
   @override
@@ -7755,7 +7978,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
       );
     }
 
-    return Dialog(
+    return MobileDialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
@@ -7843,7 +8066,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
               ),
               const SizedBox(height: 16),
               Container(
-                decoration: BoxDecoration(
+                decoration: mobileFlatDecoration(context, BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   gradient: LinearGradient(
                     colors: [
@@ -7851,15 +8074,15 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                       Constants.ctaColorLight.withOpacity(0.8)
                     ],
                   ),
-                ),
+                )),
                 child: ElevatedButton(
                   onPressed: _loadData,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
+                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Colors.transparent,
                     foregroundColor: Colors.white,
                     shadowColor: Colors.transparent,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 12)),
                   ),
                   child: Text(
                     'Retry',
@@ -8071,7 +8294,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                 _buildSectionHeader('Optional Information',
                                     const Color(0xFF3B82F6), Icons.tune),
                                 const SizedBox(height: 20),
-                                Row(
+                                MobileFormRow(
                                   children: [
                                     Expanded(
                                       child: DropdownButtonFormField<String>(
@@ -8161,7 +8384,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                       () => _selectedAssignedToId = value),
                                 ),
                                 const SizedBox(height: 20),
-                                Row(
+                                MobileFormRow(
                                   children: [
                                     Expanded(
                                       child: TextFormField(
@@ -8377,7 +8600,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                   ),
                                   const SizedBox(height: 20),
                                 ],
-                                Row(
+                                MobileFormRow(
                                   children: [
                                     Expanded(
                                       child: TextFormField(
@@ -8439,7 +8662,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                         style: TextButton.styleFrom(
                                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                                             side: const BorderSide(color: Color(0xFFE5E7EB)),
                                           ),
                                         ),
@@ -8450,7 +8673,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                         style: TextButton.styleFrom(
                                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                                             side: const BorderSide(color: Color(0xFFE5E7EB)),
                                           ),
                                         ),
@@ -8459,10 +8682,10 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                                       ElevatedButton(
                                         onPressed: _isSubmitting ? null : _submitForm,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Constants.ctaColorLight,
+                                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                                           foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8)),
                                         ),
                                         child: _isSubmitting
                                             ? Row(
@@ -10211,9 +10434,9 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                   ? 'Files app'
                   : 'Downloads folder';
 
-          showDialog(
+          showMobileDialog(
             context: context,
-            builder: (context) => AlertDialog(
+            builder: (context) => MobileAlertDialog(
               title: Text(
                 'PDF Saved Successfully',
                 style: GoogleFonts.inter(fontWeight: FontWeight.bold),
@@ -10266,7 +10489,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Constants.ctaColorLight,
+                      backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                     ),
                     child: Text('Open PDF'),
                   ),
@@ -10416,7 +10639,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
       );
     }
 
-    return Dialog(
+    return MobileDialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.all(20),
         child: Container(
@@ -10495,12 +10718,12 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                       icon: Icon(Icons.picture_as_pdf, size: 18),
                       label: Text('Generate Sample Report'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Constants.ctaColorLight,
+                        backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                         foregroundColor: Colors.white,
                         padding:
                             EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                         ),
                         elevation: 0,
                       ),
@@ -10547,7 +10770,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                     ),
                   ),
                   SizedBox(height: 8),
-                  Container(
+                  _MaintenanceFormSurface(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
@@ -10558,7 +10781,8 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: DropdownButton<int>(
-                      value: _selectedYear,
+                      isDense: isPhoneLayout(context),
+                        value: _selectedYear,
                       isExpanded: true,
                       underline: SizedBox(),
                       icon: Icon(
@@ -10722,7 +10946,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                   icon: Icon(Icons.download, size: 16),
                   label: Text(isMobile ? 'Download' : 'Download PDF'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Constants.ctaColorLight,
+                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(
                       horizontal: isMobile ? 12 : 16,
@@ -10858,6 +11082,44 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _MaintenanceMetadataRow extends StatelessWidget {
+  const _MaintenanceMetadataRow(
+      {required this.children,
+      this.spacing = 0,
+      this.runSpacing = 0,
+      this.crossAxisAlignment = WrapCrossAlignment.start});
+  final List<Widget> children;
+  final double spacing, runSpacing;
+  final WrapCrossAlignment crossAxisAlignment;
+  @override
+  Widget build(BuildContext context) => isPhoneLayout(context)
+      ? Wrap(
+          spacing: spacing,
+          runSpacing: runSpacing,
+          crossAxisAlignment: crossAxisAlignment,
+          children: children.where((child) => child is! Spacer).toList())
+      : Row(children: children);
+}
+
+class _MaintenanceFormSurface extends StatelessWidget {
+  const _MaintenanceFormSurface({required this.child, this.width, this.padding, this.decoration});
+  final Widget child;
+  final double? width;
+  final EdgeInsetsGeometry? padding;
+  final Decoration? decoration;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isPhoneLayout(context)) {
+      return Container(width: width, padding: padding, decoration: decoration, child: child);
+    }
+    return InputDecorator(
+      decoration: mobileInputDecoration(context, const InputDecoration(isDense: true)),
+      child: child,
     );
   }
 }
