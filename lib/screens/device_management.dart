@@ -1,3 +1,4 @@
+import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_screen.dart';
 import '../widgets/mobile_equipment_card.dart';
 import '../gasmon/gas_theme.dart';
@@ -51,6 +52,7 @@ class _DeviceManagementState extends State<DeviceManagement>
   List<Device> _filteredDevices = [];
   List<Unit> _availableUnits = [];
   bool _isLoading = true;
+  bool _loadFailed = false;
   String _selectedFilter = 'All';
   bool _isGridView = false;
 
@@ -64,6 +66,7 @@ class _DeviceManagementState extends State<DeviceManagement>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+    _animationController.forward();
     _loadData();
     _searchController.addListener(_onSearchChanged);
   }
@@ -81,35 +84,28 @@ class _DeviceManagementState extends State<DeviceManagement>
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-
+    setState(() { _isLoading = true; _loadFailed = false; });
     try {
-      int? businessId = Constants.myBusiness.businessUid;
+      final businessId = Constants.myBusiness.businessUid;
       if (businessId > 0) {
-        await Future.wait([
-          _loadDevices(businessId),
-          _loadUnits(businessId),
-        ]);
-        _animationController.forward();
+        final results = await Future.wait([
+          ApiService.fetchDevices(businessId),
+          ApiService.fetchUnits(businessId),
+        ]).timeout(const Duration(seconds: 20));
+        if (!mounted) return;
+        _allDevices = results[0].cast<Device>();
+        _availableUnits = results[1].cast<Unit>();
       } else {
         _allDevices = [];
-        _filteredDevices = [];
         _availableUnits = [];
       }
-    } catch (e) {
-      _showErrorSnackBar('Failed to load data: ${e.toString()}');
+      if (!mounted) return;
+      _filterDevices();
+    } catch (_) {
+      if (mounted) setState(() => _loadFailed = true);
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  Future<void> _loadDevices(int businessId) async {
-    _allDevices = await ApiService.fetchDevices(businessId);
-    _filteredDevices = List.from(_allDevices);
-  }
-
-  Future<void> _loadUnits(int businessId) async {
-    _availableUnits = await ApiService.fetchUnits(businessId);
   }
 
   void _filterDevices() {
@@ -243,12 +239,12 @@ class _DeviceManagementState extends State<DeviceManagement>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Statistics Cards
-                      _buildStatisticsSection(),
+                      if (!_loadFailed && !_isLoading) _buildStatisticsSection(),
 
                       SizedBox(height: isPhoneLayout(context) ? 24 : 32),
 
                       // Search and Controls
-                      _buildSearchAndControls(),
+                      if (!_loadFailed && !_isLoading) _buildSearchAndControls(),
 
                       const SizedBox(height: 24),
 
@@ -306,6 +302,7 @@ class _DeviceManagementState extends State<DeviceManagement>
               ),
             ),
             const SizedBox(height: 12),
+            if (!_loadFailed && !_isLoading) ...[
             SizedBox(
               height: 44,
               child: ListView.separated(
@@ -379,8 +376,11 @@ class _DeviceManagementState extends State<DeviceManagement>
               ],
             ),
             const SizedBox(height: 8),
+            ],
             _isLoading
                 ? _buildLoadingState()
+                : _loadFailed
+                ? _buildLoadError()
                 : _filteredDevices.isEmpty
                 ? _buildEmptyState()
                 : _buildMobileDeviceList(),
@@ -758,7 +758,9 @@ class _DeviceManagementState extends State<DeviceManagement>
         const SizedBox(height: 16),
         _isLoading
             ? _buildLoadingState()
-            : _filteredDevices.isEmpty
+            : _loadFailed
+                ? _buildLoadError()
+                : _filteredDevices.isEmpty
                 ? _buildEmptyState()
                 : _isGridView
                     ? _buildGridView()
@@ -784,73 +786,28 @@ class _DeviceManagementState extends State<DeviceManagement>
     );
   }
 
+  Widget _buildLoadError() => GPanel(child: AppEmptyState(
+    kind: AppEmptyStateKind.offline,
+    title: 'Devices could not be loaded',
+    message: 'Check your internet connection and try again. Your saved devices have not been changed.',
+    actionLabel: 'Try again', onAction: _loadData,
+  ));
+
   Widget _buildEmptyState() {
-    return Container(
-      constraints: BoxConstraints(
-        minHeight: isPhoneLayout(context) ? 168 : 240,
-      ),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: isPhoneLayout(context)
-            ? Border.all(color: GasPalette.border)
-            : null,
-        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.devices_rounded,
-              size: isPhoneLayout(context) ? 32 : 64,
-              color: Colors.grey.shade400,
-            ),
-            SizedBox(height: isPhoneLayout(context) ? 12 : 16),
-            Text(
-              'No devices found',
-              style: GoogleFonts.inter(
-                fontSize: isPhoneLayout(context) ? 16 : 18,
-                fontWeight: FontWeight.w600,
-                color: isPhoneLayout(context)
-                    ? GasPalette.ink2
-                    : const Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _searchController.text.isNotEmpty || _selectedFilter != 'All'
-                  ? 'Try another search or clear the filters.'
-                  : 'Get started by adding your first device',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF9CA3AF),
-              ),
-            ),
-            if (_searchController.text.isNotEmpty ||
-                _selectedFilter != 'All') ...[
-              SizedBox(height: isPhoneLayout(context) ? 12 : 16),
-              OutlinedButton(
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _selectedFilter = 'All');
-                  _filterDevices();
-                },
-                child: const Text('Clear filters'),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+    final filtered = _searchController.text.isNotEmpty || _selectedFilter != 'All';
+    return GPanel(child: AppEmptyState(
+      kind: filtered ? AppEmptyStateKind.results : AppEmptyStateKind.devices,
+      title: filtered ? 'No matching devices' : 'Your first device starts here',
+      message: filtered
+          ? 'Try another name, ID or location, or clear your filters.'
+          : 'Add a gas scale or monitoring device to see its readings and set up your alerts.',
+      actionLabel: filtered ? 'Clear filters' : 'Add device',
+      onAction: filtered ? () {
+        _searchController.clear();
+        setState(() => _selectedFilter = 'All');
+        _filterDevices();
+      } : _addDevice,
+    ));
   }
 
   Widget _buildMobileDeviceCard(Device device) => MobileEquipmentCard(

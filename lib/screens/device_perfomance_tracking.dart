@@ -1,3 +1,7 @@
+import '../widgets/app_empty_state.dart';
+import '../gasmon/gas_core.dart' show isGasCylinderType;
+import '../gasmon/gas_dashboard_card.dart';
+import '../models/device.dart' as app;
 import '../gasmon/gas_widgets.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
@@ -1683,7 +1687,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${baseUrl}api/companies/$companyId/devices/'),
       headers: {'Content-Type': 'application/json'},
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -1715,7 +1719,7 @@ class ApiService {
     final response = await http.get(
       uri,
       headers: {'Content-Type': 'application/json'},
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       //print("fgghghghj ${response.body}");
@@ -1745,7 +1749,7 @@ class ApiService {
     final response = await http.get(
       uri,
       headers: {'Content-Type': 'application/json'},
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -1758,7 +1762,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('${baseUrl}api/devices/$deviceId/'),
       headers: {'Content-Type': 'application/json'},
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -1787,7 +1791,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   // Device Filter
   String? deviceTypeFilter;
-  String? onlineStatusFilter = 'online';
+  String? onlineStatusFilter;
   DeviceAnalytics? analyticsData;
   Device2Analytics? device2AnalyticsData;
   Device3Analytics? device3AnalyticsData;
@@ -1795,7 +1799,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Device5Analytics? device5AnalyticsData;
   Device6Analytics? device6AnalyticsData;
   Device7Analytics? device7AnalyticsData;
-  bool isLoading = false;
+  bool isLoading = true;
+  bool _inventoryLoaded = false;
+  bool _hasReadings = false;
+  int _inventoryGeneration = 0;
+  int _analyticsGeneration = 0;
+  String? _loadedAnalyticsKey;
+  DateTime? _lastAnalyticsLoad;
   bool isInitialLoad = true;
   String? errorMessage;
   Timer? _refreshTimer;
@@ -1812,6 +1822,132 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     _startAutoRefresh();
   }
 
+  String? get _analyticsKey => selectedDevice == null ? null :
+      '${widget.companyId}:${selectedDevice!.deviceId}:${startDate.toIso8601String()}:${endDate.toIso8601String()}';
+
+  bool get _hasCurrentReadings => _hasReadings && _loadedAnalyticsKey == _analyticsKey;
+  bool get _isGasDevice => selectedDevice != null && isGasCylinderType(selectedDevice!.deviceType);
+
+  void _clearAnalytics() {
+    analyticsData = null;
+    device2AnalyticsData = null;
+    device3AnalyticsData = null;
+    device4AnalyticsData = null;
+    device5AnalyticsData = null;
+    device6AnalyticsData = null;
+    device7AnalyticsData = null;
+    _hasReadings = false;
+    _loadedAnalyticsKey = null;
+    _lastAnalyticsLoad = null;
+  }
+
+  // Zero is a valid measurement; nonempty series or reported record counts
+  // establish that data exists, without inventing readings from model defaults.
+  bool _responseHasReadings(Map<String, dynamic> raw) {
+    bool hasSeries(Object? value) {
+      if (value is List) {
+        return value.any((item) => item != null &&
+            (item is! String || item.trim().isNotEmpty) &&
+            (item is! Map || item.isNotEmpty));
+      }
+      if (value is Map) {
+        const metadataKeys = {'labels', 'timestamps', 'times', 'dates', 'custom_labels'};
+        return value.entries.any((entry) =>
+            !metadataKeys.contains(entry.key) && hasSeries(entry.value));
+      }
+      return false;
+    }
+    if (hasSeries(raw)) return true;
+    final statistics = raw['overall_statistics'] as Map?;
+    final summary = raw['ice_machine_summary'] as Map? ?? raw['zone_summary'] as Map?;
+    for (final source in [raw, statistics, summary]) {
+      if (source == null) continue;
+      for (final name in ['total_readings', 'total_scans', 'total_records']) {
+        final count = source[name];
+        if (count is num && count > 0) return true;
+      }
+    }
+    if (statistics != null && !statistics.containsKey('total_readings')) {
+      for (final name in ['compressors', 'sensors', 'tray_weights']) {
+        final values = statistics[name];
+        if (values is Map && values.isNotEmpty) return true;
+      }
+    }
+    return false;
+  }
+
+  @override
+  void didUpdateWidget(covariant DevicePeformanceDashboard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.companyId != widget.companyId) {
+      _inventoryGeneration++;
+      _analyticsGeneration++;
+      devices = [];
+      selectedDevice = null;
+      deviceTypeFilter = null;
+      onlineStatusFilter = null;
+      _inventoryLoaded = false;
+      _clearAnalytics();
+      _loadDevices();
+    }
+  }
+
+  void _clearDeviceFilters() {
+    setState(() {
+      deviceTypeFilter = null;
+      onlineStatusFilter = null;
+      selectedDevice = devices.firstOrNull;
+    });
+    _loadAnalytics();
+  }
+
+  Widget _scrollableEmpty(Widget child) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      child: ConstrainedBox(constraints: BoxConstraints(minHeight: constraints.maxHeight), child: child)));
+
+  Widget _buildAnalyticsContent() {
+    if (isLoading && !_hasCurrentReadings) {
+      return Center(child: CircularProgressIndicator(color: GasPalette.primary));
+    }
+    if (errorMessage != null && !_hasCurrentReadings) {
+      return _scrollableEmpty(AppEmptyState(kind: AppEmptyStateKind.offline,
+        title: _inventoryLoaded ? 'Readings could not be loaded' : 'Equipment could not be loaded',
+        message: 'Check your connection and try again.', actionLabel: 'Retry',
+        onAction: _inventoryLoaded ? () => _loadAnalytics() : () => _loadDevices()));
+    }
+    if (_inventoryLoaded && devices.isEmpty) {
+      return _scrollableEmpty(const AppEmptyState(kind: AppEmptyStateKind.devices,
+        title: 'No devices yet', message: 'Add equipment to this account to see its performance here.'));
+    }
+    if (selectedDevice == null) {
+      return _scrollableEmpty(AppEmptyState(kind: AppEmptyStateKind.results,
+        title: 'No matching devices', message: 'Clear the device filters to see all your equipment.',
+        actionLabel: 'Clear filters', onAction: _clearDeviceFilters));
+    }
+    if (_isGasDevice) {
+      final device = selectedDevice!;
+      return SingleChildScrollView(padding: const EdgeInsets.all(16),
+        child: GasDashboardCard(key: ValueKey('gas-${widget.companyId}-${device.deviceId}'),
+          device: app.Device(id: device.id, name: device.name,
+            deviceId: device.deviceId, deviceType: device.deviceType, isOnline: device.isOnline)));
+    }
+    if (!_hasCurrentReadings) {
+      return _scrollableEmpty(AppEmptyState(kind: AppEmptyStateKind.readings,
+        title: 'No readings in this period', message: 'Try another date range, or wait for this device to report a reading.',
+        actionLabel: 'Refresh readings', onAction: () => _loadAnalytics()));
+    }
+    return LayoutBuilder(builder: (context, constraints) => Column(children: [
+      if (errorMessage != null)
+        ConstrainedBox(constraints: BoxConstraints(maxHeight: constraints.maxHeight * .4),
+          child: SingleChildScrollView(child: AppEmptyState(kind: AppEmptyStateKind.offline, compact: true,
+          title: 'Refresh unavailable',
+          message: 'Showing the readings loaded ${_lastAnalyticsLoad != null ? DateFormat('d MMM, HH:mm').format(_lastAnalyticsLoad!) : 'previously'}. Check your connection and retry.',
+          actionLabel: 'Retry', onAction: () => _loadAnalytics()))),
+      if (isLoading) const LinearProgressIndicator(minHeight: 2),
+      Expanded(child: _buildDashboard()),
+    ]));
+  }
+
   @override
   void dispose() {
     _refreshTimer?.cancel();
@@ -1820,7 +1956,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   void _startAutoRefresh() {
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (selectedDevice != null) {
+      if (selectedDevice != null && !_isGasDevice) {
         _loadAnalytics(
             showLoading: false); // Background refresh without loading indicator
       }
@@ -1828,91 +1964,76 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   }
 
   Future<void> _loadDevices() async {
+    final generation = ++_inventoryGeneration;
+    final companyId = widget.companyId;
+    setState(() { isLoading = true; errorMessage = null; });
     try {
-      final deviceList = await ApiService.getDevices(widget.companyId);
+      final deviceList = await ApiService.getDevices(companyId);
+      if (!mounted || generation != _inventoryGeneration || companyId != widget.companyId) return;
       setState(() {
         devices = deviceList;
-        if (deviceList.isNotEmpty) {
-          selectedDevice = deviceList.first;
-          _loadAnalytics();
-        }
+        _inventoryLoaded = true;
+        final filtered = _getFilteredDevices();
+        selectedDevice = filtered.where((device) => device.deviceId == selectedDevice?.deviceId).firstOrNull ?? filtered.firstOrNull;
       });
-    } catch (e) {
-      setState(() {
-        errorMessage = e.toString();
-      });
+      await _loadAnalytics();
+    } catch (error) {
+      if (!mounted || generation != _inventoryGeneration || companyId != widget.companyId) return;
+      setState(() { errorMessage = 'Equipment could not be loaded'; isLoading = false; isInitialLoad = false; });
     }
   }
 
   Future<void> _loadAnalytics({bool showLoading = true}) async {
-    if (selectedDevice == null) return;
-
-    // Capture the target device at the start of the request
+    final generation = ++_analyticsGeneration;
+    final targetKey = _analyticsKey;
+    if (selectedDevice == null || _isGasDevice) {
+      setState(() { _clearAnalytics(); isLoading = false; isInitialLoad = false; errorMessage = null; });
+      return;
+    }
     final targetDeviceId = selectedDevice!.deviceId;
     final deviceType = selectedDevice!.deviceType;
-
-    if (showLoading) {
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
-    }
-
+    final companyId = widget.companyId;
+    final requestedStart = startDate.toIso8601String();
+    final requestedEnd = endDate.toIso8601String();
+    setState(() {
+      if (_loadedAnalyticsKey != targetKey) _clearAnalytics();
+      isLoading = showLoading;
+      errorMessage = null;
+    });
     try {
-      // Get raw JSON first to determine parsing strategy
       final rawData = await ApiService.getDeviceAnalyticsRaw(
-        deviceId: targetDeviceId,
-        startDate: startDate.toIso8601String(),
-        endDate: endDate.toIso8601String(),
-        companyId: widget.companyId,
-      );
-
-      // Discard stale response if user switched devices during the API call
-      if (selectedDevice?.deviceId != targetDeviceId) {
-        print(
-            'Device changed during analytics load ($targetDeviceId -> ${selectedDevice?.deviceId}), discarding stale response');
-        return;
-      }
-
+        deviceId: targetDeviceId, startDate: requestedStart, endDate: requestedEnd, companyId: companyId);
+      if (!mounted || generation != _analyticsGeneration || targetKey != _analyticsKey) return;
+      // Parse before replacing saved data so a malformed response preserves
+      // the last successful readings for this exact device and date range.
+      final parsed = switch (deviceType) {
+        'device2' => Device2Analytics.fromJson(rawData),
+        'device3' => Device3Analytics.fromJson(rawData),
+        'device4' => Device4Analytics.fromJson(rawData),
+        'device5' => Device5Analytics.fromJson(rawData),
+        'device6' => Device6Analytics.fromJson(rawData),
+        'device7' => Device7Analytics.fromJson(rawData),
+        _ => DeviceAnalytics.fromJson(rawData),
+      };
       setState(() {
-        // Clear all analytics data first
-        analyticsData = null;
-        device2AnalyticsData = null;
-        device3AnalyticsData = null;
-        device4AnalyticsData = null;
-        device5AnalyticsData = null;
-        device6AnalyticsData = null;
-        device7AnalyticsData = null;
-
-        // Parse based on device type
-        if (deviceType == 'device2') {
-          device2AnalyticsData = Device2Analytics.fromJson(rawData);
-        } else if (deviceType == 'device3') {
-          device3AnalyticsData = Device3Analytics.fromJson(rawData);
-        } else if (deviceType == 'device4') {
-          device4AnalyticsData = Device4Analytics.fromJson(rawData);
-        } else if (deviceType == 'device5') {
-          device5AnalyticsData = Device5Analytics.fromJson(rawData);
-        } else if (deviceType == 'device6') {
-          device6AnalyticsData = Device6Analytics.fromJson(rawData);
-        } else if (deviceType == 'device7') {
-          device7AnalyticsData = Device7Analytics.fromJson(rawData);
-        } else {
-          analyticsData = DeviceAnalytics.fromJson(rawData);
-        }
+        _clearAnalytics();
+        if (parsed is Device2Analytics) device2AnalyticsData = parsed;
+        if (parsed is Device3Analytics) device3AnalyticsData = parsed;
+        if (parsed is Device4Analytics) device4AnalyticsData = parsed;
+        if (parsed is Device5Analytics) device5AnalyticsData = parsed;
+        if (parsed is Device6Analytics) device6AnalyticsData = parsed;
+        if (parsed is Device7Analytics) device7AnalyticsData = parsed;
+        if (parsed is DeviceAnalytics) analyticsData = parsed;
+        _hasReadings = _responseHasReadings(rawData);
+        _loadedAnalyticsKey = targetKey;
+        _lastAnalyticsLoad = DateTime.now();
         isLoading = false;
         isInitialLoad = false;
+        errorMessage = null;
       });
-    } catch (e) {
-      // Only show error if this is still the active device
-      if (showLoading && selectedDevice?.deviceId == targetDeviceId) {
-        setState(() {
-          errorMessage = e.toString();
-          print(errorMessage);
-          isLoading = false;
-        });
-      }
-      // For background updates or stale requests, silently fail
+    } catch (error) {
+      if (!mounted || generation != _analyticsGeneration || targetKey != _analyticsKey) return;
+      setState(() { errorMessage = 'Readings could not be loaded'; isLoading = false; isInitialLoad = false; });
     }
   }
 
@@ -1920,138 +2041,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   Widget build(BuildContext context) {
     return Container(
       color: isPhoneLayout(context) ? GasPalette.page : const Color(0xFFF8FAFC),
-      child: Column(
-        children: [
-          if (isPhoneLayout(context))
-            const MobileScreenHeader(
-              title: 'Performance',
-              padding: EdgeInsets.fromLTRB(16, 20, 16, 12),
-            )
-          else
-            const CompactHeader(
-              title: "Device Performance",
-              description: "Monitor and analyze device analytics in real-time",
-              icon: Icons.analytics_rounded,
-            ),
-          _buildControlPanel(),
-          Expanded(
-            child: isLoading && isInitialLoad
-                ? Container(
-                    width: double.infinity,
-                    height: double.infinity,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            color: Constants.ctaColorLight,
-                            strokeWidth: 3.0,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Loading device analytics...',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : errorMessage != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline,
-                                size: 48, color: Colors.red.shade300),
-                            SizedBox(height: 16),
-                            Text(
-                              'Error: $errorMessage',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: Colors.red.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : (analyticsData != null ||
-                            device2AnalyticsData != null ||
-                            device3AnalyticsData != null ||
-                            device4AnalyticsData != null ||
-                            device5AnalyticsData != null ||
-                            device6AnalyticsData != null ||
-                            device7AnalyticsData != null)
-                        ? Stack(
-                            children: [
-                              _buildDashboard(),
-                              // Show small loading indicator for background updates
-                              if (isLoading && !isInitialLoad)
-                                Positioned(
-                                  top: 16,
-                                  right: 16,
-                                  child: Container(
-                                    padding: EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black
-                                              .withValues(alpha: 0.1),
-                                          blurRadius: 4,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Constants.ctaColorLight,
-                                          ),
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Updating...',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          )
-                        : Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.analytics_outlined,
-                                    size: 48, color: Colors.grey.shade400),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Select a device to view analytics',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-          ),
-        ],
-      ),
+      child: Column(children: [
+        if (isPhoneLayout(context))
+          const MobileScreenHeader(title: 'Performance', padding: EdgeInsets.fromLTRB(16, 20, 16, 12))
+        else
+          const CompactHeader(title: 'Device Performance', description: 'Monitor and analyze device analytics in real-time', icon: Icons.analytics_rounded),
+        if (devices.isNotEmpty) _buildControlPanel(),
+        Expanded(child: _buildAnalyticsContent()),
+      ]),
     );
   }
 
@@ -2224,14 +2221,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           }
           // Reset selected device if it's no longer in filtered list
           final filtered = _getFilteredDevices();
-          if (selectedDevice != null &&
+          if (selectedDevice == null ||
               !filtered.any((d) => d.deviceId == selectedDevice!.deviceId)) {
             selectedDevice = filtered.isNotEmpty ? filtered.first : null;
           }
         });
-        if (selectedDevice != null) {
-          _loadAnalytics();
-        }
+        _loadAnalytics();
       },
     );
   }
@@ -2242,7 +2237,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         Expanded(
             child: DropdownButtonFormField<String>(
           key: ValueKey(selectedDevice?.deviceId),
-          initialValue: selectedDevice?.deviceId,
+          initialValue: _getFilteredDevices().any((device) => device.deviceId == selectedDevice?.deviceId) ? selectedDevice?.deviceId : null,
           isExpanded: true,
           style: gasBody(context).copyWith(color: GasPalette.ink),
           decoration: mobileInputDecoration(
@@ -2271,7 +2266,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         Tooltip(message: 'Filter devices', child: _buildFilterButton()),
       ]),
       const SizedBox(height: 4),
-      Theme(
+      if (!_isGasDevice) Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: Material(
             type: MaterialType.transparency,

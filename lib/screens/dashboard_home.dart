@@ -1,3 +1,4 @@
+import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_widgets.dart';
 import '../widgets/mobile_forms.dart';
@@ -929,6 +930,18 @@ class ArticDashboardTab extends StatefulWidget {
 
 class _ArticDashboardTabState extends State<ArticDashboardTab>
     with TickerProviderStateMixin {
+  late int _businessId;
+  int _loadGeneration = 0;
+  bool _hasInventory = false;
+  String? _loadError;
+  List<LatestDeviceData> latestDeviceDataList = [];
+  List<DailyAggregate> dailyAggregatesList = [];
+  List<HourlyAggregate> hourlyAggregatesList = [];
+  List<AlertData> alertsList = [];
+  DashboardData? dashboardData;
+  List<DeviceAlert> activeAlerts = [];
+  List<EnhancedSummaryCard> enhancedSummaryCards = [];
+
   bool isLoading = true;
   bool isInitialLoad = true;
   bool isRefreshing = false;
@@ -939,7 +952,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   // Device Filter
   String? deviceTypeFilter;
-  String? onlineStatusFilter = 'online';
+  String? onlineStatusFilter;
   List<DeviceModel3> totalDetached = [];
   List<DeviceModel3> totalActive = [];
   List<DeviceModel3> totalInactive = [];
@@ -1074,6 +1087,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   @override
   void initState() {
     super.initState();
+    _businessId = Constants.myBusiness.businessUid;
     print('Dashboard Home initState called');
     _metricsTabController = TabController(length: 4, vsync: this);
     _chartTabController = TabController(length: 3, vsync: this);
@@ -1084,6 +1098,95 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         _startAutoRefresh();
       }
     });
+  }
+
+  LatestDeviceData? get _selectedReading {
+    final device = availableDevices.where((device) => device.deviceId == selectedDeviceId).firstOrNull;
+    final reading = latestDeviceDataList.where((reading) => reading.deviceId == selectedDeviceId).firstOrNull;
+    if (device == null || reading == null || isGasCylinderType(device.deviceType)) return null;
+    final List<Object?> values = switch (device.deviceType) {
+      'device1' => [reading.temperature, reading.temperatureAir, reading.temperatureCoil, reading.temperatureDrain,
+        reading.door, reading.iceBuiltUp, reading.comp, reading.compressorLow, reading.compressorHigh,
+        reading.compAmpPh1, reading.compAmpPh2, reading.compAmpPh3],
+      'device2' => [reading.temp1, reading.temp2, reading.temp3, reading.temp4, reading.temp5, reading.temp6, reading.temp7, reading.temp8],
+      'device3' => [reading.hsTemp, reading.lsTemp, reading.iceTemp, reading.airTemp, reading.harvsw, reading.wtrlvl, reading.amps],
+      'device4' => [for (var compressor = 1; compressor <= 8; compressor++)
+        for (var phase = 1; phase <= 3; phase++) _getCompPhase(reading, compressor, phase)],
+      'device5' => [reading.relay1, reading.relay2, reading.relay3, reading.relay4, reading.relay5, reading.relay6,
+        reading.relay7, reading.relay8, reading.relay9, reading.relay10, reading.relay11, reading.relay12,
+        reading.relay13, reading.relay14, reading.relay15, reading.relay16],
+      'device6' => [reading.prs1, reading.prs2, reading.prs3, reading.prs4, reading.prs5, reading.prs6, reading.prs7, reading.prs8],
+      'device7' => [reading.tray1wt, reading.tray2wt, reading.tray3wt, reading.tray4wt, reading.bottleTemp, reading.codeScan],
+      _ => [],
+    };
+    return values.any((value) => value != null) ? reading : null;
+  }
+
+  bool _acceptLoad(int generation, int businessId) =>
+      mounted && generation == _loadGeneration && businessId == _businessId && businessId == Constants.myBusiness.businessUid;
+
+  void _clearMetrics() {
+    currentPerformanceMetrics = null;
+    temperatureRanges = [];
+    pressureMetrics = null;
+    compressorMetrics = null;
+    enhancedSummaryCards = [];
+    dailySummaryList = [];
+    dailySummaryList2 = [];
+  }
+
+  @override
+  void didUpdateWidget(covariant ArticDashboardTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_businessId != Constants.myBusiness.businessUid) {
+      _businessId = Constants.myBusiness.businessUid;
+      _loadGeneration++;
+      _hasInventory = false;
+      _loadError = null;
+      latestDeviceDataList = [];
+      dailyAggregatesList = [];
+      hourlyAggregatesList = [];
+      alertsList = [];
+      dashboardData = null;
+      activeAlerts = [];
+      availableDevices = [];
+      selectedDeviceId = null;
+      deviceTypeFilter = null;
+      onlineStatusFilter = null;
+      lastRefreshTime = null;
+      _clearMetrics();
+      _loadAllData();
+    }
+  }
+
+  void _clearDeviceFilters() {
+    setState(() {
+      deviceTypeFilter = null;
+      onlineStatusFilter = null;
+      selectedDeviceId = availableDevices.firstOrNull?.deviceId;
+      _processDashboardData();
+    });
+    _refreshDataForSelectedDevice();
+  }
+
+  Widget _buildReadingState() {
+    if (availableDevices.isEmpty) {
+      return AppEmptyState(kind: AppEmptyStateKind.devices,
+        title: 'No devices yet', message: 'Add equipment to this account to see its readings here.');
+    }
+    if (_getFilteredDevices().isEmpty) {
+      return AppEmptyState(kind: AppEmptyStateKind.results,
+        title: 'No matching devices', message: 'Try clearing the device filters to see all your equipment.',
+        actionLabel: 'Clear filters', onAction: _clearDeviceFilters);
+    }
+    if (selectedDeviceId == null) {
+      return const AppEmptyState(kind: AppEmptyStateKind.readings,
+        title: 'Choose a device', message: 'Select equipment above to see its own readings.');
+    }
+    return AppEmptyState(kind: _loadError != null ? AppEmptyStateKind.offline : AppEmptyStateKind.readings,
+      title: _loadError != null ? 'Readings could not be loaded' : 'No readings yet',
+      message: _loadError != null ? 'Check your connection and try again.' : 'This device has not reported any readings yet. Its readings will appear after it connects.',
+      actionLabel: 'Retry', onAction: () => _loadAllData(showLoading: false));
   }
 
   @override
@@ -1116,6 +1219,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   // [Include all the existing API methods here - fetchLatestDeviceData, fetchDashboardData, etc.]
 
   void _processDashboardData() {
+    if (selectedDeviceId == null || _selectedGasDevice != null || _selectedReading == null) {
+      _clearMetrics();
+      return;
+    }
+    _updateDailySummaryFromLatestData();
     // Build all metrics using the fetched data
     _buildPerformanceMetrics();
     _buildDesktopDoorMetrics();
@@ -1143,9 +1251,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     }
 
     // Use selected device instead of first device
-    final latestData = selectedDeviceId != null
-        ? latestDeviceDataList.where((d) => d.deviceId == selectedDeviceId).firstOrNull ?? latestDeviceDataList.first
-        : latestDeviceDataList.first;
+    final latestData = _selectedReading;
+    if (latestData == null) {
+      currentPerformanceMetrics = null;
+      return;
+    }
     // Filter daily aggregates by selected device ID and get today's data
     final dailyData = dailyAggregatesList
         .where((d) => d.deviceId == selectedDeviceId)
@@ -4255,6 +4365,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     children: [
                       _buildWelcomeHeader(),
                       SizedBox(height: isMobile ? 16 : 24),
+                      if (_loadError != null && !_hasInventory)
+                        AppEmptyState(kind: AppEmptyStateKind.offline,
+                          title: 'Equipment could not be loaded', message: 'Check your connection and try again.',
+                          actionLabel: 'Retry', onAction: () => _loadAllData())
+                      else if (_loadError != null && _selectedReading != null)
+                        AppEmptyState(kind: AppEmptyStateKind.offline, compact: true,
+                          title: 'Refresh unavailable', message: _loadError!,
+                          actionLabel: 'Retry', onAction: () => _loadAllData(showLoading: false)),
                       _buildFleetTiles(),
                       SizedBox(height: isMobile ? 16 : 24),
                       _buildPerformanceOverview(),
@@ -4269,15 +4387,17 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       if (_selectedGasDevice != null) ...[
                         GasDashboardCard(device: _selectedGasDevice!),
                         SizedBox(height: isMobile ? 16 : 24),
-                      ] else ...[
+                      ] else if (_selectedReading != null && selectedDeviceId != null) ...[
                         _buildEnhancedSummaryCards2(),
                         SizedBox(height: isMobile ? 16 : 24),
                         _buildMetricsTabView(),
                         SizedBox(height: isMobile ? 16 : 24),
                       ],
-                      _buildAlertsSection(context),
+                      if (_selectedGasDevice == null && _selectedReading == null && _hasInventory)
+                        _buildReadingState(),
+                      if (availableDevices.isNotEmpty) _buildAlertsSection(context),
                       SizedBox(height: isMobile ? 16 : 24),
-                      _buildDeviceMapSection(context),
+                      if (availableDevices.isNotEmpty) _buildDeviceMapSection(context),
                     ],
                   ),
                 ),
@@ -4433,7 +4553,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           }
           // Reset selected device if it's no longer in filtered list
           final filtered = _getFilteredDevices();
-          if (selectedDeviceId != null && !filtered.any((d) => d.deviceId == selectedDeviceId)) {
+          if (selectedDeviceId == null || !filtered.any((d) => d.deviceId == selectedDeviceId)) {
             selectedDeviceId = filtered.isNotEmpty ? filtered.first.deviceId : null;
           }
         });
@@ -4566,87 +4686,54 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   // Include all the existing API methods here
   Future<void> _refreshDataForSelectedDevice() async {
-    setState(() {
-      isRefreshing = true;
-    });
-
-    try {
-      await Future.wait([
-        fetchLatestDeviceData(),
-        fetchDashboardData(),
-        fetchAlerts(),
-      ]);
-      _processDashboardData();
-    } catch (e) {
-      print('Error refreshing data for selected device: $e');
-    } finally {
-      setState(() {
-        isRefreshing = false;
-      });
-    }
+    if (!mounted) return;
+    setState(_processDashboardData);
+    await _loadAllData(showLoading: false);
   }
 
   Future<void> _loadAllData({bool showLoading = true}) async {
-    print(
-        '_loadAllData called for Dashboard Home with showLoading: $showLoading at ${DateTime.now()}');
-
-    // IMPORTANT: Preserve the currently selected device before refresh
-    final preservedDeviceId = selectedDeviceId;
-    print('Preserving selectedDeviceId before refresh: $preservedDeviceId');
-
-    if (showLoading) {
-      setState(() {
-        isLoading = true;
-      });
-    }
-
+    final generation = ++_loadGeneration;
+    final businessId = _businessId;
+    setState(() {
+      isLoading = showLoading && !_hasInventory;
+      isRefreshing = !isLoading;
+      _loadError = null;
+    });
     try {
-      print('Starting data fetch operations for Dashboard Home...');
+      // Inventory is authoritative; telemetry must never select another device.
+      await getDeviceByClient(businessId, generation: generation);
+      if (!_acceptLoad(generation, businessId)) return;
       await Future.wait([
-        getDeviceByClient(Constants.myBusiness.businessUid),
-        fetchLatestDeviceData(),
-        fetchDashboardData(),
-        fetchAlerts(),
+        fetchLatestDeviceData(generation: generation),
+        fetchDashboardData(generation: generation),
+        fetchAlerts(generation: generation),
       ]);
-
-      // Only restore if the user hasn't changed the selection during the refresh
-      // (prevents jumping back to old device when auto-refresh races with manual selection)
-      if (preservedDeviceId != null && selectedDeviceId == preservedDeviceId && availableDevices.any((d) => d.deviceId == preservedDeviceId)) {
-        // Selection unchanged, keep it
-        print('selectedDeviceId unchanged during refresh: $selectedDeviceId');
-      } else if (preservedDeviceId != null && selectedDeviceId != preservedDeviceId) {
-        print('User changed selection during refresh from $preservedDeviceId to $selectedDeviceId, keeping new selection');
-      }
-
-      _processDashboardData();
-
-      print('Data fetch completed successfully for Dashboard Home');
-      if (mounted) {
+      if (!_acceptLoad(generation, businessId)) return;
+      setState(() {
+        _processDashboardData();
+        lastRefreshTime = DateTime.now();
+      });
+    } catch (error) {
+      if (!_acceptLoad(generation, businessId)) return;
+      setState(() {
+        _loadError = 'Some data could not be refreshed. Available readings are the last received from this device.';
+        _processDashboardData();
+      });
+    } finally {
+      if (_acceptLoad(generation, businessId)) {
         setState(() {
           isLoading = false;
+          isRefreshing = false;
           isInitialLoad = false;
-          lastRefreshTime = DateTime.now();
-        });
-        print('Dashboard Home state updated');
-      }
-    } catch (e) {
-      print('Error loading dashboard data: $e');
-      if (showLoading && mounted) {
-        setState(() {
-          isLoading = false;
         });
       }
-      // For background updates, silently fail to avoid disrupting UI
     }
   }
 
   Widget _buildWelcomeHeader() {
     final isMobile = _isMobile(context);
     final name = Constants.myDisplayname.trim().split(' ').first;
-    final lastUpdated = latestDeviceDataList
-        .where((d) => d.deviceId == selectedDeviceId)
-        .map((d) => d.time)
-        .firstOrNull;
+    final lastUpdated = _selectedReading?.time;
     if (isPhoneLayout(context)) {
       return MobileScreenHeader(
         padding: EdgeInsets.zero,
@@ -4947,7 +5034,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   }
 
   Widget _buildPerformanceOverview() {
-    if (currentPerformanceMetrics == null) return Container();
+    if (availableDevices.isEmpty) return const SizedBox.shrink();
     final isMobile = _isMobile(context);
 
     return Container(
@@ -5000,7 +5087,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   'The cylinder\'s level and usage are shown below.',
                   style: GoogleFonts.inter(
                       fontSize: 12, color: Colors.grey.shade600)),
-            ] else ...[
+            ] else if (currentPerformanceMetrics != null) ...[
               SizedBox(height: 16),
               isMobile
                   ? Column(
@@ -5487,13 +5574,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   // Helper method to get the device type for the currently selected device
   String _getSelectedDeviceType() {
-    if (selectedDeviceId == null || latestDeviceDataList.isEmpty) {
-      return 'device1';
-    }
-    final selectedDevice = latestDeviceDataList
-        .where((device) => device.deviceId == selectedDeviceId)
-        .firstOrNull;
-    return selectedDevice?.resolvedDeviceType ?? 'device1';
+    return availableDevices.where((device) => device.deviceId == selectedDeviceId)
+        .firstOrNull?.deviceType ?? '';
   }
 
   Widget _buildMetricsTabView() {
@@ -7850,42 +7932,19 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Constants.ctaColorLight;
   }
 
-  Future<void> fetchLatestDeviceData() async {
-    try {
-      final response = await http.get(
-        Uri.parse(
-            '${Constants.articBaseUrl2}latest-device-data/${Constants.myBusiness.businessUid}/'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        print("dfgfgf ${data}");
-
-        final newDeviceList =
-            data.map((item) => LatestDeviceData.fromJson(item)).toList();
-
-        if (newDeviceList.isNotEmpty) {
-          // Update the list without triggering setState - let the caller handle final setState
-          // This prevents race conditions during concurrent updates
-          latestDeviceDataList = newDeviceList;
-
-          // Only set default selected device on INITIAL load
-          // Don't change selectedDeviceId during refresh - let _loadAllData preserve it
-          if (selectedDeviceId == null && isInitialLoad) {
-            selectedDeviceId = latestDeviceDataList.first.deviceId;
-            print('Initial load: Setting selectedDeviceId to first device: $selectedDeviceId');
-          }
-
-          // Update the UI summary for the selected device
-          _updateDailySummaryFromLatestData();
-        }
-      } else {
-        print('Failed to fetch latest device data: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching latest device data: $e');
-    }
+  Future<void> fetchLatestDeviceData({int? generation}) async {
+    final requestGeneration = generation ?? _loadGeneration;
+    final businessId = _businessId;
+    final response = await http.get(
+      Uri.parse('${Constants.articBaseUrl2}latest-device-data/$businessId/'),
+      headers: {'Content-Type': 'application/json'},
+    ).timeout(const Duration(seconds: 20));
+    if (!_acceptLoad(requestGeneration, businessId)) return;
+    if (response.statusCode != 200) throw Exception('Readings request failed');
+    final data = jsonDecode(response.body) as List;
+    final readings = data.map((item) => LatestDeviceData.fromJson(item)).toList();
+    latestDeviceDataList = readings.where((reading) =>
+      availableDevices.any((device) => device.deviceId == reading.deviceId)).toList();
   }
 
   void _updateDailySummaryFromLatestData() {
@@ -7902,10 +7961,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         // If found, use it.
         deviceToDisplay = matchingDevices.first;
       } else {
-        // If not found (e.g., selection is out of sync), default to the first device.
-        print(
-            "Fallback: selectedDeviceId '$selectedDeviceId' not found. Defaulting to the first device.");
-        deviceToDisplay = latestDeviceDataList.first;
+        dailySummaryList = [];
+        dailySummaryList2 = [];
+        return;
       }
       // --- FIX ENDS HERE ---
 
@@ -8232,19 +8290,22 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     setState(() {});
   }
 
-  Future<void> fetchDashboardData() async {
+  Future<void> fetchDashboardData({int? generation}) async {
+    final requestGeneration = generation ?? _loadGeneration;
+    final businessId = _businessId;
     try {
       // Fetch ALL dashboard data without device filter
       // Filtering by device is done client-side to ensure we always have data for all devices
       String url =
-          '${Constants.articBaseUrl2}dashboard-data/?business_uid=${Constants.myBusiness.businessUid}';
+          '${Constants.articBaseUrl2}dashboard-data/?business_uid=$businessId';
       print("Fetching dashboard data from: $url (selectedDeviceId: $selectedDeviceId)");
 
       final response = await http.get(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(const Duration(seconds: 20));
 
+      if (!_acceptLoad(requestGeneration, businessId)) return;
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
 
@@ -8323,17 +8384,22 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         // Note: _processDashboardData() is called in _loadAllData after all futures complete
       } else {
         print('Failed to fetch dashboard data: ${response.statusCode}');
+        throw Exception('Could not load dashboard data');
       }
     } catch (e, stackTrace) {
       print('Error fetching dashboard data: $e');
       print('Stack trace: $stackTrace');
+      rethrow;
     }
   }
 
-  Future<void> fetchAlerts() async {
+  Future<void> fetchAlerts({int? generation}) async {
+    final requestGeneration = generation ?? _loadGeneration;
+    final businessId = _businessId;
+    final requestedDeviceId = selectedDeviceId;
     try {
       String url =
-          '${Constants.articBaseUrl2}alerts/?business_id=${Constants.myBusiness.businessUid}';
+          '${Constants.articBaseUrl2}alerts/?business_id=$businessId';
 
       // Add device filter if specific device is selected
       if (selectedDeviceId != null && selectedDeviceId!.isNotEmpty) {
@@ -8343,8 +8409,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       final response = await http.get(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(const Duration(seconds: 20));
 
+      if (!_acceptLoad(requestGeneration, businessId) || requestedDeviceId != selectedDeviceId) return;
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         // Update data without triggering setState - let the caller handle final setState
@@ -8355,20 +8422,25 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         _updateNotificationList();
       } else {
         print('Failed to fetch alerts: ${response.statusCode}');
+        throw Exception('Could not load dashboard data');
       }
     } catch (e) {
       print('Error fetching alerts: $e');
+      rethrow;
     }
   }
 
-  Future<void> getDeviceByClient(int business_uid) async {
+  Future<void> getDeviceByClient(int business_uid, {int? generation}) async {
+    final requestGeneration = generation ?? _loadGeneration;
+    final businessId = _businessId;
     try {
       final response = await http.get(
         Uri.parse(
             '${Constants.articBaseUrl2}get_devices_by_client/$business_uid/'),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(const Duration(seconds: 20));
 
+      if (!_acceptLoad(requestGeneration, businessId)) return;
       if (response.statusCode == 200) {
         var responsedata = jsonDecode(response.body);
         List<DeviceModel3> devices = [];
@@ -8399,21 +8471,26 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         Constants.allDeviceData = devices;
         availableDevices = devices;
 
-        // Only set default selected device on INITIAL load (when no device is selected)
-        // Don't change selectedDeviceId during refresh - let _loadAllData handle it
-        if (selectedDeviceId == null && devices.isNotEmpty && isInitialLoad) {
-          selectedDeviceId = devices.first.deviceId;
-          print('Initial load: Setting selectedDeviceId to first device: $selectedDeviceId');
+        final hadInventory = _hasInventory;
+        _hasInventory = true;
+        final filtered = _getFilteredDevices();
+        if ((!hadInventory && selectedDeviceId == null) ||
+            (selectedDeviceId != null && !filtered.any((device) => device.deviceId == selectedDeviceId))) {
+          selectedDeviceId = filtered.firstOrNull?.deviceId;
         }
+        latestDeviceDataList = latestDeviceDataList.where((reading) =>
+          devices.any((device) => device.deviceId == reading.deviceId)).toList();
 
         // Don't call empty setState here - let the caller (_loadAllData) handle the final setState
         // This prevents race conditions during concurrent updates
         _initializeMarkers();
       } else {
         print('Failed to fetch devices: ${response.statusCode}');
+        throw Exception('Could not load dashboard data');
       }
     } catch (e) {
       print("Error fetching devices: $e");
+      rethrow;
     }
   }
 

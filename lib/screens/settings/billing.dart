@@ -1,8 +1,8 @@
+import '../../widgets/app_empty_state.dart';
 import 'mobile_account_widgets.dart';
 import '../../gasmon/gas_theme.dart';
 import '../../gasmon/gas_widgets.dart';
 import '../../widgets/mobile_forms.dart';
-import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +43,7 @@ class _BillManagementState extends State<BillManagement>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+    _animationController.forward();
     _loadBills();
     _searchController.addListener(_onSearchChanged);
   }
@@ -97,66 +98,10 @@ class _BillManagementState extends State<BillManagement>
   }
 
   Future<void> _getAllBillings(String billFilter) async {
-    // Mock data for demonstration
-    String jsonString = '''
-[
-    {
-        "id": 1,
-        "sentDate": "2024-10-01T12:00:00Z",
-        "description": "Payment for services rendered",
-        "amount": 150.00,
-        "recipients": "John Doe",
-        "dueDate": "2024-11-01T12:00:00Z",
-        "status": "Paid",
-        "type": "Recurring"
-    },
-    {
-        "id": 2,
-        "sentDate": "2024-10-02T09:30:00Z",
-        "description": "Invoice #1234",
-        "amount": 200.50,
-        "recipients": "Jane Smith",
-        "dueDate": "2024-10-15T12:00:00Z",
-        "status": "Draft",
-        "type": "One-time"
-    },
-    {
-        "id": 3,
-        "sentDate": "2024-10-03T15:45:00Z",
-        "description": "Consulting fee",
-        "amount": 300.75,
-        "recipients": "Acme Corp.",
-        "dueDate": "2024-11-03T12:00:00Z",
-        "status": "Sent",
-        "type": "Recurring"
-    },
-    {
-        "id": 4,
-        "sentDate": "2024-10-04T11:15:00Z",
-        "description": "Monthly subscription",
-        "amount": 29.99,
-        "recipients": "Tech Solutions",
-        "dueDate": "2024-10-31T12:00:00Z",
-        "status": "Paid",
-        "type": "Recurring"
-    },
-    {
-        "id": 5,
-        "sentDate": "2024-10-05T08:00:00Z",
-        "description": "Refund for cancellation",
-        "amount": 75.00,
-        "recipients": "Alice Johnson",
-        "dueDate": "2024-10-20T12:00:00Z",
-        "status": "Paid",
-        "type": "One-time"
-    }
-]
-''';
-
-    List<dynamic> billList = jsonDecode(jsonString);
-    _allBills =
-        billList.map((item) => BillingManagement.fromMap(item)).toList();
-    _filteredBills = List.from(_allBills);
+    // Billing history has no connected read endpoint yet. Keep it empty
+    // instead of presenting example invoices as this account's bills.
+    _allBills = [];
+    _filteredBills = [];
   }
 
   void _filterBills() {
@@ -364,13 +309,7 @@ class _BillManagementState extends State<BillManagement>
             const GPanel(child: Center(child: Padding(
                 padding: EdgeInsets.all(24), child: CircularProgressIndicator())))
           else if (_filteredBills.isEmpty)
-            GPanel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text('No bills found', style: gasTitle(context)),
-              const SizedBox(height: 8),
-              Text(_searchController.text.isNotEmpty || _selectedFilter != 'All'
-                  ? 'Try a different search or clear your filters.'
-                  : 'Your bills will appear here.', style: gasBody(context)),
-            ]))
+            _buildEmptyState()
           else
             GPanel(padding: EdgeInsets.zero, child: Column(children: [
               for (var index = 0; index < _filteredBills.length; index++) ...[
@@ -759,67 +698,18 @@ class _BillManagementState extends State<BillManagement>
   }
 
   Widget _buildEmptyState() {
-    return Container(
-      height: 300,
-      decoration: accountSurface(
-          context,
-          BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          )),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.receipt_long_rounded,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No bills found',
-              style: accountInter(
-                context,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _searchController.text.isNotEmpty || _selectedFilter != 'All'
-                  ? 'Try adjusting your search or filters'
-                  : 'Get started by sending your first bill',
-              style: accountInter(
-                context,
-                fontSize: 14,
-                color: const Color(0xFF9CA3AF),
-              ),
-            ),
-            if (_searchController.text.isNotEmpty ||
-                _selectedFilter != 'All') ...[
-              const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _selectedFilter = 'All');
-                  _filterBills();
-                },
-                child: const Text('Clear filters'),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+    final filtered = _searchController.text.isNotEmpty || _selectedFilter != 'All';
+    return GPanel(child: AppEmptyState(
+      kind: filtered ? AppEmptyStateKind.results : AppEmptyStateKind.records,
+      title: filtered ? 'No matching bills' : 'No bills yet',
+      message: filtered ? 'Try another search or clear your filters.' : 'Billing history will appear here when it is available for your account.',
+      actionLabel: filtered ? 'Clear filters' : null,
+      onAction: filtered ? () {
+        _searchController.clear();
+        setState(() => _selectedFilter = 'All');
+        _filterBills();
+      } : null,
+    ));
   }
 
   Widget _buildGridView() {

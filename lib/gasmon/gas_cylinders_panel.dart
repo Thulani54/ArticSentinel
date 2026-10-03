@@ -4,6 +4,7 @@
 library;
 
 import '../widgets/mobile_forms.dart';
+import '../widgets/app_empty_state.dart';
 import 'package:flutter/material.dart';
 
 import '../models/device.dart';
@@ -27,13 +28,20 @@ class GasCylindersPanel extends StatelessWidget {
     return GSection(
       eyebrow: 'Gas supply',
       title: 'Gas cylinders (${devices.length})',
-      child: GTileGrid(
-        minWidth: 260,
-        children: [
-          for (final d in devices)
-            _CylinderCard(key: ValueKey(d.id), device: d, onOpened: onOpened),
-        ],
-      ),
+      child: devices.isEmpty
+          ? const AppEmptyState(
+              kind: AppEmptyStateKind.devices,
+              title: 'No gas cylinders yet',
+              message: 'Add a gas device to monitor its level and usage.',
+            )
+          : GTileGrid(
+              minWidth: 260,
+              children: [
+                for (final d in devices)
+                  _CylinderCard(
+                      key: ValueKey(d.id), device: d, onOpened: onOpened),
+              ],
+            ),
     );
   }
 }
@@ -51,6 +59,7 @@ class _CylinderCard extends StatefulWidget {
 class _CylinderCardState extends State<_CylinderCard> {
   GasDeviceData? _data;
   bool _failed = false;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -59,18 +68,22 @@ class _CylinderCardState extends State<_CylinderCard> {
   }
 
   Future<void> _load() async {
+    final request = ++_loadGeneration;
     final id = widget.device.id;
     if (id == null) return;
     try {
-      final r = await GasApi.load(deviceId: id, demoKey: widget.device.deviceId);
-      if (mounted) {
+      final r =
+          await GasApi.load(deviceId: id, demoKey: widget.device.deviceId);
+      if (mounted && request == _loadGeneration && id == widget.device.id) {
         setState(() {
           _data = r.data;
           _failed = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _failed = true);
+      if (mounted && request == _loadGeneration && id == widget.device.id) {
+        setState(() => _failed = true);
+      }
     }
   }
 
@@ -91,14 +104,20 @@ class _CylinderCardState extends State<_CylinderCard> {
       if ((d.location ?? '').isNotEmpty) d.location!,
       d.deviceId,
     ].join(' · ');
-    final online = data != null && data.live ? !data.isOffline : d.isOnline == true;
+    final online = data?.hasReadings == true && !_failed && !data!.isOffline;
 
     Widget level;
     if (data == null) {
-      level = Text(_failed ? 'Level unavailable' : 'Loading level…',
+      level = Text(
+          _failed
+              ? 'Level unavailable — tap Retry to reconnect.'
+              : d.id == null
+                  ? 'Add this device to connect its scale.'
+                  : 'Loading level…',
           style: gasSmall(context));
-    } else if (!data.live) {
-      level = const GChip('Waiting for first reading', tone: GChipTone.demo);
+    } else if (!data.hasReadings) {
+      level = const Text(
+          'Waiting for the first reading. Connect your scale to start monitoring.');
     } else {
       final band = bandFor(data.currentLevelPct,
           lowPct: data.lowPct, warningPct: data.warningPct);
@@ -156,10 +175,16 @@ class _CylinderCardState extends State<_CylinderCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(children: [
-                const GChip('Gas Cylinder', tone: GChipTone.demo),
-                const Spacer(),
-                GChip(online ? 'Online' : 'Offline',
-                    tone: online ? GChipTone.good : GChipTone.crit, dot: true),
+                const Expanded(child: Text('Gas cylinder')),
+                const SizedBox(width: 8),
+                GChip(
+                    online
+                        ? 'Online'
+                        : data?.hasReadings == true
+                            ? 'Offline'
+                            : _failed ? 'Unavailable' : 'Not reporting',
+                    tone: online ? GChipTone.good : GChipTone.crit,
+                    dot: true),
               ]),
               const SizedBox(height: 12),
               Text(d.name,
@@ -175,6 +200,15 @@ class _CylinderCardState extends State<_CylinderCard> {
               ],
               const SizedBox(height: 12),
               level,
+              if (data?.hasReadings == true &&
+                  (_failed || data!.isOffline)) ...[
+                const SizedBox(height: 8),
+                Text(
+                    'Last reported ${formatAgo(data!.latest.at)}${_failed ? ' · refresh failed' : ''}',
+                    style: gasSmall(context)),
+              ],
+              if (_failed)
+                TextButton(onPressed: _load, child: const Text('Retry')),
               const SizedBox(height: 10),
               Text('View →',
                   style: gasBody(context).copyWith(

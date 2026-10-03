@@ -2,11 +2,12 @@
 /// oriented `DeviceDetailsDialog` for devices whose type is 'gas_cylinder'.
 ///
 /// Shows live scale readings from api/gas/readings/ once the scale has
-/// reported (labelled "LIVE SCALE"), and demo data ("DEMO DATA") before that.
+/// reported. Missing readings and failed requests are shown explicitly.
 /// Also hosts the Cylinder setup and the Bluetooth "Connect scale" flow.
 library;
 
 import '../widgets/mobile_forms.dart';
+import '../widgets/app_empty_state.dart';
 
 import 'dart:async';
 
@@ -47,7 +48,8 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
   GasConfig? _config;
   String? _loadError;
   Timer? _refresh;
-  late final String _demoKey;
+  bool _loading = true;
+  int _loadGeneration = 0;
   late final AnimationController _fillCtrl;
   int _rangeDays = 30;
   bool _exporting = false;
@@ -57,12 +59,6 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
   @override
   void initState() {
     super.initState();
-    final key = [
-      widget.device.deviceId,
-      widget.device.name,
-      widget.device.id?.toString() ?? '',
-    ].where((s) => s.isNotEmpty).join('-');
-    _demoKey = key.isEmpty ? 'gas' : key;
     _fillCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1100),
@@ -80,43 +76,60 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
   }
 
   Future<void> _load() async {
+    final request = ++_loadGeneration;
     final id = widget.device.id;
-    GasDeviceData data;
-    GasConfig? config = _config;
-    if (widget.loadData != null) {
-      final result = await widget.loadData!();
-      data = result.data;
-      config = result.config;
-    } else if (id == null) {
-      data = GasApi.demoForConfig(_demoKey, null);
-    } else {
-      try {
-        final r = await GasApi.load(deviceId: id, demoKey: _demoKey);
-        data = r.data;
-        config = r.config;
-        _loadError = null;
-      } catch (e) {
-        debugPrint('[gas] load failed: $e');
-        if (mounted)
-          setState(() => _loadError =
-              'Could not refresh scale readings. Check your connection and retry.');
-        if (_loaded != null) return; // keep showing what we have
-        data = GasApi.demoForConfig(_demoKey, null);
-      }
+    if (id == null && widget.loadData == null) {
+      setState(() => _loading = false);
+      return;
     }
-    if (!mounted) return;
-    final first = _loaded == null;
-    setState(() {
-      _loaded = data;
-      _config = config;
-    });
-    if (first) _fillCtrl.forward();
+    if (_loaded == null) setState(() => _loading = true);
+    try {
+      final result = widget.loadData != null
+          ? await widget.loadData!()
+          : await GasApi.load(deviceId: id!, demoKey: widget.device.deviceId);
+      if (!mounted || request != _loadGeneration || id != widget.device.id) {
+        return;
+      }
+      final firstReading =
+          _loaded?.hasReadings != true && result.data.hasReadings;
+      setState(() {
+        _loaded = result.data;
+        _config = result.config;
+        _loadError = null;
+        _loading = false;
+      });
+      if (firstReading) _fillCtrl.forward(from: 0);
+    } catch (_) {
+      if (!mounted || request != _loadGeneration || id != widget.device.id) {
+        return;
+      }
+      setState(() {
+        _loadError =
+            'Could not refresh scale readings. Check your connection and retry.';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _openCylinderSetup() async {
+    final config = _config;
+    if (config == null || widget.device.id == null) return;
+    await showMobileDialog(
+      context: context,
+      builder: (_) => GasCylinderSetupDialog(
+        config: config,
+        scaleGrossKg:
+            _loaded?.hasReadings == true ? _loaded!.scaleGrossKg : null,
+        onSave: _saveConfig,
+      ),
+    );
   }
 
   Future<void> _saveConfig(GasConfig config) async {
     final id = widget.device.id;
     if (id == null) throw GasApiException('This device has no ID yet.');
     final saved = await GasApi.saveConfig(deviceId: id, config: config);
+    if (!mounted) return;
     setState(() => _config = saved);
     await _load(); // levels are recomputed against the new tare/capacity
   }
@@ -135,7 +148,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
 
   @override
   Widget build(BuildContext context) {
-    if (_loaded == null) {
+    if (_loading && _loaded == null) {
       return const MobileDialog(
         child: Padding(
           padding: EdgeInsets.all(32),
@@ -158,7 +171,8 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1180),
-            child: _buildPage(),
+            child:
+                _loaded?.hasReadings == true ? _buildPage() : _buildEmptyPage(),
           ),
         ),
       ),
@@ -178,6 +192,28 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
     );
   }
 
+  Widget _buildEmptyPage() => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildHeader(true),
+          const SizedBox(height: 20),
+          AppEmptyState(
+            kind: _loadError != null
+                ? AppEmptyStateKind.offline
+                : AppEmptyStateKind.readings,
+            title: _loadError != null
+                ? 'Readings unavailable'
+                : 'Waiting for the first reading',
+            message: widget.device.id == null && widget.loadData == null
+                ? 'Add this device before connecting a scale or setting up its cylinder.'
+                : _loadError ??
+                    'Connect the scale to see the gas level, usage and alerts. No weight has been reported yet.',
+            actionLabel: widget.device.id != null ? 'Retry' : null,
+            onAction: widget.device.id != null ? _load : null,
+          ),
+        ],
+      );
+
   /// Same sections, in the same order, as the website's gas page.
   Widget _buildPage() {
     final levelPct = _data.currentLevelPct;
@@ -191,12 +227,15 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
       children: [
         _buildHeader(offline),
         const SizedBox(height: 20),
-        if (_loadError != null) GBanner(lead: _loadError!),
-        if (!_data.live)
-          const GBanner(
-              lead: 'Showing demo data.',
-              text: 'Live readings replace it as soon as the scale sends its '
-                  'first weight. Tap "Connect scale" to set one up.'),
+        if (_loadError != null) ...[
+          GBanner(
+              lead: _loadError!,
+              text:
+                  'Showing the last reported reading from ${DateFormat("d MMM, HH:mm").format(_data.latest.at)}.'),
+          Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(onPressed: _load, child: const Text('Retry'))),
+        ],
         if (_data.live && gross != null && gross < _data.spec.tareKg)
           GBanner(
               lead: 'The scale reads ${kg1(gross)} — less than the empty '
@@ -207,7 +246,8 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
         if (band == GasBand.low)
           GBanner(
               critical: true,
-              lead: 'Low gas — ${levelPct.round()}% remaining.',
+              lead:
+                  '${offline || _loadError != null ? "Last reported low gas" : "Low gas"} — ${levelPct.round()}% remaining.',
               text: 'Schedule a refill.'),
         if (offline)
           GBanner(
@@ -222,11 +262,6 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
         const SizedBox(height: 16),
         _buildReports(levelPct),
         const SizedBox(height: 16),
-        GasSetupCard(
-          config: _config,
-          scaleGrossKg: _data.live ? gross : null,
-          onSave: _saveConfig,
-        ),
         if (isPhoneLayout(context)) ...[
           const SizedBox(height: 16),
           GasNotificationCard(device: widget.device),
@@ -265,7 +300,8 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Gas Cylinder',
-                  style: gasEyebrow(context).copyWith(color: GasPalette.series)),
+                  style:
+                      gasEyebrow(context).copyWith(color: GasPalette.series)),
               const SizedBox(height: 2),
               Text(widget.device.name,
                   style: gasData(context, size: phone ? 24 : 30)
@@ -294,15 +330,30 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
           runSpacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _data.live
-                ? const GChip('LIVE SCALE', tone: GChipTone.good)
-                : const GChip('DEMO DATA', tone: GChipTone.demo),
-            GStatusChip(
-                online: _data.live ? !offline : widget.device.isOnline == true,
-                lastSeen: _data.live ? _data.latest.at : null),
+            if (_loaded?.hasReadings == true) ...[
+              GChip(
+                  offline || _loadError != null
+                      ? 'LAST REPORTED'
+                      : 'LIVE SCALE',
+                  tone: offline || _loadError != null
+                      ? GChipTone.neutral
+                      : GChipTone.good),
+              GStatusChip(
+                  online: !offline && _loadError == null,
+                  lastSeen: _data.latest.at),
+            ] else
+              GChip(_loadError != null ? 'Reading unavailable' : 'No readings yet',
+                  tone: GChipTone.neutral),
+            OutlinedButton(
+              style: _secondaryButton(),
+              onPressed: _config != null && widget.device.id != null
+                  ? _openCylinderSetup
+                  : null,
+              child: const Text('Switch gas'),
+            ),
             OutlinedButton.icon(
               style: _secondaryButton(),
-              onPressed: _openScaleSetup,
+              onPressed: widget.device.id == null ? null : _openScaleSetup,
               icon: const Icon(Icons.bluetooth, size: 16),
               label: const Text('Connect scale'),
             ),
@@ -391,45 +442,46 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
       eyebrow: 'Right now',
       title: 'Readings',
       child: GTileGrid(
-        minWidth: isPhoneLayout(context) ? MediaQuery.sizeOf(context).width : 150,
-        children: [
-        if (_data.live && gross != null)
-          GTile(
-              label: 'On the scale',
-              value: kg1(gross),
-              sub: 'cylinder + gas combined'),
-        GTile(
-            label: 'Net gas',
-            value: kg1(_data.currentNetKg),
-            sub: 'tare ${_trim(_data.spec.tareKg)} kg excluded'),
-        GTile(
-            label: 'Today so far',
-            value: kg1(today.kg),
-            sub: '${money(today.cost)} at ${money(_data.pricePerKg)}/kg'),
-        GTile(
-            label: 'Burn rate',
-            value: '${kg1(burn)}/day',
-            sub: '7-day rolling average'),
-        GTile(
-            label: 'Projection',
-            value: _data.isOffline || projection.emptyBy == null
-                ? '—'
-                : DateFormat('d MMM').format(projection.emptyBy!),
-            sub: 'empty by, at current burn'),
-        GTile(
-            label: 'Capacity',
-            value: '${_data.spec.gasKg}kg class',
-            sub: '${kg1(_data.spec.capacityKg)} usable when full'),
-        GTile(
-            label: 'Last reading',
-            value: DateFormat('d MMM, HH:mm').format(lastAt),
-            valueSize: 15,
-            sub: [
-              '${kg1(gross ?? _data.latest.weightKg)} on the scale',
-              if (_data.batteryPct != null)
-                'battery ${_data.batteryPct!.round()}%',
-            ].join(' · ')),
-      ]),
+          minWidth:
+              isPhoneLayout(context) ? MediaQuery.sizeOf(context).width : 150,
+          children: [
+            if (_data.live && gross != null)
+              GTile(
+                  label: 'On the scale',
+                  value: kg1(gross),
+                  sub: 'cylinder + gas combined'),
+            GTile(
+                label: 'Net gas',
+                value: kg1(_data.currentNetKg),
+                sub: 'tare ${_trim(_data.spec.tareKg)} kg excluded'),
+            GTile(
+                label: 'Today so far',
+                value: kg1(today.kg),
+                sub: '${money(today.cost)} at ${money(_data.pricePerKg)}/kg'),
+            GTile(
+                label: 'Burn rate',
+                value: '${kg1(burn)}/day',
+                sub: '7-day rolling average'),
+            GTile(
+                label: 'Projection',
+                value: _data.isOffline || projection.emptyBy == null
+                    ? '—'
+                    : DateFormat('d MMM').format(projection.emptyBy!),
+                sub: 'empty by, at current burn'),
+            GTile(
+                label: 'Capacity',
+                value: '${_data.spec.gasKg}kg class',
+                sub: '${kg1(_data.spec.capacityKg)} usable when full'),
+            GTile(
+                label: 'Last reading',
+                value: DateFormat('d MMM, HH:mm').format(lastAt),
+                valueSize: 15,
+                sub: [
+                  '${kg1(gross ?? _data.latest.weightKg)} on the scale',
+                  if (_data.batteryPct != null)
+                    'battery ${_data.batteryPct!.round()}%',
+                ].join(' · ')),
+          ]),
     );
   }
 
@@ -481,19 +533,23 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           GTileGrid(
-            minWidth: isPhoneLayout(context) ? MediaQuery.sizeOf(context).width : 140,
-            children: [
-            GTile(label: 'Consumed', value: kg1(summary.totalKg)),
-            GTile(label: 'Cost', value: money(summary.totalCost)),
-            GTile(
-                label: 'Avg / day',
-                value: money(summary.avgDailyCost),
-                sub: kg1(summary.avgDailyKg)),
-            GTile(
-                label: 'Peak ${daily ? 'day' : 'week'}',
-                value: peak == null ? '—' : kg1(peak.kg),
-                sub: peak == null ? null : DateFormat('d MMM').format(peak.day)),
-          ]),
+              minWidth: isPhoneLayout(context)
+                  ? MediaQuery.sizeOf(context).width
+                  : 140,
+              children: [
+                GTile(label: 'Consumed', value: kg1(summary.totalKg)),
+                GTile(label: 'Cost', value: money(summary.totalCost)),
+                GTile(
+                    label: 'Avg / day',
+                    value: money(summary.avgDailyCost),
+                    sub: kg1(summary.avgDailyKg)),
+                GTile(
+                    label: 'Peak ${daily ? 'day' : 'week'}',
+                    value: peak == null ? '—' : kg1(peak.kg),
+                    sub: peak == null
+                        ? null
+                        : DateFormat('d MMM').format(peak.day)),
+              ]),
           const SizedBox(height: 16),
           LayoutBuilder(builder: (context, c) {
             if (c.maxWidth >= 760) {
@@ -579,8 +635,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
                   style: gasBody(context).copyWith(
                       color: GasPalette.ink, fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
-              Text(a.detail,
-                  style: gasBody(context).copyWith(fontSize: 12.5)),
+              Text(a.detail, style: gasBody(context).copyWith(fontSize: 12.5)),
             ],
           ),
         ),

@@ -1,9 +1,7 @@
 /// Deterministic demo telemetry for gas cylinder devices.
 ///
-/// The ArticSentinel backend does not expose gas-weight endpoints yet, so the
-/// gas dashboard renders this generated series — clearly labelled "DEMO DATA"
-/// in the UI. When live telemetry arrives, replace [generateGasDemoData] with
-/// a repository that returns [GasDeviceData]; nothing else changes.
+/// The generator is a test fixture only. Production screens render only
+/// server readings returned by GasApi; a missing series stays empty.
 library;
 
 import 'dart:math' as math;
@@ -41,9 +39,13 @@ class GasDeviceData {
   final double lowPct;
   final double warningPct;
 
+  /// A level is available only when at least one genuine reading exists.
+  bool get hasReadings => live && readings.isNotEmpty;
+
   GasReading get latest => readings.last;
 
-  bool get isOffline => DateTime.now().difference(latest.at) > kOfflineAfter;
+  bool get isOffline =>
+      !hasReadings || DateTime.now().difference(latest.at) > kOfflineAfter;
 
   double get currentNetKg =>
       netGasKg(currentKg: latest.weightKg, tareKg: spec.tareKg);

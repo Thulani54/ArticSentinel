@@ -4,6 +4,8 @@
 /// user signed in by any path is stored identically.
 library;
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../constants/Constants.dart';
 import '../models/business.dart';
 import 'push_notifications.dart';
@@ -11,6 +13,37 @@ import 'shared_preferences.dart';
 
 class AuthSession {
   AuthSession._();
+
+  static Future<void> signOut() async {
+    try {
+      await PushNotifications.instance.unregister();
+    } catch (_) {
+      // Local sign-out must still finish when notification services are offline.
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(Sharedprefs.sharedPreferenceUserLoggedInKey, false);
+    for (final key in [
+      Sharedprefs.sharedPreferenceAuthTokenKey,
+      Sharedprefs.sharedPasswordPrefKey,
+      Sharedprefs.sharedPreferenceUidKey,
+      Sharedprefs.sharedPreferenceBusinessUidKey,
+      Sharedprefs.sharedPreferenceUserNameKey,
+      Sharedprefs.sharedPreferenceUserEmailKey,
+      Sharedprefs.sharedPreferenceBusinessNameKey,
+      Sharedprefs.sharedPreferenceBusinessDataKey,
+    ]) {
+      await prefs.remove(key);
+    }
+    Constants.authToken = '';
+    Constants.user_uid = 0;
+    Constants.business_uid = 0;
+    Constants.myEmail = '';
+    Constants.myDisplayname = '';
+    Constants.myUsername = '';
+    Constants.cellphoneNumber = '';
+    Constants.business_name = '';
+    Constants.myBusiness = Business.empty();
+  }
 
   static Future<void> applyLoginResponse(Map<String, dynamic> body,
       {String password = ''}) async {

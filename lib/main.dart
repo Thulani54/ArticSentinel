@@ -11,6 +11,8 @@ import 'package:uuid/uuid.dart';
 // Authentication screens
 import 'authentication/login.dart';
 import 'authentication/signup_flow.dart';
+import 'onboarding/device_setup_wizard.dart';
+import 'products/products_page.dart';
 
 // Main screens
 import 'screens/alert.dart';
@@ -108,8 +110,53 @@ class MyApp extends StatelessWidget {
       GoRoute(
         path: '/signup',
         name: 'signup',
-        builder: (BuildContext context, GoRouterState state) =>
-            const SignUpFlowPage(),
+        builder: (BuildContext context, GoRouterState state) => SignUpFlowPage(
+            initialDeviceType: state.uri.queryParameters['type']),
+      ),
+      GoRoute(
+        path: '/products',
+        name: 'products',
+        builder: (context, state) => ProductsPage(
+          onBack: () async {
+            if (context.canPop()) {
+              context.pop();
+              return;
+            }
+            final signedIn =
+                await Sharedprefs.getUserLoggedInSharedPreference() ?? false;
+            if (context.mounted) {
+              context.go(signedIn ? '/dashboard' : '/welcome');
+            }
+          },
+          onLinkDevice: (type) async {
+            final signedIn =
+                await Sharedprefs.getUserLoggedInSharedPreference() ?? false;
+            if (!context.mounted) return;
+            context.push(Uri(
+                path: signedIn ? '/device-setup' : '/signup',
+                queryParameters: {'type': type}).toString());
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/device-setup',
+        name: 'device-setup',
+        redirect: (context, state) async {
+          final signedIn =
+              await Sharedprefs.getUserLoggedInSharedPreference() ?? false;
+          final token = await Sharedprefs.getAuthTokenPreference();
+          if (signedIn && token != null && token.isNotEmpty) return null;
+          return Uri(path: '/login', queryParameters: {
+            'next': 'device-setup',
+            if (state.uri.queryParameters['type'] != null)
+              'type': state.uri.queryParameters['type']!,
+          }).toString();
+        },
+        builder: (context, state) => DeviceSetupWizard(
+          initialDeviceType: state.uri.queryParameters['type'],
+          onDone: () => context.go('/dashboard'),
+          onBrowseProducts: () => context.push('/products'),
+        ),
       ),
       GoRoute(
         path: '/splash',

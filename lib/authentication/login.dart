@@ -174,7 +174,20 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 10),
         OutlinedButton(
-          onPressed: _busy ? null : () => context.push('/signup'),
+          onPressed: _busy
+              ? null
+              : () => context.push(Uri(
+                    path: '/signup',
+                    queryParameters:
+                        GoRouterState.of(context).uri.queryParameters['type'] ==
+                                null
+                            ? null
+                            : {
+                                'type': GoRouterState.of(context)
+                                    .uri
+                                    .queryParameters['type']!
+                              },
+                  ).toString()),
           style: OutlinedButton.styleFrom(
             foregroundColor: GasPalette.ink,
             side: const BorderSide(color: GasPalette.border),
@@ -185,6 +198,10 @@ class _LoginPageState extends State<LoginPage> {
                 GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600),
           ),
           child: const Text('Create an account'),
+        ),
+        TextButton(
+          onPressed: _busy ? null : () => context.push('/products'),
+          child: const Text('Explore our products'),
         ),
         const SizedBox(height: 18),
         Center(
@@ -229,8 +246,7 @@ class _LoginPageState extends State<LoginPage> {
           suffixIcon: suffix,
           filled: true,
           fillColor: const Color(0xFFF7F8FA),
-          labelStyle:
-              GoogleFonts.inter(fontSize: 14, color: GasPalette.ink2),
+          labelStyle: GoogleFonts.inter(fontSize: 14, color: GasPalette.ink2),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           enabledBorder: OutlineInputBorder(
@@ -250,8 +266,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void _toastError(String message) {
     MotionToast.error(
-      description:
-          Text(message, style: const TextStyle(color: Colors.white)),
+      description: Text(message, style: const TextStyle(color: Colors.white)),
       animationDuration: const Duration(milliseconds: 2500),
     ).show(context);
   }
@@ -261,13 +276,25 @@ class _LoginPageState extends State<LoginPage> {
     await AuthSession.applyLoginResponse(body, password: password);
     _email.clear();
     _password.clear();
-    if (mounted) context.goNamed('dashboard');
+    if (!mounted) return;
+    final query = GoRouterState.of(context).uri.queryParameters;
+    if (body['is_new_account'] == true || query['next'] == 'device-setup') {
+      context.go(Uri(
+              path: '/device-setup',
+              queryParameters:
+                  query['type'] == null ? null : {'type': query['type']!})
+          .toString());
+    } else {
+      context.goNamed('dashboard');
+    }
   }
 
   Future<void> _signIn() async {
     final email = _email.text.trim();
     if (email.isEmpty) return _toastError('Please enter your email');
-    if (_password.text.isEmpty) return _toastError('Please enter your password');
+    if (_password.text.isEmpty) {
+      return _toastError('Please enter your password');
+    }
     setState(() => _busy = true);
     try {
       final response = await http.post(

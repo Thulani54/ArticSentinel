@@ -1,3 +1,4 @@
+import '../widgets/app_empty_state.dart';
 import '../gasmon/gas_widgets.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
@@ -10,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../constants/Constants.dart';
+import '../services/shared_preferences.dart';
 import '../widgets/compact_header.dart';
 
 class ControlScreen extends StatefulWidget {
@@ -87,7 +89,7 @@ class _ControlScreenState extends State<ControlScreen>
     });
 
     try {
-      await _loadDevices();
+      await _loadDevices().timeout(const Duration(seconds: 20));
       if (_selectedDevice != null) {
         if (_selectedDevice!.deviceType == 'device1') {
           // Load device1 specific data
@@ -114,11 +116,12 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _error = 'Failed to load data: $e';
+        _error = 'Check your internet connection and try again.';
       });
     } finally {
-      setState(() {
+      if (mounted) setState(() {
         _isLoading = false;
       });
     }
@@ -126,9 +129,13 @@ class _ControlScreenState extends State<ControlScreen>
 
   Future<void> _loadDevices() async {
     try {
+      final token = await Sharedprefs.getAuthTokenPreference();
       final response = await http.post(
         Uri.parse('${Constants.articBaseUrl2}api/devices/list/'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Token $token',
+        },
         body: jsonEncode({
           'business_id': Constants.myBusiness.businessUid,
           'include_unit_details': false,
@@ -137,6 +144,8 @@ class _ControlScreenState extends State<ControlScreen>
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Device list unavailable');
+        if (!mounted) return;
         if (data['success'] == true) {
           // Include both device1 and device3
           final devices = (data['devices'] as List)
@@ -149,14 +158,14 @@ class _ControlScreenState extends State<ControlScreen>
 
           setState(() {
             _devices = devices;
-            if (_selectedDevice == null && devices.isNotEmpty) {
-              _selectedDevice = devices.first;
-            }
+            _selectedDevice = devices.where((d) => d.id == _selectedDevice?.id).firstOrNull ?? devices.firstOrNull;
           });
         }
+      } else {
+        throw Exception('Device list unavailable');
       }
     } catch (e) {
-      print('Error loading devices: $e');
+      rethrow;
     }
   }
 
@@ -171,10 +180,13 @@ class _ControlScreenState extends State<ControlScreen>
           'business_id': Constants.myBusiness.businessUid,
           'device_id': _selectedDevice!.id,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode != 200) throw Exception('Controls unavailable');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Controls unavailable');
         if (data['success'] == true) {
           setState(() {
             _relayStatusData = data['relay_status'];
@@ -183,7 +195,7 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
-      print('Error loading relay status: $e');
+      if (mounted) setState(() => _error = 'Check your internet connection and try again.');
     }
   }
 
@@ -198,10 +210,13 @@ class _ControlScreenState extends State<ControlScreen>
           'business_id': Constants.myBusiness.businessUid,
           'device_id': _selectedDevice!.id,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode != 200) throw Exception('Controls unavailable');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Controls unavailable');
         if (data['success'] == true) {
           setState(() {
             _schedules = (data['schedules'] as List)
@@ -211,7 +226,7 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
-      print('Error loading schedules: $e');
+      if (mounted) setState(() => _error = 'Check your internet connection and try again.');
     }
   }
 
@@ -227,10 +242,13 @@ class _ControlScreenState extends State<ControlScreen>
           'device_id': _selectedDevice!.id,
           'limit': 50,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode != 200) throw Exception('Controls unavailable');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Controls unavailable');
         if (data['success'] == true) {
           setState(() {
             _history = (data['history'] as List)
@@ -240,7 +258,7 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
-      print('Error loading history: $e');
+      if (mounted) setState(() => _error = 'Check your internet connection and try again.');
     }
   }
 
@@ -256,10 +274,13 @@ class _ControlScreenState extends State<ControlScreen>
           'business_id': Constants.myBusiness.businessUid,
           'device_id': _selectedDevice!.id,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode != 200) throw Exception('Controls unavailable');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Controls unavailable');
         if (data['success'] == true) {
           setState(() {
             _harvestTurnoffStatus = data['harvest_turnoff'];
@@ -267,7 +288,7 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
-      print('Error loading harvest turnoff status: $e');
+      if (mounted) setState(() => _error = 'Check your internet connection and try again.');
     }
   }
 
@@ -283,10 +304,13 @@ class _ControlScreenState extends State<ControlScreen>
           'business_id': Constants.myBusiness.businessUid,
           'device_id': _selectedDevice!.id,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode != 200) throw Exception('Controls unavailable');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Controls unavailable');
         if (data['success'] == true) {
           setState(() {
             _device1ControlStatus = data['control_status'];
@@ -294,7 +318,7 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
-      print('Error loading device1 control status: $e');
+      if (mounted) setState(() => _error = 'Check your internet connection and try again.');
     }
   }
 
@@ -311,10 +335,13 @@ class _ControlScreenState extends State<ControlScreen>
           'device_id': _selectedDevice!.id,
           'limit': 50,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode != 200) throw Exception('Controls unavailable');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Controls unavailable');
         if (data['success'] == true) {
           setState(() {
             _device1ControlHistory = (data['history'] as List)
@@ -324,7 +351,7 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
-      print('Error loading device1 control history: $e');
+      if (mounted) setState(() => _error = 'Check your internet connection and try again.');
     }
   }
 
@@ -340,10 +367,13 @@ class _ControlScreenState extends State<ControlScreen>
           'business_id': Constants.myBusiness.businessUid,
           'device_id': _selectedDevice!.id,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode != 200) throw Exception('Controls unavailable');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Controls unavailable');
         if (data['success'] == true) {
           setState(() {
             _defrostSchedules = (data['schedules'] as List)
@@ -353,7 +383,7 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
-      print('Error loading defrost schedules: $e');
+      if (mounted) setState(() => _error = 'Check your internet connection and try again.');
     }
   }
 
@@ -369,10 +399,13 @@ class _ControlScreenState extends State<ControlScreen>
           'business_id': Constants.myBusiness.businessUid,
           'device_id': _selectedDevice!.id,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode != 200) throw Exception('Controls unavailable');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Controls unavailable');
         if (data['success'] == true) {
           setState(() {
             _automationRules = (data['rules'] as List)
@@ -382,7 +415,7 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
-      print('Error loading automation rules: $e');
+      if (mounted) setState(() => _error = 'Check your internet connection and try again.');
     }
   }
 
@@ -641,10 +674,13 @@ class _ControlScreenState extends State<ControlScreen>
           'business_id': Constants.myBusiness.businessUid,
           'device_id': _selectedDevice!.id,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode != 200) throw Exception('Controls unavailable');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Controls unavailable');
         if (data['success'] == true) {
           final states = data['relay_states'] as Map<String, dynamic>;
           setState(() {
@@ -656,7 +692,7 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
-      print('Error loading device5 relay status: $e');
+      if (mounted) setState(() => _error = 'Check your internet connection and try again.');
     }
   }
 
@@ -673,10 +709,13 @@ class _ControlScreenState extends State<ControlScreen>
           'device_id': _selectedDevice!.id,
           'limit': 50,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (response.statusCode != 200) throw Exception('Controls unavailable');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        if (data['success'] != true) throw Exception('Controls unavailable');
         if (data['success'] == true) {
           setState(() {
             _device5History =
@@ -685,7 +724,7 @@ class _ControlScreenState extends State<ControlScreen>
         }
       }
     } catch (e) {
-      print('Error loading device5 history: $e');
+      if (mounted) setState(() => _error = 'Check your internet connection and try again.');
     }
   }
 
@@ -968,16 +1007,15 @@ class _ControlScreenState extends State<ControlScreen>
   Widget build(BuildContext context) {
     return Container(
       color: isPhoneLayout(context) ? GasPalette.page : Colors.white,
-      child: _isLoading && _devices.isEmpty
+      child: _isLoading
           ? Center(
               child: CircularProgressIndicator(color: const Color(0xFF3B82F6)))
           : _error.isNotEmpty
-              ? Center(
-                  child: Text(
-                    _error,
-                    style: GoogleFonts.inter(color: const Color(0xFFEF4444)),
-                  ),
-                )
+              ? SingleChildScrollView(child: AppEmptyState(
+                  kind: AppEmptyStateKind.offline,
+                  title: 'Controls could not be loaded', message: _error,
+                  actionLabel: 'Try again', onAction: _loadData,
+                ))
               : _devices.isEmpty
                   ? _buildEmptyState()
                   : SingleChildScrollView(
@@ -1028,45 +1066,11 @@ class _ControlScreenState extends State<ControlScreen>
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              CupertinoIcons.power,
-              size: 48,
-              color: Color(0xFF3B82F6),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'No Control Devices Found',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Control is available for Device 1, Device 3, and Device 5',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF64748B),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildEmptyState() => const SingleChildScrollView(child: AppEmptyState(
+    kind: AppEmptyStateKind.devices,
+    title: 'No controllable devices yet',
+    message: 'Controls appear here for connected refrigeration, ice machine and relay devices. Gas scales are monitored from the dashboard.',
+  ));
 
   Widget _buildDeviceSelector() {
     return Container(

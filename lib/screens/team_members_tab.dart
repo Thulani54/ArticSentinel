@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import '../constants/Constants.dart';
 import '../gasmon/gas_theme.dart';
 import '../services/shared_preferences.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_forms.dart';
 
 const _userTypes = <(String, String)>[
@@ -65,19 +66,23 @@ class _TeamMembersTabState extends State<TeamMembersTab> {
     try {
       final r = await http.get(
           Uri.parse('${Constants.articBaseUrl2}api/team/members/'),
-          headers: await _headers());
+          headers: await _headers()).timeout(const Duration(seconds: 20));
       final body = jsonDecode(r.body);
       if (r.statusCode != 200) {
-        throw Exception(body is Map ? (body['error'] ?? 'Request failed') : 'Request failed');
+        throw Exception(body is Map
+            ? (body['error'] ?? 'Request failed')
+            : 'Request failed');
       }
+      if (!mounted) return;
       setState(() {
         _members = (body['members'] as List).cast<Map<String, dynamic>>();
         _canManage = body['can_manage'] == true;
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _error = 'Could not load your team. Pull to refresh or try again.';
+        _error = 'Check your connection and try again.';
         _loading = false;
       });
     }
@@ -126,8 +131,7 @@ class _TeamMembersTabState extends State<TeamMembersTab> {
                   ),
                   icon: const Icon(Icons.person_add_alt_1, size: 18),
                   label: Text('Add user',
-                      style:
-                          GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
                 ),
             ],
           ),
@@ -182,6 +186,28 @@ class _TeamMembersTabState extends State<TeamMembersTab> {
   }
 
   Widget _notice(String text, {bool retry = false}) {
+    if (isPhoneLayout(context)) {
+      return AppEmptyState(
+        kind: retry
+            ? AppEmptyStateKind.offline
+            : _query.isNotEmpty
+                ? AppEmptyStateKind.results
+                : AppEmptyStateKind.records,
+        icon: retry ? null : Icons.people_outline,
+        title: retry
+            ? 'Unable to load your team'
+            : _query.isNotEmpty
+                ? 'No matching team members'
+                : 'No team members yet',
+        message: retry
+            ? text
+            : _query.isNotEmpty
+                ? 'Try another name, email or job title.'
+                : 'People added to your business will appear here.',
+        actionLabel: retry ? 'Retry' : null,
+        onAction: retry ? _load : null,
+      );
+    }
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -206,7 +232,11 @@ class _TeamMembersTabState extends State<TeamMembersTab> {
     final name = '${m['firstname'] ?? ''} ${m['lastname'] ?? ''}'.trim();
     final initials = name.isEmpty
         ? '?'
-        : name.split(RegExp(r'\s+')).take(2).map((p) => p[0].toUpperCase()).join();
+        : name
+            .split(RegExp(r'\s+'))
+            .take(2)
+            .map((p) => p[0].toUpperCase())
+            .join();
     final active = m['is_active'] != false;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -244,11 +274,13 @@ class _TeamMembersTabState extends State<TeamMembersTab> {
                     ),
                     if (m['is_primary_contact'] == true) ...[
                       const SizedBox(width: 6),
-                      _chip('Owner', const Color(0xFFEFF6FF), GasPalette.series),
+                      _chip(
+                          'Owner', const Color(0xFFEFF6FF), GasPalette.series),
                     ],
                     if (!active) ...[
                       const SizedBox(width: 6),
-                      _chip('Disabled', GasPalette.critSoft, GasPalette.critInk),
+                      _chip(
+                          'Disabled', GasPalette.critSoft, GasPalette.critInk),
                     ],
                   ],
                 ),
@@ -265,7 +297,8 @@ class _TeamMembersTabState extends State<TeamMembersTab> {
                     _chip(_userTypeLabel(m['user_type']), GasPalette.panelAlt,
                         GasPalette.ink2),
                     if ((m['job_title'] ?? '').toString().isNotEmpty)
-                      _chip(m['job_title'], GasPalette.panelAlt, GasPalette.ink2),
+                      _chip(
+                          m['job_title'], GasPalette.panelAlt, GasPalette.ink2),
                   ],
                 ),
               ],
@@ -392,7 +425,9 @@ class _AddUserDialogState extends State<_AddUserDialog> {
       children: [
         Text('Add a team member',
             style: GoogleFonts.inter(
-                fontSize: 18, fontWeight: FontWeight.w800, color: GasPalette.ink)),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: GasPalette.ink)),
         const SizedBox(height: 4),
         Text('They get access to this workspace and its devices.',
             style: GoogleFonts.inter(fontSize: 12.5, color: GasPalette.ink2)),
@@ -420,7 +455,8 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         const SizedBox(height: 12),
         _field(_job, 'Job title (optional)'),
         const SizedBox(height: 12),
-        _field(_phone, 'Cellphone (optional)', keyboardType: TextInputType.phone),
+        _field(_phone, 'Cellphone (optional)',
+            keyboardType: TextInputType.phone),
         if (_error != null) ...[
           const SizedBox(height: 12),
           Text(_error!,
@@ -434,7 +470,8 @@ class _AddUserDialogState extends State<_AddUserDialog> {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+                onPressed:
+                    _busy ? null : () => Navigator.of(context).pop(false),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(46),
                   side: const BorderSide(color: GasPalette.border),
@@ -475,7 +512,9 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         Text('User added',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
-                fontSize: 18, fontWeight: FontWeight.w800, color: GasPalette.ink)),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: GasPalette.ink)),
         const SizedBox(height: 6),
         Text(
           '$_createdEmail can sign in with this temporary password. '
@@ -521,7 +560,8 @@ class _AddUserDialogState extends State<_AddUserDialog> {
             minimumSize: const Size.fromHeight(46),
             backgroundColor: GasPalette.primary,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
           ),
           child: const Text('Done'),
         ),
@@ -537,7 +577,8 @@ class _AddUserDialogState extends State<_AddUserDialog> {
         filled: true,
         fillColor: Colors.white,
         labelStyle: GoogleFonts.inter(fontSize: 14, color: GasPalette.ink2),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: GasPalette.border),

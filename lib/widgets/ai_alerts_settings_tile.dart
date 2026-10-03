@@ -24,9 +24,14 @@ class _AIAlertsSettingsTileState extends State<AIAlertsSettingsTile> {
   }
 
   Future<void> _load() async {
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
-      final s = await AIAssistantService.getSettings(Constants.myBusiness.businessUid);
+      final s =
+          await AIAssistantService.getSettings(Constants.myBusiness.businessUid)
+              .timeout(const Duration(seconds: 20));
       if (!mounted) return;
       setState(() {
         _settings = s;
@@ -36,14 +41,15 @@ class _AIAlertsSettingsTileState extends State<AIAlertsSettingsTile> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error =
+            'Unable to load alert preferences. Check your connection and retry.';
       });
     }
   }
 
   Future<void> _save(AIAlertSettings updated) async {
     setState(() {
-      _settings = updated;
+      // Keep the last confirmed settings until the request succeeds.
       _busy = true;
       _error = null;
     });
@@ -61,7 +67,8 @@ class _AIAlertsSettingsTileState extends State<AIAlertsSettingsTile> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error =
+            'Your changes could not be saved. Check your connection and retry.';
       });
     }
   }
@@ -74,7 +81,12 @@ class _AIAlertsSettingsTileState extends State<AIAlertsSettingsTile> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,17 +99,21 @@ class _AIAlertsSettingsTileState extends State<AIAlertsSettingsTile> {
                   color: Constants.ctaColorLight.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Iconsax.cpu, color: Constants.ctaColorLight, size: 18),
+                child:
+                    Icon(Iconsax.cpu, color: Constants.ctaColorLight, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('AI Alerts', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
+                    Text('AI Alerts',
+                        style: GoogleFonts.inter(
+                            fontSize: 15, fontWeight: FontWeight.w600)),
                     Text(
                       'Get plain-English alerts from the AI when something looks off.',
-                      style: GoogleFonts.inter(fontSize: 12, color: Constants.ctaTextColor),
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: Constants.ctaTextColor),
                     ),
                   ],
                 ),
@@ -162,7 +178,12 @@ class _AIAlertsSettingsTileState extends State<AIAlertsSettingsTile> {
           ],
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text(_error!, style: GoogleFonts.inter(fontSize: 12, color: Constants.criticalColor)),
+            Text(_error!,
+                style: GoogleFonts.inter(
+                    fontSize: 12, color: Constants.criticalColor)),
+            TextButton(
+                onPressed: _busy ? null : _load,
+                child: const Text('Reload preferences')),
           ],
         ],
       ),
@@ -175,7 +196,10 @@ class _AIAlertsSettingsTileState extends State<AIAlertsSettingsTile> {
       child: Row(
         children: [
           Expanded(child: Text(label, style: GoogleFonts.inter(fontSize: 13))),
-          Switch(value: value, onChanged: _busy ? null : onChanged, activeColor: Constants.ctaColorGreen),
+          Switch(
+              value: value,
+              onChanged: _busy ? null : onChanged,
+              activeColor: Constants.ctaColorGreen),
         ],
       ),
     );

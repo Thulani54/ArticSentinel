@@ -12,6 +12,67 @@ import 'gas_core.dart';
 import 'gas_theme.dart';
 import 'gas_widgets.dart';
 
+/// Reuses the same setup editor and explicit save action when swapping a cylinder.
+class GasCylinderSetupDialog extends StatelessWidget {
+  const GasCylinderSetupDialog({
+    super.key,
+    required this.config,
+    required this.onSave,
+    this.scaleGrossKg,
+  });
+
+  final GasConfig config;
+  final Future<void> Function(GasConfig) onSave;
+  final double? scaleGrossKg;
+
+  @override
+  Widget build(BuildContext context) => MobileDialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: ColoredBox(
+            color: GasPalette.page,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 8, 12),
+                  child: Row(children: [
+                    Expanded(
+                        child:
+                            Text('Cylinder setup', style: gasTitle(context))),
+                    IconButton(
+                      tooltip: 'Close cylinder setup',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ]),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                            'Match the empty weight and capacity to the cylinder on your scale. Changes apply only when you save.',
+                            style: gasBody(context)),
+                        const SizedBox(height: 16),
+                        GasSetupCard(
+                            config: config,
+                            scaleGrossKg: scaleGrossKg,
+                            onSave: onSave),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
 class GasSetupCard extends StatefulWidget {
   const GasSetupCard({
     super.key,
@@ -237,7 +298,8 @@ class _GasSetupCardState extends State<GasSetupCard> {
             ),
           Wrap(spacing: 10, runSpacing: 8, children: [
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: GasPalette.primary),
+              style:
+                  FilledButton.styleFrom(backgroundColor: GasPalette.primary),
               onPressed: _busy ? null : _save,
               child: Text(_busy ? 'Saving…' : 'Save setup'),
             ),

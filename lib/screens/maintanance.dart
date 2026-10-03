@@ -1,6 +1,7 @@
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
 import '../gasmon/gas_widgets.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_forms.dart';
 import 'package:artic_sentinel/constants/Constants.dart';
 import 'package:artic_sentinel/custom_widgets/customCard.dart';
@@ -76,120 +77,139 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
         _loadSchedules(),
       ]);
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _error = 'Failed to load data: ${e.toString()}';
+        _error = 'Check your connection and try again.';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+        });
     }
   }
 
-  Future<void> _loadDashboardData() async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}api/maintenance/dashboard/'),
-      headers: ApiConfig.headers,
-      body: json.encode({
-        'business_id': await SharedPrefs.getBusinessId(),
-        'date_from': _dateRange?.start.toIso8601String(),
-        'date_to': _dateRange?.end.toIso8601String(),
-      }),
-    );
-    if (kDebugMode) {
-      print("hghjh ${response.body}");
-    }
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      print("hghjh ${data['dashboard']['upcoming_maintenance']}");
-      setState(() {
-        _dashboardData = data['dashboard'];
-        _upcomingMaintenance = data['dashboard']['upcoming_maintenance'];
-      });
-    }
-  }
-
-  Future<void> _loadMaintenanceRecords() async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}api/maintenance/list/'),
-      headers: ApiConfig.headers,
-      body: json.encode({
-        'business_id': await SharedPrefs.getBusinessId(),
-        'filters': _filters,
-        'page': 1,
-        'per_page': 50,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        _maintenanceRecords = data['maintenance_records'];
-      });
-    }
-  }
-
-  Future<void> _loadMaintenanceTypes() async {
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}api/maintenance/types/'),
-      headers: ApiConfig.headers,
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        _maintenanceTypes = data['maintenance_types'];
-      });
-    }
-  }
-
-  Future<void> _loadRemindersData() async {
+  Future<void> _guardMaintenanceLoad(Future<void> Function() load) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/reminders/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'business_id': await SharedPrefs.getBusinessId(),
-        }),
-      );
+      await load();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'Check your connection and try again.');
+    }
+  }
 
-      if (response.statusCode == 200) {
+  Future<void> _loadDashboardData() => _guardMaintenanceLoad(() async {
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}api/maintenance/dashboard/'),
+          headers: ApiConfig.headers,
+          body: json.encode({
+            'business_id': await SharedPrefs.getBusinessId(),
+            'date_from': _dateRange?.start.toIso8601String(),
+            'date_to': _dateRange?.end.toIso8601String(),
+          }),
+        ).timeout(const Duration(seconds: 20));
+        if (kDebugMode) {
+          print("hghjh ${response.body}");
+        }
+
+        if (response.statusCode != 200) {
+          throw StateError('Maintenance request failed');
+        }
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          print("hghjh ${data['dashboard']['upcoming_maintenance']}");
+          if (!mounted) return;
+          setState(() {
+            _dashboardData = data['dashboard'];
+            _upcomingMaintenance = data['dashboard']['upcoming_maintenance'];
+          });
+        }
+      });
+
+  Future<void> _loadMaintenanceRecords() => _guardMaintenanceLoad(() async {
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}api/maintenance/list/'),
+          headers: ApiConfig.headers,
+          body: json.encode({
+            'business_id': await SharedPrefs.getBusinessId(),
+            'filters': _filters,
+            'page': 1,
+            'per_page': 50,
+          }),
+        ).timeout(const Duration(seconds: 20));
+
+        if (response.statusCode != 200) {
+          throw StateError('Maintenance request failed');
+        }
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          if (!mounted) return;
+          setState(() {
+            _maintenanceRecords = data['maintenance_records'];
+          });
+        }
+      });
+
+  Future<void> _loadMaintenanceTypes() => _guardMaintenanceLoad(() async {
+        final response = await http.get(
+          Uri.parse('${ApiConfig.baseUrl}api/maintenance/types/'),
+          headers: ApiConfig.headers,
+        ).timeout(const Duration(seconds: 20));
+
+        if (response.statusCode != 200) {
+          throw StateError('Maintenance request failed');
+        }
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          if (!mounted) return;
+          setState(() {
+            _maintenanceTypes = data['maintenance_types'];
+          });
+        }
+      });
+
+  Future<void> _loadRemindersData() => _guardMaintenanceLoad(() async {
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}api/maintenance/reminders/'),
+          headers: ApiConfig.headers,
+          body: json.encode({
+            'business_id': await SharedPrefs.getBusinessId(),
+          }),
+        ).timeout(const Duration(seconds: 20));
+        if (response.statusCode != 200) {
+          throw StateError('Maintenance request failed');
+        }
         final data = json.decode(response.body);
+        if (!mounted) return;
         setState(() {
           _remindersData = data['reminders'] ?? {};
         });
-      }
-    } catch (e) {
-      print('Error loading reminders: $e');
-    }
-  }
+      });
 
-  Future<void> _loadSchedules() async {
-    try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedules/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'business_id': await SharedPrefs.getBusinessId(),
-        }),
-      );
-
-      if (response.statusCode == 200) {
+  Future<void> _loadSchedules() => _guardMaintenanceLoad(() async {
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedules/'),
+          headers: ApiConfig.headers,
+          body: json.encode({
+            'business_id': await SharedPrefs.getBusinessId(),
+          }),
+        ).timeout(const Duration(seconds: 20));
+        if (response.statusCode != 200) {
+          throw StateError('Maintenance request failed');
+        }
         final data = json.decode(response.body);
+        if (!mounted) return;
         setState(() {
           _schedules = data['schedules'] ?? [];
         });
-      }
-    } catch (e) {
-      print('Error loading schedules: $e');
-    }
-  }
+      });
 
-  Future<void> _sendManualReminder(String maintenanceId, String reminderType) async {
+  Future<void> _sendManualReminder(
+      String maintenanceId, String reminderType) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/$maintenanceId/send-reminder/'),
+        Uri.parse(
+            '${ApiConfig.baseUrl}api/maintenance/$maintenanceId/send-reminder/'),
         headers: ApiConfig.headers,
         body: json.encode({
           'reminder_type': reminderType,
@@ -272,8 +292,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
               ),
               Padding(
-                padding:
-                    const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: TabBar(
                   controller: _tabController,
                   isScrollable: true,
@@ -286,8 +305,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                       borderRadius: BorderRadius.circular(32)),
                   labelColor: GasPalette.primary,
                   unselectedLabelColor: GasPalette.ink2,
-                  labelStyle:
-                      gasBody(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+                  labelStyle: gasBody(context)
+                      .copyWith(fontSize: 12, fontWeight: FontWeight.w600),
                   tabs: const [
                     Tab(height: 36, text: 'Overview'),
                     Tab(height: 36, text: 'Records'),
@@ -548,11 +567,19 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     if (isPhoneLayout(context)) {
       final summary = _dashboardData['summary'] ?? {};
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        GPanel(padding: const EdgeInsets.all(16), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(child: _phoneMaintenanceMetric('Total', '${summary['total_maintenance'] ?? 0}')),
-          Expanded(child: _phoneMaintenanceMetric('Completed', '${summary['completed_maintenance'] ?? 0}')),
-          Expanded(child: _phoneMaintenanceMetric('Overdue', '${summary['overdue_maintenance'] ?? 0}')),
-        ])),
+        GPanel(
+            padding: const EdgeInsets.all(16),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                  child: _phoneMaintenanceMetric(
+                      'Total', '${summary['total_maintenance'] ?? 0}')),
+              Expanded(
+                  child: _phoneMaintenanceMetric(
+                      'Completed', '${summary['completed_maintenance'] ?? 0}')),
+              Expanded(
+                  child: _phoneMaintenanceMetric(
+                      'Overdue', '${summary['overdue_maintenance'] ?? 0}')),
+            ])),
         const SizedBox(height: 12),
         FilledButton.icon(
           onPressed: _showCreateMaintenanceDialog,
@@ -562,14 +589,18 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             backgroundColor: GasPalette.primary,
             foregroundColor: Colors.white,
             minimumSize: const Size.fromHeight(48),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
           ),
         ),
         const SizedBox(height: 6),
         Wrap(spacing: 8, runSpacing: 4, children: [
-          TextButton(onPressed: _showReportsDialog, child: const Text('Reports')),
-          TextButton(onPressed: _showOverdueItems, child: const Text('Overdue')),
-          TextButton(onPressed: _showMaintenanceTypes, child: const Text('Types')),
+          TextButton(
+              onPressed: _showReportsDialog, child: const Text('Reports')),
+          TextButton(
+              onPressed: _showOverdueItems, child: const Text('Overdue')),
+          TextButton(
+              onPressed: _showMaintenanceTypes, child: const Text('Types')),
         ]),
       ]);
     }
@@ -579,21 +610,23 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
         return Container(
           padding: EdgeInsets.all(isMobile ? 12 : 16),
-          decoration: mobileFlatDecoration(context, BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Constants.ctaColorLight.withOpacity(0.05),
-                Constants.ctaColorLight.withOpacity(0.02),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Constants.ctaColorLight.withOpacity(0.1),
-              width: 1,
-            ),
-          )),
+          decoration: mobileFlatDecoration(
+              context,
+              BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Constants.ctaColorLight.withOpacity(0.05),
+                    Constants.ctaColorLight.withOpacity(0.02),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Constants.ctaColorLight.withOpacity(0.1),
+                  width: 1,
+                ),
+              )),
           child: Column(
             children: [
               Row(
@@ -662,7 +695,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_circle_outline, color: Colors.white, size: 22),
+                            Icon(Icons.add_circle_outline,
+                                color: Colors.white, size: 22),
                             SizedBox(width: 8),
                             Text(
                               'Schedule Maintenance',
@@ -728,13 +762,13 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   Widget _phoneMaintenanceMetric(String label, String value) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(value, style: gasData(context, size: 20)),
-      const SizedBox(height: 4),
-      Text(label, style: gasSmall(context).copyWith(fontSize: 10.5)),
-    ],
-  );
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(value, style: gasData(context, size: 20)),
+          const SizedBox(height: 4),
+          Text(label, style: gasSmall(context).copyWith(fontSize: 10.5)),
+        ],
+      );
 
   Widget _buildCompactActionButton(
       String label, IconData icon, Color color, VoidCallback onTap) {
@@ -818,7 +852,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.all(16),
-        decoration: _phoneMaintenanceSurface( BoxDecoration(
+        decoration: _phoneMaintenanceSurface(BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withOpacity(0.2)),
@@ -829,8 +863,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               offset: Offset(0, 2),
             ),
           ],
-        )
-        ),
+        )),
         child: Row(
           children: [
             Container(
@@ -867,7 +900,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
         // List
         Expanded(
           child: _maintenanceRecords.isEmpty
-              ? _buildEmptyState('No maintenance records found')
+              ? SingleChildScrollView(
+                  child: _buildEmptyState('No maintenance records found'))
               : ListView.builder(
                   padding: EdgeInsets.all(16),
                   itemCount: _maintenanceRecords.length,
@@ -1060,13 +1094,14 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Widget _buildMaintenanceCard(Map<String, dynamic> maintenance,
       {bool isCompact = false}) {
-    if (isPhoneLayout(context)) return _phoneMaintenanceRecord(maintenance, isCompact: isCompact);
+    if (isPhoneLayout(context))
+      return _phoneMaintenanceRecord(maintenance, isCompact: isCompact);
     return InkWell(
       onTap: () => _showMaintenanceDetails(maintenance),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.all(16),
-        decoration: _phoneMaintenanceSurface( BoxDecoration(
+        decoration: _phoneMaintenanceSurface(BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
@@ -1231,13 +1266,15 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Widget _buildUpCommingMaintenanceCard(Map<String, dynamic> maintenance,
       {bool isCompact = false}) {
-    if (isPhoneLayout(context)) return _phoneMaintenanceRecord(maintenance, isCompact: isCompact, upcoming: true);
+    if (isPhoneLayout(context))
+      return _phoneMaintenanceRecord(maintenance,
+          isCompact: isCompact, upcoming: true);
     return InkWell(
       onTap: () => _showMaintenanceDetails(maintenance),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.all(16),
-        decoration: _phoneMaintenanceSurface( BoxDecoration(
+        decoration: _phoneMaintenanceSurface(BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
@@ -1247,8 +1284,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               offset: Offset(0, 2),
             ),
           ],
-        )
-        ),
+        )),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1352,63 +1388,121 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     );
   }
 
-  Widget _phoneMaintenanceRecord(Map<String, dynamic> maintenance, {required bool isCompact, bool upcoming = false}) {
-    final deviceName = upcoming ? maintenance['device_name'] ?? 'Unknown Device' : maintenance['device']['name'] ?? 'Unknown Device';
-    final type = upcoming ? maintenance['maintenance_type'] ?? 'Unknown Type' : maintenance['maintenance_type']['name'] ?? 'Unknown Type';
-    final assignee = upcoming ? maintenance['assigned_to'] : maintenance['assigned_to']?['username'];
-    return GPanel(padding: EdgeInsets.zero, child: Material(type: MaterialType.transparency, child: InkWell(
-      onTap: () => _showMaintenanceDetails(maintenance),
-      borderRadius: BorderRadius.circular(14),
-      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(child: Text('$deviceName', style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600))),
-          const SizedBox(width: 8),
-          const Icon(Icons.chevron_right_rounded, size: 20, color: GasPalette.ink2),
-        ]),
-        const SizedBox(height: 5),
-        Text('$type', style: gasSmall(context)),
-        const SizedBox(height: 8),
-        Wrap(spacing: 6, runSpacing: 6, children: [
-          if (!upcoming) _phoneMaintenanceBadge(maintenance['status_display'] ?? '', _getStatusColor(maintenance['status'])),
-          _phoneMaintenanceBadge(upcoming ? maintenance['priority'] ?? 'normal' : maintenance['priority_display'] ?? '', _getPriorityColor(maintenance['priority'])),
-          if (maintenance['is_overdue'] == true) _phoneMaintenanceBadge('Overdue', GasPalette.critInk),
-        ]),
-        const SizedBox(height: 8),
-        Text(_formatDateTime(maintenance['scheduled_date']), style: gasSmall(context)),
-        if (assignee != null) ...[
-          const SizedBox(height: 4),
-          Text('Assigned to $assignee', style: gasSmall(context)),
-        ],
-        if (!isCompact) ...[
-          const SizedBox(height: 10),
-          Text(maintenance['work_description'] ?? '', style: gasBody(context), maxLines: 2, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            if (maintenance['status'] == 'scheduled') _buildActionButton('Start', Icons.play_arrow, GasPalette.primary, () => _updateMaintenanceStatus(maintenance['id'], 'start')),
-            if (maintenance['status'] == 'in_progress') _buildActionButton('Complete', Icons.check, GasPalette.primary, () => _updateMaintenanceStatus(maintenance['id'], 'complete')),
-            _buildActionButton('Details', Icons.info_outline, GasPalette.ink2, () => _showMaintenanceDetails(maintenance)),
-          ]),
-        ],
-      ])),
-    )));
+  Widget _phoneMaintenanceRecord(Map<String, dynamic> maintenance,
+      {required bool isCompact, bool upcoming = false}) {
+    final deviceName = upcoming
+        ? maintenance['device_name'] ?? 'Unknown Device'
+        : maintenance['device']['name'] ?? 'Unknown Device';
+    final type = upcoming
+        ? maintenance['maintenance_type'] ?? 'Unknown Type'
+        : maintenance['maintenance_type']['name'] ?? 'Unknown Type';
+    final assignee = upcoming
+        ? maintenance['assigned_to']
+        : maintenance['assigned_to']?['username'];
+    return GPanel(
+        padding: EdgeInsets.zero,
+        child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: () => _showMaintenanceDetails(maintenance),
+              borderRadius: BorderRadius.circular(14),
+              child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                  child: Text('$deviceName',
+                                      style: gasTitle(context).copyWith(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600))),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.chevron_right_rounded,
+                                  size: 20, color: GasPalette.ink2),
+                            ]),
+                        const SizedBox(height: 5),
+                        Text('$type', style: gasSmall(context)),
+                        const SizedBox(height: 8),
+                        Wrap(spacing: 6, runSpacing: 6, children: [
+                          if (!upcoming)
+                            _phoneMaintenanceBadge(
+                                maintenance['status_display'] ?? '',
+                                _getStatusColor(maintenance['status'])),
+                          _phoneMaintenanceBadge(
+                              upcoming
+                                  ? maintenance['priority'] ?? 'normal'
+                                  : maintenance['priority_display'] ?? '',
+                              _getPriorityColor(maintenance['priority'])),
+                          if (maintenance['is_overdue'] == true)
+                            _phoneMaintenanceBadge(
+                                'Overdue', GasPalette.critInk),
+                        ]),
+                        const SizedBox(height: 8),
+                        Text(_formatDateTime(maintenance['scheduled_date']),
+                            style: gasSmall(context)),
+                        if (assignee != null) ...[
+                          const SizedBox(height: 4),
+                          Text('Assigned to $assignee',
+                              style: gasSmall(context)),
+                        ],
+                        if (!isCompact) ...[
+                          const SizedBox(height: 10),
+                          Text(maintenance['work_description'] ?? '',
+                              style: gasBody(context),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 8),
+                          Wrap(spacing: 8, runSpacing: 8, children: [
+                            if (maintenance['status'] == 'scheduled')
+                              _buildActionButton(
+                                  'Start',
+                                  Icons.play_arrow,
+                                  GasPalette.primary,
+                                  () => _updateMaintenanceStatus(
+                                      maintenance['id'], 'start')),
+                            if (maintenance['status'] == 'in_progress')
+                              _buildActionButton(
+                                  'Complete',
+                                  Icons.check,
+                                  GasPalette.primary,
+                                  () => _updateMaintenanceStatus(
+                                      maintenance['id'], 'complete')),
+                            _buildActionButton(
+                                'Details',
+                                Icons.info_outline,
+                                GasPalette.ink2,
+                                () => _showMaintenanceDetails(maintenance)),
+                          ]),
+                        ],
+                      ])),
+            )));
   }
 
   Widget _phoneMaintenanceBadge(String label, Color color) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-    decoration: BoxDecoration(color: color.withValues(alpha: .08), borderRadius: BorderRadius.circular(32)),
-    child: Text(label, style: gasSmall(context).copyWith(color: color, fontSize: 10.5, fontWeight: FontWeight.w600)),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+            color: color.withValues(alpha: .08),
+            borderRadius: BorderRadius.circular(32)),
+        child: Text(label,
+            style: gasSmall(context).copyWith(
+                color: color, fontSize: 10.5, fontWeight: FontWeight.w600)),
+      );
 
   Widget _buildActionButton(
       String label, IconData icon, Color color, VoidCallback onPressed) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 :6),
+      borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 6),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: isPhoneLayout(context) ? 12: 6),
+        padding: EdgeInsets.symmetric(
+            horizontal: 16, vertical: isPhoneLayout(context) ? 12 : 6),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 :6),
+          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 6),
           border: Border.all(color: color.withOpacity(0.3)),
         ),
         child: Row(
@@ -1454,7 +1548,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Widget _buildSchedulesList() {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface( BoxDecoration(
+      decoration: _phoneMaintenanceSurface(BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1464,8 +1558,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
-      )
-      ),
+      )),
       child: Column(
         children: [
           _MaintenanceMetadataRow(
@@ -1494,7 +1587,9 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                 icon: Icon(Icons.add, size: 16),
                 label: Text('New Schedule'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                  backgroundColor: isPhoneLayout(context)
+                      ? GasPalette.primary
+                      : Constants.ctaColorLight,
                   foregroundColor: Colors.white,
                 ),
               ),
@@ -1513,11 +1608,14 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                 final schedule = _schedules[index];
                 final isActive = schedule['is_active'] ?? false;
                 return ListTile(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   leading: Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isActive ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                      color: isActive
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.grey.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -1528,19 +1626,22 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                   ),
                   title: Text(
                     '${schedule['device']?['name'] ?? 'Unknown Device'}',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         '${schedule['maintenance_type']?['name'] ?? ''} - ${schedule['frequency_display'] ?? ''}',
-                        style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+                        style: GoogleFonts.inter(
+                            fontSize: 12, color: Colors.grey[600]),
                       ),
                       SizedBox(height: 2),
                       Text(
                         'Next due: ${schedule['next_due'] ?? 'N/A'}',
-                        style: GoogleFonts.inter(fontSize: 11, color: Constants.ctaColorLight),
+                        style: GoogleFonts.inter(
+                            fontSize: 11, color: Constants.ctaColorLight),
                       ),
                     ],
                   ),
@@ -1548,9 +1649,12 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isActive ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                          color: isActive
+                              ? Colors.green.withOpacity(0.1)
+                              : Colors.red.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -1576,7 +1680,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                             value: 'toggle',
                             child: Row(
                               children: [
-                                Icon(isActive ? Icons.pause : Icons.play_arrow, size: 18),
+                                Icon(isActive ? Icons.pause : Icons.play_arrow,
+                                    size: 18),
                                 SizedBox(width: 8),
                                 Text(isActive ? 'Deactivate' : 'Activate'),
                               ],
@@ -1588,7 +1693,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                               children: [
                                 Icon(Icons.delete, size: 18, color: Colors.red),
                                 SizedBox(width: 8),
-                                Text('Delete', style: TextStyle(color: Colors.red)),
+                                Text('Delete',
+                                    style: TextStyle(color: Colors.red)),
                               ],
                             ),
                           ),
@@ -1607,19 +1713,25 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Future<void> _toggleScheduleStatus(String scheduleId, bool isActive) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedule/$scheduleId/update/'),
+        Uri.parse(
+            '${ApiConfig.baseUrl}api/maintenance/schedule/$scheduleId/update/'),
         headers: ApiConfig.headers,
         body: json.encode({'is_active': isActive}),
       );
       if (response.statusCode == 200) {
         _loadSchedules();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Schedule ${isActive ? 'activated' : 'deactivated'}'), backgroundColor: Colors.green),
+          SnackBar(
+              content:
+                  Text('Schedule ${isActive ? 'activated' : 'deactivated'}'),
+              backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating schedule'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Error updating schedule'),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -1631,7 +1743,9 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
         title: Text('Delete Schedule'),
         content: Text('Are you sure you want to delete this schedule?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text('Delete', style: TextStyle(color: Colors.red)),
@@ -1643,18 +1757,22 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
     try {
       final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedule/$scheduleId/delete/'),
+        Uri.parse(
+            '${ApiConfig.baseUrl}api/maintenance/schedule/$scheduleId/delete/'),
         headers: ApiConfig.headers,
       );
       if (response.statusCode == 200) {
         _loadSchedules();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Schedule deleted'), backgroundColor: Colors.green),
+          SnackBar(
+              content: Text('Schedule deleted'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting schedule'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Error deleting schedule'),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -1662,7 +1780,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Widget _buildGenerateMaintenanceSection() {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface( BoxDecoration(
+      decoration: _phoneMaintenanceSurface(BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1672,8 +1790,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
-      )
-      ),
+      )),
       child: Column(
         children: [
           _MaintenanceMetadataRow(
@@ -1706,7 +1823,9 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             icon: Icon(Icons.play_arrow, size: 16),
             label: Text('Generate Now'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+              backgroundColor: isPhoneLayout(context)
+                  ? GasPalette.primary
+                  : Constants.ctaColorLight,
               foregroundColor: Colors.white,
               minimumSize: Size(double.infinity, 40),
             ),
@@ -1750,7 +1869,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface( BoxDecoration(
+      decoration: _phoneMaintenanceSurface(BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1820,7 +1939,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface( BoxDecoration(
+      decoration: _phoneMaintenanceSurface(BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1889,7 +2008,9 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
         child: Row(children: [
           Expanded(child: Text(title, style: gasSmall(context))),
           const SizedBox(width: 12),
-          Flexible(child: Text(value, textAlign: TextAlign.end, style: gasData(context, size: 18))),
+          Flexible(
+              child: Text(value,
+                  textAlign: TextAlign.end, style: gasData(context, size: 18))),
         ]),
       );
     }
@@ -1946,7 +2067,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Widget _buildBreakdownCard(String title, List<dynamic>? data) {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface( BoxDecoration(
+      decoration: _phoneMaintenanceSurface(BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1956,8 +2077,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
-      )
-      ),
+      )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2064,29 +2184,42 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Widget _buildReminderStats(Map<String, dynamic> summary) {
     if (isPhoneLayout(context)) {
-      return GPanel(padding: const EdgeInsets.all(16), child: Row(children: [
-        Expanded(child: _phoneMaintenanceMetric('Upcoming', '${summary['upcoming_count'] ?? 0}')),
-        Expanded(child: _phoneMaintenanceMetric('Overdue', '${summary['overdue_count'] ?? 0}')),
-        Expanded(child: _phoneMaintenanceMetric('Sent today', '${(summary['reminders_sent_today'] ?? 0) + (summary['overdue_reminders_sent_today'] ?? 0)}')),
-      ]));
+      return GPanel(
+          padding: const EdgeInsets.all(16),
+          child: Row(children: [
+            Expanded(
+                child: _phoneMaintenanceMetric(
+                    'Upcoming', '${summary['upcoming_count'] ?? 0}')),
+            Expanded(
+                child: _phoneMaintenanceMetric(
+                    'Overdue', '${summary['overdue_count'] ?? 0}')),
+            Expanded(
+                child: _phoneMaintenanceMetric('Sent today',
+                    '${(summary['reminders_sent_today'] ?? 0) + (summary['overdue_reminders_sent_today'] ?? 0)}')),
+          ]));
     }
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: mobileFlatDecoration(context, BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Constants.ctaColorLight, Constants.ctaColorLight.withOpacity(0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Constants.ctaColorLight.withOpacity(0.3),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-      )),
+      decoration: mobileFlatDecoration(
+          context,
+          BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Constants.ctaColorLight,
+                Constants.ctaColorLight.withOpacity(0.8)
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Constants.ctaColorLight.withOpacity(0.3),
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+          )),
       child: Row(
         children: [
           Expanded(
@@ -2141,13 +2274,15 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     );
   }
 
-  Widget _buildRemindersList(List<dynamic> reminders, {required bool isOverdue}) {
+  Widget _buildRemindersList(List<dynamic> reminders,
+      {required bool isOverdue}) {
     if (reminders.isEmpty) {
-      return _buildEmptyState(isOverdue ? 'No overdue maintenance' : 'No upcoming maintenance');
+      return _buildEmptyState(
+          isOverdue ? 'No overdue maintenance' : 'No upcoming maintenance');
     }
 
     return Container(
-      decoration: _phoneMaintenanceSurface( BoxDecoration(
+      decoration: _phoneMaintenanceSurface(BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -2157,8 +2292,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
-      )
-      ),
+      )),
       child: ListView.separated(
         shrinkWrap: true,
         physics: NeverScrollableScrollPhysics(),
@@ -2172,7 +2306,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     );
   }
 
-  Widget _buildReminderCard(Map<String, dynamic> reminder, {required bool isOverdue}) {
+  Widget _buildReminderCard(Map<String, dynamic> reminder,
+      {required bool isOverdue}) {
     final priorityColor = _getPriorityColor(reminder['priority'] ?? 'normal');
     final reminderSent = reminder['reminder_sent'] ?? false;
     final overdueReminderSent = reminder['overdue_reminder_sent'] ?? false;
@@ -2182,7 +2317,9 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
       leading: Container(
         padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: isOverdue ? Colors.red.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+          color: isOverdue
+              ? Colors.red.withOpacity(0.1)
+              : Colors.blue.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(
@@ -2196,7 +2333,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
           Expanded(
             child: Text(
               reminder['device_name'] ?? 'Unknown Device',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+              style:
+                  GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ),
           Container(
@@ -2229,7 +2367,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             spacing: 4,
             runSpacing: 6,
             children: [
-              Icon(Icons.access_time, size: 12, color: isOverdue ? Colors.red : Colors.grey),
+              Icon(Icons.access_time,
+                  size: 12, color: isOverdue ? Colors.red : Colors.grey),
               SizedBox(width: 4),
               Text(
                 reminder['time_display'] ?? '',
@@ -2254,7 +2393,10 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                       SizedBox(width: 4),
                       Text(
                         'Reminder Sent',
-                        style: GoogleFonts.inter(fontSize: 9, color: Colors.green, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(
+                            fontSize: 9,
+                            color: Colors.green,
+                            fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -2287,7 +2429,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     }
 
     return Container(
-      decoration: _phoneMaintenanceSurface( BoxDecoration(
+      decoration: _phoneMaintenanceSurface(BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -2297,8 +2439,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
-      )
-      ),
+      )),
       child: ListView.separated(
         shrinkWrap: true,
         physics: NeverScrollableScrollPhysics(),
@@ -2318,7 +2459,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             ),
             title: Text(
               reminder['device_name'] ?? 'Unknown Device',
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+              style:
+                  GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
             ),
             subtitle: Text(
               '${reminder['maintenance_type'] ?? ''} - Sent: ${_formatReminderDate(reminder['reminder_sent_at'])}',
@@ -2360,7 +2502,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Widget _buildMaintenanceTypesSection() {
     return Container(
-      decoration: _phoneMaintenanceSurface( BoxDecoration(
+      decoration: _phoneMaintenanceSurface(BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -2370,8 +2512,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
-      )
-      ),
+      )),
       child: Column(
         children: [
           Container(
@@ -2480,7 +2621,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   Widget _buildSystemSettingsSection() {
     return Container(
       padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface( BoxDecoration(
+      decoration: _phoneMaintenanceSurface(BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -2490,8 +2631,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             offset: Offset(0, 2),
           ),
         ],
-      )
-      ),
+      )),
       child: Column(
         children: [
           _buildSettingItem(
@@ -2566,15 +2706,16 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   // Helper Widgets
   Widget _buildSectionHeader(String title, IconData icon) {
     if (isPhoneLayout(context)) {
-      return Text(title, style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600));
+      return Text(title,
+          style: gasTitle(context)
+              .copyWith(fontSize: 14, fontWeight: FontWeight.w600));
     }
     return Row(
       children: [
         Icon(icon, color: Constants.ctaColorLight, size: 20),
         SizedBox(width: 8),
         Expanded(
-            child:
-        Text(
+            child: Text(
           title,
           style: GoogleFonts.inter(
             fontSize: 18,
@@ -2588,13 +2729,12 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Widget _buildEmptyState(String message) {
     if (isPhoneLayout(context)) {
-      return GPanel(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(children: [
-          const Icon(Icons.event_available_outlined, color: GasPalette.ink2, size: 20),
-          const SizedBox(width: 12),
-          Expanded(child: Text(message, style: gasBody(context).copyWith(fontSize: 12))),
-        ]),
+      return AppEmptyState(
+        kind: AppEmptyStateKind.records,
+        icon: Icons.event_available_outlined,
+        title: message,
+        message: 'Maintenance activity will appear here when available.',
+        compact: true,
       );
     }
     return Container(
@@ -2637,6 +2777,18 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   Widget _buildErrorState() {
+    if (isPhoneLayout(context)) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: AppEmptyState(
+          kind: AppEmptyStateKind.offline,
+          title: 'Unable to load maintenance',
+          message: _error,
+          actionLabel: 'Retry',
+          onAction: _loadInitialData,
+        ),
+      );
+    }
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -2913,7 +3065,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         Uri.parse(
             '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/'),
         headers: ApiConfig.headers,
-      );
+      ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -2945,7 +3097,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       }
     } catch (e) {
       setState(() {
-        _error = 'Failed to load maintenance details: ${e.toString()}';
+        _error = 'Check your connection and try again.';
       });
     } finally {
       setState(() {
@@ -3015,21 +3167,32 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
           ? Center(
               child: CircularProgressIndicator(color: Constants.ctaColorLight))
           : _error.isNotEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error, color: Colors.red, size: 48),
-                      SizedBox(height: 16),
-                      Text(_error),
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadMaintenanceDetail,
-                        child: Text('Retry'),
+              ? isPhoneLayout(context)
+                  ? SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: AppEmptyState(
+                        kind: AppEmptyStateKind.offline,
+                        title: 'Unable to load maintenance details',
+                        message: _error,
+                        actionLabel: 'Retry',
+                        onAction: _loadMaintenanceDetail,
                       ),
-                    ],
-                  ),
-                )
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error, color: Colors.red, size: 48),
+                          SizedBox(height: 16),
+                          Text(_error),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadMaintenanceDetail,
+                            child: Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    )
               : TabBarView(
                   controller: _tabController,
                   children: [
@@ -3702,11 +3865,14 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               icon: Icon(Icons.add, size: 18),
               label: Text('Add First Item'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                backgroundColor: isPhoneLayout(context)
+                    ? GasPalette.primary
+                    : Constants.ctaColorLight,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                  borderRadius:
+                      BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                 ),
               ),
             ),
@@ -3724,32 +3890,35 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         Expanded(
           child: TextField(
             controller: TextEditingController(),
-            decoration: mobileInputDecoration(context, InputDecoration(
-              hintText: 'Type to quickly add a checklist item...',
-              hintStyle: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Constants.ctaColorLight),
-              ),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              suffixIcon: IconButton(
-                onPressed: () => _showAddChecklistItemDialog(),
-                icon: Icon(Icons.add_circle, color: Constants.ctaColorLight),
-                tooltip: 'Add Item',
-              ),
-            )),
+            decoration: mobileInputDecoration(
+                context,
+                InputDecoration(
+                  hintText: 'Type to quickly add a checklist item...',
+                  hintStyle: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Constants.ctaColorLight),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  suffixIcon: IconButton(
+                    onPressed: () => _showAddChecklistItemDialog(),
+                    icon:
+                        Icon(Icons.add_circle, color: Constants.ctaColorLight),
+                    tooltip: 'Add Item',
+                  ),
+                )),
             onSubmitted: (value) {
               if (value.trim().isNotEmpty) {
                 _addChecklistItemQuick(value.trim());
@@ -3876,7 +4045,10 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   Widget _buildDocumentationTab() {
     // Allow uploads for in_progress, scheduled, and completed maintenance
     final status = _maintenance['status'] ?? '';
-    final bool canEdit = status == 'in_progress' || status == 'scheduled' || status == 'completed' || status == 'pending';
+    final bool canEdit = status == 'in_progress' ||
+        status == 'scheduled' ||
+        status == 'completed' ||
+        status == 'pending';
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
@@ -3967,7 +4139,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.add_photo_alternate, size: 16),
                   label: Text('Add Photo'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Colors.green[600],
+                    backgroundColor: isPhoneLayout(context)
+                        ? GasPalette.primary
+                        : Colors.green[600],
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -3979,7 +4153,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.save, size: 16),
                   label: Text('Save'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                    backgroundColor: isPhoneLayout(context)
+                        ? GasPalette.primary
+                        : Constants.ctaColorLight,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -3989,7 +4165,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
             ],
           ),
           // Parts Images Gallery
-          _buildSectionImageGallery('parts', _maintenance['parts_images'] ?? [], canEdit),
+          _buildSectionImageGallery(
+              'parts', _maintenance['parts_images'] ?? [], canEdit),
           SizedBox(height: 20),
           if (parts.isEmpty)
             Container(
@@ -4159,32 +4336,36 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       Expanded(
                         child: TextField(
                           controller: controller,
-                          decoration: mobileInputDecoration(context, InputDecoration(
-                            hintText:
-                                'Enter part name or code (e.g., Air Filter #AF-100)',
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                  color: Constants.ctaColorLight, width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            prefixIcon: Icon(
-                              Icons.settings,
-                              color: Colors.grey[500],
-                              size: 20,
-                            ),
-                          )),
+                          decoration: mobileInputDecoration(
+                              context,
+                              InputDecoration(
+                                hintText:
+                                    'Enter part name or code (e.g., Air Filter #AF-100)',
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey[300]!),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                      color: Constants.ctaColorLight, width: 2),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey[300]!),
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
+                                prefixIcon: Icon(
+                                  Icons.settings,
+                                  color: Colors.grey[500],
+                                  size: 20,
+                                ),
+                              )),
                           onSubmitted: (value) {
                             if (value.trim().isEmpty) return;
                             setState(() {
@@ -4210,7 +4391,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         icon: Icon(Icons.add, size: 18),
                         label: Text('Add Part'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                          backgroundColor: isPhoneLayout(context)
+                              ? GasPalette.primary
+                              : Constants.ctaColorLight,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
                               horizontal: 16, vertical: 14),
@@ -4286,7 +4469,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.add_photo_alternate, size: 16),
                   label: Text('Add Photo'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Colors.green[600],
+                    backgroundColor: isPhoneLayout(context)
+                        ? GasPalette.primary
+                        : Colors.green[600],
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -4298,7 +4483,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.save, size: 16),
                   label: Text('Save'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                    backgroundColor: isPhoneLayout(context)
+                        ? GasPalette.primary
+                        : Constants.ctaColorLight,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -4308,7 +4495,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
             ],
           ),
           // Materials Images Gallery
-          _buildSectionImageGallery('materials', _maintenance['materials_images'] ?? [], canEdit),
+          _buildSectionImageGallery(
+              'materials', _maintenance['materials_images'] ?? [], canEdit),
           SizedBox(height: 20),
           if (materials.isEmpty)
             Container(
@@ -4480,32 +4668,36 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       Expanded(
                         child: TextField(
                           controller: controller,
-                          decoration: mobileInputDecoration(context, InputDecoration(
-                            hintText:
-                                'Enter material name or type (e.g., Lubricant Oil 1L)',
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                  color: Constants.ctaColorLight, width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            prefixIcon: Icon(
-                              Icons.science,
-                              color: Colors.grey[500],
-                              size: 20,
-                            ),
-                          )),
+                          decoration: mobileInputDecoration(
+                              context,
+                              InputDecoration(
+                                hintText:
+                                    'Enter material name or type (e.g., Lubricant Oil 1L)',
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey[300]!),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                      color: Constants.ctaColorLight, width: 2),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey[300]!),
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
+                                prefixIcon: Icon(
+                                  Icons.science,
+                                  color: Colors.grey[500],
+                                  size: 20,
+                                ),
+                              )),
                           onSubmitted: (value) {
                             if (value.trim().isEmpty) return;
                             setState(() {
@@ -4531,7 +4723,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         icon: Icon(Icons.add, size: 18),
                         label: Text('Add Material'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                          backgroundColor: isPhoneLayout(context)
+                              ? GasPalette.primary
+                              : Constants.ctaColorLight,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
                               horizontal: 16, vertical: 14),
@@ -4555,9 +4749,14 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     final afterPhotos = _maintenance['after_photos'] as List<dynamic>? ?? [];
     final documents = _maintenance['documents'] as List<dynamic>? ?? [];
     final partsImages = _maintenance['parts_images'] as List<dynamic>? ?? [];
-    final materialsImages = _maintenance['materials_images'] as List<dynamic>? ?? [];
+    final materialsImages =
+        _maintenance['materials_images'] as List<dynamic>? ?? [];
 
-    final totalFiles = beforePhotos.length + afterPhotos.length + documents.length + partsImages.length + materialsImages.length;
+    final totalFiles = beforePhotos.length +
+        afterPhotos.length +
+        documents.length +
+        partsImages.length +
+        materialsImages.length;
 
     return CustomCard(
       elevation: 4,
@@ -4610,7 +4809,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.add_photo_alternate, size: 16),
                   label: Text('Photos'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Colors.green[600],
+                    backgroundColor: isPhoneLayout(context)
+                        ? GasPalette.primary
+                        : Colors.green[600],
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -4622,7 +4823,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   icon: Icon(Icons.upload_file, size: 16),
                   label: Text('Documents'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                    backgroundColor: isPhoneLayout(context)
+                        ? GasPalette.primary
+                        : Constants.ctaColorLight,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -4658,7 +4861,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     SizedBox(height: 4),
                     Text(
                       'Use the buttons above to add photos and documents',
-                      style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[500]),
+                      style: GoogleFonts.inter(
+                          fontSize: 14, color: Colors.grey[500]),
                     ),
                   ],
                 ],
@@ -4736,7 +4940,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     ),
                     SizedBox(height: 12),
                     ...documents.map((doc) {
-                      final docData = doc is Map ? doc : {'filename': doc.toString()};
+                      final docData =
+                          doc is Map ? doc : {'filename': doc.toString()};
                       return Container(
                         margin: EdgeInsets.only(bottom: 8),
                         padding: EdgeInsets.all(12),
@@ -4747,7 +4952,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.insert_drive_file, color: Colors.teal, size: 24),
+                            Icon(Icons.insert_drive_file,
+                                color: Colors.teal, size: 24),
                             SizedBox(width: 12),
                             Expanded(
                               child: Column(
@@ -4761,7 +4967,10 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  if (docData['description'] != null && docData['description'].toString().isNotEmpty)
+                                  if (docData['description'] != null &&
+                                      docData['description']
+                                          .toString()
+                                          .isNotEmpty)
                                     Text(
                                       docData['description'],
                                       style: GoogleFonts.inter(
@@ -4798,7 +5007,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   }
 
   // Build a media category with expandable gallery
-  Widget _buildMediaCategory(String title, IconData icon, Color color, List<dynamic> images, bool canEdit, {String? section}) {
+  Widget _buildMediaCategory(String title, IconData icon, Color color,
+      List<dynamic> images, bool canEdit,
+      {String? section}) {
     return Container(
       margin: EdgeInsets.only(top: 16),
       padding: EdgeInsets.all(16),
@@ -4832,8 +5043,10 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               itemCount: images.length,
               itemBuilder: (context, index) {
                 final img = images[index];
-                final imageUrl = img is Map ? (img['url'] ?? '') : img.toString();
-                final filename = img is Map ? (img['filename'] ?? 'Image') : 'Image';
+                final imageUrl =
+                    img is Map ? (img['url'] ?? '') : img.toString();
+                final filename =
+                    img is Map ? (img['filename'] ?? 'Image') : 'Image';
                 final imageId = img is Map ? (img['id'] ?? '') : '';
 
                 return Container(
@@ -4857,11 +5070,13 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                   ? imageUrl
                                   : '${Constants.articBaseUrl2}$imageUrl',
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Icon(
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(
                                 Icons.broken_image,
                                 color: Colors.grey[400],
                               ),
-                              loadingBuilder: (context, child, loadingProgress) {
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
                                 if (loadingProgress == null) return child;
                                 return Center(
                                   child: CircularProgressIndicator(
@@ -4886,7 +5101,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                 color: Colors.red[400],
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(Icons.close, size: 14, color: Colors.white),
+                              child: Icon(Icons.close,
+                                  size: 14, color: Colors.white),
                             ),
                           ),
                         ),
@@ -5232,12 +5448,15 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     icon: Icon(Icons.add, size: 18),
                     label: Text('Add Finding'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                      backgroundColor: isPhoneLayout(context)
+                          ? GasPalette.primary
+                          : Constants.ctaColorLight,
                       foregroundColor: Colors.white,
                       padding:
                           EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                        borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 : 8),
                       ),
                       elevation: 2,
                     ),
@@ -5364,8 +5583,10 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                 DateTime.now()
                             : DateTime.now();
 
-                        final observationImages = observation['images'] as List<dynamic>? ?? [];
-                        final observationId = observation['id']?.toString() ?? '';
+                        final observationImages =
+                            observation['images'] as List<dynamic>? ?? [];
+                        final observationId =
+                            observation['id']?.toString() ?? '';
 
                         return Container(
                           padding: EdgeInsets.all(16),
@@ -5378,7 +5599,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                   Expanded(
                                     flex: 4,
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           observation['text'] ??
@@ -5389,13 +5611,15 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                             height: 1.4,
                                           ),
                                         ),
-                                        if (observation['is_critical'] == true) ...[
+                                        if (observation['is_critical'] ==
+                                            true) ...[
                                           SizedBox(height: 8),
                                           Container(
                                             padding: EdgeInsets.symmetric(
                                                 horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: Colors.orange.withOpacity(0.1),
+                                              color: Colors.orange
+                                                  .withOpacity(0.1),
                                               borderRadius:
                                                   BorderRadius.circular(4),
                                             ),
@@ -5440,7 +5664,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            _formatDateTime(dateAdded.toIso8601String()),
+                                            _formatDateTime(
+                                                dateAdded.toIso8601String()),
                                             style: GoogleFonts.inter(
                                               fontSize: 13,
                                               color: Colors.grey[600],
@@ -5449,8 +5674,12 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                         ),
                                         if (canEdit && observationId.isNotEmpty)
                                           IconButton(
-                                            onPressed: () => _uploadObservationImage(observationId),
-                                            icon: Icon(Icons.add_photo_alternate, size: 20),
+                                            onPressed: () =>
+                                                _uploadObservationImage(
+                                                    observationId),
+                                            icon: Icon(
+                                                Icons.add_photo_alternate,
+                                                size: 20),
                                             color: Colors.green[600],
                                             tooltip: 'Add Photo',
                                             padding: EdgeInsets.zero,
@@ -5477,19 +5706,22 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                         child: Stack(
                                           children: [
                                             GestureDetector(
-                                              onTap: () => _showImagePreview(imageUrl, img['filename'] ?? 'Image'),
+                                              onTap: () => _showImagePreview(
+                                                  imageUrl,
+                                                  img['filename'] ?? 'Image'),
                                               child: Container(
                                                 width: 80,
                                                 height: 80,
                                                 decoration: BoxDecoration(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  border: Border.all(color: Colors.grey[300]!),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                      color: Colors.grey[300]!),
                                                   image: DecorationImage(
-                                                    image: NetworkImage(
-                                                      imageUrl.startsWith('http')
+                                                    image: NetworkImage(imageUrl
+                                                            .startsWith('http')
                                                         ? imageUrl
-                                                        : '${Constants.articBaseUrl2}$imageUrl'
-                                                    ),
+                                                        : '${Constants.articBaseUrl2}$imageUrl'),
                                                     fit: BoxFit.cover,
                                                   ),
                                                 ),
@@ -5571,16 +5803,18 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
           children: [
             TextField(
               controller: controller,
-              decoration: mobileInputDecoration(context, InputDecoration(
-                hintText: 'Enter your finding...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Constants.ctaColorLight),
-                ),
-              )),
+              decoration: mobileInputDecoration(
+                  context,
+                  InputDecoration(
+                    hintText: 'Enter your finding...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Constants.ctaColorLight),
+                    ),
+                  )),
               maxLines: 3,
               minLines: 2,
             ),
@@ -5603,7 +5837,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+              backgroundColor: isPhoneLayout(context)
+                  ? GasPalette.primary
+                  : Constants.ctaColorLight,
               foregroundColor: Colors.white,
             ),
             child: Text('Add'),
@@ -5742,7 +5978,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         icon: Icon(Icons.image, size: 20),
                         label: Text('Select Images'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                          backgroundColor: isPhoneLayout(context)
+                              ? GasPalette.primary
+                              : Constants.ctaColorLight,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -5755,7 +5993,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         icon: Icon(Icons.videocam, size: 20),
                         label: Text('Select Videos'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                          backgroundColor: isPhoneLayout(context)
+                              ? GasPalette.primary
+                              : Constants.ctaColorLight,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -5849,18 +6089,21 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 SizedBox(height: 8),
                 TextField(
                   controller: descriptionController,
-                  decoration: mobileInputDecoration(context, InputDecoration(
-                    hintText: 'Enter document description...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Constants.ctaColorLight),
-                    ),
-                    contentPadding: EdgeInsets.all(12),
-                  )),
+                  decoration: mobileInputDecoration(
+                      context,
+                      InputDecoration(
+                        hintText: 'Enter document description...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              BorderSide(color: Constants.ctaColorLight),
+                        ),
+                        contentPadding: EdgeInsets.all(12),
+                      )),
                   maxLines: 3,
                 ),
                 SizedBox(height: 20),
@@ -5872,7 +6115,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     icon: Icon(Icons.upload_file, size: 20),
                     label: Text('Select & Upload Document'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                      backgroundColor: isPhoneLayout(context)
+                          ? GasPalette.primary
+                          : Constants.ctaColorLight,
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -6235,7 +6480,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   }
 
   // Build image gallery for a section
-  Widget _buildSectionImageGallery(String section, List<dynamic> images, bool canEdit) {
+  Widget _buildSectionImageGallery(
+      String section, List<dynamic> images, bool canEdit) {
     if (images.isEmpty) {
       return SizedBox.shrink();
     }
@@ -6272,7 +6518,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 child: Stack(
                   children: [
                     GestureDetector(
-                      onTap: () => _showImagePreview(imageUrl, img['filename'] ?? 'Image'),
+                      onTap: () => _showImagePreview(
+                          imageUrl, img['filename'] ?? 'Image'),
                       child: Container(
                         width: 120,
                         height: 120,
@@ -6280,11 +6527,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.grey[300]!),
                           image: DecorationImage(
-                            image: NetworkImage(
-                              imageUrl.startsWith('http')
+                            image: NetworkImage(imageUrl.startsWith('http')
                                 ? imageUrl
-                                : '${Constants.articBaseUrl2}$imageUrl'
-                            ),
+                                : '${Constants.articBaseUrl2}$imageUrl'),
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -6361,8 +6606,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               Flexible(
                 child: Image.network(
                   imageUrl.startsWith('http')
-                    ? imageUrl
-                    : '${Constants.articBaseUrl2}$imageUrl',
+                      ? imageUrl
+                      : '${Constants.articBaseUrl2}$imageUrl',
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => Container(
                     padding: EdgeInsets.all(40),
@@ -6868,29 +7113,33 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       SizedBox(height: 8),
                       TextField(
                         controller: _descriptionController,
-                        decoration: mobileInputDecoration(context, InputDecoration(
-                          hintText: 'e.g., Check compressor oil levels',
-                          hintStyle: GoogleFonts.inter(
-                            color: Colors.grey[500],
-                            fontSize: 14,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                                color: Constants.ctaColorLight, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: EdgeInsets.all(16),
-                        )),
+                        decoration: mobileInputDecoration(
+                            context,
+                            InputDecoration(
+                              hintText: 'e.g., Check compressor oil levels',
+                              hintStyle: GoogleFonts.inter(
+                                color: Colors.grey[500],
+                                fontSize: 14,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                    color: Constants.ctaColorLight, width: 2),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: EdgeInsets.all(16),
+                            )),
                         style: GoogleFonts.inter(fontSize: 14),
                         maxLines: 2,
                       ),
@@ -6908,29 +7157,33 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       SizedBox(height: 8),
                       TextField(
                         controller: _notesController,
-                        decoration: mobileInputDecoration(context, InputDecoration(
-                          hintText: 'Additional details or instructions',
-                          hintStyle: GoogleFonts.inter(
-                            color: Colors.grey[500],
-                            fontSize: 14,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                                color: Constants.ctaColorLight, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: EdgeInsets.all(16),
-                        )),
+                        decoration: mobileInputDecoration(
+                            context,
+                            InputDecoration(
+                              hintText: 'Additional details or instructions',
+                              hintStyle: GoogleFonts.inter(
+                                color: Colors.grey[500],
+                                fontSize: 14,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                    color: Constants.ctaColorLight, width: 2),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: EdgeInsets.all(16),
+                            )),
                         style: GoogleFonts.inter(fontSize: 14),
                         maxLines: 3,
                       ),
@@ -7010,7 +7263,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                            borderRadius: BorderRadius.circular(
+                                isPhoneLayout(context) ? 32 : 8),
                           ),
                         ),
                         child: Text(
@@ -7061,11 +7315,14 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                          backgroundColor: isPhoneLayout(context)
+                              ? GasPalette.primary
+                              : Constants.ctaColorLight,
                           foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                            borderRadius: BorderRadius.circular(
+                                isPhoneLayout(context) ? 32 : 8),
                           ),
                           elevation: 2,
                         ),
@@ -7229,31 +7486,37 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               children: [
                 TextField(
                   controller: _descriptionController,
-                  decoration: mobileInputDecoration(context, InputDecoration(
-                    labelText: 'Item Description *',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Constants.ctaColorLight),
-                    ),
-                  )),
+                  decoration: mobileInputDecoration(
+                      context,
+                      InputDecoration(
+                        labelText: 'Item Description *',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              BorderSide(color: Constants.ctaColorLight),
+                        ),
+                      )),
                   maxLines: 2,
                 ),
                 SizedBox(height: 16),
                 TextField(
                   controller: _notesController,
-                  decoration: mobileInputDecoration(context, InputDecoration(
-                    labelText: 'Notes (Optional)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Constants.ctaColorLight),
-                    ),
-                  )),
+                  decoration: mobileInputDecoration(
+                      context,
+                      InputDecoration(
+                        labelText: 'Notes (Optional)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              BorderSide(color: Constants.ctaColorLight),
+                        ),
+                      )),
                   maxLines: 3,
                 ),
                 SizedBox(height: 16),
@@ -7319,7 +7582,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                backgroundColor: isPhoneLayout(context)
+                    ? GasPalette.primary
+                    : Constants.ctaColorLight,
                 foregroundColor: Colors.white,
               ),
               child: _isSubmitting
@@ -7400,7 +7665,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               await _deleteChecklistItem(item['id']);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Colors.red,
+              backgroundColor:
+                  isPhoneLayout(context) ? GasPalette.primary : Colors.red,
               foregroundColor: Colors.white,
             ),
             child: Text('Delete'),
@@ -7589,7 +7855,7 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
 
       var headers = {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${await Sharedprefs.getAuthTokenPreference()}',
+        'Authorization': 'Token ${await Sharedprefs.getAuthTokenPreference()}',
       };
 
       var request = http.Request(
@@ -7901,39 +8167,43 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
 
   InputDecoration _buildInputDecoration(String label,
       {String? hint, IconData? icon, Color? iconColor}) {
-    return mobileInputDecoration(context, InputDecoration(
-      labelText: label,
-      hintText: hint,
-      prefixIcon: icon != null
-          ? Icon(icon, color: iconColor ?? const Color(0xFF6B7280), size: 20)
-          : null,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-      ),
-      filled: true,
-      fillColor: const Color(0xFFFAFAFA),
-      labelStyle: GoogleFonts.inter(
-        fontSize: 14,
-        color: const Color(0xFF6B7280),
-        fontWeight: FontWeight.w500,
-      ),
-      hintStyle:
-          GoogleFonts.inter(fontSize: 14, color: const Color(0xFF9CA3AF)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    ));
+    return mobileInputDecoration(
+        context,
+        InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon: icon != null
+              ? Icon(icon,
+                  color: iconColor ?? const Color(0xFF6B7280), size: 20)
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+          ),
+          filled: true,
+          fillColor: const Color(0xFFFAFAFA),
+          labelStyle: GoogleFonts.inter(
+            fontSize: 14,
+            color: const Color(0xFF6B7280),
+            fontWeight: FontWeight.w500,
+          ),
+          hintStyle:
+              GoogleFonts.inter(fontSize: 14, color: const Color(0xFF9CA3AF)),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ));
   }
 
   @override
@@ -7960,7 +8230,8 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(Icons.build_circle, color: Colors.white, size: 18),
+                child: const Icon(Icons.build_circle,
+                    color: Colors.white, size: 18),
               ),
               const SizedBox(width: 10),
               Text(
@@ -8057,36 +8328,46 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: const Color(0xFFEF4444)),
+              Icon(Icons.error_outline,
+                  size: 64, color: const Color(0xFFEF4444)),
               const SizedBox(height: 16),
               Text(
                 _error!,
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+                style: GoogleFonts.inter(
+                    fontSize: 14, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Container(
-                decoration: mobileFlatDecoration(context, BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  gradient: LinearGradient(
-                    colors: [
-                      Constants.ctaColorLight,
-                      Constants.ctaColorLight.withOpacity(0.8)
-                    ],
-                  ),
-                )),
+                decoration: mobileFlatDecoration(
+                    context,
+                    BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      gradient: LinearGradient(
+                        colors: [
+                          Constants.ctaColorLight,
+                          Constants.ctaColorLight.withOpacity(0.8)
+                        ],
+                      ),
+                    )),
                 child: ElevatedButton(
                   onPressed: _loadData,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Colors.transparent,
+                    backgroundColor: isPhoneLayout(context)
+                        ? GasPalette.primary
+                        : Colors.transparent,
                     foregroundColor: Colors.white,
                     shadowColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 12)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 : 12)),
                   ),
                   child: Text(
                     'Retry',
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -8098,619 +8379,557 @@ class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
 
     // Main form content
     return SingleChildScrollView(
-                          padding: const EdgeInsets.all(24),
-                          child: Form(
-                            key: _formKey,
+      padding: const EdgeInsets.all(24),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Required Fields Section
+            _buildSectionHeader(
+                'Required Information', const Color(0xFFEF4444), Icons.star),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<int>(
+              value: _selectedDeviceId,
+              decoration: _buildInputDecoration('Device *',
+                  icon: Icons.devices, iconColor: const Color(0xFFEF4444)),
+              style:
+                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+              items: _devices.map((device) {
+                return DropdownMenuItem(
+                  value: device.id,
+                  child: Text(device.name,
+                      style: GoogleFonts.inter(
+                          fontSize: 14, fontWeight: FontWeight.w500)),
+                );
+              }).toList(),
+              onChanged: (value) => setState(() => _selectedDeviceId = value),
+              validator: (value) =>
+                  value == null ? 'Please select a device' : null,
+            ),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: _selectedMaintenanceTypeId,
+              decoration: _buildInputDecoration('Maintenance Type *',
+                  icon: Icons.build, iconColor: const Color(0xFFEF4444)),
+              style:
+                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+              isExpanded: true,
+              itemHeight: 60,
+              items: _maintenanceTypes.map((type) {
+                return DropdownMenuItem(
+                  value: type.id,
+                  child: Text(
+                    '${type.name} (${type.categoryDisplay})',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) =>
+                  setState(() => _selectedMaintenanceTypeId = value),
+              validator: (value) =>
+                  value == null ? 'Please select a maintenance type' : null,
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _workDescriptionController,
+              decoration: _buildInputDecoration(
+                'Work Description *',
+                hint: 'e.g., Monthly compressor inspection and cleaning',
+                icon: Icons.description,
+                iconColor: const Color(0xFFEF4444),
+              ),
+              style:
+                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+              maxLines: 3,
+              validator: (value) => value == null || value.isEmpty
+                  ? 'Please enter work description'
+                  : null,
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFAFAFA),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: const Color(0xFFE5E7EB), width: 1.5),
+                    ),
+                    child: InkWell(
+                      onTap: () => _selectDate(context),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today,
+                              color: const Color(0xFFEF4444), size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Required Fields Section
-                                _buildSectionHeader('Required Information',
-                                    const Color(0xFFEF4444), Icons.star),
-                                const SizedBox(height: 20),
-                                DropdownButtonFormField<int>(
-                                  value: _selectedDeviceId,
-                                  decoration: _buildInputDecoration('Device *',
-                                      icon: Icons.devices,
-                                      iconColor: const Color(0xFFEF4444)),
+                                Text('Date *',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF6B7280))),
+                                const SizedBox(height: 4),
+                                Text(
+                                  DateFormat.yMMMd().format(_scheduledDate),
                                   style: GoogleFonts.inter(
                                       fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                                  items: _devices.map((device) {
-                                    return DropdownMenuItem(
-                                      value: device.id,
-                                      child: Text(device.name,
-                                          style: GoogleFonts.inter(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500)),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) =>
-                                      setState(() => _selectedDeviceId = value),
-                                  validator: (value) => value == null
-                                      ? 'Please select a device'
-                                      : null,
-                                ),
-                                const SizedBox(height: 20),
-                                DropdownButtonFormField<String>(
-                                  value: _selectedMaintenanceTypeId,
-                                  decoration: _buildInputDecoration(
-                                      'Maintenance Type *',
-                                      icon: Icons.build,
-                                      iconColor: const Color(0xFFEF4444)),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                                  isExpanded: true,
-                                  itemHeight: 60,
-                                  items: _maintenanceTypes.map((type) {
-                                    return DropdownMenuItem(
-                                      value: type.id,
-                                      child: Text(
-                                        '${type.name} (${type.categoryDisplay})',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) => setState(
-                                      () => _selectedMaintenanceTypeId = value),
-                                  validator: (value) => value == null
-                                      ? 'Please select a maintenance type'
-                                      : null,
-                                ),
-                                const SizedBox(height: 20),
-                                TextFormField(
-                                  controller: _workDescriptionController,
-                                  decoration: _buildInputDecoration(
-                                    'Work Description *',
-                                    hint:
-                                        'e.g., Monthly compressor inspection and cleaning',
-                                    icon: Icons.description,
-                                    iconColor: const Color(0xFFEF4444),
-                                  ),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                                  maxLines: 3,
-                                  validator: (value) =>
-                                      value == null || value.isEmpty
-                                          ? 'Please enter work description'
-                                          : null,
-                                ),
-                                const SizedBox(height: 20),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFFAFAFA),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          border: Border.all(
-                                              color: const Color(0xFFE5E7EB),
-                                              width: 1.5),
-                                        ),
-                                        child: InkWell(
-                                          onTap: () => _selectDate(context),
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.calendar_today,
-                                                  color:
-                                                      const Color(0xFFEF4444),
-                                                  size: 20),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text('Date *',
-                                                        style: GoogleFonts.inter(
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: const Color(
-                                                                0xFF6B7280))),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      DateFormat.yMMMd().format(
-                                                          _scheduledDate),
-                                                      style: GoogleFonts.inter(
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color: const Color(
-                                                              0xFF1F2937)),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFFAFAFA),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          border: Border.all(
-                                              color: const Color(0xFFE5E7EB),
-                                              width: 1.5),
-                                        ),
-                                        child: InkWell(
-                                          onTap: () => _selectTime(context),
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.access_time,
-                                                  color:
-                                                      const Color(0xFFEF4444),
-                                                  size: 20),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text('Time *',
-                                                        style: GoogleFonts.inter(
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color: const Color(
-                                                                0xFF6B7280))),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      _scheduledTime
-                                                          .format(context),
-                                                      style: GoogleFonts.inter(
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color: const Color(
-                                                              0xFF1F2937)),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 40),
-                                // Optional Fields Section
-                                _buildSectionHeader('Optional Information',
-                                    const Color(0xFF3B82F6), Icons.tune),
-                                const SizedBox(height: 20),
-                                MobileFormRow(
-                                  children: [
-                                    Expanded(
-                                      child: DropdownButtonFormField<String>(
-                                        value: _selectedStatus,
-                                        decoration: _buildInputDecoration(
-                                            'Status',
-                                            icon: Icons.flag,
-                                            iconColor: const Color(0xFF3B82F6)),
-                                        style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500),
-                                        items: const [
-                                          DropdownMenuItem(
-                                              value: 'scheduled',
-                                              child: Text('Scheduled')),
-                                          DropdownMenuItem(
-                                              value: 'in_progress',
-                                              child: Text('In Progress')),
-                                          DropdownMenuItem(
-                                              value: 'completed',
-                                              child: Text('Completed')),
-                                          DropdownMenuItem(
-                                              value: 'cancelled',
-                                              child: Text('Cancelled')),
-                                          DropdownMenuItem(
-                                              value: 'overdue',
-                                              child: Text('Overdue')),
-                                        ],
-                                        onChanged: (value) => setState(
-                                            () => _selectedStatus = value!),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Expanded(
-                                      child: DropdownButtonFormField<String>(
-                                        value: _selectedPriority,
-                                        decoration: _buildInputDecoration(
-                                            'Priority',
-                                            icon: Icons.priority_high,
-                                            iconColor: const Color(0xFF3B82F6)),
-                                        style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500),
-                                        items: const [
-                                          DropdownMenuItem(
-                                              value: 'low', child: Text('Low')),
-                                          DropdownMenuItem(
-                                              value: 'normal',
-                                              child: Text('Normal')),
-                                          DropdownMenuItem(
-                                              value: 'high',
-                                              child: Text('High')),
-                                          DropdownMenuItem(
-                                              value: 'critical',
-                                              child: Text('Critical')),
-                                        ],
-                                        onChanged: (value) => setState(
-                                            () => _selectedPriority = value!),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 20),
-                                DropdownButtonFormField<String>(
-                                  value: _selectedAssignedToId,
-                                  decoration: _buildInputDecoration(
-                                      'Assigned To',
-                                      icon: Icons.person,
-                                      iconColor: const Color(0xFF3B82F6)),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                                  items: [
-                                    const DropdownMenuItem(
-                                        value: null, child: Text('Unassigned')),
-                                    ..._assignableUsers.map((user) {
-                                      return DropdownMenuItem(
-                                        value: user['id'].toString(),
-                                        child: Text(user['name'],
-                                            style: GoogleFonts.inter(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500)),
-                                      );
-                                    }),
-                                  ],
-                                  onChanged: (value) => setState(
-                                      () => _selectedAssignedToId = value),
-                                ),
-                                const SizedBox(height: 20),
-                                MobileFormRow(
-                                  children: [
-                                    Expanded(
-                                      child: TextFormField(
-                                        controller: _estimatedCostController,
-                                        decoration: _buildInputDecoration(
-                                            'Estimated Cost',
-                                            hint: '150.00',
-                                            icon: Icons.attach_money,
-                                            iconColor: const Color(0xFF3B82F6)),
-                                        style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500),
-                                        keyboardType: const TextInputType
-                                            .numberWithOptions(decimal: true),
-                                        validator: (value) {
-                                          if (value != null &&
-                                              value.isNotEmpty) {
-                                            if (double.tryParse(value) ==
-                                                    null ||
-                                                double.parse(value) < 0) {
-                                              return 'Enter a valid positive number';
-                                            }
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Expanded(
-                                      child: TextFormField(
-                                        controller:
-                                            _estimatedDurationController,
-                                        decoration: _buildInputDecoration(
-                                            'Duration (Hours)',
-                                            hint: '3.5',
-                                            icon: Icons.timer,
-                                            iconColor: const Color(0xFF3B82F6)),
-                                        style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500),
-                                        keyboardType: const TextInputType
-                                            .numberWithOptions(decimal: true),
-                                        validator: (value) {
-                                          if (value != null &&
-                                              value.isNotEmpty) {
-                                            if (double.tryParse(value) ==
-                                                    null ||
-                                                double.parse(value) <= 0) {
-                                              return 'Enter a valid positive number';
-                                            }
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 20),
-                                TextFormField(
-                                  controller: _partsUsedController,
-                                  decoration: _buildInputDecoration(
-                                    'Parts Used',
-                                    hint:
-                                        'Air Filter, Lubricant Oil (comma separated)',
-                                    icon: Icons.build_circle,
-                                    iconColor: const Color(0xFF3B82F6),
-                                  ),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                                  validator: (value) {
-                                    if (value != null && value.isNotEmpty) {
-                                      if (!RegExp(r'^[\w\s,.-]+$')
-                                          .hasMatch(value)) {
-                                        return 'Enter valid parts (comma separated)';
-                                      }
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 20),
-                                TextFormField(
-                                  controller: _materialsUsedController,
-                                  decoration: _buildInputDecoration(
-                                    'Materials Used',
-                                    hint:
-                                        'Cleaning Solution, Replacement Gaskets (comma separated)',
-                                    icon: Icons.handyman,
-                                    iconColor: const Color(0xFF3B82F6),
-                                  ),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                                  validator: (value) {
-                                    if (value != null && value.isNotEmpty) {
-                                      if (!RegExp(r'^[\w\s,.-]+$')
-                                          .hasMatch(value)) {
-                                        return 'Enter valid materials (comma separated)';
-                                      }
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 20),
-                                TextFormField(
-                                  controller: _externalContractorController,
-                                  decoration: _buildInputDecoration(
-                                      'External Contractor',
-                                      hint: 'Contractor information',
-                                      icon: Icons.business,
-                                      iconColor: const Color(0xFF3B82F6)),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                                const SizedBox(height: 20),
-                                TextFormField(
-                                  controller: _safetyPrecautionsController,
-                                  decoration: _buildInputDecoration(
-                                    'Safety Precautions',
-                                    hint:
-                                        'Turn off main power, wear safety goggles',
-                                    icon: Icons.security,
-                                    iconColor: const Color(0xFF3B82F6),
-                                  ),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                                  maxLines: 2,
-                                ),
-                                const SizedBox(height: 40),
-                                // Checklist Section
-                                _buildSectionHeader('Maintenance Checklist',
-                                    const Color(0xFFF59E0B), Icons.checklist),
-                                const SizedBox(height: 20),
-                                if (_checklistItems.isNotEmpty) ...[
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: const Color(0xFFE5E7EB)),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Column(
-                                      children: _checklistItems
-                                          .asMap()
-                                          .entries
-                                          .map((entry) {
-                                        int index = entry.key;
-                                        ChecklistItem item = entry.value;
-                                        return Container(
-                                          padding: const EdgeInsets.all(16),
-                                          decoration: BoxDecoration(
-                                            border: index <
-                                                    _checklistItems.length - 1
-                                                ? const Border(
-                                                    bottom: BorderSide(
-                                                        color:
-                                                            Color(0xFFE5E7EB)))
-                                                : null,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Checkbox(
-                                                value: item.isCritical,
-                                                onChanged: (value) {
-                                                  setState(() {
-                                                    item.isCritical =
-                                                        value ?? false;
-                                                  });
-                                                },
-                                                activeColor:
-                                                    Constants.ctaColorLight,
-                                              ),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      item.description,
-                                                      style: GoogleFonts.inter(
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color: const Color(
-                                                              0xFF1F2937)),
-                                                    ),
-                                                    if (item.isCritical)
-                                                      Text(
-                                                        'Critical',
-                                                        style: GoogleFonts.inter(
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            color: const Color(
-                                                                0xFFEF4444)),
-                                                      ),
-                                                  ],
-                                                ),
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(
-                                                    Icons.delete_outline,
-                                                    color: Color(0xFFEF4444)),
-                                                onPressed: () =>
-                                                    _removeChecklistItem(index),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                ],
-                                MobileFormRow(
-                                  children: [
-                                    Expanded(
-                                      child: TextFormField(
-                                        controller: _newChecklistController,
-                                        decoration: _buildInputDecoration(
-                                          'Add Checklist Item',
-                                          hint: 'Check compressor oil levels',
-                                          icon: Icons.add_task,
-                                          iconColor: const Color(0xFFF59E0B),
-                                        ),
-                                        style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500),
-                                        // onSubmitted: (_) => _addChecklistItem(),
-                                        validator: (value) {
-                                          if (value != null &&
-                                              value.isNotEmpty) {
-                                            if (!RegExp(r'^[\w\s.-]+$')
-                                                .hasMatch(value)) {
-                                              return 'Enter a valid checklist item';
-                                            }
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          color: Constants.ctaColorLight),
-                                      child: IconButton(
-                                        onPressed: _addChecklistItem,
-                                        icon: const Icon(Icons.add_rounded,
-                                            color: Colors.white),
-                                        tooltip: 'Add Item',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                // Footer Actions
-                                const SizedBox(height: 40),
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFAFAFA),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                                  ),
-                                  child: Wrap(
-                                    spacing: 12,
-                                    runSpacing: 12,
-                                    alignment: WrapAlignment.end,
-                                    children: [
-                                      TextButton(
-                                        onPressed: _isSubmitting ? null : _resetForm,
-                                        style: TextButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
-                                            side: const BorderSide(color: Color(0xFFE5E7EB)),
-                                          ),
-                                        ),
-                                        child: Text('Reset', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF6B7280))),
-                                      ),
-                                      TextButton(
-                                        onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-                                        style: TextButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
-                                            side: const BorderSide(color: Color(0xFFE5E7EB)),
-                                          ),
-                                        ),
-                                        child: Text('Cancel', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: const Color(0xFF6B7280))),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: _isSubmitting ? null : _submitForm,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8)),
-                                        ),
-                                        child: _isSubmitting
-                                            ? Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))),
-                                                  const SizedBox(width: 8),
-                                                  Text('Scheduling...', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
-                                                ],
-                                              )
-                                            : Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  const Icon(Icons.build_circle, size: 18),
-                                                  const SizedBox(width: 8),
-                                                  Text('Schedule Maintenance', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
-                                                ],
-                                              ),
-                                      ),
-                                    ],
-                                  ),
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF1F2937)),
                                 ),
                               ],
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFAFAFA),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: const Color(0xFFE5E7EB), width: 1.5),
+                    ),
+                    child: InkWell(
+                      onTap: () => _selectTime(context),
+                      child: Row(
+                        children: [
+                          Icon(Icons.access_time,
+                              color: const Color(0xFFEF4444), size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Time *',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF6B7280))),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _scheduledTime.format(context),
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF1F2937)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 40),
+            // Optional Fields Section
+            _buildSectionHeader(
+                'Optional Information', const Color(0xFF3B82F6), Icons.tune),
+            const SizedBox(height: 20),
+            MobileFormRow(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedStatus,
+                    decoration: _buildInputDecoration('Status',
+                        icon: Icons.flag, iconColor: const Color(0xFF3B82F6)),
+                    style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w500),
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'scheduled', child: Text('Scheduled')),
+                      DropdownMenuItem(
+                          value: 'in_progress', child: Text('In Progress')),
+                      DropdownMenuItem(
+                          value: 'completed', child: Text('Completed')),
+                      DropdownMenuItem(
+                          value: 'cancelled', child: Text('Cancelled')),
+                      DropdownMenuItem(
+                          value: 'overdue', child: Text('Overdue')),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _selectedStatus = value!),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedPriority,
+                    decoration: _buildInputDecoration('Priority',
+                        icon: Icons.priority_high,
+                        iconColor: const Color(0xFF3B82F6)),
+                    style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w500),
+                    items: const [
+                      DropdownMenuItem(value: 'low', child: Text('Low')),
+                      DropdownMenuItem(value: 'normal', child: Text('Normal')),
+                      DropdownMenuItem(value: 'high', child: Text('High')),
+                      DropdownMenuItem(
+                          value: 'critical', child: Text('Critical')),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _selectedPriority = value!),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: _selectedAssignedToId,
+              decoration: _buildInputDecoration('Assigned To',
+                  icon: Icons.person, iconColor: const Color(0xFF3B82F6)),
+              style:
+                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+              items: [
+                const DropdownMenuItem(value: null, child: Text('Unassigned')),
+                ..._assignableUsers.map((user) {
+                  return DropdownMenuItem(
+                    value: user['id'].toString(),
+                    child: Text(user['name'],
+                        style: GoogleFonts.inter(
+                            fontSize: 14, fontWeight: FontWeight.w500)),
+                  );
+                }),
+              ],
+              onChanged: (value) =>
+                  setState(() => _selectedAssignedToId = value),
+            ),
+            const SizedBox(height: 20),
+            MobileFormRow(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _estimatedCostController,
+                    decoration: _buildInputDecoration('Estimated Cost',
+                        hint: '150.00',
+                        icon: Icons.attach_money,
+                        iconColor: const Color(0xFF3B82F6)),
+                    style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w500),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        if (double.tryParse(value) == null ||
+                            double.parse(value) < 0) {
+                          return 'Enter a valid positive number';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: TextFormField(
+                    controller: _estimatedDurationController,
+                    decoration: _buildInputDecoration('Duration (Hours)',
+                        hint: '3.5',
+                        icon: Icons.timer,
+                        iconColor: const Color(0xFF3B82F6)),
+                    style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w500),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        if (double.tryParse(value) == null ||
+                            double.parse(value) <= 0) {
+                          return 'Enter a valid positive number';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _partsUsedController,
+              decoration: _buildInputDecoration(
+                'Parts Used',
+                hint: 'Air Filter, Lubricant Oil (comma separated)',
+                icon: Icons.build_circle,
+                iconColor: const Color(0xFF3B82F6),
+              ),
+              style:
+                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+              validator: (value) {
+                if (value != null && value.isNotEmpty) {
+                  if (!RegExp(r'^[\w\s,.-]+$').hasMatch(value)) {
+                    return 'Enter valid parts (comma separated)';
+                  }
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _materialsUsedController,
+              decoration: _buildInputDecoration(
+                'Materials Used',
+                hint:
+                    'Cleaning Solution, Replacement Gaskets (comma separated)',
+                icon: Icons.handyman,
+                iconColor: const Color(0xFF3B82F6),
+              ),
+              style:
+                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+              validator: (value) {
+                if (value != null && value.isNotEmpty) {
+                  if (!RegExp(r'^[\w\s,.-]+$').hasMatch(value)) {
+                    return 'Enter valid materials (comma separated)';
+                  }
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _externalContractorController,
+              decoration: _buildInputDecoration('External Contractor',
+                  hint: 'Contractor information',
+                  icon: Icons.business,
+                  iconColor: const Color(0xFF3B82F6)),
+              style:
+                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _safetyPrecautionsController,
+              decoration: _buildInputDecoration(
+                'Safety Precautions',
+                hint: 'Turn off main power, wear safety goggles',
+                icon: Icons.security,
+                iconColor: const Color(0xFF3B82F6),
+              ),
+              style:
+                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 40),
+            // Checklist Section
+            _buildSectionHeader('Maintenance Checklist',
+                const Color(0xFFF59E0B), Icons.checklist),
+            const SizedBox(height: 20),
+            if (_checklistItems.isNotEmpty) ...[
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: _checklistItems.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    ChecklistItem item = entry.value;
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: index < _checklistItems.length - 1
+                            ? const Border(
+                                bottom: BorderSide(color: Color(0xFFE5E7EB)))
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: item.isCritical,
+                            onChanged: (value) {
+                              setState(() {
+                                item.isCritical = value ?? false;
+                              });
+                            },
+                            activeColor: Constants.ctaColorLight,
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.description,
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF1F2937)),
+                                ),
+                                if (item.isCritical)
+                                  Text(
+                                    'Critical',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFFEF4444)),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline,
+                                color: Color(0xFFEF4444)),
+                            onPressed: () => _removeChecklistItem(index),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+            MobileFormRow(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _newChecklistController,
+                    decoration: _buildInputDecoration(
+                      'Add Checklist Item',
+                      hint: 'Check compressor oil levels',
+                      icon: Icons.add_task,
+                      iconColor: const Color(0xFFF59E0B),
+                    ),
+                    style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w500),
+                    // onSubmitted: (_) => _addChecklistItem(),
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        if (!RegExp(r'^[\w\s.-]+$').hasMatch(value)) {
+                          return 'Enter a valid checklist item';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Constants.ctaColorLight),
+                  child: IconButton(
+                    onPressed: _addChecklistItem,
+                    icon: const Icon(Icons.add_rounded, color: Colors.white),
+                    tooltip: 'Add Item',
+                  ),
+                ),
+              ],
+            ),
+
+            // Footer Actions
+            const SizedBox(height: 40),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFAFAFA),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: _isSubmitting ? null : _resetForm,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 : 8),
+                        side: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                    ),
+                    child: Text('Reset',
+                        style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF6B7280))),
+                  ),
+                  TextButton(
+                    onPressed:
+                        _isSubmitting ? null : () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                            isPhoneLayout(context) ? 32 : 8),
+                        side: const BorderSide(color: Color(0xFFE5E7EB)),
+                      ),
+                    ),
+                    child: Text('Cancel',
+                        style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF6B7280))),
+                  ),
+                  ElevatedButton(
+                    onPressed: _isSubmitting ? null : _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isPhoneLayout(context)
+                          ? GasPalette.primary
+                          : Constants.ctaColorLight,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                              isPhoneLayout(context) ? 32 : 8)),
+                    ),
+                    child: _isSubmitting
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white))),
+                              const SizedBox(width: 8),
+                              Text('Scheduling...',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600)),
+                            ],
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.build_circle, size: 18),
+                              const SizedBox(width: 8),
+                              Text('Schedule Maintenance',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -9261,8 +9480,10 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                 'Assigned To',
                 maintenanceData['assigned_to']?['full_name']?.toString() ??
                     'Unassigned'),
-            _buildPDFInfoRow('Performed By',
-                maintenanceData['performed_by']?['full_name']?.toString() ?? 'N/A'),
+            _buildPDFInfoRow(
+                'Performed By',
+                maintenanceData['performed_by']?['full_name']?.toString() ??
+                    'N/A'),
             if (maintenanceData['supervised_by'] != null)
               _buildPDFInfoRow(
                   'Supervised By',
@@ -10489,7 +10710,9 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                      backgroundColor: isPhoneLayout(context)
+                          ? GasPalette.primary
+                          : Constants.ctaColorLight,
                     ),
                     child: Text('Open PDF'),
                   ),
@@ -10614,7 +10837,8 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(Icons.assessment_outlined, color: Colors.white, size: 18),
+                child: const Icon(Icons.assessment_outlined,
+                    color: Colors.white, size: 18),
               ),
               const SizedBox(width: 10),
               Text(
@@ -10718,12 +10942,15 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                       icon: Icon(Icons.picture_as_pdf, size: 18),
                       label: Text('Generate Sample Report'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                        backgroundColor: isPhoneLayout(context)
+                            ? GasPalette.primary
+                            : Constants.ctaColorLight,
                         foregroundColor: Colors.white,
                         padding:
                             EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                          borderRadius: BorderRadius.circular(
+                              isPhoneLayout(context) ? 32 : 8),
                         ),
                         elevation: 0,
                       ),
@@ -10758,138 +10985,145 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
         Container(
           padding: EdgeInsets.all(isMobile ? 16 : 24),
           child: isMobile
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Report Year:',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  _MaintenanceFormSurface(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Constants.ctaColorLight.withOpacity(0.3),
-                        width: 1,
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Report Year:',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
                       ),
-                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: DropdownButton<int>(
-                      isDense: isPhoneLayout(context),
+                    SizedBox(height: 8),
+                    _MaintenanceFormSurface(
+                      width: double.infinity,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Constants.ctaColorLight.withOpacity(0.3),
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButton<int>(
+                        isDense: isPhoneLayout(context),
                         value: _selectedYear,
-                      isExpanded: true,
-                      underline: SizedBox(),
-                      icon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Constants.ctaColorLight,
+                        isExpanded: true,
+                        underline: SizedBox(),
+                        icon: Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Constants.ctaColorLight,
+                        ),
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Constants.ctaColorLight,
+                        ),
+                        items: List.generate(5, (index) {
+                          final year = DateTime.now().year - index;
+                          return DropdownMenuItem(
+                            value: year,
+                            child: Text(year.toString()),
+                          );
+                        }),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedYear = value;
+                              _selectedMonth = null;
+                              _selectedMonthRecords = [];
+                            });
+                            _loadMonthlyReports();
+                          }
+                        },
                       ),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Text(
+                      'Report Year:',
                       style: GoogleFonts.inter(
                         fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Constants.ctaColorLight,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
                       ),
-                      items: List.generate(5, (index) {
-                        final year = DateTime.now().year - index;
-                        return DropdownMenuItem(
-                          value: year,
-                          child: Text(year.toString()),
-                        );
-                      }),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedYear = value;
-                            _selectedMonth = null;
-                            _selectedMonthRecords = [];
-                          });
-                          _loadMonthlyReports();
-                        }
-                      },
                     ),
-                  ),
-                ],
-              )
-            : Row(
-                children: [
-                  Text(
-                    'Report Year:',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Constants.ctaColorLight.withOpacity(0.3),
-                        width: 1,
+                    SizedBox(width: 16),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Constants.ctaColorLight.withOpacity(0.3),
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButton<int>(
-                      value: _selectedYear,
-                      underline: SizedBox(),
-                      icon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Constants.ctaColorLight,
+                      child: DropdownButton<int>(
+                        value: _selectedYear,
+                        underline: SizedBox(),
+                        icon: Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Constants.ctaColorLight,
+                        ),
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Constants.ctaColorLight,
+                        ),
+                        items: List.generate(5, (index) {
+                          final year = DateTime.now().year - index;
+                          return DropdownMenuItem(
+                            value: year,
+                            child: Text(year.toString()),
+                          );
+                        }),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedYear = value;
+                              _selectedMonth = null;
+                              _selectedMonthRecords = [];
+                            });
+                            _loadMonthlyReports();
+                          }
+                        },
                       ),
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Constants.ctaColorLight,
-                      ),
-                      items: List.generate(5, (index) {
-                        final year = DateTime.now().year - index;
-                        return DropdownMenuItem(
-                          value: year,
-                          child: Text(year.toString()),
-                        );
-                      }),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _selectedYear = value;
-                            _selectedMonth = null;
-                            _selectedMonthRecords = [];
-                          });
-                          _loadMonthlyReports();
-                        }
-                      },
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
         ),
         // Main content area
         Expanded(
           child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: Constants.ctaColorLight))
-            : _error.isNotEmpty
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.red, size: 48),
-                      SizedBox(height: 16),
-                      Text(_error, style: GoogleFonts.inter(color: Colors.grey[600])),
-                      SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadMonthlyReports,
-                        child: Text('Retry'),
+                  child:
+                      CircularProgressIndicator(color: Constants.ctaColorLight))
+              : _error.isNotEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline,
+                              color: Colors.red, size: 48),
+                          SizedBox(height: 16),
+                          Text(_error,
+                              style:
+                                  GoogleFonts.inter(color: Colors.grey[600])),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadMonthlyReports,
+                            child: Text('Retry'),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                )
-              : _buildMonthsGrid(isMobile),
+                    )
+                  : _buildMonthsGrid(isMobile),
         ),
       ]),
     );
@@ -10946,7 +11180,9 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                   icon: Icon(Icons.download, size: 16),
                   label: Text(isMobile ? 'Download' : 'Download PDF'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                    backgroundColor: isPhoneLayout(context)
+                        ? GasPalette.primary
+                        : Constants.ctaColorLight,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(
                       horizontal: isMobile ? 12 : 16,
@@ -10984,8 +11220,8 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
   }
 
   Widget _buildMonthCard(dynamic report, bool isMobile) {
-    final isSelected = _selectedMonth != null &&
-        _selectedMonth['month'] == report['month'];
+    final isSelected =
+        _selectedMonth != null && _selectedMonth['month'] == report['month'];
     return InkWell(
       onTap: () {
         setState(() {
@@ -10996,7 +11232,9 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
       child: Container(
         padding: EdgeInsets.all(isMobile ? 12 : 16),
         decoration: BoxDecoration(
-          color: isSelected ? Constants.ctaColorLight.withOpacity(0.1) : Colors.white,
+          color: isSelected
+              ? Constants.ctaColorLight.withOpacity(0.1)
+              : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? Constants.ctaColorLight : Colors.grey[300]!,
@@ -11106,7 +11344,8 @@ class _MaintenanceMetadataRow extends StatelessWidget {
 }
 
 class _MaintenanceFormSurface extends StatelessWidget {
-  const _MaintenanceFormSurface({required this.child, this.width, this.padding, this.decoration});
+  const _MaintenanceFormSurface(
+      {required this.child, this.width, this.padding, this.decoration});
   final Widget child;
   final double? width;
   final EdgeInsetsGeometry? padding;
@@ -11115,10 +11354,12 @@ class _MaintenanceFormSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!isPhoneLayout(context)) {
-      return Container(width: width, padding: padding, decoration: decoration, child: child);
+      return Container(
+          width: width, padding: padding, decoration: decoration, child: child);
     }
     return InputDecorator(
-      decoration: mobileInputDecoration(context, const InputDecoration(isDense: true)),
+      decoration:
+          mobileInputDecoration(context, const InputDecoration(isDense: true)),
       child: child,
     );
   }

@@ -24,21 +24,33 @@ class _Page {
 const _pages = [
   _Page(
     Icons.monitor_heart_outlined,
-    [(Icons.ac_unit, '-18.2 °C'), (Icons.bolt, 'Compressor ON'), (Icons.wifi, 'Online')],
+    [
+      (Icons.ac_unit, '-18.2 °C'),
+      (Icons.bolt, 'Compressor ON'),
+      (Icons.wifi, 'Online')
+    ],
     'Your equipment,\nalways in view',
     'Fridges, freezers, ice machines and cold rooms report their readings '
         'around the clock, wherever you are.',
   ),
   _Page(
     Icons.propane_tank_outlined,
-    [(Icons.scale, '12.5 kg on the scale'), (Icons.local_fire_department, '50% gas left'), (Icons.event, 'Refill ~22 Oct')],
+    [
+      (Icons.scale, '12.5 kg on the scale'),
+      (Icons.local_fire_department, '50% gas left'),
+      (Icons.event, 'Refill ~22 Oct')
+    ],
     'Gas that never\nruns out on you',
     'Put a cylinder on a connected scale and watch the level, daily usage '
         'and the projected refill date.',
   ),
   _Page(
     Icons.notifications_active_outlined,
-    [(Icons.warning_amber, 'Door left open'), (Icons.forum_outlined, 'Ask the assistant'), (Icons.group_outlined, 'Whole team alerted')],
+    [
+      (Icons.warning_amber, 'Door left open'),
+      (Icons.forum_outlined, 'Ask the assistant'),
+      (Icons.group_outlined, 'Whole team alerted')
+    ],
     'Problems found\nbefore they cost you',
     'Alerts reach your team the moment something drifts, and the assistant '
         'answers questions about any device.',
@@ -161,6 +173,11 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600)),
                       ),
+                      TextButton(
+                        onPressed: () => context.push('/products'),
+                        child: const Text('Explore our products',
+                            style: TextStyle(color: Colors.white70)),
+                      ),
                     ],
                   ),
                 ),
@@ -239,7 +256,8 @@ class _WelcomePage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         boxShadow: const [
-          BoxShadow(color: Color(0x33000000), blurRadius: 14, offset: Offset(0, 6)),
+          BoxShadow(
+              color: Color(0x33000000), blurRadius: 14, offset: Offset(0, 6)),
         ],
       ),
       child: Row(
@@ -271,12 +289,8 @@ class _SonarPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     for (var i = 1; i <= 6; i++) {
       paint.color = Colors.white.withValues(alpha: 0.05 + 0.015 * (6 - i));
-      canvas.drawArc(
-          Rect.fromCircle(center: centre, radius: 70.0 * i),
-          math.pi * (0.9 + i * 0.07),
-          math.pi * 1.25,
-          false,
-          paint);
+      canvas.drawArc(Rect.fromCircle(center: centre, radius: 70.0 * i),
+          math.pi * (0.9 + i * 0.07), math.pi * 1.25, false, paint);
     }
   }
 

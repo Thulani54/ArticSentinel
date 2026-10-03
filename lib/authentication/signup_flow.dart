@@ -1,10 +1,4 @@
-/// Create-account flow, in four short steps:
-///   1. Company or personal account
-///   2. Who you are (and the company name)
-///   3. Password
-///   4. Add purchased devices — optional, can be skipped
-/// On finish it registers (api/signup/v2/), signs in, creates any devices
-/// listed, and lands on the dashboard.
+/// Three-step account creation, followed by authenticated guided device setup.
 library;
 
 import 'dart:convert';
@@ -13,36 +7,19 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:motion_toast/motion_toast.dart';
 
 import '../constants/Constants.dart';
 import '../gasmon/gas_theme.dart';
 import '../services/auth_session.dart';
 import '../widgets/mobile_forms.dart';
 
-const _deviceTypes = <(String, String)>[
-  ('device1', 'Refrigeration unit'),
-  ('device2', 'Multi-zone temperature'),
-  ('device3', 'Ice machine'),
-  ('device4', 'Multi-compressor'),
-  ('device5', 'Relay controller'),
-  ('device6', 'Pressure monitor'),
-  ('device7', 'Bottle vetting'),
-  ('gas_cylinder', 'Gas cylinder'),
-];
-
-class _DeviceDraft {
-  final id = TextEditingController();
-  final name = TextEditingController();
-  String type = 'device1';
-  void dispose() {
-    id.dispose();
-    name.dispose();
-  }
-}
-
 class SignUpFlowPage extends StatefulWidget {
-  const SignUpFlowPage({super.key});
+  const SignUpFlowPage(
+      {super.key, this.client, this.applySession, this.initialDeviceType});
+
+  final http.Client? client;
+  final Future<void> Function(Map<String, dynamic>, String)? applySession;
+  final String? initialDeviceType;
 
   @override
   State<SignUpFlowPage> createState() => _SignUpFlowPageState();
@@ -51,6 +28,9 @@ class SignUpFlowPage extends StatefulWidget {
 class _SignUpFlowPageState extends State<SignUpFlowPage> {
   int _step = 0;
   bool _busy = false;
+  bool _accountCreated = false;
+  String? _error;
+  late final http.Client _client = widget.client ?? http.Client();
   String _accountType = 'company';
 
   final _firstName = TextEditingController();
@@ -61,23 +41,27 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
   final _password = TextEditingController();
   final _confirm = TextEditingController();
   bool _hidePassword = true;
-  final List<_DeviceDraft> _devices = [_DeviceDraft()];
 
   static const _titles = [
     ('Who is this account for?', 'You can add teammates later either way.'),
     ('Tell us about yourself', 'This is how your workspace will know you.'),
     ('Secure your account', 'Pick a password of at least 8 characters.'),
-    ('Add your devices', 'Already purchased ArticSentinel devices? Add them now, or skip and do it later.'),
   ];
 
   @override
   void dispose() {
-    for (final c in [_firstName, _lastName, _email, _phone, _companyName, _password, _confirm]) {
+    for (final c in [
+      _firstName,
+      _lastName,
+      _email,
+      _phone,
+      _companyName,
+      _password,
+      _confirm
+    ]) {
       c.dispose();
     }
-    for (final d in _devices) {
-      d.dispose();
-    }
+    if (widget.client == null) _client.close();
     super.dispose();
   }
 
@@ -91,44 +75,68 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
       children: [
         _header(),
         const SizedBox(height: 20),
-        [_stepType(), _stepDetails(), _stepSecurity(), _stepDevices()][_step],
+        AnimatedSwitcher(
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 240),
+          child: KeyedSubtree(
+            key: ValueKey(_step),
+            child: [_stepType(), _stepDetails(), _stepSecurity()][_step],
+          ),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 16),
+          Semantics(
+              liveRegion: true,
+              child: Text(_error!,
+                  style:
+                      const TextStyle(color: GasPalette.critInk, height: 1.5))),
+        ],
         const SizedBox(height: 24),
         _actions(),
         const SizedBox(height: 16),
       ],
     );
     if (phone) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child: content,
-          ),
-        ),
-      );
-    }
-    return Scaffold(
-      backgroundColor: GasPalette.page,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Container(
-            width: 520,
-            padding: const EdgeInsets.fromLTRB(36, 28, 36, 28),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: GasPalette.border),
-              boxShadow: const [
-                BoxShadow(color: Color(0x14133648), blurRadius: 24, offset: Offset(0, 8)),
-              ],
+      return PopScope(
+          canPop: !_busy,
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            body: SafeArea(
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: content,
+              ),
             ),
-            child: content,
+          ));
+    }
+    return PopScope(
+        canPop: !_busy,
+        child: Scaffold(
+          backgroundColor: GasPalette.page,
+          body: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Container(
+                width: 520,
+                padding: const EdgeInsets.fromLTRB(36, 28, 36, 28),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: GasPalette.border),
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Color(0x14133648),
+                        blurRadius: 24,
+                        offset: Offset(0, 8)),
+                  ],
+                ),
+                child: content,
+              ),
+            ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 
   Widget _header() {
@@ -143,24 +151,28 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
               onPressed: _busy
                   ? null
                   : () {
-                      if (_step == 0) {
+                      if (_step == 0 || _accountCreated) {
                         context.canPop() ? context.pop() : context.go('/login');
                       } else {
-                        setState(() => _step -= 1);
+                        setState(() {
+                          _step -= 1;
+                          _error = null;
+                        });
                       }
                     },
               icon: const Icon(Icons.arrow_back, color: GasPalette.ink),
             ),
             const Spacer(),
-            Text('Step ${_step + 1} of 4',
-                style: GoogleFonts.inter(fontSize: 12.5, color: GasPalette.ink2)),
+            Text('Step ${_step + 1} of 3',
+                style:
+                    GoogleFonts.inter(fontSize: 12.5, color: GasPalette.ink2)),
           ],
         ),
         const SizedBox(height: 6),
         ClipRRect(
           borderRadius: BorderRadius.circular(99),
           child: LinearProgressIndicator(
-            value: (_step + 1) / 4,
+            value: (_step + 1) / 3,
             minHeight: 6,
             backgroundColor: GasPalette.panelAlt,
             color: GasPalette.primary,
@@ -169,7 +181,9 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
         const SizedBox(height: 22),
         Text('Create your account',
             style: GoogleFonts.inter(
-                fontSize: 12, fontWeight: FontWeight.w700, color: GasPalette.series)),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: GasPalette.series)),
         const SizedBox(height: 4),
         Text(title,
             style: GoogleFonts.inter(
@@ -178,7 +192,8 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
                 letterSpacing: -0.3,
                 color: GasPalette.ink)),
         const SizedBox(height: 6),
-        Text(sub, style: GoogleFonts.inter(fontSize: 13.5, color: GasPalette.ink2)),
+        Text(sub,
+            style: GoogleFonts.inter(fontSize: 13.5, color: GasPalette.ink2)),
       ],
     );
   }
@@ -207,7 +222,8 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
                   color: selected ? GasPalette.primary : GasPalette.panelAlt,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: selected ? Colors.white : GasPalette.ink2),
+                child: Icon(icon,
+                    color: selected ? Colors.white : GasPalette.ink2),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -216,9 +232,13 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
                   children: [
                     Text(title,
                         style: GoogleFonts.inter(
-                            fontSize: 15, fontWeight: FontWeight.w700, color: GasPalette.ink)),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: GasPalette.ink)),
                     const SizedBox(height: 2),
-                    Text(sub, style: GoogleFonts.inter(fontSize: 12.5, color: GasPalette.ink2)),
+                    Text(sub,
+                        style: GoogleFonts.inter(
+                            fontSize: 12.5, color: GasPalette.ink2)),
                   ],
                 ),
               ),
@@ -248,7 +268,7 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
           _field(_companyName, 'Company name'),
           const SizedBox(height: 14),
         ],
-        Row(
+        MobileFormRow(
           children: [
             Expanded(child: _field(_firstName, 'First name')),
             const SizedBox(width: 12),
@@ -258,7 +278,8 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
         const SizedBox(height: 14),
         _field(_email, 'Email', keyboardType: TextInputType.emailAddress),
         const SizedBox(height: 14),
-        _field(_phone, 'Cellphone (optional)', keyboardType: TextInputType.phone),
+        _field(_phone, 'Cellphone (optional)',
+            keyboardType: TextInputType.phone),
       ],
     );
   }
@@ -272,7 +293,9 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
               tooltip: _hidePassword ? 'Show password' : 'Hide password',
               onPressed: () => setState(() => _hidePassword = !_hidePassword),
               icon: Icon(
-                  _hidePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _hidePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   size: 20,
                   color: GasPalette.ink2),
             )),
@@ -287,85 +310,8 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
     );
   }
 
-  Widget _stepDevices() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < _devices.length; i++) _deviceCard(i),
-        const SizedBox(height: 4),
-        OutlinedButton.icon(
-          onPressed: _busy ? null : () => setState(() => _devices.add(_DeviceDraft())),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: GasPalette.ink,
-            side: const BorderSide(color: GasPalette.border),
-            minimumSize: const Size.fromHeight(46),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-          ),
-          icon: const Icon(Icons.add, size: 18),
-          label: Text('Add another device',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13.5)),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'The Device ID is printed on the unit. Each device can also be added '
-          'later in Device Management.',
-          style: GoogleFonts.inter(fontSize: 12, color: GasPalette.muted),
-        ),
-      ],
-    );
-  }
-
-  Widget _deviceCard(int i) {
-    final d = _devices[i];
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: GasPalette.panelAlt,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: GasPalette.border),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Text('Device ${i + 1}',
-                  style: GoogleFonts.inter(
-                      fontSize: 12, fontWeight: FontWeight.w700, color: GasPalette.ink2)),
-              const Spacer(),
-              if (_devices.length > 1)
-                IconButton(
-                  tooltip: 'Remove',
-                  onPressed: _busy
-                      ? null
-                      : () => setState(() => _devices.removeAt(i).dispose()),
-                  icon: const Icon(Icons.close, size: 18, color: GasPalette.ink2),
-                ),
-            ],
-          ),
-          DropdownButtonFormField<String>(
-            initialValue: d.type,
-            isExpanded: true,
-            decoration: _decoration('Device type'),
-            items: [
-              for (final (value, label) in _deviceTypes)
-                DropdownMenuItem(
-                    value: value,
-                    child: Text(label, style: GoogleFonts.inter(fontSize: 14))),
-            ],
-            onChanged: (v) => setState(() => d.type = v ?? d.type),
-          ),
-          const SizedBox(height: 12),
-          _field(d.id, 'Device ID (on the unit)'),
-          const SizedBox(height: 12),
-          _field(d.name, 'Name it (e.g. Kitchen fridge)'),
-        ],
-      ),
-    );
-  }
-
   Widget _actions() {
-    final last = _step == 3;
+    final last = _step == 2;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -375,26 +321,35 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
             backgroundColor: GasPalette.primary,
             foregroundColor: Colors.white,
             minimumSize: const Size.fromHeight(52),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-            textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+            textStyle:
+                GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
           ),
           child: Text(_busy
-              ? 'Working…'
-              : last
-                  ? 'Finish and open my dashboard'
-                  : _step == 2
+              ? (_accountCreated ? 'Signing you in…' : 'Working…')
+              : _accountCreated
+                  ? 'Sign in and connect devices'
+                  : last
                       ? 'Create account'
                       : 'Continue'),
         ),
+        const SizedBox(height: 8),
         if (last) ...[
+          Text('Next, we’ll help you connect your devices. You can skip setup.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(fontSize: 12.5, color: GasPalette.ink2)),
           const SizedBox(height: 8),
-          TextButton(
-            onPressed: _busy ? null : () => _finish(skipDevices: true),
-            child: Text('Skip for now',
-                style: GoogleFonts.inter(
-                    fontSize: 13.5, fontWeight: FontWeight.w600, color: GasPalette.series)),
-          ),
         ],
+        TextButton(
+          onPressed: _busy ? null : () => context.push('/products'),
+          child: const Text('Explore our products'),
+        ),
+        if (_accountCreated || _error != null)
+          TextButton(
+            onPressed: _busy ? null : () => context.go('/login'),
+            child: const Text('Go to sign in'),
+          ),
       ],
     );
   }
@@ -408,7 +363,8 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
         filled: true,
         fillColor: Colors.white,
         labelStyle: GoogleFonts.inter(fontSize: 14, color: GasPalette.ink2),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: GasPalette.border),
@@ -425,6 +381,7 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
       {bool obscure = false, Widget? suffix, TextInputType? keyboardType}) {
     return TextField(
       controller: controller,
+      enabled: !_busy && !_accountCreated,
       obscureText: obscure,
       keyboardType: keyboardType,
       style: GoogleFonts.inter(fontSize: 14.5, color: GasPalette.ink),
@@ -434,133 +391,119 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
 
   // ------------------------------------------------------------- actions
 
-  void _toastError(String message) {
-    MotionToast.error(
-      description: Text(message, style: const TextStyle(color: Colors.white)),
-      animationDuration: const Duration(milliseconds: 2500),
-    ).show(context);
+  void _showError(String message) {
+    if (mounted) setState(() => _error = message);
   }
 
   bool get _emailLooksValid =>
       RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(_email.text.trim());
 
   void _next() {
+    setState(() => _error = null);
     switch (_step) {
       case 0:
         setState(() => _step = 1);
       case 1:
         if (_accountType == 'company' && _companyName.text.trim().isEmpty) {
-          return _toastError('Please enter the company name');
+          return _showError('Please enter the company name.');
         }
         if (_firstName.text.trim().isEmpty || _lastName.text.trim().isEmpty) {
-          return _toastError('Please enter your first and last name');
+          return _showError('Please enter your first and last name.');
         }
-        if (!_emailLooksValid) return _toastError('Please enter a valid email');
+        if (!_emailLooksValid) return _showError('Please enter a valid email.');
         setState(() => _step = 2);
       case 2:
         if (_password.text.length < 8) {
-          return _toastError('The password must be at least 8 characters');
+          return _showError('The password must be at least 8 characters.');
         }
         if (_password.text != _confirm.text) {
-          return _toastError("The passwords don't match");
+          return _showError("The passwords don't match.");
         }
-        setState(() => _step = 3);
-      case 3:
-        _finish(skipDevices: false);
+        _finish();
     }
   }
 
-  Future<void> _finish({required bool skipDevices}) async {
-    final drafts = skipDevices
-        ? <_DeviceDraft>[]
-        : _devices
-            .where((d) => d.id.text.trim().isNotEmpty || d.name.text.trim().isNotEmpty)
-            .toList();
-    for (final d in drafts) {
-      if (d.id.text.trim().isEmpty || d.name.text.trim().isEmpty) {
-        return _toastError('Each device needs both a Device ID and a name — or remove it.');
-      }
-    }
-
-    setState(() => _busy = true);
+  Map<String, dynamic> _responseBody(http.Response response) {
     try {
-      // 1. Register.
-      final signup = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/signup/v2/'),
-        headers: const {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'account_type': _accountType,
-          'first_name': _firstName.text.trim(),
-          'last_name': _lastName.text.trim(),
-          'email': _email.text.trim(),
-          'password': _password.text,
-          'cellphone_number': _phone.text.trim(),
-          if (_accountType == 'company') 'business_name': _companyName.text.trim(),
-        }),
-      );
-      final signupBody = signup.body.isEmpty ? null : jsonDecode(signup.body);
-      if (signup.statusCode != 201) {
-        final error = (signupBody is Map ? signupBody['error'] : null)?.toString() ??
-            'Could not create the account. Please try again.';
-        if (error.toLowerCase().contains('email')) setState(() => _step = 1);
-        _toastError(error);
-        return;
-      }
+      final data = jsonDecode(response.body);
+      return data is Map<String, dynamic> ? data : {};
+    } on FormatException {
+      return {};
+    }
+  }
 
-      // 2. Sign in with the new account.
-      final login = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/login/'),
-        headers: const {'Content-Type': 'application/json'},
-        body: jsonEncode(
-            {'user_email': _email.text.trim(), 'password': _password.text}),
-      );
-      if (login.statusCode != 200) {
-        _toastError('Account created — now sign in with your new details.');
-        if (mounted) context.go('/login');
-        return;
-      }
-      await AuthSession.applyLoginResponse(
-          jsonDecode(login.body) as Map<String, dynamic>,
-          password: _password.text);
-
-      // 3. Add the purchased devices, if any.
-      var added = 0;
-      var failed = 0;
-      for (final d in drafts) {
-        try {
-          final r = await http.post(
-            Uri.parse('${Constants.articBaseUrl2}api/devices/create/'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Token ${Constants.authToken}',
-            },
-            body: jsonEncode({
-              'business_id': Constants.business_uid,
-              'device_id': d.id.text.trim(),
-              'name': d.name.text.trim(),
-              'device_type': d.type,
-            }),
-          );
-          (r.statusCode == 200 || r.statusCode == 201) ? added++ : failed++;
-        } catch (_) {
-          failed++;
+  Future<void> _finish() async {
+    if (_busy) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      // Remember a successful registration. A failed auto-login can be retried
+      // without registering the account again or creating duplicate devices.
+      if (!_accountCreated) {
+        final signup = await _client
+            .post(
+              Uri.parse('${Constants.articBaseUrl2}api/signup/v2/'),
+              headers: const {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'account_type': _accountType,
+                'first_name': _firstName.text.trim(),
+                'last_name': _lastName.text.trim(),
+                'email': _email.text.trim(),
+                'password': _password.text,
+                'cellphone_number': _phone.text.trim(),
+                if (_accountType == 'company')
+                  'business_name': _companyName.text.trim(),
+              }),
+            )
+            .timeout(const Duration(seconds: 25));
+        if (!mounted) return;
+        if (signup.statusCode != 201) {
+          final responseError = _responseBody(signup)['error'];
+          final error = responseError is String && responseError.length <= 220
+              ? responseError
+              : 'Could not create the account. Please try again.';
+          if (error.toLowerCase().contains('email')) setState(() => _step = 1);
+          _showError(error);
+          return;
         }
+        setState(() => _accountCreated = true);
       }
-
+      final login = await _client
+          .post(
+            Uri.parse('${Constants.articBaseUrl2}api/login/'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode(
+                {'user_email': _email.text.trim(), 'password': _password.text}),
+          )
+          .timeout(const Duration(seconds: 25));
       if (!mounted) return;
-      context.goNamed('dashboard');
-      final summary = drafts.isEmpty
-          ? 'Welcome to ArticSentinel!'
-          : failed == 0
-              ? 'Welcome! $added device${added == 1 ? '' : 's'} added.'
-              : 'Welcome! $added added, $failed failed — retry in Device Management.';
-      MotionToast.success(
-        description: Text(summary, style: const TextStyle(color: Colors.white)),
-        animationDuration: const Duration(milliseconds: 3000),
-      ).show(context);
-    } catch (e) {
-      debugPrint('Signup failed: $e');
-      _toastError('Could not create the account. Check your connection.');
+      final body = _responseBody(login);
+      if (login.statusCode != 200 ||
+          body['token'] is! String ||
+          (body['token'] as String).isEmpty ||
+          body['user'] is! Map) {
+        _showError('Your account was created. We could not sign you in yet. '
+            'Try again below, or open the sign-in page.');
+        return;
+      }
+      if (widget.applySession != null) {
+        await widget.applySession!(body, _password.text);
+      } else {
+        await AuthSession.applyLoginResponse(body, password: _password.text);
+      }
+      if (!mounted) return;
+      final type = widget.initialDeviceType;
+      context.go(Uri(
+              path: '/device-setup',
+              queryParameters: type == null ? null : {'type': type})
+          .toString());
+    } catch (_) {
+      _showError(_accountCreated
+          ? 'Your account was created. Check your connection and try signing in again.'
+          : 'We could not confirm account creation. Check your connection, or try signing in if the account was created.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

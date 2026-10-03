@@ -1,6 +1,6 @@
 import 'settings/mobile_account_widgets.dart';
 import '../gasmon/gas_theme.dart';
-import '../gasmon/gas_widgets.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_forms.dart';
 import '../widgets/mobile_screen.dart';
 import 'dart:async';
@@ -154,7 +154,7 @@ class AuthApiService {
     final response = await http.get(
       Uri.parse(url),
       headers: {'Authorization': 'Bearer $token'},
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final body = json.decode(response.body);
@@ -162,7 +162,7 @@ class AuthApiService {
       List<dynamic> data = body is List ? body : (body['results'] ?? body);
       return data.map((json) => Role.fromJson(json)).toList();
     } else {
-      return [];
+      throw StateError('Access request failed');
     }
   }
 
@@ -238,14 +238,14 @@ class AuthApiService {
     final response = await http.get(
       Uri.parse(url),
       headers: {'Authorization': 'Bearer $token'},
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final body = json.decode(response.body);
       List<dynamic> data = body is List ? body : (body['results'] ?? body);
       return data.map((json) => Permission.fromJson(json)).toList();
     } else {
-      return [];
+      throw StateError('Access request failed');
     }
   }
 
@@ -258,14 +258,14 @@ class AuthApiService {
     final response = await http.get(
       Uri.parse(url),
       headers: {'Authorization': 'Bearer $token'},
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final body = json.decode(response.body);
       List<dynamic> data = body is List ? body : (body['results'] ?? body);
       return data.map((json) => PermissionRequest.fromJson(json)).toList();
     } else {
-      return [];
+      throw StateError('Access request failed');
     }
   }
 
@@ -299,12 +299,12 @@ class AuthApiService {
   static Future<Map<String, dynamic>> getDashboardStats() async {
     final response = await http.get(
       Uri.parse('$baseUrl/dashboard/stats/'),
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      return {};
+      throw StateError('Access request failed');
     }
   }
 }
@@ -326,6 +326,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
   Map<String, dynamic> dashboardStats = {};
 
   bool _isLoading = true;
+  String? _loadError;
   String? _selectedCategory;
   String? _selectedModule;
   String _searchQuery = '';
@@ -338,7 +339,10 @@ class _RoleManagementPageState extends State<RoleManagementPage>
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
 
     try {
       final results = await Future.wait([
@@ -348,6 +352,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
         AuthApiService.getDashboardStats(),
       ]);
 
+      if (!mounted) return;
       setState(() {
         roles = results[0] as List<Role>;
         permissions = results[1] as List<Permission>;
@@ -356,8 +361,13 @@ class _RoleManagementPageState extends State<RoleManagementPage>
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      _showErrorSnackBar('Failed to load data: $e');
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _loadError = 'Check your connection and try again.';
+      });
+      if (!isPhoneLayout(context))
+        _showErrorSnackBar('Unable to load access data. Try again.');
     }
   }
 
@@ -585,33 +595,36 @@ class _RoleManagementPageState extends State<RoleManagementPage>
           Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : TabBarView(controller: _tabController, children: [
-                      const TeamMembersTab(),
-                      _buildRolesTab(),
-                      _buildPermissionsTab(),
-                      _buildRequestsTab(),
-                      _buildAuditLogsTab()
-                    ])),
+                  : _loadError != null
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: AppEmptyState(
+                            kind: AppEmptyStateKind.offline,
+                            title: 'Unable to load team access',
+                            message: _loadError!,
+                            actionLabel: 'Retry',
+                            onAction: _loadData,
+                          ),
+                        )
+                      : TabBarView(controller: _tabController, children: [
+                          const TeamMembersTab(),
+                          _buildRolesTab(),
+                          _buildPermissionsTab(),
+                          _buildRequestsTab(),
+                          _buildAuditLogsTab()
+                        ])),
         ]));
   }
 
-  Widget _mobileEmpty(String title, String description, IconData icon) {
-    return Align(
-        alignment: Alignment.topCenter,
-        child: GPanel(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-              Icon(icon, size: 32, color: GasPalette.ink2),
-              const SizedBox(height: 12),
-              Text(title,
-                  style: gasTitle(context), textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              Text(description,
-                  style: gasBody(context), textAlign: TextAlign.center),
-            ])));
-  }
+  Widget _mobileEmpty(String title, String description, IconData icon) =>
+      SingleChildScrollView(
+        child: AppEmptyState(
+          title: title,
+          message: description,
+          icon: icon,
+          compact: true,
+        ),
+      );
 
   Widget _buildStatsCards() {
     return Row(
@@ -728,21 +741,29 @@ class _RoleManagementPageState extends State<RoleManagementPage>
   Widget _buildSearchAndFilter() {
     if (isPhoneLayout(context)) {
       return Row(children: [
-        Expanded(child: TextField(
+        Expanded(
+            child: TextField(
           onChanged: (value) => setState(() => _searchQuery = value),
-          decoration: mobileInputDecoration(context,
-              const InputDecoration(labelText: 'Search access', hintText: 'Roles, permissions or users')),
+          decoration: mobileInputDecoration(
+              context,
+              const InputDecoration(
+                  labelText: 'Search access',
+                  hintText: 'Roles, permissions or users')),
         )),
         const SizedBox(width: 10),
         ElevatedButton(
           onPressed: () async {
             final result = await showMobileDialog<bool>(
-              context: context, builder: (context) => const AddRoleDialog(),
+              context: context,
+              builder: (context) => const AddRoleDialog(),
             );
             if (result == true) _loadRoles();
           },
-          style: accountButtonStyle(context, ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16)), primary: true),
+          style: accountButtonStyle(
+              context,
+              ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16)),
+              primary: true),
           child: const Text('Add Role'),
         ),
       ]);
@@ -859,19 +880,19 @@ class _RoleManagementPageState extends State<RoleManagementPage>
           Row(
             children: [
               if (!isPhoneLayout(context)) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _getCategoryColor(role.category).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _getCategoryColor(role.category).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _getCategoryIcon(role.category),
+                    color: _getCategoryColor(role.category),
+                    size: 24,
+                  ),
                 ),
-                child: Icon(
-                  _getCategoryIcon(role.category),
-                  color: _getCategoryColor(role.category),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
+                const SizedBox(width: 16),
               ],
               Expanded(
                 child: Column(
@@ -882,16 +903,21 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                       style: accountInter(
                         context,
                         fontSize: isPhoneLayout(context) ? 15 : 18,
-                        fontWeight: isPhoneLayout(context) ? FontWeight.w600 : FontWeight.w700,
+                        fontWeight: isPhoneLayout(context)
+                            ? FontWeight.w600
+                            : FontWeight.w700,
                         color: Constants.ctaColorLight,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: isPhoneLayout(context) ? EdgeInsets.zero : const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                      padding: isPhoneLayout(context)
+                          ? EdgeInsets.zero
+                          : const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isPhoneLayout(context) ? Colors.transparent
+                        color: isPhoneLayout(context)
+                            ? Colors.transparent
                             : _getCategoryColor(role.category).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
@@ -901,7 +927,9 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                           context,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isPhoneLayout(context) ? GasPalette.ink2 : _getCategoryColor(role.category),
+                          color: isPhoneLayout(context)
+                              ? GasPalette.ink2
+                              : _getCategoryColor(role.category),
                         ),
                       ),
                     ),
@@ -1053,20 +1081,20 @@ class _RoleManagementPageState extends State<RoleManagementPage>
           Row(
             children: [
               if (!isPhoneLayout(context)) ...[
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color:
-                      _getPermissionTypeColor(permission.type).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _getPermissionTypeColor(permission.type)
+                        .withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    _getPermissionTypeIcon(permission.type),
+                    color: _getPermissionTypeColor(permission.type),
+                    size: 20,
+                  ),
                 ),
-                child: Icon(
-                  _getPermissionTypeIcon(permission.type),
-                  color: _getPermissionTypeColor(permission.type),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
               ],
               Expanded(
                 child: Column(

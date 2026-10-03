@@ -1,3 +1,4 @@
+import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
 import '../gasmon/gas_widgets.dart';
@@ -566,14 +567,14 @@ class ReportApiService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (data is! Map || data['success'] == false) throw Exception('Report history unavailable');
         return data['reports'] ?? [];
       } else {
         print('Failed to load report history. Status: ${response.statusCode}');
         throw Exception('Failed to load report history');
       }
     } catch (e) {
-      print('ERROR in getReportHistory: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -735,6 +736,7 @@ class _ReportsState extends State<Reports> {
   // Report history from backend
   List<dynamic> downloadedReports = [];
   bool isLoadingReports = false;
+  bool _reportHistoryFailed = false;
   int currentReportPage = 0;
   int reportsPerPage = 10;
 
@@ -784,25 +786,37 @@ class _ReportsState extends State<Reports> {
   Future<void> _loadReportHistory() async {
     setState(() {
       isLoadingReports = true;
+      _reportHistoryFailed = false;
     });
 
     try {
       final reports = await ReportApiService.getReportHistory(
         businessId: widget.companyId,
         limit: 100,
-      );
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
       setState(() {
         downloadedReports = reports;
         currentReportPage = 0;
+        downloadsCurrentPage = 0;
+        generatedCurrentPage = 0;
         isLoadingReports = false;
       });
     } catch (e) {
-      print('Error loading report history: $e');
+      if (!mounted) return;
       setState(() {
         isLoadingReports = false;
+        _reportHistoryFailed = true;
       });
     }
   }
+
+  Widget _buildReportHistoryError() => AppEmptyState(
+    kind: AppEmptyStateKind.offline,
+    title: 'Reports could not be loaded',
+    message: 'Check your internet connection and try again. Your saved reports are still available once connected.',
+    actionLabel: 'Try again', onAction: _loadReportHistory, compact: true,
+  );
 
   // Remove old static list - now using dynamic data from backend
   /*final List<DownloadedReport> downloadedReports = [
@@ -3570,7 +3584,27 @@ class _ReportsState extends State<Reports> {
     });
   }
 
+  bool _showUnavailableReportLibrary() {
+    if (!_reportHistoryFailed && !isLoadingReports) return false;
+    showMobileDialog(context: context, builder: (dialogContext) => MobileAlertDialog(
+      title: const Text('Report library'),
+      content: SizedBox(width: 360, child: isLoadingReports
+        ? const Padding(padding: EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
+            CircularProgressIndicator(), SizedBox(height: 16), Text('Loading reports…'),
+          ]))
+        : AppEmptyState(kind: AppEmptyStateKind.offline, compact: true,
+            title: 'Reports could not be loaded',
+            message: 'Check your internet connection and try again.',
+            actionLabel: 'Try again', onAction: () {
+              Navigator.of(dialogContext).pop();
+              _loadReportHistory();
+            })),
+    ));
+    return true;
+  }
+
   void _showDownloadsDialog() {
+    if (_showUnavailableReportLibrary()) return;
     showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -3987,6 +4021,7 @@ class _ReportsState extends State<Reports> {
   }
 
   void _showGeneratedReportsDialog() {
+    if (_showUnavailableReportLibrary()) return;
     showMobileDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -9295,7 +9330,9 @@ class _ReportsState extends State<Reports> {
                                 ),
                               ),
                             )
-                          : downloadedReports.isEmpty
+                          : _reportHistoryFailed
+                              ? _buildReportHistoryError()
+                              : downloadedReports.isEmpty
                               ? Container(
                                   padding: EdgeInsets.all(48),
                                   child: Center(
@@ -9462,7 +9499,7 @@ class _ReportsState extends State<Reports> {
             padding: const EdgeInsets.all(8),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(child: _phoneReportLibraryRow(context, 'Generated', '${generatedReports.length}', _showGeneratedReportsDialog)),
-              Expanded(child: _phoneReportLibraryRow(context, 'Downloads', '${downloadedReports.length}', _showDownloadsDialog)),
+              Expanded(child: _phoneReportLibraryRow(context, 'Downloads', _reportHistoryFailed || isLoadingReports ? '—' : '${downloadedReports.length}', _showDownloadsDialog)),
               Expanded(child: _phoneReportLibraryRow(context, 'Scheduled', '${scheduledReports.length}', _showScheduledReportsDialog)),
             ]),
           ),
@@ -9514,11 +9551,14 @@ class _ReportsState extends State<Reports> {
               const SizedBox(height: 16),
               Text('Loading reports…', style: gasBody(context)),
             ]))
+          else if (_reportHistoryFailed)
+            GPanel(child: _buildReportHistoryError())
           else if (downloadedReports.isEmpty)
-            GPanel(
-              padding: const EdgeInsets.all(16),
-              child: Text('No reports yet. Create one using the options above.', style: gasBody(context)),
-            )
+            const GPanel(child: AppEmptyState(
+              kind: AppEmptyStateKind.records, compact: true,
+              title: 'No reports yet',
+              message: 'Create a report above to explore your device readings and activity.',
+            ))
           else ...[
             GPanel(padding: EdgeInsets.zero, child: Column(children: [
               for (final entry in downloadedReports.sublist(start, end).asMap().entries) ...[

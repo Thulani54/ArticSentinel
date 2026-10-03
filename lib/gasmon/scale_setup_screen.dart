@@ -252,7 +252,7 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
       try {
         final r = await GasApi.load(
             deviceId: deviceId, demoKey: widget.device.deviceId);
-        final latest = r.data.live ? r.data.latest : null;
+        final latest = r.data.hasReadings ? r.data.latest : null;
         final since =
             (_sentAt ?? DateTime.now()).subtract(const Duration(minutes: 1));
         if (latest != null && latest.at.isAfter(since)) {

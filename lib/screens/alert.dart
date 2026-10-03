@@ -1,6 +1,7 @@
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
 import '../gasmon/gas_widgets.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
@@ -56,7 +57,7 @@ class AlertApiService {
       Uri.parse('${_baseUrl}api/alerts/list/'),
       headers: await _getHeaders(),
       body: jsonEncode(requestData),
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -76,7 +77,7 @@ class AlertApiService {
         "business_id": businessId,
         "status": status,
       }),
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -97,7 +98,7 @@ class AlertApiService {
         "business_id": businessId,
         "severity": severity,
       }),
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -199,7 +200,7 @@ class AlertApiService {
       body: jsonEncode({
         "business_id": businessId,
       }),
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -217,7 +218,7 @@ class AlertApiService {
         "business_id": businessId,
         "alert_id": alertId,
       }),
-    );
+    ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -256,6 +257,8 @@ class _NotificationPageState extends State<NotificationPage> {
   String navStringId = "all";
   bool _isLoading = true;
   bool _isLoadingStatistics = true;
+  String? _loadError;
+  bool _statisticsFailed = false;
 
   @override
   void initState() {
@@ -267,6 +270,7 @@ class _NotificationPageState extends State<NotificationPage> {
   Future<void> _loadAlertStatistics() async {
     setState(() {
       _isLoadingStatistics = true;
+      _statisticsFailed = false;
     });
 
     try {
@@ -276,12 +280,14 @@ class _NotificationPageState extends State<NotificationPage> {
         _updateNavigationList();
       }
     } catch (e) {
-      print('Error loading alert statistics: $e');
+      if (!mounted) return;
+      _statisticsFailed = true;
       _setDefaultNavigation();
     } finally {
-      setState(() {
-        _isLoadingStatistics = false;
-      });
+      if (mounted)
+        setState(() {
+          _isLoadingStatistics = false;
+        });
     }
   }
 
@@ -317,6 +323,7 @@ class _NotificationPageState extends State<NotificationPage> {
   Future<void> _loadAlerts() async {
     setState(() {
       _isLoading = true;
+      _loadError = null;
     });
 
     try {
@@ -348,20 +355,24 @@ class _NotificationPageState extends State<NotificationPage> {
         currentAlerts = response.alerts;
       } else {
         currentAlerts = [];
+        _loadError =
+            'Your business is unavailable. Sign in again to load alerts.';
       }
     } catch (e) {
-      print('Error loading alerts: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load alerts: ${e.toString()}'),
+      if (!mounted) return;
+      _loadError = 'Check your connection and try again.';
+      if (!isPhoneLayout(context)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Unable to load alerts. Try again.'),
           backgroundColor: Colors.red,
-        ),
-      );
+        ));
+      }
       currentAlerts = [];
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+        });
     }
   }
 
@@ -874,13 +885,17 @@ class _NotificationPageState extends State<NotificationPage> {
       color: GasPalette.page,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           MobileScreenHeader(
             title: 'Alerts',
-            trailing: _isLoading ? null : Padding(
-              padding: const EdgeInsets.only(top: 7),
-              child: Text('${currentAlerts.length} shown', style: gasSmall(context)),
-            ),
+            trailing: _isLoading || _loadError != null
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.only(top: 7),
+                    child: Text('${currentAlerts.length} shown',
+                        style: gasSmall(context)),
+                  ),
             padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
           ),
           if (_isLoadingStatistics)
@@ -894,17 +909,23 @@ class _NotificationPageState extends State<NotificationPage> {
                     padding: const EdgeInsets.only(right: 6),
                     child: ChoiceChip(
                       selected: navIndex == entry.key,
-                      label: Text('${entry.value.itemName}  ${entry.value.itemTotal}'),
+                      label: Text(_statisticsFailed
+                          ? entry.value.itemName
+                          : '${entry.value.itemName}  ${entry.value.itemTotal}'),
                       selectedColor: const Color(0xFFE9EDF4),
                       backgroundColor: GasPalette.panel,
                       showCheckmark: false,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32)),
                       side: const BorderSide(color: GasPalette.border),
                       labelStyle: gasSmall(context).copyWith(
-                        color: navIndex == entry.key ? GasPalette.primary : GasPalette.ink2,
+                        color: navIndex == entry.key
+                            ? GasPalette.primary
+                            : GasPalette.ink2,
                         fontWeight: FontWeight.w600,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
                       onSelected: (_) {
                         setState(() {
                           navIndex = entry.key;
@@ -918,7 +939,8 @@ class _NotificationPageState extends State<NotificationPage> {
             ),
           const SizedBox(height: 12),
           if (_isLoading)
-            GPanel(child: Padding(
+            GPanel(
+                child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Column(children: [
                 const CircularProgressIndicator(color: GasPalette.primary),
@@ -926,35 +948,60 @@ class _NotificationPageState extends State<NotificationPage> {
                 Text('Loading alerts…', style: gasBody(context)),
               ]),
             ))
+          else if (_loadError != null)
+            AppEmptyState(
+              kind: AppEmptyStateKind.offline,
+              title: 'Unable to load alerts',
+              message: _loadError!,
+              actionLabel: 'Retry',
+              onAction: _loadAlerts,
+            )
           else if (currentAlerts.isEmpty)
-            GPanel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Icon(Icons.notifications_none_rounded, color: GasPalette.ink2, size: 28),
-              const SizedBox(height: 14),
-              Text('No alerts in this category', style: gasTitle(context)),
-              const SizedBox(height: 6),
-              Text('Reported equipment alerts will appear here.', style: gasBody(context)),
-            ]))
+            const AppEmptyState(
+              kind: AppEmptyStateKind.alerts,
+              title: 'No alerts in this category',
+              message: 'Reported equipment alerts will appear here.',
+            )
           else
-            GPanel(padding: EdgeInsets.zero, child: Material(
-              type: MaterialType.transparency,
-              child: Column(children: [
-                for (final entry in currentAlerts.asMap().entries) ...[
-                  if (entry.key > 0) const Divider(height: 1, color: GasPalette.border),
-                  _phoneAlertRow(context, entry.value),
-                ],
-              ]),
-            )),
-          const SizedBox(height: 16),
-          GPanel(padding: EdgeInsets.zero, child: Material(
-            type: MaterialType.transparency,
-            child: ExpansionTile(
-              maintainState: true,
-              shape: const Border(),
-              collapsedShape: const Border(),
-              title: Text('AI alert preferences', style: gasBody(context).copyWith(color: GasPalette.ink, fontWeight: FontWeight.w600)),
-              children: const [AIAlertsSettingsTile()],
+            GPanel(
+                padding: EdgeInsets.zero,
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Column(children: [
+                    for (final entry in currentAlerts.asMap().entries) ...[
+                      if (entry.key > 0)
+                        const Divider(height: 1, color: GasPalette.border),
+                      _phoneAlertRow(context, entry.value),
+                    ],
+                  ]),
+                )),
+          if (_statisticsFailed && _loadError == null) ...[
+            const SizedBox(height: 12),
+            AppEmptyState(
+              kind: AppEmptyStateKind.offline,
+              title: 'Alert totals unavailable',
+              message:
+                  'Your alerts are shown. Retry to update category totals.',
+              actionLabel: 'Retry totals',
+              onAction: _loadAlertStatistics,
+              compact: true,
             ),
-          )),
+          ],
+          const SizedBox(height: 16),
+          GPanel(
+              padding: EdgeInsets.zero,
+              child: Material(
+                type: MaterialType.transparency,
+                child: ExpansionTile(
+                  maintainState: true,
+                  shape: const Border(),
+                  collapsedShape: const Border(),
+                  title: Text('AI alert preferences',
+                      style: gasBody(context).copyWith(
+                          color: GasPalette.ink, fontWeight: FontWeight.w600)),
+                  children: const [AIAlertsSettingsTile()],
+                ),
+              )),
           const SizedBox(height: 16),
         ]),
       ),
@@ -962,32 +1009,49 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Widget _phoneAlertRow(BuildContext context, Alert alert) => InkWell(
-    onTap: () => _showAlertDetails(alert),
-    borderRadius: BorderRadius.circular(14),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(child: Text(alert.title, style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600))),
-          const SizedBox(width: 10),
-          const Icon(Icons.chevron_right_rounded, size: 20, color: GasPalette.ink2),
-        ]),
-        const SizedBox(height: 5),
-        Wrap(spacing: 8, runSpacing: 3, children: [
-          Text(alert.deviceName ?? 'Device ID: ${alert.deviceId}', style: gasSmall(context)),
-          Text('· ${timeAgo.format(alert.triggeredDateTime)}', style: gasSmall(context)),
-        ]),
-        const SizedBox(height: 8),
-        Text(alert.message, style: gasBody(context), maxLines: 2, overflow: TextOverflow.ellipsis),
-        const SizedBox(height: 12),
-        Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-          _phoneAlertBadge(context, alert.severityDisplay, alert.severityColor),
-          _phoneAlertBadge(context, alert.statusDisplay, alert.statusColor),
-          Text('Duration: ${alert.duration}', style: gasSmall(context).copyWith(fontSize: 10.5)),
-        ]),
-      ]),
-    ),
-  );
+        onTap: () => _showAlertDetails(alert),
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                  child: Text(alert.title,
+                      style: gasTitle(context).copyWith(
+                          fontSize: 14, fontWeight: FontWeight.w600))),
+              const SizedBox(width: 10),
+              const Icon(Icons.chevron_right_rounded,
+                  size: 20, color: GasPalette.ink2),
+            ]),
+            const SizedBox(height: 5),
+            Wrap(spacing: 8, runSpacing: 3, children: [
+              Text(alert.deviceName ?? 'Device ID: ${alert.deviceId}',
+                  style: gasSmall(context)),
+              Text('· ${timeAgo.format(alert.triggeredDateTime)}',
+                  style: gasSmall(context)),
+            ]),
+            const SizedBox(height: 8),
+            Text(alert.message,
+                style: gasBody(context),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 12),
+            Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _phoneAlertBadge(
+                      context, alert.severityDisplay, alert.severityColor),
+                  _phoneAlertBadge(
+                      context, alert.statusDisplay, alert.statusColor),
+                  Text('Duration: ${alert.duration}',
+                      style: gasSmall(context).copyWith(fontSize: 10.5)),
+                ]),
+          ]),
+        ),
+      );
 
   Widget _phoneAlertBadge(BuildContext context, String label, Color color) =>
       Container(
@@ -996,8 +1060,8 @@ class _NotificationPageState extends State<NotificationPage> {
             color: color.withValues(alpha: .1),
             borderRadius: BorderRadius.circular(32)),
         child: Text(label,
-            style: gasSmall(context)
-                .copyWith(color: color, fontWeight: FontWeight.w500, fontSize: 10.5)),
+            style: gasSmall(context).copyWith(
+                color: color, fontWeight: FontWeight.w500, fontSize: 10.5)),
       );
 
   Color _getSeverityColor(String category) {
@@ -1061,20 +1125,22 @@ class AlertDetailsDialog extends StatelessWidget {
             // Header Section
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: mobileFlatDecoration(context, BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    alert.severityColor.withOpacity(0.1),
-                    alert.severityColor.withOpacity(0.05),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              )),
+              decoration: mobileFlatDecoration(
+                  context,
+                  BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        alert.severityColor.withOpacity(0.1),
+                        alert.severityColor.withOpacity(0.05),
+                      ],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                  )),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1324,7 +1390,7 @@ class AlertDetailsDialog extends StatelessWidget {
                           horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
-                            isPhoneLayout(context) ? 32 :12),
+                            isPhoneLayout(context) ? 32 : 12),
                       ),
                     ),
                     child: Text(
@@ -1354,13 +1420,15 @@ class AlertDetailsDialog extends StatelessWidget {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                        backgroundColor: isPhoneLayout(context)
+                            ? GasPalette.primary
+                            : Constants.ctaColorLight,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
-                              isPhoneLayout(context) ? 32 :12),
+                              isPhoneLayout(context) ? 32 : 12),
                         ),
                         elevation: 0,
                         shadowColor: Colors.transparent,
@@ -1385,13 +1453,15 @@ class AlertDetailsDialog extends StatelessWidget {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                        backgroundColor: isPhoneLayout(context)
+                            ? GasPalette.primary
+                            : Constants.ctaColorLight,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
-                              isPhoneLayout(context) ? 32 :12),
+                              isPhoneLayout(context) ? 32 : 12),
                         ),
                         elevation: 0,
                         shadowColor: Colors.transparent,
@@ -1408,8 +1478,7 @@ class AlertDetailsDialog extends StatelessWidget {
   }
 
   Widget _buildPhoneDetails(BuildContext context) {
-    Widget section(
-      String title, List<Widget> children) => GPanel(
+    Widget section(String title, List<Widget> children) => GPanel(
           padding: const EdgeInsets.all(16),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -1511,8 +1580,7 @@ class AlertDetailsDialog extends StatelessWidget {
               child: const Text('Close')),
         ]),
       ),
-    )
-    );
+    ));
   }
 
   Widget _buildModernInfoCard(
@@ -1582,57 +1650,53 @@ class AlertDetailsDialog extends StatelessWidget {
     return LayoutBuilder(builder: (context, constraints) {
       if (isPhoneLayout(context)) {
         return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child:
-              Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-            Text(label, style: gasSmall(context)
-          ),
-          const SizedBox(height: 4), Text(value,
-              style: gasBody(context)
-                    .copyWith(
-                color: valueColor ?? GasPalette.ink)),
+          padding: const EdgeInsets.only(bottom: 16),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: gasSmall(context)),
+            const SizedBox(height: 4),
+            Text(value,
+                style: gasBody(context)
+                    .copyWith(color: valueColor ?? GasPalette.ink)),
           ]),
         );
       }
       return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: const Color(0xFF94A3B8),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF64748B),
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: const Color(0xFF94A3B8),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 120,
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF64748B),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: valueColor ?? const Color(0xFF1E293B),
+            Expanded(
+              child: Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: valueColor ?? const Color(0xFF1E293B),
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-    );
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildModernStatusRow(String label, bool status, IconData icon) {
@@ -1650,70 +1714,69 @@ class AlertDetailsDialog extends StatelessWidget {
           ]),
         );
       }
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: const Color(0xFF94A3B8),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF64748B),
-              ),
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: const Color(0xFF94A3B8),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: status
-                  ? Constants.ctaColorLight.withOpacity(0.1)
-                  : const Color(0xFFEF4444).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: status
-                    ? Constants.ctaColorLight.withOpacity(0.2)
-                    : const Color(0xFFEF4444).withOpacity(0.2),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  status ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                  size: 14,
-                  color: status
-                      ? Constants.ctaColorLight
-                      : const Color(0xFFEF4444),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 120,
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF64748B),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  status ? 'Sent' : 'Not Sent',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: status
+                    ? Constants.ctaColorLight.withOpacity(0.1)
+                    : const Color(0xFFEF4444).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: status
+                      ? Constants.ctaColorLight.withOpacity(0.2)
+                      : const Color(0xFFEF4444).withOpacity(0.2),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    status ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                    size: 14,
                     color: status
                         ? Constants.ctaColorLight
                         : const Color(0xFFEF4444),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    status ? 'Sent' : 'Not Sent',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: status
+                          ? Constants.ctaColorLight
+                          : const Color(0xFFEF4444),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-    );
+          ],
+        ),
+      );
+    });
   }
 
   String _formatDateTime(String dateTimeString) {

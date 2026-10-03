@@ -6,6 +6,7 @@ import 'package:iconsax/iconsax.dart';
 
 import '../constants/Constants.dart';
 import '../gasmon/gas_theme.dart';
+import '../services/auth_session.dart';
 
 class SideBarItems {
   int id;
@@ -35,6 +36,14 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _sidebarAnimation;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _signingOut = false;
+
+  Future<void> _signOut() async {
+    if (_signingOut) return;
+    setState(() => _signingOut = true);
+    await AuthSession.signOut();
+    if (mounted) context.go('/login');
+  }
 
   // Helper method to check if screen is mobile
   bool _isMobile(BuildContext context) {
@@ -93,6 +102,8 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
     SideBarItems(8, "access", "Access Management", CupertinoIcons.person_2),
     SideBarItems(9, "settings", "Settings", CupertinoIcons.gear_alt),
     SideBarItems(10, "help", "Help & Support", CupertinoIcons.question_circle),
+    SideBarItems(12, "products", "Products", Iconsax.box),
+    SideBarItems(13, "device_setup", "Connect a device", Iconsax.link),
   ];
 
   static const _mobileDrawerIcons = [
@@ -109,6 +120,8 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
     Iconsax.people,
     Iconsax.setting_2,
     Iconsax.message_question,
+    Iconsax.box,
+    Iconsax.link,
   ];
 
   int get sideColorIndex {
@@ -144,6 +157,10 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
         return 11;
       case '/help':
         return 12;
+      case '/products':
+        return 13;
+      case '/device-setup':
+        return 14;
       default:
         return 0;
     }
@@ -190,6 +207,12 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
         break;
       case "help":
         context.go('/help');
+        break;
+      case "products":
+        context.push('/products');
+        break;
+      case "device_setup":
+        context.push('/device-setup');
         break;
     }
   }
@@ -274,7 +297,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
           Padding(
               padding: const EdgeInsets.all(16),
               child: OutlinedButton.icon(
-                onPressed: () => context.go('/login'),
+                onPressed: _signingOut ? null : _signOut,
                 icon: const Icon(Iconsax.logout, size: 18),
                 label: const Text('Sign out'),
               )),
@@ -468,9 +491,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                         ),
                 ),
               ),
-              onTap: () {
-                context.go('/login');
-              },
+              onTap: _signingOut ? null : _signOut,
             ),
           ],
         ),

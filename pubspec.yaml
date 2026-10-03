@@ -101,6 +101,7 @@ flutter:
   assets:
     - lib/assets/artic_logo.png
     - lib/assets/devices/
+    - lib/assets/states/
     # Register as assets as well so google_fonts resolves these offline.
     - lib/assets/fonts/inter/
     - lib/assets/fonts/lato/

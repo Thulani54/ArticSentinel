@@ -17,7 +17,7 @@ void main() {
     expect(error, isNot(contains('GATT_ERROR')));
   });
   for (final width in [320.0, 430.0]) {
-    for (final live in [false, true]) {
+    for (final live in [true]) {
       testWidgets('gas view at ${width}px stays in its layout with live=$live',
           (tester) async {
         tester.view.physicalSize = Size(width, 800);
@@ -50,9 +50,9 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         // Same sections as the website's gas page.
-        expect(find.text(live ? 'LIVE SCALE' : 'DEMO DATA'), findsOneWidget);
+        expect(find.text('DEMO DATA'), findsNothing);
         expect(find.textContaining('Showing demo data.', findRichText: true),
-            live ? findsNothing : findsOneWidget);
+            findsNothing);
         expect(find.text('Current level'), findsOneWidget);
         expect(find.text('Readings'), findsOneWidget);
         for (final grid in find.byType(GTileGrid).evaluate()) {

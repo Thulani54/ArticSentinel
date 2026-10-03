@@ -1,3 +1,4 @@
+import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
 import '../gasmon/gas_widgets.dart';
@@ -41,6 +42,7 @@ class _UnitManagementState extends State<UnitManagement>
   List<Unit> _filteredUnits = [];
   Map<String, dynamic> _statistics = {};
   bool _isLoading = true;
+  bool _loadFailed = false;
   String _selectedFilter = 'All';
   bool _isGridView = false;
 
@@ -105,6 +107,7 @@ class _UnitManagementState extends State<UnitManagement>
     print(
         '_loadUnits called for Unit Management with showLoading: $showLoading at ${DateTime.now()}');
 
+    if (showLoading && mounted) setState(() => _loadFailed = false);
     if (showLoading) {
       setState(() {
         _isLoading = true;
@@ -114,10 +117,11 @@ class _UnitManagementState extends State<UnitManagement>
     try {
       int? businessId = Constants.myBusiness.businessUid;
       if (businessId > 0) {
-        final result = await UnitApiService.fetchUnitsManagement(businessId);
+        final result = await UnitApiService.fetchUnitsManagement(businessId).timeout(const Duration(seconds: 20));
 
         if (mounted) {
           setState(() {
+            _loadFailed = false;
             _allUnits = result['units'];
             _statistics = result['statistics'];
             _filteredUnits = List.from(_allUnits);
@@ -137,6 +141,7 @@ class _UnitManagementState extends State<UnitManagement>
       } else {
         if (mounted) {
           setState(() {
+            _loadFailed = false;
             _allUnits = [];
             _filteredUnits = [];
             _statistics = {};
@@ -147,10 +152,7 @@ class _UnitManagementState extends State<UnitManagement>
     } catch (e) {
       print('Error loading Unit Management data: $e');
       if (mounted) {
-        setState(() => _isLoading = false);
-        if (showLoading) {
-          _showErrorSnackBar('Failed to load units: ${e.toString()}');
-        }
+        setState(() { _isLoading = false; _loadFailed = true; });
       }
     }
   }
@@ -287,12 +289,12 @@ class _UnitManagementState extends State<UnitManagement>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Statistics Cards
-                          _buildStatisticsSection(),
+                          if (!_loadFailed && !_isLoading) _buildStatisticsSection(),
 
                           SizedBox(height: isPhoneLayout(context) ? 24 : 32),
 
                           // Search and Controls
-                          _buildSearchAndControls(),
+                          if (!_loadFailed && !_isLoading) _buildSearchAndControls(),
 
                           const SizedBox(height: 24),
 
@@ -391,6 +393,7 @@ class _UnitManagementState extends State<UnitManagement>
               ),
             ),
             const SizedBox(height: 12),
+            if (!_loadFailed && !_isLoading) ...[
             SizedBox(
               height: 44,
               child: ListView.separated(
@@ -481,8 +484,11 @@ class _UnitManagementState extends State<UnitManagement>
               ],
             ),
             const SizedBox(height: 8),
+            ],
             _isLoading
                 ? _buildLoadingState()
+                : _loadFailed
+                ? _buildLoadError()
                 : _filteredUnits.isEmpty
                 ? _buildEmptyState()
                 : _buildMobileUnitList(),
@@ -859,7 +865,9 @@ class _UnitManagementState extends State<UnitManagement>
         const SizedBox(height: 16),
         _isLoading
             ? _buildLoadingState()
-            : _filteredUnits.isEmpty
+            : _loadFailed
+                ? _buildLoadError()
+                : _filteredUnits.isEmpty
                 ? _buildEmptyState()
                 : _isGridView
                     ? _buildGridView()
@@ -903,73 +911,25 @@ class _UnitManagementState extends State<UnitManagement>
     );
   }
 
+  Widget _buildLoadError() => GPanel(child: AppEmptyState(
+    kind: AppEmptyStateKind.offline, title: 'Units could not be loaded',
+    message: 'Check your internet connection and try again.',
+    actionLabel: 'Try again', onAction: _loadUnits,
+  ));
+
   Widget _buildEmptyState() {
-    return Container(
-      constraints: BoxConstraints(
-        minHeight: isPhoneLayout(context) ? 168 : 240,
-      ),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: isPhoneLayout(context)
-            ? Border.all(color: GasPalette.border)
-            : null,
-        borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.precision_manufacturing_rounded,
-              size: isPhoneLayout(context) ? 32 : 64,
-              color: Colors.grey.shade400,
-            ),
-            SizedBox(height: isPhoneLayout(context) ? 12 : 16),
-            Text(
-              'No units found',
-              style: GoogleFonts.inter(
-                fontSize: isPhoneLayout(context) ? 16 : 18,
-                fontWeight: FontWeight.w600,
-                color: isPhoneLayout(context)
-                    ? GasPalette.ink2
-                    : const Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _searchController.text.isNotEmpty || _selectedFilter != 'All'
-                  ? 'Try another search or clear the filters.'
-                  : 'Get started by adding your first unit',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF9CA3AF),
-              ),
-            ),
-            if (_searchController.text.isNotEmpty ||
-                _selectedFilter != 'All') ...[
-              SizedBox(height: isPhoneLayout(context) ? 12 : 16),
-              OutlinedButton(
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _selectedFilter = 'All');
-                  _filterUnits();
-                },
-                child: const Text('Clear filters'),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+    final filtered = _searchController.text.isNotEmpty || _selectedFilter != 'All';
+    return GPanel(child: AppEmptyState(
+      kind: filtered ? AppEmptyStateKind.results : AppEmptyStateKind.devices,
+      title: filtered ? 'No matching units' : 'No units yet',
+      message: filtered ? 'Try another search or clear your filters.' : 'Add a unit to organise your equipment and its maintenance.',
+      actionLabel: filtered ? 'Clear filters' : 'Add unit',
+      onAction: filtered ? () {
+        _searchController.clear();
+        setState(() => _selectedFilter = 'All');
+        _filterUnits();
+      } : _addUnit,
+    ));
   }
 
   Widget _buildMobileUnitCard(Unit unit) {
@@ -5805,13 +5765,14 @@ class UnitApiService {
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
+      if (responseData['success'] == false) throw Exception('Units unavailable');
       List<dynamic> unitList = responseData['units'] ?? [];
       List<Unit> units =
           unitList.map((dynamic item) => Unit.fromJson(item)).toList();
 
       return {
         'units': units,
-        'statistics': responseData['statistics'] ?? {},
+        'statistics': Map<String, dynamic>.from(responseData['statistics'] as Map? ?? {}),
       };
     } else {
       throw Exception('Failed to load units: ${response.body}');

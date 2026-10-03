@@ -1,3 +1,4 @@
+import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
 import '../widgets/mobile_forms.dart';
@@ -24,8 +25,7 @@ class EnhancedGeoFencing extends StatefulWidget {
 class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
     with SingleTickerProviderStateMixin {
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
-  final Completer<GoogleMapController> _mapController =
-      Completer<GoogleMapController>();
+  GoogleMapController? _mapController;
   late TabController _tabController;
 
   // Data
@@ -43,6 +43,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   bool isLoadingUnits = false;
   bool isLoadingSuppliers = false;
   String error = '';
+  bool _suppliersFailed = false;
 
   // Auto-refresh functionality
   Timer? _refreshTimer;
@@ -90,7 +91,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
       });
     } catch (e) {
       setState(() {
-        error = 'Failed to load location data: ${e.toString()}';
+        error = 'Location data could not be loaded. Check your connection and retry.';
       });
     }
   }
@@ -115,7 +116,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
       request.body = json.encode({"business_id": businessId});
       request.headers.addAll(headers);
 
-      http.StreamedResponse response = await request.send();
+      http.StreamedResponse response = await request.send().timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         String responseBody = await response.stream.bytesToString();
@@ -133,7 +134,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
       }
     } catch (e) {
       setState(() {
-        error = 'Failed to load units: ${e.toString()}';
+        error = 'Locations could not be loaded. Check your connection and retry.';
       });
     } finally {
       setState(() {
@@ -145,6 +146,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   Future<void> _loadSuppliers() async {
     setState(() {
       isLoadingSuppliers = true;
+      _suppliersFailed = false;
     });
 
     try {
@@ -164,18 +166,19 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
       });
       request.headers.addAll(headers);
 
-      http.StreamedResponse response = await request.send();
+      http.StreamedResponse response = await request.send().timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         String responseBody = await response.stream.bytesToString();
         Map<String, dynamic> data = json.decode(responseBody);
 
-        if (data['success']) {
-          suppliers = data['suppliers'];
-        }
+        if (data['success'] != true) throw Exception('Suppliers unavailable');
+        suppliers = data['suppliers'];
+      } else {
+        throw Exception('Suppliers unavailable');
       }
-    } catch (e) {
-      print('Failed to load suppliers: $e');
+    } catch (_) {
+      if (mounted) setState(() => _suppliersFailed = true);
     } finally {
       setState(() {
         isLoadingSuppliers = false;
@@ -239,7 +242,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
 
   Future<void> _animateToUnit(Unit unit) async {
     if (unit.latitude != null && unit.longitude != null) {
-      final GoogleMapController controller = await _mapController.future;
+      final controller = _mapController;
+      if (controller == null) return;
       controller.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(
@@ -485,7 +489,18 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
     );
   }
 
+  Widget _locationState() => SingleChildScrollView(child: AppEmptyState(
+    kind: error.isNotEmpty ? AppEmptyStateKind.offline : AppEmptyStateKind.devices,
+    title: error.isNotEmpty ? 'Locations could not be loaded' : 'No locations yet',
+    message: error.isNotEmpty ? 'Check your internet connection and try again.' : 'Add a unit with location information to see your equipment on the map.',
+    actionLabel: 'Refresh', onAction: _loadData,
+  ));
+
   Widget _buildMapView() {
+    if (!isLoadingUnits && (error.isNotEmpty || markers.isEmpty)) {
+      _mapController = null;
+      return _locationState();
+    }
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -568,7 +583,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                       initialCameraPosition: _defaultLocation,
                       markers: markers.values.toSet(),
                       onMapCreated: (GoogleMapController controller) {
-                        _mapController.complete(controller);
+                        _mapController = controller;
+                        if (selectedUnit != null) _animateToUnit(selectedUnit!);
                       },
                       myLocationButtonEnabled: false,
                       myLocationEnabled: true,
@@ -656,45 +672,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
       );
     }
 
-    if (unitList.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.location_off_rounded,
-                size: 48,
-                color: Colors.grey.shade400,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No units found',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Units will appear here once they are configured with location data',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF9CA3AF),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    if (error.isNotEmpty || unitList.isEmpty) return _locationState();
 
     return Column(
       children: [
@@ -779,57 +757,13 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
       );
     }
 
-    if (suppliers.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.business_center_rounded,
-                size: 48,
-                color: Colors.grey.shade400,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No suppliers found',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Local suppliers will be displayed here based on your location',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF9CA3AF),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: _loadSuppliers,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Refresh'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.ctaColorLight,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+    if (_suppliersFailed || suppliers.isEmpty) {
+      return SingleChildScrollView(child: AppEmptyState(
+        kind: _suppliersFailed ? AppEmptyStateKind.offline : AppEmptyStateKind.records,
+        title: _suppliersFailed ? 'Suppliers could not be loaded' : 'No suppliers found',
+        message: _suppliersFailed ? 'Check your internet connection and try again.' : 'Local suppliers will appear here when available for your location.',
+        actionLabel: 'Try again', onAction: _loadSuppliers,
+      ));
     }
 
     return Column(
@@ -1947,7 +1881,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
 
   Future<void> _centerOnUnit(Unit unit) async {
     if (unit.latitude != null && unit.longitude != null) {
-      final GoogleMapController controller = await _mapController.future;
+      final controller = _mapController;
+      if (controller == null) return;
       await controller.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(

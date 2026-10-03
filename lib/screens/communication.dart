@@ -1,4 +1,5 @@
 import '../widgets/mobile_screen.dart';
+import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_forms.dart';
 import '../gasmon/gas_theme.dart';
 import '../gasmon/gas_widgets.dart';
@@ -50,6 +51,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
   @override
   void dispose() {
     _tabController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -69,13 +71,15 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
         _loadStats(),
       ]);
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _error = 'Failed to load data: ${e.toString()}';
+        _error = 'Check your connection and try again.';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+        });
     }
   }
 
@@ -83,11 +87,15 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/communication/providers/'),
       headers: ApiConfig.headers,
-    );
+    ).timeout(const Duration(seconds: 20));
     print("sghsahj ${response.body}");
 
+    if (response.statusCode != 200) {
+      throw StateError('Communication request failed');
+    }
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      if (!mounted) return;
       setState(() {
         _providers = data['providers'] ?? [];
       });
@@ -98,10 +106,14 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/communication/templates/'),
       headers: ApiConfig.headers,
-    );
+    ).timeout(const Duration(seconds: 20));
 
+    if (response.statusCode != 200) {
+      throw StateError('Communication request failed');
+    }
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      if (!mounted) return;
       setState(() {
         _templates = data['templates'] ?? [];
       });
@@ -112,10 +124,14 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/communication/logs/?per_page=50'),
       headers: ApiConfig.headers,
-    );
+    ).timeout(const Duration(seconds: 20));
 
+    if (response.statusCode != 200) {
+      throw StateError('Communication request failed');
+    }
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      if (!mounted) return;
       setState(() {
         _logs = data['logs'] ?? [];
       });
@@ -126,10 +142,14 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/communication/otp/?per_page=50'),
       headers: ApiConfig.headers,
-    );
+    ).timeout(const Duration(seconds: 20));
 
+    if (response.statusCode != 200) {
+      throw StateError('Communication request failed');
+    }
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      if (!mounted) return;
       setState(() {
         _otpCodes = data['otp_codes'] ?? [];
       });
@@ -140,10 +160,14 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/communication/queues/'),
       headers: ApiConfig.headers,
-    );
+    ).timeout(const Duration(seconds: 20));
 
+    if (response.statusCode != 200) {
+      throw StateError('Communication request failed');
+    }
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      if (!mounted) return;
       setState(() {
         _queues = data['queues'] ?? [];
       });
@@ -154,10 +178,14 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/communication/stats/'),
       headers: ApiConfig.headers,
-    );
+    ).timeout(const Duration(seconds: 20));
 
+    if (response.statusCode != 200) {
+      throw StateError('Communication request failed');
+    }
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      if (!mounted) return;
       setState(() {
         _stats = data;
       });
@@ -234,8 +262,8 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                     borderRadius: BorderRadius.circular(32)),
                 labelColor: GasPalette.primary,
                 unselectedLabelColor: GasPalette.ink2,
-                labelStyle:
-                    gasBody(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+                labelStyle: gasBody(context)
+                    .copyWith(fontSize: 12, fontWeight: FontWeight.w600),
                 tabs: const [
                   Tab(height: 36, text: 'Overview'),
                   Tab(height: 36, text: 'Providers'),
@@ -262,43 +290,57 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                     : _error.isNotEmpty
                         ? SingleChildScrollView(
                             padding: const EdgeInsets.all(16),
-                            child: GPanel(
-                                child: Column(children: [
-                              const Icon(Icons.cloud_off_outlined,
-                                  color: GasPalette.ink2, size: 32),
-                              const SizedBox(height: 12),
-                              Text('Could not load communication data',
-                                  style: gasTitle(context),
-                                  textAlign: TextAlign.center),
-                              const SizedBox(height: 8),
-                              Text(_error,
-                                  style: gasBody(context),
-                                  textAlign: TextAlign.center),
-                              const SizedBox(height: 16),
-                              FilledButton(
-                                  onPressed: _loadData,
-                                  child: const Text('Try again')),
-                            ])))
+                            child: AppEmptyState(
+                              kind: AppEmptyStateKind.offline,
+                              title: 'Unable to load messages',
+                              message: _error,
+                              actionLabel: 'Retry',
+                              onAction: _loadData,
+                            ))
                         : TabBarView(controller: _tabController, children: [
                             _phoneCommunicationList('Overview', [
-                              GPanel(padding: const EdgeInsets.all(16), child: Column(children: [
-                                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Expanded(child: _phoneCommunicationMetric('SMS sent', '${totals['sms_sent'] ?? 0}')),
-                                  const SizedBox(width: 16),
-                                  Expanded(child: _phoneCommunicationMetric('Emails sent', '${totals['email_sent'] ?? 0}')),
-                                ]),
-                                const Divider(height: 20, color: GasPalette.border),
-                                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Expanded(child: _phoneCommunicationMetric('OTP generated', '${totals['otp_generated'] ?? 0}')),
-                                  const SizedBox(width: 16),
-                                  Expanded(child: _phoneCommunicationMetric('Total cost', '\$${(totals['sms_cost'] ?? 0).toStringAsFixed(2)}')),
-                                ]),
-                              ])),
+                              GPanel(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(children: [
+                                    Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                              child: _phoneCommunicationMetric(
+                                                  'SMS sent',
+                                                  '${totals['sms_sent'] ?? 0}')),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                              child: _phoneCommunicationMetric(
+                                                  'Emails sent',
+                                                  '${totals['email_sent'] ?? 0}')),
+                                        ]),
+                                    const Divider(
+                                        height: 20, color: GasPalette.border),
+                                    Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                              child: _phoneCommunicationMetric(
+                                                  'OTP generated',
+                                                  '${totals['otp_generated'] ?? 0}')),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                              child: _phoneCommunicationMetric(
+                                                  'Total cost',
+                                                  '\$${(totals['sms_cost'] ?? 0).toStringAsFixed(2)}')),
+                                        ]),
+                                  ])),
                               const SizedBox(height: 16),
-                              Text('Recent activity', style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
+                              Text('Recent activity',
+                                  style: gasTitle(context).copyWith(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600)),
                               const SizedBox(height: 12),
                               if (_logs.isEmpty)
-                                _phoneCommunicationEmpty('No recent activity')
+                                _phoneCommunicationEmpty('No messages yet')
                               else
                                 for (final log in _logs.take(5))
                                   _phoneCommunicationLog(log),
@@ -379,44 +421,59 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           if (children.isEmpty)
-            _phoneCommunicationEmpty('No ${title.toLowerCase()} available')
+            _phoneCommunicationEmpty(title == 'Logs'
+                ? 'No messages yet'
+                : 'No ${title.toLowerCase()} yet')
           else
             ...children,
         ]),
       );
 
-  Widget _phoneCommunicationEmpty(String message) => GPanel(
-          child: Column(children: [
-        const Icon(Icons.inbox_outlined, color: GasPalette.ink2, size: 32),
-        const SizedBox(height: 12),
-        Text(message, style: gasBody(context), textAlign: TextAlign.center),
-      ]));
+  Widget _phoneCommunicationEmpty(String title) => AppEmptyState(
+        kind: AppEmptyStateKind.records,
+        icon: Icons.chat_bubble_outline,
+        title: title,
+        message: 'Communication activity will appear here when available.',
+        compact: true,
+      );
 
   Widget _phoneCommunicationMetric(String label, String value) => Row(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      Expanded(child: Text(label, style: gasSmall(context).copyWith(fontSize: 10.5))),
-      const SizedBox(width: 8),
-      Flexible(child: Text(value, textAlign: TextAlign.end, style: gasData(context, size: 18))),
-    ],
-  );
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+              child: Text(label,
+                  style: gasSmall(context).copyWith(fontSize: 10.5))),
+          const SizedBox(width: 8),
+          Flexible(
+              child: Text(value,
+                  textAlign: TextAlign.end, style: gasData(context, size: 18))),
+        ],
+      );
 
   Widget _phoneCommunicationValue(String label, String value) {
     if (label == 'Message') return _PhoneMessagePreview(message: value);
-    final paragraph = ['Message', 'Subject', 'Description', 'Error'].contains(label);
+    final paragraph =
+        ['Message', 'Subject', 'Description', 'Error'].contains(label);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: paragraph
           ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(label, style: gasSmall(context)),
               const SizedBox(height: 3),
-              Text(value, style: gasBody(context).copyWith(color: GasPalette.ink, height: 1.4, fontSize: 12)),
+              Text(value,
+                  style: gasBody(context).copyWith(
+                      color: GasPalette.ink, height: 1.4, fontSize: 12)),
             ])
           : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(child: Text(label, style: gasSmall(context))),
               const SizedBox(width: 12),
-              Expanded(child: Text(value, textAlign: TextAlign.end,
-                style: gasBody(context).copyWith(color: GasPalette.ink, fontSize: 12, fontWeight: FontWeight.w600))),
+              Expanded(
+                  child: Text(value,
+                      textAlign: TextAlign.end,
+                      style: gasBody(context).copyWith(
+                          color: GasPalette.ink,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600))),
             ]),
     );
   }
@@ -430,7 +487,9 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(title, style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text(title,
+                      style: gasTitle(context)
+                          .copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
                   Text(subtitle, style: gasSmall(context)),
                   const Divider(height: 16, color: GasPalette.border),
@@ -442,10 +501,13 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
   Widget _phoneCommunicationLog(Map<String, dynamic> log) {
     final subject = log['subject'] as String?;
     final hasSubject = subject != null && subject.isNotEmpty;
-    final status = '${log['communication_type_display'] ?? ''} · ${log['status_display'] ?? ''}';
+    final status =
+        '${log['communication_type_display'] ?? ''} · ${log['status_display'] ?? ''}';
     return _phoneCommunicationRecord(
       hasSubject ? subject : status,
-      hasSubject ? '$status · ${_formatDateTime(log['created_at'])}' : _formatDateTime(log['created_at']),
+      hasSubject
+          ? '$status · ${_formatDateTime(log['created_at'])}'
+          : _formatDateTime(log['created_at']),
       {
         'Message': log['message'] ?? '',
         if (log['error_message'] != null && log['error_message'].isNotEmpty)
@@ -632,12 +694,15 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Try Again'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
+                backgroundColor: isPhoneLayout(context)
+                    ? GasPalette.primary
+                    : Constants.ctaColorLight,
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 12),
+                  borderRadius:
+                      BorderRadius.circular(isPhoneLayout(context) ? 32 : 12),
                 ),
                 elevation: 0,
               ),
@@ -1871,8 +1936,8 @@ class _PhoneMessagePreviewState extends State<_PhoneMessagePreview> {
                 : _text,
             maxLines: canExpand && !_expanded ? 3 : null,
             overflow: canExpand && !_expanded ? TextOverflow.ellipsis : null,
-            style: gasBody(context)
-                .copyWith(color: GasPalette.ink, height: 1.5),
+            style:
+                gasBody(context).copyWith(color: GasPalette.ink, height: 1.5),
           ),
           if (canExpand)
             TextButton(

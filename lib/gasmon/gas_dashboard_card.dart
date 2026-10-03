@@ -4,6 +4,7 @@
 library;
 
 import '../widgets/mobile_forms.dart';
+import '../widgets/app_empty_state.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -18,9 +19,10 @@ import 'gas_theme.dart';
 import 'gas_widgets.dart';
 
 class GasDashboardCard extends StatefulWidget {
-  const GasDashboardCard({super.key, required this.device});
+  const GasDashboardCard({super.key, required this.device, this.loadData});
 
   final Device device;
+  final Future<({GasDeviceData data, GasConfig config})> Function()? loadData;
 
   @override
   State<GasDashboardCard> createState() => _GasDashboardCardState();
@@ -30,6 +32,7 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
   GasDeviceData? _data;
   String? _error;
   Timer? _refresh;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -42,7 +45,10 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
   void didUpdateWidget(GasDashboardCard old) {
     super.didUpdateWidget(old);
     if (old.device.id != widget.device.id) {
-      setState(() => _data = null);
+      setState(() {
+        _data = null;
+        _error = null;
+      });
       _load();
     }
   }
@@ -54,19 +60,23 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
   }
 
   Future<void> _load() async {
+    final request = ++_loadGeneration;
     final id = widget.device.id;
-    if (id == null) return;
+    if (id == null && widget.loadData == null) return;
     try {
-      final r =
-          await GasApi.load(deviceId: id, demoKey: widget.device.deviceId);
-      if (mounted && id == widget.device.id) {
+      final r = widget.loadData != null
+          ? await widget.loadData!()
+          : await GasApi.load(deviceId: id!, demoKey: widget.device.deviceId);
+      if (mounted && request == _loadGeneration && id == widget.device.id) {
         setState(() {
           _data = r.data;
           _error = null;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted && request == _loadGeneration && id == widget.device.id) {
+        setState(() => _error = 'Check your connection and try again.');
+      }
     }
   }
 
@@ -81,18 +91,39 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
   @override
   Widget build(BuildContext context) {
     final data = _data;
-    if (data == null) {
+    if (data == null || !data.hasReadings) {
+      final unsaved = widget.device.id == null && widget.loadData == null;
+      if (data == null && _error == null && !unsaved) {
+        return const GPanel(
+            child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ));
+      }
       return GPanel(
-        child: SizedBox(
-          height: 120,
-          child: Center(
-            child: _error != null
-                ? Text("Couldn't load the cylinder: $_error",
-                    style: gasSmall(context))
-                : const CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      );
+          child: AppEmptyState(
+        compact: true,
+        kind: _error != null
+            ? AppEmptyStateKind.offline
+            : AppEmptyStateKind.readings,
+        title: _error != null
+            ? 'Cylinder unavailable'
+            : 'Waiting for the first reading',
+        message: unsaved
+            ? 'Add this device to connect a scale and view its gas level.'
+            : _error ??
+                'No weight has been reported for ${widget.device.name}. Connect your scale to start monitoring.',
+        actionLabel: unsaved
+            ? null
+            : _error != null
+                ? 'Retry'
+                : 'Set up cylinder',
+        onAction: unsaved
+            ? null
+            : _error != null
+                ? _load
+                : _openDetails,
+      ));
     }
 
     final level = data.currentLevelPct;
@@ -110,37 +141,35 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
         ),
       ),
     );
-    final readouts = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          Expanded(
-              child:
-                  GReadout(label: 'Gas left', value: kg1(data.currentNetKg))),
-          Expanded(
-            child: GReadout(
-              label: 'On the scale',
-              value: data.scaleGrossKg != null ? kg1(data.scaleGrossKg!) : '—',
-              sub: data.live ? 'cylinder + gas' : null,
-            ),
-          ),
-        ]),
-        const SizedBox(height: 14),
-        Row(children: [
-          Expanded(
-              child: GReadout(
-                  label: 'Last reading', value: formatAgo(data.latest.at))),
-          Expanded(
-            child: GReadout(
-              label: 'Scale battery',
-              value: data.batteryPct != null
-                  ? '${data.batteryPct!.round()}%'
-                  : '—',
-            ),
-          ),
-        ]),
-      ],
-    );
+    final readoutItems = [
+      GReadout(label: 'Gas left', value: kg1(data.currentNetKg)),
+      GReadout(
+          label: 'On the scale',
+          value: data.scaleGrossKg != null ? kg1(data.scaleGrossKg!) : '—',
+          sub: 'cylinder + gas'),
+      GReadout(label: 'Last reading', value: formatAgo(data.latest.at)),
+      GReadout(
+          label: 'Scale battery',
+          value:
+              data.batteryPct != null ? '${data.batteryPct!.round()}%' : '—'),
+    ];
+    final readouts = isPhoneLayout(context)
+        ? Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            for (final readout in readoutItems)
+              Padding(
+                  padding: const EdgeInsets.only(bottom: 12), child: readout),
+          ])
+        : Column(children: [
+            Row(children: [
+              Expanded(child: readoutItems[0]),
+              Expanded(child: readoutItems[1])
+            ]),
+            const SizedBox(height: 14),
+            Row(children: [
+              Expanded(child: readoutItems[2]),
+              Expanded(child: readoutItems[3])
+            ]),
+          ]);
 
     return GPanel(
       child: Column(
@@ -155,12 +184,31 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis),
             ),
-            data.live
-                ? const GChip('LIVE SCALE', tone: GChipTone.good)
-                : const GChip('DEMO DATA', tone: GChipTone.demo),
-            const SizedBox(width: 8),
+          ]),
+          const SizedBox(height: 10),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            GChip(
+                data.isOffline || _error != null
+                    ? 'LAST REPORTED'
+                    : 'LIVE SCALE',
+                tone: data.isOffline || _error != null
+                    ? GChipTone.neutral
+                    : GChipTone.good),
             GBandChip(band: band, levelPct: level),
           ]),
+          if (_error != null || data.isOffline) ...[
+            const SizedBox(height: 10),
+            Text(
+                _error != null
+                    ? 'Could not refresh. Showing the last reported reading (${formatAgo(data.latest.at)}).'
+                    : 'Scale offline. Showing the last reported reading (${formatAgo(data.latest.at)}).',
+                style: gasSmall(context)),
+            if (_error != null)
+              Align(
+                  alignment: Alignment.centerLeft,
+                  child:
+                      TextButton(onPressed: _load, child: const Text('Retry'))),
+          ],
           if (data.live &&
               data.scaleGrossKg != null &&
               data.scaleGrossKg! < data.spec.tareKg) ...[

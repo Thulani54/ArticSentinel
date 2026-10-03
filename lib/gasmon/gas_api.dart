@@ -1,7 +1,6 @@
 /// Client for the gas-cylinder endpoints (api/gas/*): the device's Cylinder
 /// setup and the scale readings ingested over MQTT. Produces the same
-/// [GasDeviceData] the dashboard renders, so live and demo data are
-/// interchangeable.
+/// [GasDeviceData] the dashboard renders. Missing readings remain empty.
 library;
 
 import 'dart:convert';
@@ -117,8 +116,8 @@ class GasApi {
     return 'Request failed ($status)';
   }
 
-  /// Live data when the scale has reported, otherwise demo data reshaped to
-  /// the saved setup. Also returns the setup itself.
+  /// Returns only reported telemetry and the saved cylinder setup.
+  /// An empty series means the scale has not supplied a reading yet.
   static Future<({GasDeviceData data, GasConfig config})> load({
     required int deviceId,
     required String demoKey,
@@ -126,14 +125,15 @@ class GasApi {
     final resp = await _post('readings/', {
       'device_id': deviceId,
       'days': historyDays,
-    });
+    }).timeout(
+      const Duration(seconds: 20),
+      onTimeout: () => throw GasApiException(
+        'The scale readings request timed out. Check your connection and retry.',
+      ),
+    );
     final config = GasConfig.fromJson(resp['config'] as Map<String, dynamic>);
     final rows = (resp['readings'] as List).cast<Map<String, dynamic>>();
     final latest = resp['latest'] as Map<String, dynamic>?;
-
-    if (rows.isEmpty && latest == null) {
-      return (data: demoForConfig(demoKey, config), config: config);
-    }
 
     final spec = config.spec;
     // Readings are normalised onto the current tare via the stored net
@@ -142,7 +142,8 @@ class GasApi {
           at: DateTime.parse(r['time'] as String).toLocal(),
           weightKg: (r['net_kg'] as num).toDouble() + spec.tareKg,
         );
-    final readings = rows.map(toReading).toList();
+    final readings = rows.map(toReading).toList()
+      ..sort((a, b) => a.at.compareTo(b.at));
     if (latest != null) {
       final l = toReading(latest);
       if (readings.isEmpty || l.at.isAfter(readings.last.at)) {
@@ -167,37 +168,11 @@ class GasApi {
     );
   }
 
-  /// Demo series re-expressed on the saved cylinder, so demo readouts match
-  /// the setup: each reading keeps its fill fraction, scaled to the new
-  /// capacity and shifted onto the new tare.
-  static GasDeviceData demoForConfig(String demoKey, GasConfig? config) {
-    final demo = generateGasDemoData(deviceKey: demoKey);
-    if (config == null || config.isDefault) return demo;
-    final spec = config.spec;
-    final readings = demo.readings
-        .map((r) => GasReading(
-              at: r.at,
-              weightKg: spec.tareKg +
-                  netGasKg(currentKg: r.weightKg, tareKg: demo.spec.tareKg) /
-                      demo.spec.capacityKg *
-                      spec.capacityKg,
-            ))
-        .toList();
-    return GasDeviceData(
-      spec: spec,
-      readings: readings,
-      alerts: deriveGasAlerts(readings,
-          spec: spec, lowPct: config.lowPct, warningPct: config.warningPct),
-      pricePerKg: config.pricePerKg,
-      lowPct: config.lowPct,
-      warningPct: config.warningPct,
-    );
-  }
-
   /// Has the server issue (or rotate) the scale's broker login. The password
   /// is returned only here, so pass it straight to the scale; it replaces any
   /// earlier one.
-  static Future<ScaleCredentials> issueCredentials({required int deviceId}) async {
+  static Future<ScaleCredentials> issueCredentials(
+      {required int deviceId}) async {
     final resp = await _post('credentials/issue/', {'device_id': deviceId});
     return ScaleCredentials(
         Map<String, dynamic>.from(resp['credentials'] as Map));
