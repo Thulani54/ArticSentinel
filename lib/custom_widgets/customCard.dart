@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import 'package:flutter/material.dart';
 
 class CustomCard extends StatefulWidget {
@@ -28,7 +29,7 @@ class _CustomCardState extends State<CustomCard> {
         borderRadius: BorderRadius.all(Radius.circular(16)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
+            color: Tone.bg(Colors.grey).withOpacity(0.5),
             spreadRadius: 5,
             blurRadius: 7,
             offset: Offset(0, 3),

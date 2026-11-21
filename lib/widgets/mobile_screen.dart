@@ -33,7 +33,7 @@ class MobileScreenHeader extends StatelessWidget {
                   child: Semantics(
                     header: true,
                     child: Text(title,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontFamily: 'Inter',
                             color: GasPalette.ink,
                             fontSize: 24,
@@ -51,7 +51,7 @@ class MobileScreenHeader extends StatelessWidget {
             if (description != null) ...[
               const SizedBox(height: 5),
               Text(description!,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontFamily: 'Inter',
                       color: GasPalette.ink2,
                       fontSize: 13,

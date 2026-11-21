@@ -3,6 +3,7 @@
 /// otherwise the sign-in screen.
 library;
 
+import '../widgets/app_tone.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -64,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Tone.bg(Colors.white),
       body: Center(
         child: AnimatedBuilder(
           animation: _ctrl,

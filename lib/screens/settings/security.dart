@@ -1,3 +1,4 @@
+import '../../widgets/app_tone.dart';
 import '../../widgets/mobile_forms.dart';
 import 'mobile_account_widgets.dart';
 import '../../gasmon/gas_theme.dart';
@@ -76,7 +77,7 @@ class _SecurityPageState extends State<SecurityPage> {
                 backgroundColor: GasPalette.page,
                 backgroundImage: imageBytes != null ? MemoryImage(imageBytes!) : null,
                 child: imageBytes == null
-                    ? const Icon(Icons.person_outline, color: GasPalette.ink2, size: 20) : null,
+                    ? Icon(Icons.person_outline, color: GasPalette.ink2, size: 20) : null,
               ),
               const SizedBox(width: 10),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -93,7 +94,7 @@ class _SecurityPageState extends State<SecurityPage> {
                 ),
               ),
             ]),
-            const Padding(padding: EdgeInsets.symmetric(vertical: 10),
+            Padding(padding: EdgeInsets.symmetric(vertical: 10),
                 child: Divider(height: 1, color: GasPalette.border)),
             Text('Connected to your Google account. Update these details in Google.',
                 style: gasSmall(context).copyWith(height: 1.5)),
@@ -132,7 +133,7 @@ class _SecurityPageState extends State<SecurityPage> {
           Expanded(child: OutlinedButton(
             onPressed: () => setState(() {}),
             style: accountButtonStyle(context, OutlinedButton.styleFrom(
-                foregroundColor: GasPalette.ink2, side: const BorderSide(color: GasPalette.border))),
+                foregroundColor: GasPalette.ink2, side: BorderSide(color: GasPalette.border))),
             child: const Text('Cancel'),
           )),
           const SizedBox(width: 10),
@@ -154,7 +155,7 @@ class _SecurityPageState extends State<SecurityPage> {
             OutlinedButton(
               onPressed: () => setState(() {}),
               style: accountButtonStyle(context, OutlinedButton.styleFrom(
-                  foregroundColor: GasPalette.critInk, side: const BorderSide(color: GasPalette.border))),
+                  foregroundColor: GasPalette.critInk, side: BorderSide(color: GasPalette.border))),
               child: const Text('Request account deletion'),
             ),
           ]),
@@ -169,12 +170,12 @@ class _SecurityPageState extends State<SecurityPage> {
     if (phone) return _buildMobileSecurity();
     return AccountCard(
       elevation: isPhoneLayout(context) ? 0 : 5,
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
+      color: Tone.auto(Colors.white),
+      surfaceTintColor: Tone.bg(Colors.white),
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
           side: isPhoneLayout(context)
-              ? const BorderSide(color: GasPalette.border)
+              ? BorderSide(color: GasPalette.border)
               : BorderSide.none),
       child: Container(
         height: MediaQuery.of(context).size.height,
@@ -193,9 +194,9 @@ class _SecurityPageState extends State<SecurityPage> {
                   "Security",
                   style: accountInter(
                     context,
-                    textStyle: const TextStyle(
+                    textStyle: TextStyle(
                         fontSize: 16,
-                        color: Colors.black,
+                        color: Tone.fg(Colors.black),
                         letterSpacing: 0,
                         fontWeight: FontWeight.normal),
                   ),
@@ -290,7 +291,7 @@ class _SecurityPageState extends State<SecurityPage> {
                             context,
                             textStyle: TextStyle(
                                 fontSize: 13,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                                 letterSpacing: 0,
                                 fontWeight: FontWeight.normal),
                           ),
@@ -307,7 +308,7 @@ class _SecurityPageState extends State<SecurityPage> {
                 padding: const EdgeInsets.only(left: 24, right: 24),
                 child: Divider(
                   thickness: 0.5,
-                  color: phone ? GasPalette.border : Colors.black,
+                  color: phone ? GasPalette.border : Tone.bg(Colors.black),
                 ),
               ),
               SizedBox(
@@ -323,9 +324,9 @@ class _SecurityPageState extends State<SecurityPage> {
                       "Profile Picture",
                       style: accountInter(
                         context,
-                        textStyle: const TextStyle(
+                        textStyle: TextStyle(
                             fontSize: 15,
-                            color: Colors.black,
+                            color: Tone.fg(Colors.black),
                             letterSpacing: 0,
                             fontWeight: FontWeight.w500),
                       ),
@@ -350,7 +351,7 @@ class _SecurityPageState extends State<SecurityPage> {
                             : Icon(
                                 CupertinoIcons.person,
                                 size: 40,
-                                color: Colors.black,
+                                color: Tone.fg(Colors.black),
                               ),
                         SizedBox(
                           width: 12,
@@ -363,9 +364,9 @@ class _SecurityPageState extends State<SecurityPage> {
                               Constants.myDisplayname,
                               style: accountInter(
                                 context,
-                                textStyle: const TextStyle(
+                                textStyle: TextStyle(
                                     fontSize: 15,
-                                    color: Colors.black,
+                                    color: Tone.fg(Colors.black),
                                     letterSpacing: 0,
                                     fontWeight: FontWeight.w500),
                               ),
@@ -374,9 +375,9 @@ class _SecurityPageState extends State<SecurityPage> {
                               "Workplace Admin",
                               style: accountInter(
                                 context,
-                                textStyle: const TextStyle(
+                                textStyle: TextStyle(
                                     fontSize: 13,
-                                    color: Colors.black,
+                                    color: Tone.fg(Colors.black),
                                     letterSpacing: 0,
                                     fontWeight: FontWeight.normal),
                               ),
@@ -401,7 +402,7 @@ class _SecurityPageState extends State<SecurityPage> {
                               primary: false),
                           icon: Icon(
                             Iconsax.document_upload,
-                            color: phone ? GasPalette.ink : Colors.black,
+                            color: phone ? GasPalette.ink : Tone.fg(Colors.black),
                           ),
                           label: Center(
                             child: Text(
@@ -410,7 +411,7 @@ class _SecurityPageState extends State<SecurityPage> {
                                 context,
                                 textStyle: TextStyle(
                                     fontSize: 13,
-                                    color: Colors.black,
+                                    color: Tone.fg(Colors.black),
                                     letterSpacing: 0,
                                     fontWeight: FontWeight.normal),
                               ),
@@ -429,7 +430,7 @@ class _SecurityPageState extends State<SecurityPage> {
                 padding: const EdgeInsets.only(left: 24, right: 24),
                 child: Divider(
                   thickness: 0.5,
-                  color: phone ? GasPalette.border : Colors.black,
+                  color: phone ? GasPalette.border : Tone.bg(Colors.black),
                 ),
               ),
               SizedBox(
@@ -455,7 +456,7 @@ class _SecurityPageState extends State<SecurityPage> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       if (isPhoneLayout(context))
-                        const Icon(Icons.link, size: 25, color: GasPalette.ink2)
+                        Icon(Icons.link, size: 25, color: GasPalette.ink2)
                       else
                         Image.asset(
                           "lib/asset/images/google1.png",
@@ -474,7 +475,7 @@ class _SecurityPageState extends State<SecurityPage> {
                             textStyle: TextStyle(
                                 fontSize: 13,
                                 height: phone ? 1.5 : null,
-                                color: phone ? GasPalette.ink2 : Colors.black,
+                                color: phone ? GasPalette.ink2 : Tone.fg(Colors.black),
                                 letterSpacing: 0,
                                 fontWeight: FontWeight.w500),
                           ),
@@ -498,7 +499,7 @@ class _SecurityPageState extends State<SecurityPage> {
                         style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.normal,
-                            color: Colors.black),
+                            color: Tone.fg(Colors.black)),
                       ),
                     ),
                     Row(
@@ -532,7 +533,7 @@ class _SecurityPageState extends State<SecurityPage> {
                         style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.normal,
-                            color: Colors.black),
+                            color: Tone.fg(Colors.black)),
                       ),
                     ),
                     Row(
@@ -566,7 +567,7 @@ class _SecurityPageState extends State<SecurityPage> {
                         style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.normal,
-                            color: Colors.black),
+                            color: Tone.fg(Colors.black)),
                       ),
                     ),
                     Row(
@@ -594,11 +595,11 @@ class _SecurityPageState extends State<SecurityPage> {
                                   width: 120,
                                   height: 45,
                                   decoration: BoxDecoration(
-                                      color: Colors.grey.withOpacity(0.1),
+                                      color: Tone.bg(Colors.grey).withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(360)),
                                   child: Center(
                                     child: DropdownButton<String>(
-                                      dropdownColor: Colors.white,
+                                      dropdownColor: Tone.bg(Colors.white),
                                       padding:
                                           EdgeInsets.only(left: 12, right: 12),
                                       borderRadius: BorderRadius.circular(12),
@@ -611,7 +612,7 @@ class _SecurityPageState extends State<SecurityPage> {
                                         child: Text(
                                           "Select a Role",
                                           style: TextStyle(
-                                              color: Colors.grey, fontSize: 14),
+                                              color: Tone.fg(Colors.grey), fontSize: 14),
                                         ),
                                       ),
                                       onChanged: (newValue) {
@@ -630,7 +631,7 @@ class _SecurityPageState extends State<SecurityPage> {
                                                 child: Text(
                                                   "${item}", // Assuming item is of type Industry
                                                   style: TextStyle(
-                                                      color: Colors.black),
+                                                      color: Tone.fg(Colors.black)),
                                                 ),
                                               ),
                                             ),
@@ -658,8 +659,8 @@ class _SecurityPageState extends State<SecurityPage> {
               SizedBox(height: 24),
               AccountCard(
                 elevation: 5,
-                color: Colors.white,
-                surfaceTintColor: Colors.white,
+                color: Tone.auto(Colors.white),
+                surfaceTintColor: Tone.bg(Colors.white),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
                 child: Container(
@@ -709,7 +710,7 @@ class _SecurityPageState extends State<SecurityPage> {
                       ),
                       Divider(
                         thickness: 0.5,
-                        color: phone ? GasPalette.border : Colors.black,
+                        color: phone ? GasPalette.border : Tone.bg(Colors.black),
                       ),
                       SizedBox(
                         height: 12,

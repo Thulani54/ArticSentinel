@@ -14,6 +14,22 @@ Install `google-auth>=2.40,<3` alongside the existing requests dependency. Copy 
 
 Supply a dedicated Firebase Cloud Messaging service-account JSON at `/app/.secrets/fcm-service-account.json` (or `ARTIC_FCM_SERVICE_ACCOUNT`). Restrict filesystem permissions and never commit this file. Delivery remains disabled until the file exists. The account needs the Firebase Cloud Messaging API Admin role in its project, and the FCM API must be enabled.
 
+For Docker deployments, adding the dependency to `requirements.txt` is not enough:
+rebuild the web, worker and beat images, verify the Google imports in each image,
+then recreate those application services. Restarting an old container does not
+install dependencies. Keep the runtime credentials mounted separately and exclude
+`.secrets/` from the image build context. Add a build-time import check after pip
+installation so a missing push dependency fails the build:
+
+```sh
+python -c "from google.oauth2 import service_account; from google.auth.transport.requests import Request"
+```
+
+After deployment, verify credential refresh and an FCM HTTP v1 request with
+`validate_only: true` before relying on delivery. A successful dry run does not
+prove a phone displayed a notification. Recreate only the application services;
+do not replace or restart the Redis queue as part of a dependency update.
+
 For mobile release builds provide public Firebase app settings with `--dart-define-from-file`:
 `FIREBASE_PROJECT_ID`, `FIREBASE_SENDER_ID`, `FIREBASE_ANDROID_APP_ID`, `FIREBASE_ANDROID_API_KEY`, `FIREBASE_IOS_APP_ID`, and `FIREBASE_IOS_API_KEY`.
 
@@ -40,3 +56,16 @@ Authenticated GET/PUT `api/push/devices/<device_id>/rules/` supplies the device-
 The existing minute schedule evaluates gas, refrigeration, temperature probes, ice machines, compressor current, relays, pressure and bottle-vetting readings through a fixed telemetry allowlist. Only readings up to 15 minutes old are used. Each condition fires once until the reading recovers by the displayed reset margin. When multiple thresholds for a reading are crossed together, only the most urgent is delivered. Custom rules replace legacy gas defaults for that user, including an empty rule list.
 
 Physical-phone delivery must still be verified with permission granted and a fresh reading crossing a saved threshold. iOS additionally needs an eligible Apple team, Push Notifications entitlement, and Firebase APNs credentials.
+
+## Phone diagnostics
+
+Settings → Notifications checks permissions, native registration and delivery status.
+Authenticated `POST api/push/status/` takes this phone's FCM token and returns only
+its own registration and queued-alert metadata. `POST api/push/test/` targets the
+same installation, with a one-minute cooldown. Provider acceptance does not prove
+the operating system displayed the notification. Neither endpoint can select
+another user's phone. Apply migration `0003` before deploying `diagnostics.py` and
+the updated URLs/models. No worker or beat changes are needed for these endpoints.
+
+Isolated diagnostics checks use a disposable SQLite database and mock the provider:
+`PYTHONPATH=backend DJANGO_SETTINGS_MODULE=mobile_push.diagnostics_test_settings python -m django test mobile_push.test_diagnostics`.

@@ -1,0 +1,7 @@
+{
+  "apk": "/Users/thulanimoyo/Downloads/ArticSentinel-1.0.0-reliability-20261003.apk",
+  "bytes": 98398062,
+  "sha256": "0c2576259b8ee81524bb6988342366e570935805ba5b2aaf8401bef8a09f129b",
+  "metadata": "package: name='com.navario.artic_sentinel' versionCode='11' versionName='1.0.0' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'",
+  "signer_matches_previous_apk": true
+}

@@ -9,6 +9,8 @@ void main() {
     'mqtt_host': 'api.articsentinel.com',
     'mqtt_port': 8883,
     'mqtt_user': 'GAS-001',
+    'mqtt_client_id': 'AS_00000000000000000001',
+    'mqtt_tls': true,
     'mqtt_pass': 'issued-secret',
     'topic': 'gas_cylinder/GAS-001/data',
   };

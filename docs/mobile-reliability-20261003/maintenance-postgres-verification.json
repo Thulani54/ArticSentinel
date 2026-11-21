@@ -1,0 +1,68 @@
+{
+  "result": "passed",
+  "steps": [
+    {
+      "route": "/api/maintenance/report/",
+      "status": 200
+    },
+    {
+      "route": "/api/maintenance/create/",
+      "status": 201
+    },
+    {
+      "route": "/api/maintenance/create/",
+      "status": 201
+    },
+    {
+      "route": "/api/maintenance/<temporary-record>/update/",
+      "status": 200
+    },
+    {
+      "route": "/api/maintenance/<temporary-record>/status/",
+      "status": 200
+    },
+    {
+      "route": "/api/maintenance/<temporary-record>/status/",
+      "status": 409
+    },
+    {
+      "route": "/api/maintenance/checklist/<temporary-checklist>/update/",
+      "status": 200
+    },
+    {
+      "route": "/api/maintenance/<temporary-record>/status/",
+      "status": 200
+    },
+    {
+      "route": "/api/maintenance/<temporary-record>/",
+      "status": 200
+    },
+    {
+      "route": "/api/maintenance/report/",
+      "status": 200
+    },
+    {
+      "route": "/api/maintenance/reports/2026/10/records/",
+      "status": 200
+    },
+    {
+      "route": "/api/maintenance/reports/<temporary-record>/pdf/",
+      "status": 200
+    },
+    {
+      "route": "/api/maintenance/schedule/create/",
+      "status": 201
+    },
+    {
+      "route": "/api/maintenance/schedule/create/",
+      "status": 201
+    },
+    {
+      "route": "/api/maintenance/schedule/<temporary-schedule>/update/",
+      "status": 200
+    }
+  ],
+  "rollback_verified": true,
+  "messages_sent": 0,
+  "notes": "Actual deployed route handlers and PostgreSQL, in-process requests; not a device-to-network end-to-end run. Checklist sequence may advance."
+}

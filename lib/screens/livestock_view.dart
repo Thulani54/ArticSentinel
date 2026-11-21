@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_forms.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -32,12 +33,12 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                     maxWidth: 1200,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     shape: BoxShape.rectangle,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Colors.black26,
+                        color: Tone.bg(Colors.black26),
                         blurRadius: 10.0,
                         offset: Offset(0.0, 10.0),
                       ),
@@ -72,9 +73,9 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                               Text(
                                 widget.livestockModel.name,
                                 style: GoogleFonts.inter(
-                                  textStyle: const TextStyle(
+                                  textStyle: TextStyle(
                                       fontSize: 18,
-                                      color: Colors.white,
+                                      color: Tone.fg(Colors.white),
                                       letterSpacing: 0,
                                       fontWeight: FontWeight.normal),
                                 ),
@@ -92,9 +93,9 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                         child: Text(
                           "Livestock Information",
                           style: GoogleFonts.inter(
-                            textStyle: const TextStyle(
+                            textStyle: TextStyle(
                                 fontSize: 18,
-                                color: Colors.black,
+                                color: Tone.fg(Colors.black),
                                 letterSpacing: 0,
                                 fontWeight: FontWeight.normal),
                           ),
@@ -105,7 +106,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                       ),
                       Divider(
                         thickness: 1.0,
-                        color: Colors.black,
+                        color: Tone.bg(Colors.black),
                       ),
                       SizedBox(
                         height: 8,
@@ -127,11 +128,11 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: Colors.black, width: 1.0)),
+                                            color: Tone.bg(Colors.black), width: 1.0)),
                                     child: Icon(
                                       FontAwesomeIcons.person,
                                       size: 32,
-                                      color: Colors.black,
+                                      color: Tone.fg(Colors.black),
                                     ),
                                   ),
                                   SizedBox(
@@ -183,7 +184,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -214,7 +215,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -246,7 +247,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -267,7 +268,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                       ),
                       Divider(
                         thickness: 0.5,
-                        color: Colors.black,
+                        color: Tone.bg(Colors.black),
                       ),
                       SizedBox(
                         height: 8,
@@ -289,12 +290,12 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: Colors.black, width: 1.0)),
+                                            color: Tone.bg(Colors.black), width: 1.0)),
                                     child: Center(
                                       child: Icon(
                                         FontAwesomeIcons.cow,
                                         size: 32,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                       ),
                                     ),
                                   ),
@@ -346,7 +347,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -377,7 +378,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -408,7 +409,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -447,7 +448,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -478,7 +479,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -509,7 +510,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -527,7 +528,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                       ),
                       Divider(
                         thickness: 0.5,
-                        color: Colors.black,
+                        color: Tone.bg(Colors.black),
                       ),
                       SizedBox(
                         height: 8,
@@ -549,12 +550,12 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: Colors.black, width: 1.0)),
+                                            color: Tone.bg(Colors.black), width: 1.0)),
                                     child: Center(
                                       child: Icon(
                                         FontAwesomeIcons.heartPulse,
                                         size: 32,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                       ),
                                     ),
                                   ),
@@ -607,7 +608,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -639,7 +640,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -673,7 +674,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -691,7 +692,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                       ),
                       Divider(
                         thickness: 0.5,
-                        color: Colors.black,
+                        color: Tone.bg(Colors.black),
                       ),
                       SizedBox(
                         height: 8,
@@ -713,12 +714,12 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: Colors.black, width: 1.0)),
+                                            color: Tone.bg(Colors.black), width: 1.0)),
                                     child: Center(
                                       child: Icon(
                                         FontAwesomeIcons.notesMedical,
                                         size: 32,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                       ),
                                     ),
                                   ),
@@ -771,7 +772,7 @@ class _LivestockViewDialogState extends State<LivestockViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),

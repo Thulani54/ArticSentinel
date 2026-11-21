@@ -1,27 +1,34 @@
+import '../widgets/app_tone.dart';
+import 'dart:async';
+import 'package:uuid/uuid.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
 import '../gasmon/gas_widgets.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_forms.dart';
+import 'schedule_maintenance.dart';
+import 'maintenance_ui.dart';
+import '../widgets/device_illustration.dart';
+import '../onboarding/setup_flow_frame.dart';
 import 'package:artic_sentinel/constants/Constants.dart';
 import 'package:artic_sentinel/custom_widgets/customCard.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:open_file/open_file.dart';
+import 'package:printing/printing.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../utils/pdf_saver.dart';
 
-import '../models/device.dart' hide Device;
-import '../models/maintanance.dart';
 import '../services/shared_preferences.dart';
 import '../widgets/compact_header.dart';
 
@@ -40,6 +47,8 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   // Data
   Map<String, dynamic> _dashboardData = {};
   List<dynamic> _maintenanceRecords = [];
+  int _recordPage = 1, _recordGeneration = 0;
+  bool _hasMoreRecords = false, _loadingMoreRecords = false;
   List<dynamic> _maintenanceTypes = [];
   List<dynamic> _upcomingMaintenance = [];
   Map<String, dynamic> _remindersData = {};
@@ -70,6 +79,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
     try {
       await Future.wait([
+        MaintenanceEquipment.refresh(force: true),
         _loadDashboardData(),
         _loadMaintenanceRecords(),
         _loadMaintenanceTypes(),
@@ -99,25 +109,25 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   Future<void> _loadDashboardData() => _guardMaintenanceLoad(() async {
-        final response = await http.post(
-          Uri.parse('${ApiConfig.baseUrl}api/maintenance/dashboard/'),
-          headers: ApiConfig.headers,
-          body: json.encode({
-            'business_id': await SharedPrefs.getBusinessId(),
-            'date_from': _dateRange?.start.toIso8601String(),
-            'date_to': _dateRange?.end.toIso8601String(),
-          }),
-        ).timeout(const Duration(seconds: 20));
-        if (kDebugMode) {
-          print("hghjh ${response.body}");
-        }
+        final response = await http
+            .post(
+              Uri.parse('${ApiConfig.baseUrl}api/maintenance/dashboard/'),
+              headers: await ApiConfig.authHeaders(),
+              body: json.encode({
+                'business_id': await SharedPrefs.getBusinessId(),
+                'date_from': _dateRange?.start.toIso8601String(),
+                'date_to': _dateRange?.end.toIso8601String(),
+              }),
+            )
+            .timeout(const Duration(seconds: 20));
+        if (kDebugMode) {}
 
         if (response.statusCode != 200) {
           throw StateError('Maintenance request failed');
         }
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
-          print("hghjh ${data['dashboard']['upcoming_maintenance']}");
+
           if (!mounted) return;
           setState(() {
             _dashboardData = data['dashboard'];
@@ -126,35 +136,54 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
         }
       });
 
-  Future<void> _loadMaintenanceRecords() => _guardMaintenanceLoad(() async {
-        final response = await http.post(
-          Uri.parse('${ApiConfig.baseUrl}api/maintenance/list/'),
-          headers: ApiConfig.headers,
-          body: json.encode({
-            'business_id': await SharedPrefs.getBusinessId(),
-            'filters': _filters,
-            'page': 1,
-            'per_page': 50,
-          }),
-        ).timeout(const Duration(seconds: 20));
-
-        if (response.statusCode != 200) {
-          throw StateError('Maintenance request failed');
-        }
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          if (!mounted) return;
-          setState(() {
-            _maintenanceRecords = data['maintenance_records'];
-          });
-        }
+  Future<void> _loadMaintenanceRecords({bool append = false}) async {
+    if (append && _loadingMoreRecords) return;
+    final generation = append ? _recordGeneration : ++_recordGeneration;
+    final page = append ? _recordPage + 1 : 1;
+    final filters = Map<String, dynamic>.from(_filters);
+    if (append) setState(() => _loadingMoreRecords = true);
+    try {
+      final response = await http
+          .post(Uri.parse('${ApiConfig.baseUrl}api/maintenance/list/'),
+              headers: await ApiConfig.authHeaders(),
+              body: jsonEncode({
+                'business_id': await SharedPrefs.getBusinessId(),
+                'filters': filters,
+                'page': page,
+                'per_page': 50,
+              }))
+          .timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200) throw StateError('Unavailable');
+      final data = jsonDecode(response.body);
+      if (!mounted || generation != _recordGeneration) return;
+      setState(() {
+        final records = List<dynamic>.from(data['maintenance_records']);
+        _maintenanceRecords =
+            append ? [..._maintenanceRecords, ...records] : records;
+        _recordPage = page;
+        _hasMoreRecords = data['pagination']?['has_next'] == true;
       });
+    } catch (_) {
+      if (!mounted || generation != _recordGeneration) return;
+      if (append) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Unable to load more records. Please retry.')));
+      } else {
+        setState(() => _error = 'Check your connection and try again.');
+      }
+    } finally {
+      if (mounted && generation == _recordGeneration)
+        setState(() => _loadingMoreRecords = false);
+    }
+  }
 
   Future<void> _loadMaintenanceTypes() => _guardMaintenanceLoad(() async {
-        final response = await http.get(
-          Uri.parse('${ApiConfig.baseUrl}api/maintenance/types/'),
-          headers: ApiConfig.headers,
-        ).timeout(const Duration(seconds: 20));
+        final response = await http
+            .get(
+              Uri.parse('${ApiConfig.baseUrl}api/maintenance/types/'),
+              headers: await ApiConfig.authHeaders(),
+            )
+            .timeout(const Duration(seconds: 20));
 
         if (response.statusCode != 200) {
           throw StateError('Maintenance request failed');
@@ -169,13 +198,15 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
       });
 
   Future<void> _loadRemindersData() => _guardMaintenanceLoad(() async {
-        final response = await http.post(
-          Uri.parse('${ApiConfig.baseUrl}api/maintenance/reminders/'),
-          headers: ApiConfig.headers,
-          body: json.encode({
-            'business_id': await SharedPrefs.getBusinessId(),
-          }),
-        ).timeout(const Duration(seconds: 20));
+        final response = await http
+            .post(
+              Uri.parse('${ApiConfig.baseUrl}api/maintenance/reminders/'),
+              headers: await ApiConfig.authHeaders(),
+              body: json.encode({
+                'business_id': await SharedPrefs.getBusinessId(),
+              }),
+            )
+            .timeout(const Duration(seconds: 20));
         if (response.statusCode != 200) {
           throw StateError('Maintenance request failed');
         }
@@ -187,13 +218,15 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
       });
 
   Future<void> _loadSchedules() => _guardMaintenanceLoad(() async {
-        final response = await http.post(
-          Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedules/'),
-          headers: ApiConfig.headers,
-          body: json.encode({
-            'business_id': await SharedPrefs.getBusinessId(),
-          }),
-        ).timeout(const Duration(seconds: 20));
+        final response = await http
+            .post(
+              Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedules/'),
+              headers: await ApiConfig.authHeaders(),
+              body: json.encode({
+                'business_id': await SharedPrefs.getBusinessId(),
+              }),
+            )
+            .timeout(const Duration(seconds: 20));
         if (response.statusCode != 200) {
           throw StateError('Maintenance request failed');
         }
@@ -203,44 +236,6 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
           _schedules = data['schedules'] ?? [];
         });
       });
-
-  Future<void> _sendManualReminder(
-      String maintenanceId, String reminderType) async {
-    try {
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/$maintenanceId/send-reminder/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'reminder_type': reminderType,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Reminder sent successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        _loadRemindersData();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send reminder'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +296,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                   dividerColor: Colors.transparent,
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicator: BoxDecoration(
-                      color: const Color(0xFFE9EDF4),
+                      color: Tone.bg(const Color(0xFFE9EDF4)),
                       borderRadius: BorderRadius.circular(32)),
                   labelColor: GasPalette.primary,
                   unselectedLabelColor: GasPalette.ink2,
@@ -338,18 +333,6 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     });
   }
 
-  BoxDecoration _phoneMaintenanceSurface(BoxDecoration original) {
-    if (!isPhoneLayout(context)) return original;
-    return BoxDecoration(
-      color: GasPalette.panel,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: GasPalette.border),
-      boxShadow: const [
-        BoxShadow(color: Color(0x05133648), blurRadius: 3, offset: Offset(0, 2))
-      ],
-    );
-  }
-
   Widget _buildHeader() {
     return const CompactHeader(
       title: "Maintenance",
@@ -358,101 +341,25 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     );
   }
 
-  Widget _buildQuickStats() {
-    final summary = _dashboardData['summary'] ?? {};
-
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Total',
-            '${summary['total_maintenance'] ?? 0}',
-            Icons.list_alt,
-            Colors.white.withOpacity(0.9),
-          ),
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Completed',
-            '${summary['completed_maintenance'] ?? 0}',
-            Icons.check_circle,
-            Constants.ctaColorLight!,
-          ),
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Overdue',
-            '${summary['overdue_maintenance'] ?? 0}',
-            Icons.warning,
-            Colors.orange[300]!,
-          ),
-        ),
-        SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Rate',
-            '${summary['completion_rate']?.toStringAsFixed(1) ?? 0}%',
-            Icons.trending_up,
-            Colors.blue[300]!,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-      String label, String value, IconData icon, Color color) {
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          SizedBox(height: 4),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              color: Colors.white.withOpacity(0.8),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTabBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: Tone.bg(const Color(0xFFF1F5F9)),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0)), width: 1),
       ),
       child: TabBar(
         controller: _tabController,
         isScrollable: true,
         dividerColor: Colors.transparent,
         indicator: BoxDecoration(
-          color: Colors.white,
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Tone.bg(Colors.black).withOpacity(0.08),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -465,7 +372,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         labelColor: Constants.ctaColorLight,
-        unselectedLabelColor: const Color(0xFF64748B),
+        unselectedLabelColor: Tone.fg(const Color(0xFF64748B)),
         labelStyle: GoogleFonts.inter(
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -505,388 +412,148 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   Widget _buildOverviewTab() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Quick Actions at the top
-          _buildCompactQuickActions(),
+    final summary = _dashboardData['summary'] is Map
+        ? _dashboardData['summary'] as Map
+        : const {};
+    final records =
+        _maintenanceRecords.whereType<Map<String, dynamic>>().toList();
+    final late = records.where(maintenanceIsLate).toList();
+    final weekEnd = DateTime.now().add(const Duration(days: 7));
+    final upcoming = _upcomingMaintenance
+        .whereType<Map<String, dynamic>>()
+        .where((r) => !maintenanceIsLate(r))
+        .toList();
+    final thisWeek = upcoming.where((r) {
+      final at = DateTime.tryParse('${r['scheduled_date']}');
+      return at != null && at.isBefore(weekEnd);
+    }).length;
+    final completed =
+        records.where((r) => r['status'] == 'completed').take(3).toList();
+    final wide = MediaQuery.sizeOf(context).width >= 900;
 
-          SizedBox(height: isPhoneLayout(context) ? 16 : 24),
-
-          // Upcoming Maintenance
-          _buildSectionHeader('Upcoming Maintenance', Icons.schedule),
-          SizedBox(height: isPhoneLayout(context) ? 8 : 12),
-          _buildUpcomingMaintenanceList(),
-
-          SizedBox(height: isPhoneLayout(context) ? 16 : 24),
-
-          // Recent Activity
-          _buildSectionHeader('Recent Activity', Icons.history),
-          SizedBox(height: isPhoneLayout(context) ? 8 : 12),
-          _buildRecentActivityList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUpcomingMaintenanceList() {
-    if (_upcomingMaintenance.isEmpty) {
-      return _buildEmptyState('No upcoming maintenance scheduled');
-    }
-
-    return Column(
-      children: _upcomingMaintenance.take(5).map((maintenance) {
-        return Container(
-          margin: EdgeInsets.only(bottom: 8),
-          child: _buildUpCommingMaintenanceCard(maintenance, isCompact: true),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildRecentActivityList() {
-    final recentRecords = _maintenanceRecords.take(5).toList();
-
-    if (recentRecords.isEmpty) {
-      return _buildEmptyState('No recent maintenance activity');
-    }
-
-    return Column(
-      children: recentRecords.map((record) {
-        return Container(
-          margin: EdgeInsets.only(bottom: 8),
-          child: _buildMaintenanceCard(record, isCompact: true),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildCompactQuickActions() {
-    if (isPhoneLayout(context)) {
-      final summary = _dashboardData['summary'] ?? {};
-      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        GPanel(
-            padding: const EdgeInsets.all(16),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(
-                  child: _phoneMaintenanceMetric(
-                      'Total', '${summary['total_maintenance'] ?? 0}')),
-              Expanded(
-                  child: _phoneMaintenanceMetric(
-                      'Completed', '${summary['completed_maintenance'] ?? 0}')),
-              Expanded(
-                  child: _phoneMaintenanceMetric(
-                      'Overdue', '${summary['overdue_maintenance'] ?? 0}')),
-            ])),
-        const SizedBox(height: 12),
-        FilledButton.icon(
-          onPressed: _showCreateMaintenanceDialog,
-          icon: const Icon(Icons.add, size: 20),
-          label: const Text('Schedule maintenance'),
-          style: FilledButton.styleFrom(
-            backgroundColor: GasPalette.primary,
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(48),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Wrap(spacing: 8, runSpacing: 4, children: [
-          TextButton(
-              onPressed: _showReportsDialog, child: const Text('Reports')),
-          TextButton(
-              onPressed: _showOverdueItems, child: const Text('Overdue')),
-          TextButton(
-              onPressed: _showMaintenanceTypes, child: const Text('Types')),
-        ]),
-      ]);
-    }
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 500;
-
-        return Container(
-          padding: EdgeInsets.all(isMobile ? 12 : 16),
-          decoration: mobileFlatDecoration(
-              context,
-              BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Constants.ctaColorLight.withOpacity(0.05),
-                    Constants.ctaColorLight.withOpacity(0.02),
-                  ],
-                ),
+    Widget list(List<Map<String, dynamic>> items, String empty) => items.isEmpty
+        ? Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Constants.ctaColorLight.withOpacity(0.1),
-                  width: 1,
-                ),
-              )),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.flash_on,
-                    color: Constants.ctaColorLight,
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Quick Actions',
-                    style: GoogleFonts.inter(
-                      fontSize: isMobile ? 14 : 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: isMobile ? 12 : 16),
-              if (isMobile) ...[
-                // Mobile layout: 3 buttons in top row, Schedule button at bottom
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildCompactActionButton(
-                        'Reports',
-                        Icons.assessment_outlined,
-                        Color(0xFF1976D2),
-                        () => _showReportsDialog(),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: _buildCompactActionButton(
-                        'Overdue',
-                        Icons.warning_amber_outlined,
-                        Color(0xFFEF6C00),
-                        () => _showOverdueItems(),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: _buildCompactActionButton(
-                        'Types',
-                        Icons.category_outlined,
-                        Color(0xFF7B1FA2),
-                        () => _showMaintenanceTypes(),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12),
-                // Schedule button at bottom, full width on mobile
-                SizedBox(
-                  width: double.infinity,
-                  child: Material(
-                    color: Constants.ctaColorLight,
-                    borderRadius: BorderRadius.circular(12),
-                    child: InkWell(
-                      onTap: () => _showCreateMaintenanceDialog(),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 14),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_circle_outline,
-                                color: Colors.white, size: 22),
-                            SizedBox(width: 8),
-                            Text(
-                              'Schedule Maintenance',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ] else ...[
-                // Desktop layout: all 4 buttons in a row
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildCompactActionButton(
-                        'Schedule',
-                        Icons.add_circle_outline,
-                        Constants.ctaColorLight,
-                        () => _showCreateMaintenanceDialog(),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: _buildCompactActionButton(
-                        'Reports',
-                        Icons.assessment_outlined,
-                        Color(0xFF1976D2),
-                        () => _showReportsDialog(),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: _buildCompactActionButton(
-                        'Overdue',
-                        Icons.warning_amber_outlined,
-                        Color(0xFFEF6C00),
-                        () => _showOverdueItems(),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: _buildCompactActionButton(
-                        'Types',
-                        Icons.category_outlined,
-                        Color(0xFF7B1FA2),
-                        () => _showMaintenanceTypes(),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                border: Border.all(color: GasPalette.border)),
+            child: Text(empty,
+                style:
+                    GoogleFonts.inter(fontSize: 13.5, color: GasPalette.ink2)),
+          )
+        : Column(children: [
+            for (final r in items) _buildMaintenanceCard(r, isCompact: true)
+          ]);
+
+    final attention = [
+      MaintenanceSectionHeader(
+          title: 'Needs attention',
+          subtitle: late.isEmpty
+              ? 'Nothing overdue'
+              : '${late.length} overdue job${late.length == 1 ? '' : 's'}'),
+      list(late.take(4).toList(), 'All caught up — no overdue maintenance.'),
+    ];
+    final comingUp = [
+      MaintenanceSectionHeader(
+          title: 'Coming up',
+          subtitle: thisWeek == 0
+              ? 'Nothing due this week'
+              : '$thisWeek due in the next 7 days',
+          action: TextButton(
+              onPressed: () => _tabController.animateTo(1),
+              child: const Text('All records'))),
+      if (upcoming.isEmpty)
+        _buildEmptyState('No upcoming maintenance scheduled')
+      else
+        list(upcoming.take(5).toList(), ''),
+    ];
+    final recent = [
+      const MaintenanceSectionHeader(title: 'Recently completed'),
+      list(completed, 'Completed jobs will appear here.'),
+    ];
+
+    return RefreshIndicator(
+      onRefresh: _loadInitialData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            MaintenanceStatTile(
+                value:
+                    '${late.isNotEmpty ? late.length : summary['overdue_maintenance'] ?? 0}',
+                label: 'Overdue',
+                icon: Iconsax.danger,
+                tone: late.isNotEmpty ? GasPalette.critInk : null,
+                onTap: _showOverdueItems),
+            const SizedBox(width: 10),
+            MaintenanceStatTile(
+                value: '$thisWeek',
+                label: 'Due this week',
+                icon: Iconsax.calendar_1),
+            const SizedBox(width: 10),
+            MaintenanceStatTile(
+                value: '${summary['completed_maintenance'] ?? 0}',
+                label: 'Completed',
+                icon: Iconsax.tick_circle,
+                tone: GasPalette.goodInk),
+            if (wide) ...[
+              const SizedBox(width: 10),
+              MaintenanceStatTile(
+                  value: '${summary['total_maintenance'] ?? 0}',
+                  label: 'Last 30 days',
+                  icon: Iconsax.chart_2),
             ],
+          ]),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: _showCreateMaintenanceDialog,
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text('Schedule maintenance'),
+            style: FilledButton.styleFrom(
+                backgroundColor: GasPalette.primary,
+                foregroundColor: Tone.fg(Colors.white),
+                minimumSize: const Size.fromHeight(50),
+                shape: const StadiumBorder()),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _phoneMaintenanceMetric(String label, String value) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(value, style: gasData(context, size: 20)),
-          const SizedBox(height: 4),
-          Text(label, style: gasSmall(context).copyWith(fontSize: 10.5)),
-        ],
-      );
-
-  Widget _buildCompactActionButton(
-      String label, IconData icon, Color color, VoidCallback onTap) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: color, size: 24),
-              SizedBox(height: 4),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey[700],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      childAspectRatio: 2.5,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      children: [
-        _buildQuickActionCard(
-          'Schedule Maintenance',
-          Icons.add_circle,
-          Constants.ctaColorLight,
-          () => _showCreateMaintenanceDialog(),
-        ),
-        _buildQuickActionCard(
-          'Generate Reports',
-          Icons.assessment,
-          Color(0xFF1976D2),
-          () => _showReportsDialog(),
-        ),
-        _buildQuickActionCard(
-          'Overdue Items',
-          Icons.warning,
-          Color(0xFFEF6C00),
-          () => _showOverdueItems(),
-        ),
-        _buildQuickActionCard(
-          'Maintenance Types',
-          Icons.category,
-          Color(0xFF7B1FA2),
-          () => _showMaintenanceTypes(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickActionCard(
-      String title, IconData icon, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: _phoneMaintenanceSurface(BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
+          const SizedBox(height: 10),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            ActionChip(
+                avatar: const Icon(Iconsax.repeat, size: 17),
+                label: const Text('Recurring schedule'),
+                onPressed: _showCreateScheduleDialog),
+            ActionChip(
+                avatar: const Icon(Iconsax.document_text, size: 17),
+                label: const Text('Reports'),
+                onPressed: _showReportsDialog),
+            ActionChip(
+                avatar: const Icon(Iconsax.danger, size: 17),
+                label: const Text('Overdue'),
+                onPressed: _showOverdueItems),
+            ActionChip(
+                avatar: const Icon(Iconsax.category, size: 17),
+                label: const Text('Types'),
+                onPressed: _showMaintenanceTypes),
+          ]),
+          if (wide)
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: comingUp)),
+              const SizedBox(width: 20),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [...attention, ...recent])),
+            ])
+          else ...[
+            if (late.isNotEmpty) ...attention,
+            ...comingUp,
+            ...recent,
           ],
-        )),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
-              ),
-            ),
-          ],
-        ),
+        ]),
       ),
     );
   }
@@ -904,8 +571,19 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                   child: _buildEmptyState('No maintenance records found'))
               : ListView.builder(
                   padding: EdgeInsets.all(16),
-                  itemCount: _maintenanceRecords.length,
+                  itemCount:
+                      _maintenanceRecords.length + (_hasMoreRecords ? 1 : 0),
                   itemBuilder: (context, index) {
+                    if (index == _maintenanceRecords.length)
+                      return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: OutlinedButton(
+                              onPressed: _loadingMoreRecords
+                                  ? null
+                                  : () => _loadMaintenanceRecords(append: true),
+                              child: Text(_loadingMoreRecords
+                                  ? 'Loading…'
+                                  : 'Load more records')));
                     return Container(
                       margin: EdgeInsets.only(bottom: 12),
                       child: _buildMaintenanceCard(_maintenanceRecords[index]),
@@ -919,29 +597,27 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Widget _buildFiltersSection() {
     return Container(
-      padding: EdgeInsets.all(16),
-      color: isPhoneLayout(context) ? GasPalette.page : Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      color: isPhoneLayout(context) ? GasPalette.page : Tone.bg(Colors.white),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.filter_list, color: Constants.ctaColorLight),
-              SizedBox(width: 8),
               Text(
-                'Filters',
+                '${_maintenanceRecords.length}${_hasMoreRecords ? '+' : ''} job${_maintenanceRecords.length == 1 ? '' : 's'}',
                 style: GoogleFonts.inter(
-                  fontSize: isPhoneLayout(context) ? 14 : 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: GasPalette.ink),
               ),
-              Spacer(),
+              const Spacer(),
               if (_filters.isNotEmpty)
                 TextButton(
                   onPressed: () {
                     setState(() {
                       _filters.clear();
+                      _dateRange = null;
                     });
                     _loadMaintenanceRecords();
                   },
@@ -984,12 +660,12 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
         decoration: BoxDecoration(
           color: _filters.containsKey(key)
               ? Constants.ctaColorLight.withOpacity(0.1)
-              : Colors.grey[100],
+              : Tone.bg(Colors.grey[100]),
           borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 20),
           border: Border.all(
             color: _filters.containsKey(key)
                 ? Constants.ctaColorLight
-                : Colors.grey[300]!,
+                : Tone.bg(Colors.grey[300]),
           ),
         ),
         child: Row(
@@ -1002,7 +678,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                 fontWeight: FontWeight.w500,
                 color: _filters.containsKey(key)
                     ? Constants.ctaColorLight
-                    : Colors.grey[700],
+                    : Tone.fg(Colors.grey[700]),
               ),
             ),
             if (_filters.containsKey(key)) ...[
@@ -1055,12 +731,12 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
         decoration: BoxDecoration(
           color: _dateRange != null
               ? Constants.ctaColorLight.withOpacity(0.1)
-              : Colors.grey[100],
+              : Tone.bg(Colors.grey[100]),
           borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 20),
           border: Border.all(
             color: _dateRange != null
                 ? Constants.ctaColorLight
-                : Colors.grey[300]!,
+                : Tone.bg(Colors.grey[300]),
           ),
         ),
         child: Row(
@@ -1071,7 +747,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               size: 14,
               color: _dateRange != null
                   ? Constants.ctaColorLight
-                  : Colors.grey[600],
+                  : Tone.fg(Colors.grey[600]),
             ),
             SizedBox(width: 4),
             Text(
@@ -1083,7 +759,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
                 fontWeight: FontWeight.w500,
                 color: _dateRange != null
                     ? Constants.ctaColorLight
-                    : Colors.grey[700],
+                    : Tone.fg(Colors.grey[700]),
               ),
             ),
           ],
@@ -1092,646 +768,210 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     );
   }
 
+  /// Records, upcoming jobs and reminders all use the shared job card.
   Widget _buildMaintenanceCard(Map<String, dynamic> maintenance,
       {bool isCompact = false}) {
-    if (isPhoneLayout(context))
-      return _phoneMaintenanceRecord(maintenance, isCompact: isCompact);
-    return InkWell(
-      onTap: () => _showMaintenanceDetails(maintenance),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: _phoneMaintenanceSurface(BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        )),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _MaintenanceMetadataRow(
-              spacing: 6,
-              runSpacing: 6,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color:
-                        _getStatusColor(maintenance['status']).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    maintenance['status_display'] ?? '',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _getStatusColor(maintenance['status']),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getPriorityColor(maintenance['priority'])
-                        .withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    maintenance['priority_display'] ?? '',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: _getPriorityColor(maintenance['priority']),
-                    ),
-                  ),
-                ),
-                if (maintenance['is_overdue'] == true)
-                  Icon(Icons.warning, color: Colors.orange, size: 20),
-              ],
-            ),
-            SizedBox(height: 12),
-
-            // Device and Type
-            Text(
-              '${maintenance['device']["name"] ?? 'Unknown Device'} - ${maintenance['maintenance_type']["name"] ?? 'Unknown Type'}',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              maintenance['priority'] ?? 'normal',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-
-            SizedBox(height: 8),
-
-            // Date and Assignee
-            _MaintenanceMetadataRow(
-              spacing: 4,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Icon(Icons.schedule, size: 14, color: Colors.grey[500]),
-                SizedBox(width: 4),
-                Text(
-                  _formatDateTime(maintenance['scheduled_date']),
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                if (maintenance['assigned_to'] != null) ...[
-                  SizedBox(width: 16),
-                  Icon(Icons.person, size: 14, color: Colors.grey[500]),
-                  SizedBox(width: 4),
-                  Text(
-                    maintenance['assigned_to']['username'] ?? '',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-
-            if (!isCompact) ...[
-              SizedBox(height: 8),
-
-              // Work Description
-              Text(
-                maintenance['work_description'] ?? '',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.grey[700],
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              SizedBox(height: 12),
-
-              // Action Buttons
-              // Action Buttons
-              Row(
-                children: [
-                  if (maintenance['status'] == 'scheduled') ...[
-                    _buildActionButton(
-                      'Start',
-                      Icons.play_arrow,
-                      Constants.ctaColorLight,
-                      () =>
-                          _updateMaintenanceStatus(maintenance['id'], 'start'),
-                    ),
-                    SizedBox(width: 8),
-                  ],
-                  if (maintenance['status'] == 'in_progress') ...[
-                    _buildActionButton(
-                      'Complete',
-                      Icons.check,
-                      Color(0xFF1976D2),
-                      () => _updateMaintenanceStatus(
-                          maintenance['id'], 'complete'),
-                    ),
-                    SizedBox(width: 8),
-                  ],
-                  _buildActionButton(
-                    'Details',
-                    Icons.info,
-                    Colors.grey[600]!,
-                    () => _showMaintenanceDetails(maintenance),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUpCommingMaintenanceCard(Map<String, dynamic> maintenance,
-      {bool isCompact = false}) {
-    if (isPhoneLayout(context))
-      return _phoneMaintenanceRecord(maintenance,
-          isCompact: isCompact, upcoming: true);
-    return InkWell(
-      onTap: () => _showMaintenanceDetails(maintenance),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: _phoneMaintenanceSurface(BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        )),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 12),
-            //Text(maintenance.toString()),
-
-            // Device and Type
-            Text(
-              '${maintenance['device_name'] ?? 'Unknown Device'} - ${maintenance['maintenance_type'] ?? 'Unknown Type'} | ${maintenance['priority'] ?? 'normal'}',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-
-            SizedBox(height: 8),
-
-            // Date and Assignee
-            _MaintenanceMetadataRow(
-              spacing: 4,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Icon(Icons.schedule, size: 14, color: Colors.grey[500]),
-                SizedBox(width: 4),
-                Text(
-                  _formatDateTime(maintenance['scheduled_date']),
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                if (maintenance['assigned_to'] != null) ...[
-                  SizedBox(width: 16),
-                  Icon(Icons.person, size: 14, color: Colors.grey[500]),
-                  SizedBox(width: 4),
-                  Text(
-                    (maintenance['assigned_to'] ?? '').toString(),
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-
-            if (!isCompact) ...[
-              SizedBox(height: 8),
-
-              // Work Description
-              Text(
-                maintenance['work_description'] ?? '',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.grey[700],
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              SizedBox(height: 12),
-
-              // Action Buttons
-              // Action Buttons
-              Row(
-                children: [
-                  if (maintenance['status'] == 'scheduled') ...[
-                    _buildActionButton(
-                      'Start',
-                      Icons.play_arrow,
-                      Constants.ctaColorLight,
-                      () =>
-                          _updateMaintenanceStatus(maintenance['id'], 'start'),
-                    ),
-                    SizedBox(width: 8),
-                  ],
-                  if (maintenance['status'] == 'in_progress') ...[
-                    _buildActionButton(
-                      'Complete',
-                      Icons.check,
-                      Color(0xFF1976D2),
-                      () => _updateMaintenanceStatus(
-                          maintenance['id'], 'complete'),
-                    ),
-                    SizedBox(width: 8),
-                  ],
-                  _buildActionButton(
-                    'Details',
-                    Icons.info,
-                    Colors.grey[600]!,
-                    () => _showMaintenanceDetails(maintenance),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _phoneMaintenanceRecord(Map<String, dynamic> maintenance,
-      {required bool isCompact, bool upcoming = false}) {
-    final deviceName = upcoming
-        ? maintenance['device_name'] ?? 'Unknown Device'
-        : maintenance['device']['name'] ?? 'Unknown Device';
-    final type = upcoming
-        ? maintenance['maintenance_type'] ?? 'Unknown Type'
-        : maintenance['maintenance_type']['name'] ?? 'Unknown Type';
-    final assignee = upcoming
-        ? maintenance['assigned_to']
-        : maintenance['assigned_to']?['username'];
-    return GPanel(
-        padding: EdgeInsets.zero,
-        child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              onTap: () => _showMaintenanceDetails(maintenance),
-              borderRadius: BorderRadius.circular(14),
-              child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                  child: Text('$deviceName',
-                                      style: gasTitle(context).copyWith(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600))),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.chevron_right_rounded,
-                                  size: 20, color: GasPalette.ink2),
-                            ]),
-                        const SizedBox(height: 5),
-                        Text('$type', style: gasSmall(context)),
-                        const SizedBox(height: 8),
-                        Wrap(spacing: 6, runSpacing: 6, children: [
-                          if (!upcoming)
-                            _phoneMaintenanceBadge(
-                                maintenance['status_display'] ?? '',
-                                _getStatusColor(maintenance['status'])),
-                          _phoneMaintenanceBadge(
-                              upcoming
-                                  ? maintenance['priority'] ?? 'normal'
-                                  : maintenance['priority_display'] ?? '',
-                              _getPriorityColor(maintenance['priority'])),
-                          if (maintenance['is_overdue'] == true)
-                            _phoneMaintenanceBadge(
-                                'Overdue', GasPalette.critInk),
-                        ]),
-                        const SizedBox(height: 8),
-                        Text(_formatDateTime(maintenance['scheduled_date']),
-                            style: gasSmall(context)),
-                        if (assignee != null) ...[
-                          const SizedBox(height: 4),
-                          Text('Assigned to $assignee',
-                              style: gasSmall(context)),
-                        ],
-                        if (!isCompact) ...[
-                          const SizedBox(height: 10),
-                          Text(maintenance['work_description'] ?? '',
-                              style: gasBody(context),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis),
-                          const SizedBox(height: 8),
-                          Wrap(spacing: 8, runSpacing: 8, children: [
-                            if (maintenance['status'] == 'scheduled')
-                              _buildActionButton(
-                                  'Start',
-                                  Icons.play_arrow,
-                                  GasPalette.primary,
-                                  () => _updateMaintenanceStatus(
-                                      maintenance['id'], 'start')),
-                            if (maintenance['status'] == 'in_progress')
-                              _buildActionButton(
-                                  'Complete',
-                                  Icons.check,
-                                  GasPalette.primary,
-                                  () => _updateMaintenanceStatus(
-                                      maintenance['id'], 'complete')),
-                            _buildActionButton(
-                                'Details',
-                                Icons.info_outline,
-                                GasPalette.ink2,
-                                () => _showMaintenanceDetails(maintenance)),
-                          ]),
-                        ],
-                      ])),
-            )));
-  }
-
-  Widget _phoneMaintenanceBadge(String label, Color color) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-        decoration: BoxDecoration(
-            color: color.withValues(alpha: .08),
-            borderRadius: BorderRadius.circular(32)),
-        child: Text(label,
-            style: gasSmall(context).copyWith(
-                color: color, fontSize: 10.5, fontWeight: FontWeight.w600)),
-      );
-
-  Widget _buildActionButton(
-      String label, IconData icon, Color color, VoidCallback onPressed) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 6),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-            horizontal: 16, vertical: isPhoneLayout(context) ? 12 : 6),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 6),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: color),
-            SizedBox(width: 4),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: color,
-              ),
-            ),
-          ],
-        ),
+    final status = maintenance['status'];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: MaintenanceJobCard(
+        record: maintenance,
+        compact: isCompact,
+        onOpen: () => _showMaintenanceDetails(maintenance),
+        onStart: status == 'scheduled' || status == 'overdue'
+            ? () => _updateMaintenanceStatus('${maintenance['id']}', 'start')
+            : null,
+        onComplete: status == 'in_progress'
+            ? () => _updateMaintenanceStatus('${maintenance['id']}', 'complete')
+            : null,
       ),
     );
   }
 
   Widget _buildSchedulingTab() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final active =
+        _schedules.where((x) => x is Map && x['is_active'] == true).length;
+    return RefreshIndicator(
+      onRefresh: _loadSchedules,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          _buildSectionHeader('Recurring Schedules', Icons.repeat),
-          SizedBox(height: 12),
-          // Add scheduling interface here
-          _buildSchedulesList(),
-
-          SizedBox(height: 24),
-
-          _buildSectionHeader('Generate Maintenance', Icons.auto_awesome),
-          SizedBox(height: 12),
-          _buildGenerateMaintenanceSection(),
+          MaintenanceSectionHeader(
+            title: 'Recurring schedules',
+            subtitle: _schedules.isEmpty
+                ? 'Repeat routine jobs automatically'
+                : '$active active of ${_schedules.length}',
+            action: FilledButton.icon(
+              onPressed: _showCreateScheduleDialog,
+              style: FilledButton.styleFrom(
+                  backgroundColor: GasPalette.primary,
+                  foregroundColor: Tone.fg(Colors.white),
+                  shape: const StadiumBorder()),
+              icon: const Icon(Iconsax.repeat, size: 18),
+              label: const Text('New schedule'),
+            ),
+          ),
+          const SetupNote(
+            icon: Iconsax.magicpen,
+            title: 'Jobs create themselves',
+            text:
+                'Each schedule adds its next job 3 days before it’s due, at 09:00, and the usual reminders follow. '
+                'Use “Create due jobs now” if you don’t want to wait.',
+          ),
+          const SizedBox(height: 12),
+          if (_schedules.isEmpty)
+            _buildEmptyState('No recurring schedules yet')
+          else
+            for (final schedule in _schedules.whereType<Map>())
+              _scheduleCard(Map<String, dynamic>.from(schedule)),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: _generateScheduledMaintenance,
+              style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
+              icon: const Icon(Iconsax.flash_1, size: 18),
+              label: const Text('Create due jobs now'),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSchedulesList() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface(BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      )),
-      child: Column(
-        children: [
-          _MaintenanceMetadataRow(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Icon(Icons.schedule, color: Constants.ctaColorLight),
-              SizedBox(width: 8),
-              Text(
-                'Active Schedules (${_schedules.length})',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+  Widget _scheduleCard(Map<String, dynamic> schedule) {
+    final isActive = schedule['is_active'] == true;
+    final device = MaintenanceEquipment.of(schedule['device']);
+    final deviceName =
+        '${schedule['device'] is Map ? schedule['device']['name'] : 'Equipment'}';
+    final unit = device?.connectedUnit?.name;
+    final type =
+        '${schedule['maintenance_type'] is Map ? schedule['maintenance_type']['name'] : 'Maintenance'}';
+    final frequency = schedule['frequency'] == 'custom'
+        ? 'Every ${schedule['custom_frequency_days']} days'
+        : '${schedule['frequency_display'] ?? schedule['frequency']}';
+    final next = DateTime.tryParse('${schedule['next_due']}');
+    final assignee = schedule['auto_assign_to'] is Map
+        ? '${schedule['auto_assign_to']['name'] ?? schedule['auto_assign_to']['full_name'] ?? ''}'
+        : '';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: Tone.bg(Colors.white),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: GasPalette.border)),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Opacity(
+              opacity: isActive ? 1 : .45,
+              child: Container(
+                width: 48,
+                height: 48,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                    color: GasPalette.panelAlt,
+                    borderRadius: BorderRadius.circular(12)),
+                child: DeviceIllustration(type: device?.deviceType, size: 40),
               ),
-              Spacer(),
-              IconButton(
-                onPressed: () => _loadSchedules(),
-                icon: Icon(Icons.refresh, size: 20),
-                tooltip: 'Refresh',
-              ),
-              SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: () => _showCreateScheduleDialog(),
-                icon: Icon(Icons.add, size: 16),
-                label: Text('New Schedule'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isPhoneLayout(context)
-                      ? GasPalette.primary
-                      : Constants.ctaColorLight,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          if (_schedules.isEmpty)
-            _buildEmptyState('No recurring schedules configured')
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: _schedules.length,
-              separatorBuilder: (context, index) => Divider(height: 1),
-              itemBuilder: (context, index) {
-                final schedule = _schedules[index];
-                final isActive = schedule['is_active'] ?? false;
-                return ListTile(
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  leading: Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.repeat,
-                      color: isActive ? Colors.green : Colors.grey,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(
-                    '${schedule['device']?['name'] ?? 'Unknown Device'}',
-                    style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${schedule['maintenance_type']?['name'] ?? ''} - ${schedule['frequency_display'] ?? ''}',
-                        style: GoogleFonts.inter(
-                            fontSize: 12, color: Colors.grey[600]),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Next due: ${schedule['next_due'] ?? 'N/A'}',
-                        style: GoogleFonts.inter(
-                            fontSize: 11, color: Constants.ctaColorLight),
-                      ),
-                    ],
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          isActive ? 'Active' : 'Inactive',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isActive ? Colors.green : Colors.red,
-                          ),
-                        ),
-                      ),
-                      PopupMenuButton<String>(
-                        icon: Icon(Icons.more_vert, size: 18),
-                        onSelected: (value) {
-                          if (value == 'toggle') {
-                            _toggleScheduleStatus(schedule['id'], !isActive);
-                          } else if (value == 'delete') {
-                            _deleteSchedule(schedule['id']);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: 'toggle',
-                            child: Row(
-                              children: [
-                                Icon(isActive ? Icons.pause : Icons.play_arrow,
-                                    size: 18),
-                                SizedBox(width: 8),
-                                Text(isActive ? 'Deactivate' : 'Activate'),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(Icons.delete, size: 18, color: Colors.red),
-                                SizedBox(width: 8),
-                                Text('Delete',
-                                    style: TextStyle(color: Colors.red)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
             ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(type,
+                        style: GoogleFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: GasPalette.ink)),
+                    Text(unit == null ? deviceName : '$unit · $deviceName',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                            fontSize: 13, color: GasPalette.ink2)),
+                  ]),
+            ),
+            PopupMenuButton<String>(
+              tooltip: 'Schedule options',
+              onSelected: (value) {
+                if (value == 'toggle')
+                  _toggleScheduleStatus('${schedule['id']}', !isActive);
+                if (value == 'delete') _deleteSchedule('${schedule['id']}');
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                    value: 'toggle',
+                    child:
+                        Text(isActive ? 'Pause schedule' : 'Resume schedule')),
+                PopupMenuItem(
+                    value: 'delete',
+                    child: Text('Delete schedule',
+                        style: TextStyle(color: GasPalette.critInk))),
+              ],
+            ),
+          ]),
+          const SizedBox(height: 10),
+          Wrap(spacing: 6, runSpacing: 6, children: [
+            MaintenancePill(
+                text: frequency,
+                bg: GasPalette.seriesSoft,
+                fg: GasPalette.series,
+                icon: Iconsax.repeat),
+            isActive
+                ? MaintenancePill(
+                    text: next == null
+                        ? 'Next job: not set'
+                        : 'Next job ${DateFormat('EEE d MMM').format(next)}',
+                    bg: GasPalette.panelAlt,
+                    fg: GasPalette.ink,
+                    icon: Iconsax.calendar_1)
+                : MaintenancePill(
+                    text: 'Paused',
+                    bg: GasPalette.warnSoft,
+                    fg: GasPalette.warnInk,
+                    icon: Iconsax.pause_circle),
+            if (assignee.trim().isNotEmpty)
+              MaintenancePill(
+                  text: assignee,
+                  bg: GasPalette.panelAlt,
+                  fg: GasPalette.ink2,
+                  icon: Iconsax.user),
+          ]),
+        ]),
       ),
     );
   }
 
   Future<void> _toggleScheduleStatus(String scheduleId, bool isActive) async {
     try {
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/schedule/$scheduleId/update/'),
-        headers: ApiConfig.headers,
-        body: json.encode({'is_active': isActive}),
-      );
+      final response = await http
+          .post(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/schedule/$scheduleId/update/'),
+            headers: await ApiConfig.authHeaders(),
+            body: json.encode({'is_active': isActive}),
+          )
+          .timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200) throw StateError('Request failed');
+      if (!mounted) return;
       if (response.statusCode == 200) {
         _loadSchedules();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
                   Text('Schedule ${isActive ? 'activated' : 'deactivated'}'),
-              backgroundColor: Colors.green),
+              backgroundColor: Tone.bg(Colors.green)),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('Error updating schedule'),
-            backgroundColor: Colors.red),
+            backgroundColor: Tone.bg(Colors.red)),
       );
     }
   }
@@ -1748,7 +988,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
               child: Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text('Delete', style: TextStyle(color: Tone.fg(Colors.red))),
           ),
         ],
       ),
@@ -1756,718 +996,364 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     if (confirm != true) return;
 
     try {
-      final response = await http.delete(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/schedule/$scheduleId/delete/'),
-        headers: ApiConfig.headers,
-      );
+      final response = await http
+          .delete(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/schedule/$scheduleId/delete/'),
+            headers: await ApiConfig.authHeaders(),
+          )
+          .timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200) throw StateError('Request failed');
+      if (!mounted) return;
       if (response.statusCode == 200) {
         _loadSchedules();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Schedule deleted'), backgroundColor: Colors.green),
+              content: Text('Schedule deleted'), backgroundColor: Tone.bg(Colors.green)),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('Error deleting schedule'),
-            backgroundColor: Colors.red),
+            backgroundColor: Tone.bg(Colors.red)),
       );
     }
-  }
-
-  Widget _buildGenerateMaintenanceSection() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface(BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      )),
-      child: Column(
-        children: [
-          _MaintenanceMetadataRow(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Icon(Icons.auto_awesome, color: Constants.ctaColorLight),
-              SizedBox(width: 8),
-              Text(
-                'Auto-Generate Maintenance',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Text(
-            'Generate maintenance records from active schedules that are due.',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-          SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () => _generateScheduledMaintenance(),
-            icon: Icon(Icons.play_arrow, size: 16),
-            label: Text('Generate Now'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isPhoneLayout(context)
-                  ? GasPalette.primary
-                  : Constants.ctaColorLight,
-              foregroundColor: Colors.white,
-              minimumSize: Size(double.infinity, 40),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildAnalyticsTab() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final cost = _dashboardData['cost_analysis'] is Map
+        ? _dashboardData['cost_analysis'] as Map
+        : const {};
+    final duration = _dashboardData['duration_analysis'] is Map
+        ? _dashboardData['duration_analysis'] as Map
+        : const {};
+    final summary = _dashboardData['summary'] is Map
+        ? _dashboardData['summary'] as Map
+        : const {};
+    final breakdowns = _dashboardData['breakdowns'] is Map
+        ? _dashboardData['breakdowns'] as Map
+        : const {};
+    final money = NumberFormat.currency(symbol: 'R ', decimalDigits: 0);
+    double n(dynamic v) => v is num ? v.toDouble() : double.tryParse('$v') ?? 0;
+    final variance = n(cost['cost_variance']);
+    final period = _dashboardData['period'];
+    final from =
+        period is Map ? DateTime.tryParse('${period['date_from']}') : null;
+    final to = period is Map ? DateTime.tryParse('${period['date_to']}') : null;
+
+    Widget pair(Widget a, Widget b) =>
+        Row(children: [a, const SizedBox(width: 10), b]);
+
+    return RefreshIndicator(
+      onRefresh: _loadInitialData,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          // Cost Analysis
-          _buildSectionHeader('Cost Analysis', Icons.monetization_on),
-          SizedBox(height: 12),
-          _buildCostAnalysisSection(),
-
-          SizedBox(height: 24),
-
-          // Performance Metrics
-          _buildSectionHeader('Performance Metrics', Icons.trending_up),
-          SizedBox(height: 12),
-          _buildPerformanceMetrics(),
-
-          SizedBox(height: 24),
-
-          // Charts and Trends
-          _buildSectionHeader('Trends & Breakdown', Icons.pie_chart),
-          SizedBox(height: 12),
-          _buildChartsSection(),
+          Text(
+              from != null && to != null
+                  ? 'Last 30 days · ${DateFormat('d MMM').format(from)} – ${DateFormat('d MMM').format(to)}'
+                  : 'Last 30 days',
+              style: GoogleFonts.inter(fontSize: 13, color: GasPalette.ink2)),
+          const MaintenanceSectionHeader(
+              title: 'Costs',
+              subtitle: 'Actual against estimated, for jobs in this period'),
+          pair(
+            MaintenanceStatTile(
+                value: money.format(n(cost['total_cost'])),
+                label: 'Spent',
+                icon: Iconsax.wallet_2),
+            MaintenanceStatTile(
+                value: money.format(n(cost['total_estimated'])),
+                label: 'Estimated',
+                icon: Iconsax.receipt_2),
+          ),
+          const SizedBox(height: 10),
+          pair(
+            MaintenanceStatTile(
+                value: money.format(n(cost['avg_cost'])),
+                label: 'Average per job',
+                icon: Iconsax.calculator),
+            MaintenanceStatTile(
+                value: '${variance > 0 ? '+' : ''}${money.format(variance)}',
+                label: variance > 0 ? 'Over estimate' : 'Under or on estimate',
+                icon: Iconsax.chart_1,
+                tone: variance > 0 ? GasPalette.critInk : GasPalette.goodInk),
+          ),
+          const MaintenanceSectionHeader(title: 'Time and completion'),
+          pair(
+            MaintenanceStatTile(
+                value: '${n(duration['total_hours']).toStringAsFixed(1)} h',
+                label: 'Hours worked',
+                icon: Iconsax.clock),
+            MaintenanceStatTile(
+                value: '${n(duration['avg_hours']).toStringAsFixed(1)} h',
+                label: 'Average job',
+                icon: Iconsax.timer_1),
+          ),
+          const SizedBox(height: 10),
+          pair(
+            MaintenanceStatTile(
+                value: '${n(summary['completion_rate']).toStringAsFixed(0)}%',
+                label: 'Completed',
+                icon: Iconsax.tick_circle,
+                tone: GasPalette.goodInk),
+            MaintenanceStatTile(
+                value: '${n(summary['on_time_rate']).toStringAsFixed(0)}%',
+                label: 'On time',
+                icon: Iconsax.calendar_tick),
+          ),
+          _breakdown('By status', breakdowns['by_status']),
+          _breakdown('By type', breakdowns['by_type']),
+          _breakdown('By equipment', breakdowns['by_device']),
         ],
       ),
     );
   }
 
-  Widget _buildCostAnalysisSection() {
-    final costAnalysis = _dashboardData['cost_analysis'] ?? {};
-
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface(BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      )),
-      child: Column(
-        children: [
-          MobileFormRow(
-            children: [
-              Expanded(
-                child: _buildAnalyticsCard(
-                  'Total Cost',
-                  '${costAnalysis['total_cost']?.toStringAsFixed(2) ?? '0.00'}',
-                  Icons.attach_money,
-                  Color(0xFF1976D2),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _buildAnalyticsCard(
-                  'Average Cost',
-                  '${costAnalysis['avg_cost']?.toStringAsFixed(2) ?? '0.00'}',
-                  Icons.bar_chart,
-                  Color(0xFF388E3C),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          MobileFormRow(
-            children: [
-              Expanded(
-                child: _buildAnalyticsCard(
-                  'Estimated',
-                  '${costAnalysis['total_estimated']?.toStringAsFixed(2) ?? '0.00'}',
-                  Icons.calculate,
-                  Color(0xFF7B1FA2),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _buildAnalyticsCard(
-                  'Variance',
-                  '${costAnalysis['cost_variance']?.toStringAsFixed(2) ?? '0.00'}',
-                  Icons.trending_up,
-                  costAnalysis['cost_variance'] != null &&
-                          costAnalysis['cost_variance'] > 0
-                      ? Color(0xFFD32F2F)
-                      : Color(0xFF388E3C),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPerformanceMetrics() {
-    final durationAnalysis = _dashboardData['duration_analysis'] ?? {};
-    final summary = _dashboardData['summary'] ?? {};
-
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface(BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      )),
-      child: Column(
-        children: [
-          MobileFormRow(
-            children: [
-              Expanded(
-                child: _buildAnalyticsCard(
-                  'Total Hours',
-                  '${durationAnalysis['total_hours']?.toStringAsFixed(1) ?? '0.0'}h',
-                  Icons.timer,
-                  Color(0xFF1976D2),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _buildAnalyticsCard(
-                  'Avg Duration',
-                  '${durationAnalysis['avg_hours']?.toStringAsFixed(1) ?? '0.0'}h',
-                  Icons.schedule,
-                  Color(0xFF388E3C),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          MobileFormRow(
-            children: [
-              Expanded(
-                child: _buildAnalyticsCard(
-                  'Completion Rate',
-                  '${summary['completion_rate']?.toStringAsFixed(1) ?? '0.0'}%',
-                  Icons.check_circle,
-                  Color(0xFF388E3C),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _buildAnalyticsCard(
-                  'On-Time Rate',
-                  '${_calculateOnTimeRate()}%',
-                  Icons.access_time,
-                  Color(0xFF7B1FA2),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAnalyticsCard(
-      String title, String value, IconData icon, Color color) {
-    if (isPhoneLayout(context)) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(children: [
-          Expanded(child: Text(title, style: gasSmall(context))),
-          const SizedBox(width: 12),
-          Flexible(
-              child: Text(value,
-                  textAlign: TextAlign.end, style: gasData(context, size: 18))),
-        ]),
-      );
+  Widget _breakdown(String title, dynamic raw) {
+    final rows = (raw is List ? raw : const []).whereType<Map>().toList();
+    String label(Map item) {
+      final v = item['status_display'] ??
+          item['status'] ??
+          item['name'] ??
+          item['maintenance_type__name'] ??
+          item['device__name'] ??
+          'Other';
+      final text = '$v'.replaceAll('_', ' ');
+      return text.isEmpty
+          ? 'Other'
+          : '${text[0].toUpperCase()}${text.substring(1)}';
     }
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+
+    final max = rows.fold<num>(
+        1,
+        (m, r) =>
+            (r['count'] is num && r['count'] > m) ? r['count'] as num : m);
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      MaintenanceSectionHeader(title: title),
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: Tone.bg(Colors.white),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: GasPalette.border)),
+        child: rows.isEmpty
+            ? Text('No jobs in this period yet.',
+                style:
+                    GoogleFonts.inter(fontSize: 13.5, color: GasPalette.ink2))
+            : Column(children: [
+                for (final r in rows.take(6))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(children: [
+                      SizedBox(
+                        width: 120,
+                        child: Text(label(r),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                                fontSize: 13, color: GasPalette.ink)),
+                      ),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(99),
+                          child: LinearProgressIndicator(
+                            value: ((r['count'] as num?) ?? 0) / max,
+                            minHeight: 10,
+                            backgroundColor: GasPalette.panelAlt,
+                            color: GasPalette.series,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 28,
+                        child: Text('${r['count'] ?? 0}',
+                            textAlign: TextAlign.right,
+                            style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: GasPalette.ink)),
+                      ),
+                    ]),
+                  ),
+              ]),
       ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
+    ]);
   }
 
-  Widget _buildChartsSection() {
-    final breakdowns = _dashboardData['breakdowns'] ?? {};
+  /// Reminder rows are flat; shape them like records for the job card.
+  Map<String, dynamic> _reminderAsRecord(Map r) => {
+        'id': r['id'],
+        'device': {'device_id': r['device_id'], 'name': r['device_name']},
+        'maintenance_type': {'name': r['maintenance_type']},
+        'scheduled_date': r['scheduled_date'],
+        'status': r['status'],
+        'status_display': r['status_display'],
+        'priority': r['priority'],
+        'priority_display': r['priority_display'],
+        'assigned_to': r['assigned_to'] is String
+            ? {'full_name': r['assigned_to']}
+            : r['assigned_to'],
+        'work_description': r['work_description'],
+      };
 
-    return Column(
-      children: [
-        // Status Breakdown
-        _buildBreakdownCard('Status Breakdown', breakdowns['by_status']),
-        SizedBox(height: 16),
-        // Type Breakdown
-        _buildBreakdownCard(
-            'Maintenance Type Breakdown', breakdowns['by_type']),
-        SizedBox(height: 16),
-        // Device Breakdown
-        _buildBreakdownCard('Top Devices', breakdowns['by_device']),
-      ],
-    );
-  }
-
-  Widget _buildBreakdownCard(String title, List<dynamic>? data) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface(BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      )),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
-            ),
-          ),
-          SizedBox(height: 12),
-          if (data != null && data.isNotEmpty)
-            ...data.take(5).map((item) => _buildBreakdownItem(item)).toList()
-          else
-            _buildEmptyState('No data available'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBreakdownItem(Map<String, dynamic> item) {
-    final count = item['count'] ?? 0;
-    final total = _dashboardData['summary']['total_maintenance'] ?? 1;
-    final percentage = (count / total * 100).round();
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Text(
-              item['status'] ??
-                  item['name'] ??
-                  item['device__name'] ??
-                  'Unknown',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: LinearProgressIndicator(
-              value: percentage / 100,
-              backgroundColor: Colors.grey[200],
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
-            ),
-          ),
-          SizedBox(width: 8),
-          Text(
-            '$count ($percentage%)',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
+  String _nextReminder(dynamic scheduled) {
+    final at = DateTime.tryParse('$scheduled')?.toLocal();
+    if (at == null) return '';
+    final h = at.difference(DateTime.now()).inMinutes / 60;
+    if (h <= 0) return 'Daily overdue reminders';
+    if (h <= 3) return '3-hour reminder sent or due now';
+    if (h <= 24) return 'Next: day-before reminder';
+    if (h <= 48) return 'Next: 2-day reminder';
+    if (h <= 72) return 'Next: 3-day reminder';
+    return 'First reminder ${DateFormat('EEE d MMM').format(at.subtract(const Duration(days: 3)))}';
   }
 
   Widget _buildRemindersTab() {
-    final summary = _remindersData['summary'] ?? <String, dynamic>{};
-    final upcoming = _remindersData['upcoming'] ?? [];
-    final overdue = _remindersData['overdue'] ?? [];
-    final sentReminders = _remindersData['sent_reminders'] ?? [];
+    final summary = _remindersData['summary'] is Map
+        ? Map<String, dynamic>.from(_remindersData['summary'])
+        : <String, dynamic>{};
+    final upcoming = (_remindersData['upcoming'] as List? ?? const [])
+        .whereType<Map>()
+        .toList();
+    final overdue = (_remindersData['overdue'] as List? ?? const [])
+        .whereType<Map>()
+        .toList();
+    final sent = (_remindersData['sent_reminders'] as List? ?? const [])
+        .whereType<Map>()
+        .toList();
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Reminder Stats
-          _buildReminderStats(summary),
-          SizedBox(height: 24),
-
-          // Overdue Maintenance
-          if (overdue.isNotEmpty) ...[
-            _buildSectionHeader('Overdue Maintenance', Icons.warning_rounded),
-            SizedBox(height: 12),
-            _buildRemindersList(overdue, isOverdue: true),
-            SizedBox(height: 24),
-          ],
-
-          // Upcoming Reminders
-          _buildSectionHeader('Upcoming Maintenance', Icons.schedule),
-          SizedBox(height: 12),
-          _buildRemindersList(upcoming, isOverdue: false),
-          SizedBox(height: 24),
-
-          // Sent Reminders History
-          _buildSectionHeader('Recent Reminders Sent', Icons.history),
-          SizedBox(height: 12),
-          _buildSentRemindersList(sentReminders),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReminderStats(Map<String, dynamic> summary) {
-    if (isPhoneLayout(context)) {
-      return GPanel(
-          padding: const EdgeInsets.all(16),
-          child: Row(children: [
-            Expanded(
-                child: _phoneMaintenanceMetric(
-                    'Upcoming', '${summary['upcoming_count'] ?? 0}')),
-            Expanded(
-                child: _phoneMaintenanceMetric(
-                    'Overdue', '${summary['overdue_count'] ?? 0}')),
-            Expanded(
-                child: _phoneMaintenanceMetric('Sent today',
-                    '${(summary['reminders_sent_today'] ?? 0) + (summary['overdue_reminders_sent_today'] ?? 0)}')),
-          ]));
-    }
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: mobileFlatDecoration(
-          context,
-          BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Constants.ctaColorLight,
-                Constants.ctaColorLight.withOpacity(0.8)
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Constants.ctaColorLight.withOpacity(0.3),
-                blurRadius: 12,
-                offset: Offset(0, 4),
-              ),
-            ],
-          )),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildReminderStatCard(
-              'Upcoming',
-              '${summary['upcoming_count'] ?? 0}',
-              Icons.schedule,
-            ),
-          ),
-          Container(width: 1, height: 50, color: Colors.white.withOpacity(0.3)),
-          Expanded(
-            child: _buildReminderStatCard(
-              'Overdue',
-              '${summary['overdue_count'] ?? 0}',
-              Icons.warning_rounded,
-            ),
-          ),
-          Container(width: 1, height: 50, color: Colors.white.withOpacity(0.3)),
-          Expanded(
-            child: _buildReminderStatCard(
-              'Sent Today',
-              '${(summary['reminders_sent_today'] ?? 0) + (summary['overdue_reminders_sent_today'] ?? 0)}',
-              Icons.send,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReminderStatCard(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white, size: 24),
-        SizedBox(height: 8),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: Colors.white.withOpacity(0.9),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRemindersList(List<dynamic> reminders,
-      {required bool isOverdue}) {
-    if (reminders.isEmpty) {
-      return _buildEmptyState(
-          isOverdue ? 'No overdue maintenance' : 'No upcoming maintenance');
-    }
-
-    return Container(
-      decoration: _phoneMaintenanceSurface(BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      )),
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        itemCount: reminders.length,
-        separatorBuilder: (context, index) => Divider(height: 1),
-        itemBuilder: (context, index) {
-          final reminder = reminders[index];
-          return _buildReminderCard(reminder, isOverdue: isOverdue);
-        },
-      ),
-    );
-  }
-
-  Widget _buildReminderCard(Map<String, dynamic> reminder,
-      {required bool isOverdue}) {
-    final priorityColor = _getPriorityColor(reminder['priority'] ?? 'normal');
-    final reminderSent = reminder['reminder_sent'] ?? false;
-    final overdueReminderSent = reminder['overdue_reminder_sent'] ?? false;
-
-    return ListTile(
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: Container(
-        padding: EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: isOverdue
-              ? Colors.red.withOpacity(0.1)
-              : Colors.blue.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(
-          isOverdue ? Icons.warning_rounded : Icons.schedule,
-          color: isOverdue ? Colors.red : Colors.blue,
-          size: 24,
-        ),
-      ),
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              reminder['device_name'] ?? 'Unknown Device',
-              style:
-                  GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
-            ),
-          ),
+    Widget step(String when, String label, {bool late = false}) =>
+        Column(children: [
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: priorityColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              reminder['priority_display'] ?? '',
+                color: late ? GasPalette.critSoft : GasPalette.seriesSoft,
+                shape: BoxShape.circle),
+            child: Icon(late ? Iconsax.danger : Iconsax.notification,
+                size: 17, color: late ? GasPalette.critInk : GasPalette.series),
+          ),
+          const SizedBox(height: 4),
+          Text(when,
               style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: priorityColor,
-              ),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: GasPalette.ink)),
+          Text(label,
+              style: GoogleFonts.inter(fontSize: 11, color: GasPalette.ink2)),
+        ]);
+
+    Widget job(Map r, {bool late = false}) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            MaintenanceJobCard(
+                record: _reminderAsRecord(r),
+                compact: true,
+                onOpen: () => _showMaintenanceDetails(_reminderAsRecord(r))),
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 4),
+              child: Text(_nextReminder(r['scheduled_date']),
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: late ? GasPalette.critInk : GasPalette.ink2)),
             ),
-          ),
-        ],
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+          ]),
+        );
+
+    return RefreshIndicator(
+      onRefresh: _loadInitialData,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          SizedBox(height: 4),
-          Text(
-            reminder['maintenance_type'] ?? '',
-            style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[700]),
+          Row(children: [
+            MaintenanceStatTile(
+                value: '${summary['upcoming_count'] ?? upcoming.length}',
+                label: 'Upcoming',
+                icon: Iconsax.calendar_1),
+            const SizedBox(width: 10),
+            MaintenanceStatTile(
+                value: '${summary['overdue_count'] ?? overdue.length}',
+                label: 'Overdue',
+                icon: Iconsax.danger,
+                tone: overdue.isNotEmpty ? GasPalette.critInk : null),
+            const SizedBox(width: 10),
+            MaintenanceStatTile(
+                value:
+                    '${summary['reminders_sent_today'] ?? summary['sent_today'] ?? 0}',
+                label: 'Sent today',
+                icon: Iconsax.sms),
+          ]),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+                color: Tone.bg(Colors.white),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: GasPalette.border)),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('How reminders work',
+                      style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: GasPalette.ink)),
+                  const SizedBox(height: 4),
+                  Text(
+                      'Emails go to the person assigned, the account owner, administrators and managers.',
+                      style: GoogleFonts.inter(
+                          fontSize: 13, color: GasPalette.ink2)),
+                  const SizedBox(height: 14),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        step('3 days', 'before'),
+                        step('2 days', 'before'),
+                        step('1 day', 'before'),
+                        step('3 hours', 'before'),
+                        step('Late', 'daily ×3', late: true),
+                      ]),
+                ]),
           ),
-          SizedBox(height: 2),
-          _MaintenanceMetadataRow(
-            spacing: 4,
-            runSpacing: 6,
-            children: [
-              Icon(Icons.access_time,
-                  size: 12, color: isOverdue ? Colors.red : Colors.grey),
-              SizedBox(width: 4),
-              Text(
-                reminder['time_display'] ?? '',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: isOverdue ? Colors.red : Colors.grey[600],
-                  fontWeight: isOverdue ? FontWeight.w600 : FontWeight.normal,
-                ),
-              ),
-              SizedBox(width: 12),
-              if (reminderSent || overdueReminderSent)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check_circle, size: 10, color: Colors.green),
-                      SizedBox(width: 4),
-                      Text(
-                        'Reminder Sent',
-                        style: GoogleFonts.inter(
-                            fontSize: 9,
-                            color: Colors.green,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          if (reminder['assigned_to'] != null) ...[
-            SizedBox(height: 2),
-            Text(
-              'Assigned: ${reminder['assigned_to']}',
-              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[500]),
-            ),
+          if (overdue.isNotEmpty) ...[
+            MaintenanceSectionHeader(
+                title: 'Overdue', subtitle: 'Reminded daily for 3 days'),
+            for (final r in overdue) job(r, late: true),
           ],
-        ],
-      ),
-      trailing: IconButton(
-        onPressed: () => _sendManualReminder(
-          reminder['id'],
-          isOverdue ? 'overdue' : 'upcoming',
-        ),
-        icon: Icon(Icons.send, color: Constants.ctaColorLight, size: 20),
-        tooltip: 'Send Reminder',
-      ),
-    );
-  }
-
-  Widget _buildSentRemindersList(List<dynamic> sentReminders) {
-    if (sentReminders.isEmpty) {
-      return _buildEmptyState('No reminders sent recently');
-    }
-
-    return Container(
-      decoration: _phoneMaintenanceSurface(BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      )),
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        itemCount: sentReminders.length > 10 ? 10 : sentReminders.length,
-        separatorBuilder: (context, index) => Divider(height: 1),
-        itemBuilder: (context, index) {
-          final reminder = sentReminders[index];
-          return ListTile(
-            dense: true,
-            leading: Container(
-              padding: EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
+          const MaintenanceSectionHeader(title: 'Upcoming'),
+          if (upcoming.isEmpty)
+            _buildEmptyState('No upcoming maintenance')
+          else
+            for (final r in upcoming) job(r),
+          const MaintenanceSectionHeader(title: 'Recently sent'),
+          if (sent.isEmpty)
+            _buildEmptyState('No reminders sent recently')
+          else
+            for (final r in sent.take(10))
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                    backgroundColor: GasPalette.goodSoft,
+                    child: Icon(Iconsax.sms_tracking,
+                        color: GasPalette.goodInk, size: 18)),
+                title: Text(
+                    '${r['maintenance_type'] ?? 'Maintenance'} · ${r['device_name'] ?? ''}',
+                    style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: GasPalette.ink)),
+                subtitle: Text(
+                    'Sent ${_formatReminderDate(r['reminder_sent_at'])}',
+                    style: GoogleFonts.inter(
+                        fontSize: 12.5, color: GasPalette.ink2)),
               ),
-              child: Icon(Icons.check, color: Colors.green, size: 16),
-            ),
-            title: Text(
-              reminder['device_name'] ?? 'Unknown Device',
-              style:
-                  GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
-            ),
-            subtitle: Text(
-              '${reminder['maintenance_type'] ?? ''} - Sent: ${_formatReminderDate(reminder['reminder_sent_at'])}',
-              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
-            ),
-          );
-        },
+        ],
       ),
     );
   }
@@ -2483,247 +1369,107 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   Widget _buildSettingsTab() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Maintenance Types', Icons.category),
-          SizedBox(height: 12),
-          _buildMaintenanceTypesSection(),
-          SizedBox(height: 24),
-          _buildSectionHeader('System Settings', Icons.settings),
-          SizedBox(height: 12),
-          _buildSystemSettingsSection(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMaintenanceTypesSection() {
-    return Container(
-      decoration: _phoneMaintenanceSurface(BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      )),
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(16),
-            child: _MaintenanceMetadataRow(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Icon(Icons.category, color: Constants.ctaColorLight),
-                SizedBox(width: 8),
-                Text(
-                  'Available Maintenance Types',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Spacer(),
-                IconButton(
-                  onPressed: _loadMaintenanceTypes,
-                  icon: Icon(Icons.refresh),
-                ),
-              ],
-            ),
-          ),
-          Divider(height: 1),
-          if (_maintenanceTypes.isNotEmpty)
-            ..._maintenanceTypes
-                .map((type) => _buildMaintenanceTypeItem(type))
-                .toList()
-          else
-            Padding(
-              padding: EdgeInsets.all(16),
-              child: _buildEmptyState('No maintenance types available'),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMaintenanceTypeItem(Map<String, dynamic> type) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: _getCategoryColor(type['category']).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              type['category_display'] ?? '',
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: _getCategoryColor(type['category']),
-              ),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  type['name'] ?? '',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                if (type['description'] != null &&
-                    type['description'].isNotEmpty)
-                  Text(
-                    type['description'],
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-          ),
-          if (type['estimated_duration_hours'] != null)
-            Text(
-              '${type['estimated_duration_hours']}h',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSystemSettingsSection() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: _phoneMaintenanceSurface(BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      )),
-      child: Column(
-        children: [
-          _buildSettingItem(
-            'Auto-generate maintenance',
-            'Automatically create maintenance records from schedules',
-            true,
-            (value) {
-              // Handle setting change
-            },
-          ),
-          Divider(),
-          _buildSettingItem(
-            'Overdue notifications',
-            'Send notifications for overdue maintenance',
-            true,
-            (value) {
-              // Handle setting change
-            },
-          ),
-          Divider(),
-          _buildSettingItem(
-            'Cost tracking',
-            'Track estimated vs actual costs',
-            true,
-            (value) {
-              // Handle setting change
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingItem(
-      String title, String description, bool value, Function(bool) onChanged) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                Text(
-                  description,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: Constants.ctaColorLight,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Helper Widgets
-  Widget _buildSectionHeader(String title, IconData icon) {
-    if (isPhoneLayout(context)) {
-      return Text(title,
-          style: gasTitle(context)
-              .copyWith(fontSize: 14, fontWeight: FontWeight.w600));
+    final types = _maintenanceTypes.whereType<Map>().toList();
+    final byCategory = <String, List<Map>>{};
+    for (final t in types) {
+      byCategory
+          .putIfAbsent(
+              '${t['category_display'] ?? t['category'] ?? 'Other'}', () => [])
+          .add(t);
     }
-    return Row(
-      children: [
-        Icon(icon, color: Constants.ctaColorLight, size: 20),
-        SizedBox(width: 8),
-        Expanded(
-            child: Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
+    Widget tool(IconData icon, String title, String text, int tab) => ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+              backgroundColor: GasPalette.seriesSoft,
+              child: Icon(icon, color: GasPalette.series, size: 20)),
+          title: Text(title,
+              style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: GasPalette.ink)),
+          subtitle: Text(text,
+              style: GoogleFonts.inter(fontSize: 13, color: GasPalette.ink2)),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: () => _tabController.animateTo(tab),
+        );
+    return RefreshIndicator(
+      onRefresh: _loadInitialData,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          MaintenanceSectionHeader(
+            title: 'Maintenance types',
+            subtitle: '${types.length} available to schedule',
+            action: IconButton(
+                tooltip: 'Refresh types',
+                onPressed: _loadMaintenanceTypes,
+                icon: const Icon(Iconsax.refresh)),
           ),
-        )),
-      ],
+          if (types.isEmpty)
+            _buildEmptyState('No maintenance types are set up yet')
+          else
+            for (final entry in byCategory.entries) ...[
+              Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 8),
+                child: Text(entry.key,
+                    style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: GasPalette.ink2)),
+              ),
+              Material(
+                color: Tone.bg(Colors.white),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: GasPalette.border)),
+                clipBehavior: Clip.antiAlias,
+                child: Column(children: [
+                  for (final t in entry.value)
+                    ListTile(
+                      title: Text('${t['name'] ?? ''}',
+                          style: GoogleFonts.inter(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w600,
+                              color: GasPalette.ink)),
+                      subtitle: '${t['description'] ?? ''}'.isEmpty
+                          ? null
+                          : Text('${t['description']}',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                  fontSize: 12.5, color: GasPalette.ink2)),
+                      trailing: t['estimated_duration_hours'] == null
+                          ? null
+                          : MaintenancePill(
+                              text: '≈ ${t['estimated_duration_hours']} h',
+                              bg: GasPalette.panelAlt,
+                              fg: GasPalette.ink2,
+                              icon: Iconsax.clock),
+                    ),
+                ]),
+              ),
+            ],
+          const MaintenanceSectionHeader(title: 'Tools'),
+          Material(
+              color: Tone.bg(Colors.white),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: GasPalette.border)),
+              clipBehavior: Clip.antiAlias,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Column(children: [
+                  tool(Iconsax.repeat, 'Recurring schedules',
+                      'Repeat routine jobs automatically', 2),
+                  tool(Iconsax.notification, 'Reminders',
+                      'Who is reminded, and when', 3),
+                  tool(Iconsax.chart_2, 'Analytics',
+                      'Costs, hours and completion', 4),
+                ]),
+              )),
+        ],
+      ),
     );
   }
 
@@ -2744,14 +1490,14 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
           Icon(
             Icons.inbox_outlined,
             size: 48,
-            color: Colors.grey[400],
+            color: Tone.fg(Colors.grey[400]),
           ),
           SizedBox(height: 16),
           Text(
             message,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: Tone.fg(Colors.grey[600]),
             ),
             textAlign: TextAlign.center,
           ),
@@ -2769,7 +1515,7 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
           SizedBox(height: 16),
           Text(
             'Loading maintenance data...',
-            style: GoogleFonts.inter(color: Colors.grey[600]),
+            style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])),
           ),
         ],
       ),
@@ -2793,11 +1539,11 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red),
+          Icon(Icons.error_outline, size: 64, color: Tone.fg(Colors.red)),
           SizedBox(height: 16),
           Text(
             _error,
-            style: GoogleFonts.inter(color: Colors.red),
+            style: GoogleFonts.inter(color: Tone.fg(Colors.red)),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 16),
@@ -2810,100 +1556,22 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
     );
   }
 
-  // Helper Methods
-  Color _getStatusColor(String? status) {
-    switch (status) {
-      case 'completed':
-        return Color(0xFF388E3C);
-      case 'in_progress':
-        return Color(0xFF1976D2);
-      case 'scheduled':
-        return Color(0xFF7B1FA2);
-      case 'overdue':
-        return Color(0xFFD32F2F);
-      case 'cancelled':
-        return Color(0xFF616161);
-      default:
-        return Color(0xFF616161);
-    }
-  }
-
-  Color _getPriorityColor(String? priority) {
-    switch (priority) {
-      case 'emergency':
-        return Color(0xFFD32F2F);
-      case 'critical':
-        return Color(0xFFFF5722);
-      case 'high':
-        return Color(0xFFFF9800);
-      case 'normal':
-        return Color(0xFF1976D2);
-      case 'low':
-        return Color(0xFF4CAF50);
-      default:
-        return Color(0xFF616161);
-    }
-  }
-
-  Color _getCategoryColor(String? category) {
-    switch (category) {
-      case 'preventive':
-        return Color(0xFF4CAF50);
-      case 'corrective':
-        return Color(0xFFFF9800);
-      case 'emergency':
-        return Color(0xFFD32F2F);
-      case 'inspection':
-        return Color(0xFF2196F3);
-      case 'calibration':
-        return Color(0xFF9C27B0);
-      case 'cleaning':
-        return Color(0xFF00BCD4);
-      case 'replacement':
-        return Color(0xFFFF5722);
-      default:
-        return Color(0xFF616161);
-    }
-  }
-
-  String _formatDateTime(String? dateTime) {
-    if (dateTime == null) return '';
-    try {
-      final date = DateTime.parse(dateTime);
-      return DateFormat('MMM d, yyyy HH:mm').format(date);
-    } catch (e) {
-      return dateTime;
-    }
-  }
-
-  String _calculateOnTimeRate() {
-    // Calculate on-time completion rate
-    final completedOnTime = _maintenanceRecords.where((record) {
-      return record['status'] == 'completed' &&
-          record['actual_end_date'] != null &&
-          record['scheduled_date'] != null;
-    }).length;
-
-    final totalCompleted = _maintenanceRecords
-        .where((record) => record['status'] == 'completed')
-        .length;
-
-    if (totalCompleted == 0) return '0.0';
-    return ((completedOnTime / totalCompleted) * 100).toStringAsFixed(1);
-  }
-
   // Action Methods
   Future<void> _updateMaintenanceStatus(String id, String action) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/$id/status/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'action': action,
-          'user_id': await SharedPrefs.getUserId(),
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}api/maintenance/$id/status/'),
+            headers: await ApiConfig.authHeaders(),
+            body: json.encode({
+              'action': action,
+              'user_id': await SharedPrefs.getUserId(),
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
 
+      if (response.statusCode != 200) throw StateError('Request failed');
+      if (!mounted) return;
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2911,13 +1579,15 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             backgroundColor: Constants.ctaColorLight,
           ),
         );
-        _loadMaintenanceRecords();
+        _loadInitialData();
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to update status: $e'),
-          backgroundColor: Colors.red,
+          content:
+              Text('Unable to update status. Check your connection and retry.'),
+          backgroundColor: Tone.bg(Colors.red),
         ),
       );
     }
@@ -2925,14 +1595,18 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
 
   Future<void> _generateScheduledMaintenance() async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedule/generate/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'business_id': await SharedPrefs.getBusinessId(),
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}api/maintenance/schedule/generate/'),
+            headers: await ApiConfig.authHeaders(),
+            body: json.encode({
+              'business_id': await SharedPrefs.getBusinessId(),
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
 
+      if (response.statusCode != 200) throw StateError('Request failed');
+      if (!mounted) return;
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2942,41 +1616,51 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
             backgroundColor: Constants.ctaColorLight,
           ),
         );
-        _loadMaintenanceRecords();
+        _loadInitialData();
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to generate maintenance: $e'),
-          backgroundColor: Colors.red,
+          content: Text(
+              'Unable to generate maintenance. Check your connection and retry.'),
+          backgroundColor: Tone.bg(Colors.red),
         ),
       );
     }
   }
 
-  void _showMaintenanceDetails(Map<String, dynamic> maintenance) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
+  Future<void> _showMaintenanceDetails(Map<String, dynamic> maintenance) async {
+    await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
         builder: (context) => MaintenanceDetailScreen(
-          maintenanceId: maintenance['id'],
-        ),
-      ),
-    );
+            maintenanceId: maintenance['id'].toString())));
+    if (mounted) await _loadInitialData();
   }
 
-  void _showCreateMaintenanceDialog() {
-    showMobileDialog(
-      context: context,
-      builder: (context) => CreateMaintenanceDialog(),
-    );
+  /// The guided scheduling flow (schedule_maintenance.dart): unit or
+  /// device, what and when, then review.
+  Future<void> _showCreateMaintenanceDialog() async {
+    final saved = await Navigator.of(context, rootNavigator: true).push<bool>(
+        MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (_) => const ScheduleMaintenanceScreen()));
+    if (saved == true && mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Maintenance scheduled')));
+      await _loadInitialData();
+    }
   }
 
-  void _showCreateScheduleDialog() {
-    showMobileDialog(
-      context: context,
-      builder: (context) => CreateScheduleDialog(),
-    );
+  Future<void> _showCreateScheduleDialog() async {
+    final saved = await Navigator.of(context, rootNavigator: true).push<bool>(
+        MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (_) => const ScheduleMaintenanceScreen(recurring: true)));
+    if (saved == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Recurring schedule created')));
+      await _loadInitialData();
+    }
   }
 
   void _showReportsDialog() {
@@ -2995,18 +1679,20 @@ class _MaintenanceDashboardState extends State<MaintenanceDashboard>
   }
 
   void _showMaintenanceTypes() {
-    _tabController.animateTo(4); // Go to Settings tab
+    _tabController.animateTo(5); // Go to Settings tab
   }
-
-  CreateScheduleDialog() {}
 }
 
 // Supporting Classes
 class ApiConfig {
   static String baseUrl = Constants.articBaseUrl2;
-  static Map<String, String> get headers => {
-        'Content-Type': 'application/json',
-      };
+  static Future<Map<String, String>> authHeaders() async {
+    final token = await Sharedprefs.getAuthTokenPreference();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Token $token'
+    };
+  }
 }
 
 class SharedPrefs {
@@ -3017,7 +1703,9 @@ class SharedPrefs {
 
   static Future<int> getUserId() async {
     // Return user ID from shared preferences
-    return 1; // Placeholder - should be replaced with actual SharedPreferences logic
+    final userId = await Sharedprefs.getUserUidSharedPreference();
+    if (userId == null) throw StateError('Sign in again to continue.');
+    return userId;
   }
 }
 
@@ -3037,9 +1725,15 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
+  bool _updatingStatus = false;
   String _error = '';
   Map<String, dynamic> _maintenance = {};
   List<dynamic> _checklistItems = [];
+  // Kept across rebuilds so typed text isn't lost.
+  final _quickChecklist = TextEditingController();
+  final _newPart = TextEditingController();
+  final _newMaterial = TextEditingController();
+  bool _docsDirty = false;
 
   @override
   void initState() {
@@ -3051,6 +1745,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _quickChecklist.dispose();
+    _newPart.dispose();
+    _newMaterial.dispose();
     super.dispose();
   }
 
@@ -3061,33 +1758,21 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     });
 
     try {
-      final response = await http.get(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/'),
-        headers: ApiConfig.headers,
-      ).timeout(const Duration(seconds: 20));
+      unawaited(MaintenanceEquipment.refresh().then((_) {
+        if (mounted) setState(() {});
+      }));
+      final response = await http
+          .get(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/'),
+            headers: await ApiConfig.authHeaders(),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        print('=== FETCHING OBSERVATIONS ===');
-        print(
-            'URL: ${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/');
-        print('Response Status: ${response.statusCode}');
-        print('Full Response Data: ${json.encode(data)}');
-        print('Maintenance Data: ${json.encode(data['maintenance'])}');
-        print('Observations Raw Data: ${data['maintenance']['observations']}');
-        print(
-            'Observations Type: ${data['maintenance']['observations'].runtimeType}');
-        if (data['maintenance']['observations'] is List) {
-          print(
-              'Observations List Length: ${data['maintenance']['observations'].length}');
-          for (int i = 0; i < data['maintenance']['observations'].length; i++) {
-            print('Observation $i: ${data['maintenance']['observations'][i]}');
-          }
-        }
-        print('=============================');
-
+        if (!mounted) return;
         setState(() {
           _maintenance = data['maintenance'];
           _checklistItems = data['maintenance']['checklist_items'] ?? [];
@@ -3096,20 +1781,22 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         throw Exception('Failed to load maintenance details');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = 'Check your connection and try again.';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+        });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Tone.bg(Colors.white),
       appBar: AppBar(
         title: Text(
           'Maintenance Details',
@@ -3118,11 +1805,11 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
             color: Constants.ctaColorLight,
           ),
         ),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: Tone.bg(Colors.white),
+        surfaceTintColor: Tone.bg(Colors.white),
         foregroundColor: Constants.ctaColorLight,
         elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Tone.bg(Colors.black).withOpacity(0.1),
         actions: [
           if (!_isLoading && _maintenance.isNotEmpty)
             PopupMenuButton<String>(
@@ -3135,7 +1822,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 PopupMenuItem(value: 'edit', child: Text('Edit')),
                 PopupMenuItem(value: 'duplicate', child: Text('Duplicate')),
                 PopupMenuItem(value: 'export', child: Text('Export')),
-                PopupMenuItem(value: 'delete', child: Text('Delete')),
+                if (['scheduled', 'cancelled'].contains(_maintenance['status']))
+                  PopupMenuItem(value: 'delete', child: Text('Delete')),
               ],
             ),
         ],
@@ -3143,9 +1831,11 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
             ? null
             : TabBar(
                 controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
                 indicatorColor: Constants.ctaColorLight,
                 labelColor: Constants.ctaColorLight,
-                unselectedLabelColor: Colors.grey,
+                unselectedLabelColor: Tone.fg(Colors.grey),
                 labelStyle: GoogleFonts.inter(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -3182,7 +1872,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.error, color: Colors.red, size: 48),
+                          Icon(Icons.error, color: Tone.fg(Colors.red), size: 48),
                           SizedBox(height: 16),
                           Text(_error),
                           SizedBox(height: 16),
@@ -3208,731 +1898,355 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     );
   }
 
+  String _person(dynamic p, String fallback) {
+    if (p is! Map) return fallback;
+    final name = '${p['full_name'] ?? ''}'.trim();
+    return name.isNotEmpty ? name : '${p['username'] ?? fallback}';
+  }
+
   Widget _buildOverviewTab() {
+    final m = _maintenance;
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Status Card
           _buildStatusCard(),
-          SizedBox(height: 16),
-
-          // Basic Information
-          _buildInfoSection('Basic Information', [
-            _buildInfoRow('Device', _maintenance['device']['name']),
-            _buildInfoRow('Type', _maintenance['maintenance_type']['name']),
-            _buildInfoRow('Category',
-                _maintenance['maintenance_type']['category_display']),
-            _buildInfoRow('Priority', _maintenance['priority_display']),
-            _buildInfoRow(
-                'Scheduled', _formatDateTime(_maintenance['scheduled_date'])),
+          const SizedBox(height: 16),
+          _buildInfoSection('People', [
+            _buildInfoRow('Assigned to', _person(m['assigned_to'], 'Unassigned')),
+            _buildInfoRow('Performed by', _person(m['performed_by'], 'Not started')),
+            _buildInfoRow('Supervised by', _person(m['supervised_by'], 'None')),
           ]),
-
-          SizedBox(height: 16),
-
-          // Personnel Information
-          _buildInfoSection('Personnel', [
-            _buildInfoRow('Assigned To',
-                _maintenance['assigned_to']?['username'] ?? 'Unassigned'),
-            _buildInfoRow('Performed By',
-                _maintenance['performed_by']?['username'] ?? 'Not started'),
-            _buildInfoRow('Supervised By',
-                _maintenance['supervised_by']?['username'] ?? 'None'),
+          const SizedBox(height: 16),
+          _buildInfoSection('Work', [
+            _buildInfoText('Description', '${m['work_description'] ?? ''}'),
+            if ('${m['work_performed'] ?? ''}'.isNotEmpty) _buildInfoText('Work performed', '${m['work_performed']}'),
+            if ('${m['issues_found'] ?? ''}'.isNotEmpty) _buildInfoText('Issues found', '${m['issues_found']}'),
+            if ('${m['resolution_notes'] ?? ''}'.isNotEmpty) _buildInfoText('Resolution', '${m['resolution_notes']}'),
           ]),
-
-          SizedBox(height: 16),
-
-          // Work Details
-          _buildInfoSection('Work Details', [
-            _buildInfoText('Description', _maintenance['work_description']),
-            if (_maintenance['work_performed']?.isNotEmpty == true)
-              _buildInfoText('Work Performed', _maintenance['work_performed']),
-            if (_maintenance['issues_found']?.isNotEmpty == true)
-              _buildInfoText('Issues Found', _maintenance['issues_found']),
-            if (_maintenance['resolution_notes']?.isNotEmpty == true)
-              _buildInfoText('Resolution', _maintenance['resolution_notes']),
-          ]),
-
-          SizedBox(height: 16),
-
-          // Cost & Duration
+          const SizedBox(height: 16),
           _buildCostDurationSection(),
+          const SizedBox(height: 80),
         ],
       ),
     );
   }
 
+  /// The job at a glance: what, which equipment, when, state and who.
   Widget _buildStatusCard() {
+    final m = _maintenance;
+    final device = MaintenanceEquipment.of(m['device']);
+    final unit = device?.connectedUnit?.name;
+    final status = '${m['status'] ?? 'scheduled'}';
+    final late = maintenanceIsLate(m);
+    final st = maintenanceStatusStyle(late ? 'overdue' : status);
+    final pr = maintenancePriorityStyle('${m['priority']}');
+    final category = m['maintenance_type'] is Map ? '${m['maintenance_type']['category_display'] ?? ''}' : '';
     return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 8,
-            offset: Offset(0, 2),
+          color: Tone.bg(Colors.white),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: late ? GasPalette.critLine : GasPalette.border)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 64,
+            height: 64,
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: GasPalette.panelAlt, borderRadius: BorderRadius.circular(16)),
+            child: DeviceIllustration(type: device?.deviceType, size: 52),
           ),
-        ],
-      ),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Icon(
-                  _getStatusIcon(_maintenance['status']),
-                  color: Colors.black,
-                  size: 32,
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _maintenance['status_display'] ?? '',
-                        style: GoogleFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      Text(
-                        'Maintenance Status',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (_maintenance['is_overdue'] == true)
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      'OVERDUE',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            if (_maintenance['actual_start_date'] != null ||
-                _maintenance['actual_end_date'] != null) ...[
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  if (_maintenance['actual_start_date'] != null) ...[
-                    Icon(Icons.play_arrow,
-                        color: Colors.white.withOpacity(0.9), size: 16),
-                    SizedBox(width: 4),
-                    Text(
-                      'Started: ${_formatDateTime(_maintenance['actual_start_date'])}',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                    ),
-                  ],
-                  if (_maintenance['actual_end_date'] != null) ...[
-                    if (_maintenance['actual_start_date'] != null)
-                      SizedBox(width: 16),
-                    Icon(Icons.check,
-                        color: Colors.white.withOpacity(0.9), size: 16),
-                    SizedBox(width: 4),
-                    Text(
-                      'Completed: ${_formatDateTime(_maintenance['actual_end_date'])}',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${m['maintenance_type']?['name'] ?? 'Maintenance'}',
+                  style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: GasPalette.ink)),
+              Text(unit == null ? '${m['device']?['name'] ?? ''}' : '$unit · ${m['device']?['name'] ?? ''}',
+                  style: GoogleFonts.inter(fontSize: 14, color: GasPalette.ink2)),
+              if (category.isNotEmpty) Text(category, style: GoogleFonts.inter(fontSize: 12.5, color: GasPalette.ink2)),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 14),
+        Row(children: [
+          Icon(late ? Iconsax.danger : Iconsax.calendar_1, size: 17, color: late ? GasPalette.critInk : GasPalette.ink2),
+          const SizedBox(width: 8),
+          Text(maintenanceWhen(m['scheduled_date'], done: status == 'completed' || status == 'cancelled'),
+              style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w700, color: late ? GasPalette.critInk : GasPalette.ink)),
+        ]),
+        const SizedBox(height: 12),
+        Wrap(spacing: 6, runSpacing: 6, children: [
+          MaintenancePill(text: late ? 'Overdue' : '${m['status_display'] ?? status}', bg: st.bg, fg: st.fg, icon: st.icon),
+          MaintenancePill(text: '${m['priority_display'] ?? m['priority']} priority', bg: pr.bg, fg: pr.fg),
+        ]),
+      ]),
     );
   }
 
   Widget _buildInfoSection(String title, List<Widget> children) {
     return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Constants.ctaColorLight.withOpacity(0.2),
-                    width: 2,
-                  ),
-                ),
-              ),
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Constants.ctaColorLight,
-                ),
-              ),
-            ),
-            SizedBox(height: 16),
-            ...children,
-          ],
-        ),
-      ),
+          color: Tone.bg(Colors.white), borderRadius: BorderRadius.circular(16), border: Border.all(color: GasPalette.border)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(title, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: GasPalette.ink)),
+        const SizedBox(height: 8),
+        ...children,
+      ]),
     );
   }
 
   Widget _buildInfoRow(String label, String value) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+          width: 120,
+          child: Text(label, style: GoogleFonts.inter(fontSize: 13.5, color: GasPalette.ink2)),
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Constants.ctaColorLight,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.grey[800],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
+        Expanded(
+          child: Text(value.isEmpty ? '—' : value,
+              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: GasPalette.ink)),
+        ),
+      ]),
     );
   }
 
   Widget _buildInfoText(String label, String value) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$label:',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: Constants.ctaColorLight,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 8),
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.grey[800],
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: GoogleFonts.inter(fontSize: 13, color: GasPalette.ink2)),
+        const SizedBox(height: 4),
+        Text(value.trim().isEmpty ? '—' : value,
+            style: GoogleFonts.inter(fontSize: 14.5, height: 1.45, color: GasPalette.ink)),
+      ]),
     );
   }
 
   Widget _buildCostDurationSection() {
-    return Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade300,
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Constants.ctaColorLight.withOpacity(0.2),
-                      width: 2,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  'Cost & Duration Analysis',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Constants.ctaColorLight,
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Estimated Cost',
-                      '${_maintenance['estimated_cost']?.toStringAsFixed(2) ?? '0.00'}',
-                      Icons.attach_money,
-                      Color(0xFF1976D2),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Actual Cost',
-                      '${_maintenance['actual_cost']?.toStringAsFixed(2) ?? '0.00'}',
-                      Icons.receipt,
-                      Color(0xFF388E3C),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Est. Duration',
-                      '${_maintenance['estimated_duration_hours']?.toStringAsFixed(1) ?? '0.0'}h',
-                      Icons.schedule,
-                      Color(0xFF7B1FA2),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildMetricCard(
-                      'Actual Duration',
-                      '${_maintenance['actual_duration_hours']?.toStringAsFixed(1) ?? '0.0'}h',
-                      Icons.timer,
-                      Color(0xFFEF6C00),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ));
-  }
-
-  Widget _buildMetricCard(
-      String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              color: Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
+    final m = _maintenance;
+    final money = NumberFormat.currency(symbol: 'R ', decimalDigits: 0);
+    double? n(dynamic v) => v is num ? v.toDouble() : double.tryParse('${v ?? ''}');
+    String rand(dynamic v) => n(v) == null ? '—' : money.format(n(v));
+    String hours(dynamic v) => n(v) == null ? '—' : '${n(v)!.toStringAsFixed(1)} h';
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Text('Cost and time', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: GasPalette.ink)),
+      const SizedBox(height: 10),
+      Row(children: [
+        MaintenanceStatTile(value: rand(m['estimated_cost']), label: 'Estimated cost', icon: Iconsax.receipt_2),
+        const SizedBox(width: 10),
+        MaintenanceStatTile(value: rand(m['actual_cost']), label: 'Actual cost', icon: Iconsax.wallet_2),
+      ]),
+      const SizedBox(height: 10),
+      Row(children: [
+        MaintenanceStatTile(value: hours(m['estimated_duration_hours']), label: 'Estimated time', icon: Iconsax.timer_1),
+        const SizedBox(width: 10),
+        MaintenanceStatTile(value: hours(m['actual_duration_hours']), label: 'Actual time', icon: Iconsax.clock),
+      ]),
+    ]);
   }
 
   Widget _buildChecklistTab() {
-    final canModifyChecklist = _maintenance['status'] == 'in_progress';
-
-    return Column(
+    final canModify = _maintenance['status'] == 'in_progress';
+    final items = _checklistItems.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    final done = items.where((i) => i['is_completed'] == true).length;
+    final criticalLeft = items.where((i) => i['is_critical'] == true && i['is_completed'] != true).length;
+    final complete = items.isNotEmpty && done == items.length;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
-        // Progress Header
         Container(
-          padding: EdgeInsets.all(16),
-          color: Colors.white,
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.checklist, color: Constants.ctaColorLight),
-                  SizedBox(width: 8),
-                  Text(
-                    'Maintenance Checklist',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Spacer(),
-                  if (canModifyChecklist)
-                    IconButton(
-                      onPressed: _showAddChecklistItemDialog,
-                      icon: Icon(Icons.add_circle,
-                          color: Constants.ctaColorLight),
-                      tooltip: 'Add Checklist Item',
-                    ),
-                  Text(
-                    '${_getCompletedCount()}/${_checklistItems.length}',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Constants.ctaColorLight,
-                    ),
-                  ),
-                ],
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+              color: Tone.bg(Colors.white), borderRadius: BorderRadius.circular(16), border: Border.all(color: GasPalette.border)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              Expanded(
+                child: Text('Checklist', style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: GasPalette.ink)),
               ),
-              SizedBox(height: 12),
-              LinearProgressIndicator(
+              Text(items.isEmpty ? 'No items' : '$done of ${items.length} done',
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: complete ? GasPalette.goodInk : GasPalette.ink)),
+            ]),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: LinearProgressIndicator(
                 value: _getCompletionPercentage(),
-                backgroundColor: Colors.grey[200],
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
-              ),
-            ],
-          ),
-        ),
-
-        // Add New Item Input (when in progress)
-        if (canModifyChecklist)
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Constants.ctaColorLight.withOpacity(0.05),
-              border: Border(
-                bottom: BorderSide(color: Colors.grey[200]!),
+                minHeight: 8,
+                backgroundColor: GasPalette.panelAlt,
+                color: complete ? GasPalette.good : GasPalette.series,
               ),
             ),
-            child: _buildQuickAddChecklistItem(),
-          ),
-
-        // Checklist Items
-        Expanded(
-          child: _checklistItems.isEmpty
-              ? _buildEmptyChecklistState(canModifyChecklist)
-              : ListView.builder(
-                  padding: EdgeInsets.all(16),
-                  itemCount: _checklistItems.length,
-                  itemBuilder: (context, index) {
-                    return _buildChecklistItem(
-                        _checklistItems[index], canModifyChecklist);
-                  },
-                ),
+            if (criticalLeft > 0) ...[
+              const SizedBox(height: 10),
+              Row(children: [
+                Icon(Iconsax.danger, size: 16, color: GasPalette.critInk),
+                const SizedBox(width: 6),
+                Expanded(child: Text('$criticalLeft critical item${criticalLeft == 1 ? '' : 's'} left before the job can be completed',
+                    style: GoogleFonts.inter(fontSize: 12.5, color: GasPalette.critInk))),
+              ]),
+            ],
+            if (!canModify) ...[
+              const SizedBox(height: 10),
+              Text(
+                  _maintenance['status'] == 'completed'
+                      ? 'This job is complete; the checklist is read-only.'
+                      : 'Start the job to tick items off or add new ones.',
+                  style: GoogleFonts.inter(fontSize: 12.5, color: GasPalette.ink2)),
+            ],
+          ]),
         ),
+        if (canModify) ...[
+          const SizedBox(height: 12),
+          _buildQuickAddChecklistItem(),
+        ],
+        const SizedBox(height: 12),
+        if (items.isEmpty)
+          _buildEmptyChecklistState(canModify)
+        else
+          for (final item in items) _buildChecklistItem(item, canModify),
       ],
     );
   }
 
-  Widget _buildChecklistItem(
-      Map<String, dynamic> item, bool canModifyChecklist) {
-    final isCompleted = item['is_completed'] ?? false;
-    final isCritical = item['is_critical'] ?? false;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCritical
-              ? Colors.orange.withOpacity(0.3)
-              : Colors.grey.withOpacity(0.2),
-          width: isCritical ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              InkWell(
-                onTap: canModifyChecklist
-                    ? () => _toggleChecklistItem(item)
-                    : null,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: isCompleted
-                        ? Constants.ctaColorLight
-                        : Colors.transparent,
-                    border: Border.all(
-                      color: isCompleted
-                          ? Constants.ctaColorLight
-                          : Colors.grey[400]!,
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: isCompleted
-                      ? Icon(Icons.check, color: Colors.white, size: 16)
-                      : null,
-                ),
+  Widget _buildChecklistItem(Map<String, dynamic> item, bool canModifyChecklist) {
+    final isCompleted = item['is_completed'] == true;
+    final isCritical = item['is_critical'] == true;
+    final notes = '${item['notes'] ?? ''}'.trim();
+    final by = item['completed_by'] is Map
+        ? '${item['completed_by']['full_name'] ?? item['completed_by']['username'] ?? ''}'
+        : '${item['completed_by'] ?? ''}';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: isCompleted ? GasPalette.panelAlt : Tone.bg(Colors.white),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: isCritical && !isCompleted ? GasPalette.critLine : GasPalette.border)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: canModifyChecklist ? () => _toggleChecklistItem(item) : null,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 6, 4, 10),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Checkbox(
+                key: ValueKey('checklist-${item['id']}'),
+                value: isCompleted,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                activeColor: GasPalette.good,
+                onChanged: canModifyChecklist ? (_) => _toggleChecklistItem(item) : null,
               ),
-              SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  item['description'] ?? '',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isCompleted ? Colors.grey[600] : Colors.grey[800],
-                    decoration: isCompleted ? TextDecoration.lineThrough : null,
-                  ),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('${item['description'] ?? item['item_description'] ?? ''}',
+                        style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: isCompleted ? GasPalette.ink2 : GasPalette.ink,
+                            decoration: isCompleted ? TextDecoration.lineThrough : null)),
+                    if (isCritical) ...[
+                      const SizedBox(height: 6),
+                      MaintenancePill(text: 'Critical', bg: GasPalette.critSoft, fg: GasPalette.critInk, icon: Iconsax.danger),
+                    ],
+                    if (notes.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(notes, style: GoogleFonts.inter(fontSize: 13, color: GasPalette.ink2)),
+                    ],
+                    if (isCompleted && by.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(children: [
+                        Icon(Iconsax.tick_circle, size: 14, color: GasPalette.goodInk),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                              'Done by $by${item['completed_at'] == null ? '' : ' · ${maintenanceWhen(item['completed_at'], done: true)}'}',
+                              style: GoogleFonts.inter(fontSize: 12, color: GasPalette.goodInk)),
+                        ),
+                      ]),
+                    ],
+                  ]),
                 ),
               ),
-              if (isCritical)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'CRITICAL',
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange[700],
-                    ),
-                  ),
-                ),
               if (canModifyChecklist)
                 IconButton(
+                  tooltip: 'Item options',
+                  icon: Icon(Icons.more_vert_rounded, size: 20, color: GasPalette.ink2),
                   onPressed: () => _showChecklistItemOptions(item),
-                  icon:
-                      Icon(Icons.more_vert, size: 16, color: Colors.grey[600]),
-                  tooltip: 'Item Options',
                 ),
-            ],
+            ]),
           ),
-          if (item['notes']?.isNotEmpty == true) ...[
-            SizedBox(height: 8),
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                item['notes'],
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ),
-          ],
-          if (isCompleted && item['completed_by'] != null) ...[
-            SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.person, size: 14, color: Colors.grey[500]),
-                SizedBox(width: 4),
-                Text(
-                  '${item['completed_by']} • ${_formatDateTime(item['completed_at'])}',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildEmptyChecklistState(bool canModifyChecklist) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.checklist, size: 48, color: Colors.grey[400]),
-          SizedBox(height: 16),
-          Text(
-            'No checklist items yet',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
-            ),
-          ),
-          if (canModifyChecklist) ...[
-            SizedBox(height: 8),
-            Text(
-              'Add items to create a maintenance checklist',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _showAddChecklistItemDialog,
-              icon: Icon(Icons.add, size: 18),
-              label: Text('Add First Item'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isPhoneLayout(context)
-                    ? GasPalette.primary
-                    : Constants.ctaColorLight,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Column(children: [
+        Icon(Iconsax.task_square, size: 40, color: GasPalette.series),
+        const SizedBox(height: 10),
+        Text('No checklist items', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: GasPalette.ink)),
+        const SizedBox(height: 4),
+        Text(
+            canModifyChecklist
+                ? 'Add the steps the technician should tick off.'
+                : 'Checklist steps added to this job appear here.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(fontSize: 13.5, color: GasPalette.ink2)),
+      ]),
     );
   }
 
   Widget _buildQuickAddChecklistItem() {
-    return MobileFormRow(
-      children: [
-        Icon(Icons.add_task, color: Constants.ctaColorLight, size: 20),
-        SizedBox(width: 8),
-        Expanded(
-          child: TextField(
-            controller: TextEditingController(),
-            decoration: mobileInputDecoration(
-                context,
-                InputDecoration(
-                  hintText: 'Type to quickly add a checklist item...',
-                  hintStyle: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: Colors.grey[500],
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Constants.ctaColorLight),
-                  ),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  suffixIcon: IconButton(
-                    onPressed: () => _showAddChecklistItemDialog(),
-                    icon:
-                        Icon(Icons.add_circle, color: Constants.ctaColorLight),
-                    tooltip: 'Add Item',
-                  ),
-                )),
-            onSubmitted: (value) {
-              if (value.trim().isNotEmpty) {
-                _addChecklistItemQuick(value.trim());
-              }
-            },
+    void add() {
+      final text = _quickChecklist.text.trim();
+      if (text.isEmpty) return;
+      _addChecklistItemQuick(text);
+      _quickChecklist.clear();
+    }
+
+    return Row(children: [
+      Expanded(
+        child: TextField(
+          controller: _quickChecklist,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => add(),
+          decoration: InputDecoration(
+            hintText: 'Add a checklist step',
+            prefixIcon: const Icon(Iconsax.add_square, size: 20),
+            filled: true,
+            fillColor: Tone.bg(Colors.white),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(32), borderSide: BorderSide(color: GasPalette.border)),
+            enabledBorder:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(32), borderSide: BorderSide(color: GasPalette.border)),
           ),
         ),
-      ],
-    );
+      ),
+      const SizedBox(width: 8),
+      IconButton.filled(
+        tooltip: 'Add step',
+        style: IconButton.styleFrom(backgroundColor: GasPalette.primary, foregroundColor: Tone.fg(Colors.white)),
+        onPressed: add,
+        icon: const Icon(Icons.add),
+      ),
+      IconButton(
+        tooltip: 'Add with options (critical, notes)',
+        onPressed: _showAddChecklistItemDialog,
+        icon: const Icon(Iconsax.setting_4),
+      ),
+    ]);
   }
 
   Widget _buildObservationsTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
       child: Column(
         children: [
           _buildObservationsSection(
@@ -3943,1067 +2257,319 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
   }
 
   Widget _buildTimelineTab() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Maintenance Timeline',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          SizedBox(height: 16),
-          _buildTimelineItem(
-            'Scheduled',
-            _formatDateTime(_maintenance['scheduled_date']),
-            Icons.schedule,
-            Color(0xFF1976D2),
-            isCompleted: true,
-          ),
-          if (_maintenance['actual_start_date'] != null)
-            _buildTimelineItem(
-              'Started',
-              _formatDateTime(_maintenance['actual_start_date']),
-              Icons.play_arrow,
-              Color(0xFF388E3C),
-              isCompleted: true,
-            ),
-          if (_maintenance['actual_end_date'] != null)
-            _buildTimelineItem(
-              'Completed',
-              _formatDateTime(_maintenance['actual_end_date']),
-              Icons.check_circle,
-              Constants.ctaColorLight,
-              isCompleted: true,
-            ),
-          if (_maintenance['next_maintenance_date'] != null)
-            _buildTimelineItem(
-              'Next Maintenance',
-              _formatDate(_maintenance['next_maintenance_date']),
-              Icons.event,
-              Color(0xFF7B1FA2),
-              isCompleted: false,
-            ),
-        ],
-      ),
-    );
-  }
+    final m = _maintenance;
+    DateTime? t(dynamic v) => v == null ? null : DateTime.tryParse('$v')?.toLocal();
+    String who(dynamic v) => v is Map ? '${v['full_name'] ?? v['username'] ?? ''}' : '${v ?? ''}';
+    final events = <({DateTime? at, String title, String detail, IconData icon, Color color, bool pending})>[];
+    void add(DateTime? at, String title, String detail, IconData icon, Color color, {bool pending = false}) =>
+        events.add((at: at, title: title, detail: detail, icon: icon, color: color, pending: pending));
 
-  Widget _buildTimelineItem(
-      String title, String? date, IconData icon, Color color,
-      {required bool isCompleted}) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isCompleted ? color : color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(
-              icon,
-              color: isCompleted ? Colors.white : color,
-              size: 20,
-            ),
-          ),
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isCompleted ? Colors.grey[800] : Colors.grey[600],
-                  ),
+    add(t(m['created_at']), 'Job created', '', Iconsax.add_circle, GasPalette.ink2);
+    final scheduled = t(m['scheduled_date']);
+    add(scheduled, 'Scheduled', who(m['assigned_to']).isEmpty ? 'Unassigned' : 'Assigned to ${who(m['assigned_to'])}',
+        Iconsax.calendar_1, GasPalette.series,
+        pending: scheduled != null && scheduled.isAfter(DateTime.now()) && m['actual_start_date'] == null);
+    if (m['actual_start_date'] != null) {
+      add(t(m['actual_start_date']), 'Started', who(m['performed_by']), Iconsax.play_circle, GasPalette.series);
+    }
+    for (final item in _checklistItems.whereType<Map>()) {
+      if (item['is_completed'] == true && item['completed_at'] != null) {
+        add(t(item['completed_at']), 'Checked: ${item['description'] ?? item['item_description'] ?? ''}',
+            who(item['completed_by']), Iconsax.tick_square, GasPalette.goodInk);
+      }
+    }
+    final findings = _maintenance['observations'];
+    if (findings is List) {
+      for (final f in findings.whereType<Map>()) {
+        add(t(f['created_at']), f['is_critical'] == true ? 'Critical finding recorded' : 'Finding recorded',
+            '${f['text'] ?? ''}', f['is_critical'] == true ? Iconsax.danger : Iconsax.note_2,
+            f['is_critical'] == true ? GasPalette.critInk : GasPalette.ink2);
+      }
+    }
+    if (m['actual_end_date'] != null) {
+      add(t(m['actual_end_date']), 'Completed', '', Iconsax.tick_circle, GasPalette.goodInk);
+    }
+    events.sort((x, y) => (x.at ?? DateTime(2100)).compareTo(y.at ?? DateTime(2100)));
+    // What's still to come, in order.
+    if (m['actual_start_date'] == null && m['status'] != 'cancelled') {
+      add(null, 'Start the job', '', Iconsax.play_circle, GasPalette.ink2, pending: true);
+    }
+    if (m['actual_end_date'] == null && m['status'] != 'cancelled') {
+      add(null, 'Complete the job', '', Iconsax.tick_circle, GasPalette.ink2, pending: true);
+    }
+    if (m['next_maintenance_date'] != null) {
+      add(t(m['next_maintenance_date']), 'Next maintenance', '', Iconsax.repeat, GasPalette.series, pending: true);
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      itemCount: events.length,
+      itemBuilder: (context, i) {
+        final e = events[i];
+        final last = i == events.length - 1;
+        return IntrinsicHeight(
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            SizedBox(
+              width: 36,
+              child: Column(children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                      color: e.pending ? Tone.bg(Colors.white) : e.color.withValues(alpha: .12),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: e.pending ? GasPalette.border : Colors.transparent, width: 1.5)),
+                  child: Icon(e.icon, size: 16, color: e.pending ? GasPalette.ink2 : e.color),
                 ),
-                if (date != null)
-                  Text(
-                    date,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-              ],
+                if (!last) Expanded(child: Container(width: 2, color: GasPalette.border)),
+              ]),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 5, bottom: 20),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(e.title,
+                      style: GoogleFonts.inter(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: e.pending ? GasPalette.ink2 : GasPalette.ink)),
+                  if (e.at != null)
+                    Text(DateFormat('EEE d MMM yyyy, HH:mm').format(e.at!),
+                        style: GoogleFonts.inter(fontSize: 12.5, color: GasPalette.ink2)),
+                  if (e.detail.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(e.detail, maxLines: 2, overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(fontSize: 13, color: GasPalette.ink2)),
+                    ),
+                ]),
+              ),
+            ),
+          ]),
+        );
+      },
     );
   }
 
   Widget _buildDocumentationTab() {
-    // Allow uploads for in_progress, scheduled, and completed maintenance
-    final status = _maintenance['status'] ?? '';
-    final bool canEdit = status == 'in_progress' ||
-        status == 'scheduled' ||
-        status == 'completed' ||
-        status == 'pending';
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Parts Management
-          _buildInteractivePartsSection(canEdit),
-          SizedBox(height: 16),
-
-          // Materials Management
-          _buildInteractiveMaterialsSection(canEdit),
-          SizedBox(height: 16),
-
-          // External Services
-          if (_maintenance['external_contractor']?.isNotEmpty == true) ...[
-            _buildModernExternalContractorSection(),
-            SizedBox(height: 16),
-          ],
-
-          // Safety & Compliance
-          if (_maintenance['safety_precautions']?.isNotEmpty == true ||
-              _maintenance['compliance_notes']?.isNotEmpty == true) ...[
-            _buildModernSafetySection(),
-            SizedBox(height: 16),
-          ],
-
-          // Files and Media Management
-          _buildInteractiveFilesSection(canEdit),
+    final status = '${_maintenance['status'] ?? ''}';
+    final canEdit = const {'in_progress', 'scheduled', 'completed', 'pending'}.contains(status);
+    final contractor = '${_maintenance['external_contractor'] ?? ''}'.trim();
+    final safety = '${_maintenance['safety_precautions'] ?? ''}'.trim();
+    final compliance = '${_maintenance['compliance_notes'] ?? ''}'.trim();
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+      children: [
+        if (safety.isNotEmpty || compliance.isNotEmpty) _buildModernSafetySection(),
+        _itemsSection(
+          key: 'parts_used',
+          section: 'parts',
+          title: 'Parts used',
+          icon: Iconsax.setting_2,
+          hint: 'Add a part, e.g. Contactor 32A',
+          controller: _newPart,
+          canEdit: canEdit,
+        ),
+        _itemsSection(
+          key: 'materials_used',
+          section: 'materials',
+          title: 'Materials used',
+          icon: Iconsax.box_1,
+          hint: 'Add a material, e.g. Contact cleaner',
+          controller: _newMaterial,
+          canEdit: canEdit,
+        ),
+        if (_docsDirty && canEdit) ...[
+          const SizedBox(height: 4),
+          FilledButton.icon(
+            onPressed: () async {
+              await _savePartsAndMaterials();
+              if (mounted) setState(() => _docsDirty = false);
+            },
+            style: FilledButton.styleFrom(
+                backgroundColor: GasPalette.primary, minimumSize: const Size.fromHeight(48), shape: const StadiumBorder()),
+            icon: const Icon(Iconsax.tick_circle, size: 18),
+            label: const Text('Save parts and materials'),
+          ),
         ],
-      ),
+        if (contractor.isNotEmpty) _buildModernExternalContractorSection(),
+        _buildInteractiveFilesSection(canEdit),
+      ],
     );
   }
 
-  // Interactive Parts Section
-  Widget _buildInteractivePartsSection(bool canEdit) {
-    final rawParts = _maintenance['parts_used'] ?? [];
-    final parts = <String>[...rawParts.map((part) => part.toString())];
-    final controller = TextEditingController();
+  /// Parts or materials: removable chips, an inline add field and photos.
+  Widget _itemsSection({
+    required String key,
+    required String section,
+    required String title,
+    required IconData icon,
+    required String hint,
+    required TextEditingController controller,
+    required bool canEdit,
+  }) {
+    final items = <String>[...((_maintenance[key] as List?) ?? const []).map((e) => '$e')];
+    final images = (_maintenance['${section}_images'] as List?) ?? const [];
+    void add() {
+      final text = controller.text.trim();
+      if (text.isEmpty) return;
+      setState(() {
+        _maintenance[key] = [...items, text];
+        _docsDirty = true;
+      });
+      controller.clear();
+    }
 
-    return CustomCard(
-      elevation: 4,
-      color: Colors.white,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(20),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          MobileFormRow(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Constants.ctaColorLight.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      MaintenanceSectionHeader(
+        title: title,
+        subtitle: items.isEmpty ? 'None recorded' : '${items.length} recorded',
+        action: canEdit
+            ? IconButton(
+                tooltip: 'Add a photo of the $section',
+                onPressed: () => _uploadSectionImage(section),
+                icon: const Icon(Iconsax.camera),
+              )
+            : null,
+      ),
+      Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: Tone.bg(Colors.white), borderRadius: BorderRadius.circular(16), border: Border.all(color: GasPalette.border)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (items.isNotEmpty)
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final item in items)
+                InputChip(
+                  avatar: Icon(icon, size: 16, color: GasPalette.series),
+                  label: Text(item, overflow: TextOverflow.ellipsis),
+                  onDeleted: canEdit
+                      ? () => setState(() {
+                            _maintenance[key] = [...items]..remove(item);
+                            _docsDirty = true;
+                          })
+                      : null,
+                  deleteButtonTooltipMessage: 'Remove $item',
                 ),
-                child: Icon(
-                  Icons.build,
-                  color: Constants.ctaColorLight,
-                  size: 20,
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Parts Used',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Constants.ctaColorLight,
-                      ),
-                    ),
-                    Text(
-                      '${parts.length} part${parts.length != 1 ? 's' : ''} recorded',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (canEdit) ...[
-                ElevatedButton.icon(
-                  onPressed: () => _uploadSectionImage('parts'),
-                  icon: Icon(Icons.add_photo_alternate, size: 16),
-                  label: Text('Add Photo'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context)
-                        ? GasPalette.primary
-                        : Colors.green[600],
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-                SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: parts.isEmpty ? null : _savePartsAndMaterials,
-                  icon: Icon(Icons.save, size: 16),
-                  label: Text('Save'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context)
-                        ? GasPalette.primary
-                        : Constants.ctaColorLight,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          // Parts Images Gallery
-          _buildSectionImageGallery(
-              'parts', _maintenance['parts_images'] ?? [], canEdit),
-          SizedBox(height: 20),
-          if (parts.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.build_circle,
-                    size: 48,
-                    color: Colors.grey[400],
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    canEdit ? 'No parts recorded yet' : 'No parts recorded',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  if (canEdit) ...[
-                    SizedBox(height: 4),
-                    Text(
-                      'Use the field below to add parts',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            )
+            ])
           else
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: parts.map((p) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: Constants.ctaColorLight.withOpacity(0.2)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: IntrinsicHeight(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.settings,
-                                  size: 16,
-                                  color: Constants.ctaColorLight,
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  p,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.grey[800],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (canEdit)
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  left: BorderSide(
-                                    color: Colors.grey[200]!,
-                                    width: 1,
-                                  ),
-                                ),
-                              ),
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    final updated = <String>[...parts];
-                                    updated.remove(p);
-                                    _maintenance['parts_used'] = updated;
-                                  });
-                                },
-                                borderRadius: BorderRadius.only(
-                                  topRight: Radius.circular(8),
-                                  bottomRight: Radius.circular(8),
-                                ),
-                                child: Container(
-                                  padding: EdgeInsets.all(8),
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: Colors.red[400],
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+            Text(canEdit ? 'Nothing added yet.' : 'None recorded for this job.',
+                style: GoogleFonts.inter(fontSize: 13.5, color: GasPalette.ink2)),
           if (canEdit) ...[
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Constants.ctaColorLight.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: Constants.ctaColorLight.withOpacity(0.2)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.add_circle,
-                        color: Constants.ctaColorLight,
-                        size: 18,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Add New Part',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Constants.ctaColorLight,
-                        ),
-                      ),
-                    ],
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => add(),
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    isDense: true,
+                    filled: true,
+                    fillColor: GasPalette.panelAlt,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(32), borderSide: BorderSide.none),
                   ),
-                  SizedBox(height: 12),
-                  MobileFormRow(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controller,
-                          decoration: mobileInputDecoration(
-                              context,
-                              InputDecoration(
-                                hintText:
-                                    'Enter part name or code (e.g., Air Filter #AF-100)',
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[300]!),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                      color: Constants.ctaColorLight, width: 2),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[300]!),
-                                ),
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 14),
-                                prefixIcon: Icon(
-                                  Icons.settings,
-                                  color: Colors.grey[500],
-                                  size: 20,
-                                ),
-                              )),
-                          onSubmitted: (value) {
-                            if (value.trim().isEmpty) return;
-                            setState(() {
-                              final updated = <String>[...parts];
-                              updated.add(value.trim());
-                              _maintenance['parts_used'] = updated;
-                            });
-                            controller.clear();
-                          },
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          if (controller.text.trim().isEmpty) return;
-                          setState(() {
-                            final updated = <String>[...parts];
-                            updated.add(controller.text.trim());
-                            _maintenance['parts_used'] = updated;
-                          });
-                          controller.clear();
-                        },
-                        icon: Icon(Icons.add, size: 18),
-                        label: Text('Add Part'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isPhoneLayout(context)
-                              ? GasPalette.primary
-                              : Constants.ctaColorLight,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
-                          elevation: 0,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              IconButton.filled(
+                tooltip: 'Add',
+                style: IconButton.styleFrom(backgroundColor: GasPalette.primary, foregroundColor: Tone.fg(Colors.white)),
+                onPressed: add,
+                icon: const Icon(Icons.add),
+              ),
+            ]),
+          ],
+          if (images.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildSectionImageGallery(section, images, canEdit),
           ],
         ]),
       ),
-    );
+    ]);
   }
 
-  // Interactive Materials Section
-  Widget _buildInteractiveMaterialsSection(bool canEdit) {
-    final rawMaterials = _maintenance['materials_used'] ?? [];
-    final materials = <String>[
-      ...rawMaterials.map((material) => material.toString())
-    ];
-    final controller = TextEditingController();
-
-    return CustomCard(
-      elevation: 4,
-      color: Colors.white,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(20),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          MobileFormRow(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Constants.ctaColorLight.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.inventory,
-                  color: Constants.ctaColorLight,
-                  size: 20,
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Materials Used',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Constants.ctaColorLight,
-                      ),
-                    ),
-                    Text(
-                      '${materials.length} material${materials.length != 1 ? 's' : ''} recorded',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (canEdit) ...[
-                ElevatedButton.icon(
-                  onPressed: () => _uploadSectionImage('materials'),
-                  icon: Icon(Icons.add_photo_alternate, size: 16),
-                  label: Text('Add Photo'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context)
-                        ? GasPalette.primary
-                        : Colors.green[600],
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-                SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: materials.isEmpty ? null : _savePartsAndMaterials,
-                  icon: Icon(Icons.save, size: 16),
-                  label: Text('Save'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context)
-                        ? GasPalette.primary
-                        : Constants.ctaColorLight,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          // Materials Images Gallery
-          _buildSectionImageGallery(
-              'materials', _maintenance['materials_images'] ?? [], canEdit),
-          SizedBox(height: 20),
-          if (materials.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.inventory_2,
-                    size: 48,
-                    color: Colors.grey[400],
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    canEdit
-                        ? 'No materials recorded yet'
-                        : 'No materials recorded',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  if (canEdit) ...[
-                    SizedBox(height: 4),
-                    Text(
-                      'Use the field below to add materials',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            )
-          else
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: materials.map((m) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: Constants.ctaColorLight.withOpacity(0.2)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: IntrinsicHeight(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.science,
-                                  size: 16,
-                                  color: Constants.ctaColorLight,
-                                ),
-                                SizedBox(width: 6),
-                                Text(
-                                  m,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.grey[800],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (canEdit)
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  left: BorderSide(
-                                    color: Colors.grey[200]!,
-                                    width: 1,
-                                  ),
-                                ),
-                              ),
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    final updated = <String>[...materials];
-                                    updated.remove(m);
-                                    _maintenance['materials_used'] = updated;
-                                  });
-                                },
-                                borderRadius: BorderRadius.only(
-                                  topRight: Radius.circular(8),
-                                  bottomRight: Radius.circular(8),
-                                ),
-                                child: Container(
-                                  padding: EdgeInsets.all(8),
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: Colors.red[400],
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          if (canEdit) ...[
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Constants.ctaColorLight.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: Constants.ctaColorLight.withOpacity(0.2)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.add_circle,
-                        color: Constants.ctaColorLight,
-                        size: 18,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Add New Material',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Constants.ctaColorLight,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 12),
-                  MobileFormRow(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controller,
-                          decoration: mobileInputDecoration(
-                              context,
-                              InputDecoration(
-                                hintText:
-                                    'Enter material name or type (e.g., Lubricant Oil 1L)',
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[300]!),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: BorderSide(
-                                      color: Constants.ctaColorLight, width: 2),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[300]!),
-                                ),
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 14),
-                                prefixIcon: Icon(
-                                  Icons.science,
-                                  color: Colors.grey[500],
-                                  size: 20,
-                                ),
-                              )),
-                          onSubmitted: (value) {
-                            if (value.trim().isEmpty) return;
-                            setState(() {
-                              final updated = <String>[...materials];
-                              updated.add(value.trim());
-                              _maintenance['materials_used'] = updated;
-                            });
-                            controller.clear();
-                          },
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          if (controller.text.trim().isEmpty) return;
-                          setState(() {
-                            final updated = <String>[...materials];
-                            updated.add(controller.text.trim());
-                            _maintenance['materials_used'] = updated;
-                          });
-                          controller.clear();
-                        },
-                        icon: Icon(Icons.add, size: 18),
-                        label: Text('Add Material'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isPhoneLayout(context)
-                              ? GasPalette.primary
-                              : Constants.ctaColorLight,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
-                          elevation: 0,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ]),
-      ),
-    );
-  }
-
-  // Files/Media Section - Enhanced with categories
   Widget _buildInteractiveFilesSection(bool canEdit) {
-    final beforePhotos = _maintenance['before_photos'] as List<dynamic>? ?? [];
-    final afterPhotos = _maintenance['after_photos'] as List<dynamic>? ?? [];
-    final documents = _maintenance['documents'] as List<dynamic>? ?? [];
-    final partsImages = _maintenance['parts_images'] as List<dynamic>? ?? [];
-    final materialsImages =
-        _maintenance['materials_images'] as List<dynamic>? ?? [];
-
-    final totalFiles = beforePhotos.length +
-        afterPhotos.length +
-        documents.length +
-        partsImages.length +
-        materialsImages.length;
-
-    return CustomCard(
-      elevation: 4,
-      color: Colors.white,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(20),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Header with stats and upload buttons
-          MobileFormRow(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Constants.ctaColorLight.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.folder_open,
-                  color: Constants.ctaColorLight,
-                  size: 20,
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Files & Media',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Constants.ctaColorLight,
-                      ),
-                    ),
-                    Text(
-                      '$totalFiles file${totalFiles != 1 ? 's' : ''} uploaded',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (canEdit) ...[
-                ElevatedButton.icon(
-                  onPressed: () => _showUploadMediaDialog(),
-                  icon: Icon(Icons.add_photo_alternate, size: 16),
-                  label: Text('Photos'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context)
-                        ? GasPalette.primary
-                        : Colors.green[600],
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-                SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: () => _showUploadDocumentDialog(),
-                  icon: Icon(Icons.upload_file, size: 16),
-                  label: Text('Documents'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context)
-                        ? GasPalette.primary
-                        : Constants.ctaColorLight,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          SizedBox(height: 20),
-
-          if (totalFiles == 0)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Column(
-                children: [
-                  Icon(Icons.cloud_upload, size: 48, color: Colors.grey[400]),
-                  SizedBox(height: 12),
-                  Text(
-                    'No files uploaded yet',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  if (canEdit) ...[
-                    SizedBox(height: 4),
-                    Text(
-                      'Use the buttons above to add photos and documents',
-                      style: GoogleFonts.inter(
-                          fontSize: 14, color: Colors.grey[500]),
-                    ),
-                  ],
-                ],
-              ),
-            )
-          else ...[
-            // Before Photos Section
-            if (beforePhotos.isNotEmpty)
-              _buildMediaCategory(
-                'Before Photos',
-                Icons.photo_camera,
-                Colors.blue,
-                beforePhotos,
-                canEdit,
-              ),
-
-            // After Photos Section
-            if (afterPhotos.isNotEmpty)
-              _buildMediaCategory(
-                'After Photos',
-                Icons.photo_camera,
-                Colors.green,
-                afterPhotos,
-                canEdit,
-              ),
-
-            // Parts Images Section
-            if (partsImages.isNotEmpty)
-              _buildMediaCategory(
-                'Parts Images',
-                Icons.build,
-                Colors.orange,
-                partsImages,
-                canEdit,
-                section: 'parts',
-              ),
-
-            // Materials Images Section
-            if (materialsImages.isNotEmpty)
-              _buildMediaCategory(
-                'Materials Images',
-                Icons.inventory,
-                Colors.purple,
-                materialsImages,
-                canEdit,
-                section: 'materials',
-              ),
-
-            // Documents Section
-            if (documents.isNotEmpty) ...[
-              Container(
-                margin: EdgeInsets.only(top: 16),
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.description, size: 18, color: Colors.teal),
-                        SizedBox(width: 8),
-                        Text(
-                          'Documents (${documents.length})',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[800],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    ...documents.map((doc) {
-                      final docData =
-                          doc is Map ? doc : {'filename': doc.toString()};
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 8),
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.insert_drive_file,
-                                color: Colors.teal, size: 24),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    docData['filename'] ?? docData.toString(),
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (docData['description'] != null &&
-                                      docData['description']
-                                          .toString()
-                                          .isNotEmpty)
-                                    Text(
-                                      docData['description'],
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            if (docData['url'] != null)
-                              IconButton(
-                                onPressed: () {
-                                  final url = docData['url'].startsWith('http')
-                                      ? docData['url']
-                                      : '${Constants.articBaseUrl2}${docData['url']}';
-                                  // Open document
-                                },
-                                icon: Icon(Icons.open_in_new, size: 20),
-                                color: Colors.grey[600],
-                              ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ]),
+    List<dynamic> list(String k) => (_maintenance[k] as List?) ?? const [];
+    final before = list('before_photos'), after = list('after_photos'), documents = list('documents');
+    final total = before.length + after.length + documents.length;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      MaintenanceSectionHeader(
+        title: 'Photos and documents',
+        subtitle: total == 0 ? 'Before and after photos, reports, certificates' : '$total file${total == 1 ? '' : 's'}',
       ),
-    );
+      if (canEdit)
+        Row(children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _showUploadMediaDialog,
+              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), shape: const StadiumBorder()),
+              icon: const Icon(Iconsax.camera, size: 18),
+              label: const Text('Add photos'),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _showUploadDocumentDialog,
+              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), shape: const StadiumBorder()),
+              icon: const Icon(Iconsax.document_upload, size: 18),
+              label: const Text('Add document'),
+            ),
+          ),
+        ]),
+      if (total == 0)
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Text(
+              canEdit ? 'Take before and after photos so the work is easy to verify later.' : 'No files for this job.',
+              style: GoogleFonts.inter(fontSize: 13.5, color: GasPalette.ink2)),
+        ),
+      if (before.isNotEmpty) _buildMediaCategory('Before', Iconsax.gallery, GasPalette.series, before, canEdit),
+      if (after.isNotEmpty) _buildMediaCategory('After', Iconsax.gallery_tick, GasPalette.goodInk, after, canEdit),
+      if (documents.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        Material(
+          color: Tone.bg(Colors.white),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16), side: BorderSide(color: GasPalette.border)),
+          clipBehavior: Clip.antiAlias,
+          child: Column(children: [
+            for (final doc in documents)
+              Builder(builder: (context) {
+                final d = doc is Map ? doc : {'filename': '$doc'};
+                final url = '${d['url'] ?? ''}';
+                final full = url.isEmpty ? '' : (url.startsWith('http') ? url : '${Constants.articBaseUrl2}$url');
+                final description = '${d['description'] ?? ''}';
+                return ListTile(
+                  leading: CircleAvatar(
+                      backgroundColor: GasPalette.seriesSoft,
+                      child: Icon(Iconsax.document_text, color: GasPalette.series, size: 20)),
+                  title: Text('${d['filename'] ?? 'Document'}', maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: GasPalette.ink)),
+                  subtitle: description.isEmpty
+                      ? null
+                      : Text(description, maxLines: 2, overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(fontSize: 12.5, color: GasPalette.ink2)),
+                  trailing: full.isEmpty ? null : const Icon(Iconsax.export_3, size: 20),
+                  onTap: full.isEmpty
+                      ? null
+                      : () async {
+                          final ok = await launchUrl(Uri.parse(full), mode: LaunchMode.externalApplication);
+                          if (!ok && mounted) {
+                            ScaffoldMessenger.of(this.context)
+                                .showSnackBar(const SnackBar(content: Text('The document could not be opened.')));
+                          }
+                        },
+                );
+              }),
+          ]),
+        ),
+      ],
+    ]);
   }
 
   // Build a media category with expandable gallery
@@ -5011,12 +2577,12 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       List<dynamic> images, bool canEdit,
       {String? section}) {
     return Container(
-      margin: EdgeInsets.only(top: 16),
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        color: Tone.bg(Colors.white),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GasPalette.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -5024,14 +2590,11 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
           Row(
             children: [
               Icon(icon, size: 18, color: color),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
-                '$title (${images.length})',
+                '$title · ${images.length} photo${images.length == 1 ? '' : 's'}',
                 style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
+                    fontSize: 14.5, fontWeight: FontWeight.w700, color: GasPalette.ink),
               ),
             ],
           ),
@@ -5061,7 +2624,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: color.withOpacity(0.3)),
-                            color: Colors.grey[200],
+                            color: Tone.bg(Colors.grey[200]),
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
@@ -5073,7 +2636,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                               errorBuilder: (context, error, stackTrace) =>
                                   Icon(
                                 Icons.broken_image,
-                                color: Colors.grey[400],
+                                color: Tone.fg(Colors.grey[400]),
                               ),
                               loadingBuilder:
                                   (context, child, loadingProgress) {
@@ -5098,11 +2661,11 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                             child: Container(
                               padding: EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: Colors.red[400],
+                                color: Tone.bg(Colors.red[400]),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(Icons.close,
-                                  size: 14, color: Colors.white),
+                                  size: 14, color: Tone.fg(Colors.white)),
                             ),
                           ),
                         ),
@@ -5119,667 +2682,187 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
   // Modern External Contractor Section
   Widget _buildModernExternalContractorSection() {
-    return CustomCard(
-      elevation: 4,
-      color: Colors.white,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Constants.ctaColorLight.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.business,
-                    color: Constants.ctaColorLight,
-                    size: 20,
-                  ),
+    final name = '${_maintenance['external_contractor'] ?? ''}'.trim();
+    final contact = '${_maintenance['contractor_contact'] ?? ''}'.trim();
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const MaintenanceSectionHeader(title: 'Contractor'),
+      Material(
+        color: Tone.bg(Colors.white),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: GasPalette.border)),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          leading: CircleAvatar(
+              backgroundColor: GasPalette.flameSoft, child: Icon(Iconsax.truck, color: GasPalette.flame, size: 20)),
+          title: Text(name, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: GasPalette.ink)),
+          subtitle: contact.isEmpty ? null : Text(contact, style: GoogleFonts.inter(fontSize: 13, color: GasPalette.ink2)),
+          trailing: contact.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: 'Copy contact',
+                  icon: const Icon(Iconsax.copy, size: 20),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: contact));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contact copied')));
+                  },
                 ),
-                SizedBox(width: 12),
-                Text(
-                  'External Contractor',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Constants.ctaColorLight,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          'Company:',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          _maintenance['external_contractor'] ?? '',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: Colors.grey[800],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 12),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          'Contact:',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          _maintenance['contractor_contact'] ?? 'Not provided',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: Colors.grey[800],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
-    );
+    ]);
   }
 
-  // Modern Safety & Compliance Section
   Widget _buildModernSafetySection() {
-    return CustomCard(
-      elevation: 4,
-      color: Colors.white,
+    final safety = '${_maintenance['safety_precautions'] ?? ''}'.trim();
+    final compliance = '${_maintenance['compliance_notes'] ?? ''}'.trim();
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
       child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Constants.ctaColorLight.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.security,
-                    color: Constants.ctaColorLight,
-                    size: 20,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Text(
-                  'Safety & Compliance',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Constants.ctaColorLight,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            if (_maintenance['safety_precautions']?.isNotEmpty == true) ...[
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.warning_amber,
-                          color: Colors.orange[600],
-                          size: 18,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Safety Precautions',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[800],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      _maintenance['safety_precautions'],
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 12),
-            ],
-            if (_maintenance['compliance_notes']?.isNotEmpty == true) ...[
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.verified_user,
-                          color: Colors.green[600],
-                          size: 18,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Compliance Notes',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[800],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      _maintenance['compliance_notes'],
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: GasPalette.warnSoft, borderRadius: BorderRadius.circular(16), border: Border.all(color: GasPalette.warnLine)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(Iconsax.shield_tick, size: 20, color: GasPalette.warnInk),
+            const SizedBox(width: 8),
+            Text('Safety', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: GasPalette.warnInk)),
+          ]),
+          if (safety.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(safety, style: GoogleFonts.inter(fontSize: 14, height: 1.45, color: GasPalette.ink)),
           ],
-        ),
+          if (compliance.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text('Compliance notes', style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: GasPalette.warnInk)),
+            const SizedBox(height: 2),
+            Text(compliance, style: GoogleFonts.inter(fontSize: 13.5, color: GasPalette.ink)),
+          ],
+        ]),
       ),
     );
   }
 
-  // Modern Observations List Section
   Widget _buildObservationsSection(bool canEdit) {
-    // Access observations from _maintenance data with proper type handling
-    final observationsData = _maintenance['observations'];
-    List<Map<String, dynamic>> observationsList = [];
+    final data = _maintenance['observations'];
+    final findings = <Map<String, dynamic>>[
+      if (data is List) ...data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)),
+      if (data is Map) Map<String, dynamic>.from(data),
+      if (data is String && data.isNotEmpty)
+        {'text': data, 'created_by': 'Earlier note', 'is_critical': false, 'category': 'general'},
+    ];
+    String author(dynamic v) => v is Map ? '${v['full_name'] ?? v['username'] ?? 'Someone'}' : '${v ?? 'Someone'}';
+    String imageUrl(String raw) => raw.startsWith('http') ? raw : '${Constants.articBaseUrl2}$raw';
+    final critical = findings.where((f) => f['is_critical'] == true).length;
 
-    print('=== BUILDING FINDINGS UI ===');
-    print('Raw observations data: $observationsData');
-    print('Data type: ${observationsData.runtimeType}');
-
-    if (observationsData is List) {
-      print('Processing as List with ${observationsData.length} items');
-      observationsList = observationsData.cast<Map<String, dynamic>>();
-      print('Processed observations list: $observationsList');
-    } else if (observationsData is Map) {
-      print('Processing as single Map');
-      observationsList = [observationsData.cast<String, dynamic>()];
-      print('Converted to list: $observationsList');
-    } else if (observationsData is String && observationsData.isNotEmpty) {
-      print('Processing as legacy String: "$observationsData"');
-      // Convert legacy string format to structured data
-      observationsList = [
-        {
-          'text': observationsData,
-          'created_by': 'Legacy Entry',
-          'created_at': DateTime.now().toIso8601String(),
-          'is_critical': false,
-          'category': 'general',
-        }
-      ];
-      print('Converted legacy string to: $observationsList');
-    } else {
-      print('No observations data or unsupported format');
-    }
-
-    print('Final findings list count: ${observationsList.length}');
-    print('================================');
-
-    return CustomCard(
-      elevation: 4,
-      color: Colors.white,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Modern Header with Add Button
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Constants.ctaColorLight.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.visibility,
-                    color: Constants.ctaColorLight,
-                    size: 20,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Maintenance Findings',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Constants.ctaColorLight,
-                        ),
-                      ),
-                      Text(
-                        '${observationsList.length} finding${observationsList.length != 1 ? 's' : ''} recorded',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (canEdit)
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddObservationDialog(),
-                    icon: Icon(Icons.add, size: 18),
-                    label: Text('Add Finding'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isPhoneLayout(context)
-                          ? GasPalette.primary
-                          : Constants.ctaColorLight,
-                      foregroundColor: Colors.white,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                            isPhoneLayout(context) ? 32 : 8),
-                      ),
-                      elevation: 2,
-                    ),
-                  ),
-              ],
-            ),
-
-            SizedBox(height: 20),
-
-            // Observations List
-            if (observationsList.isEmpty)
-              Container(
-                padding: EdgeInsets.all(40),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!, width: 1),
-                ),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.visibility_off,
-                        size: 48,
-                        color: Colors.grey[400],
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'No findings recorded',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Add findings to track maintenance discoveries and recommendations',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      MaintenanceSectionHeader(
+        title: 'Findings',
+        subtitle: findings.isEmpty
+            ? 'What the technician noticed'
+            : '${findings.length} recorded${critical == 0 ? '' : ' · $critical critical'}',
+        action: canEdit
+            ? FilledButton.icon(
+                onPressed: _showAddObservationDialog,
+                style: FilledButton.styleFrom(
+                    backgroundColor: GasPalette.primary, foregroundColor: Tone.fg(Colors.white), shape: const StadiumBorder()),
+                icon: const Icon(Iconsax.add, size: 18),
+                label: const Text('Add finding'),
               )
-            else
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[200]!, width: 1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    // Header Row
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          topRight: Radius.circular(12),
-                        ),
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey[200]!,
-                            width: 1,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 4,
-                            child: Text(
-                              'Finding',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Constants.ctaColorLight,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              'Recorded By',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Constants.ctaColorLight,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              'Date Added',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Constants.ctaColorLight,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Data Rows
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: observationsList.length,
-                      separatorBuilder: (context, index) => Divider(
-                        height: 1,
-                        color: Colors.grey[200],
-                      ),
-                      itemBuilder: (context, index) {
-                        final observation = observationsList[index];
-                        final dateAdded = observation['created_at'] != null
-                            ? DateTime.tryParse(observation['created_at']) ??
-                                DateTime.now()
-                            : DateTime.now();
-
-                        final observationImages =
-                            observation['images'] as List<dynamic>? ?? [];
-                        final observationId =
-                            observation['id']?.toString() ?? '';
-
-                        return Container(
-                          padding: EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    flex: 4,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          observation['text'] ??
-                                              'No observation text',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            color: Colors.grey[800],
-                                            height: 1.4,
-                                          ),
-                                        ),
-                                        if (observation['is_critical'] ==
-                                            true) ...[
-                                          SizedBox(height: 8),
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.orange
-                                                  .withOpacity(0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              'CRITICAL',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.orange[800],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Constants.ctaColorLight
-                                            .withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        observation['created_by'] ?? 'Unknown',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: Constants.ctaColorLight,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            _formatDateTime(
-                                                dateAdded.toIso8601String()),
-                                            style: GoogleFonts.inter(
-                                              fontSize: 13,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                        ),
-                                        if (canEdit && observationId.isNotEmpty)
-                                          IconButton(
-                                            onPressed: () =>
-                                                _uploadObservationImage(
-                                                    observationId),
-                                            icon: Icon(
-                                                Icons.add_photo_alternate,
-                                                size: 20),
-                                            color: Colors.green[600],
-                                            tooltip: 'Add Photo',
-                                            padding: EdgeInsets.zero,
-                                            constraints: BoxConstraints(),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              // Show observation images if any
-                              if (observationImages.isNotEmpty) ...[
-                                SizedBox(height: 12),
-                                Container(
-                                  height: 80,
-                                  child: ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: observationImages.length,
-                                    itemBuilder: (context, imgIndex) {
-                                      final img = observationImages[imgIndex];
-                                      final imageUrl = img['url'] ?? '';
-                                      return Container(
-                                        margin: EdgeInsets.only(right: 8),
-                                        child: Stack(
-                                          children: [
-                                            GestureDetector(
-                                              onTap: () => _showImagePreview(
-                                                  imageUrl,
-                                                  img['filename'] ?? 'Image'),
-                                              child: Container(
-                                                width: 80,
-                                                height: 80,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  border: Border.all(
-                                                      color: Colors.grey[300]!),
-                                                  image: DecorationImage(
-                                                    image: NetworkImage(imageUrl
-                                                            .startsWith('http')
-                                                        ? imageUrl
-                                                        : '${Constants.articBaseUrl2}$imageUrl'),
-                                                    fit: BoxFit.cover,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
+            : null,
       ),
-    );
+      if (findings.isEmpty)
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+              color: Tone.bg(Colors.white), borderRadius: BorderRadius.circular(16), border: Border.all(color: GasPalette.border)),
+          child: Column(children: [
+            Icon(Iconsax.note_2, size: 36, color: GasPalette.series),
+            const SizedBox(height: 8),
+            Text('No findings yet', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: GasPalette.ink)),
+            const SizedBox(height: 4),
+            Text(
+                canEdit
+                    ? 'Record issues, readings and recommendations as you work. Add photos to each one.'
+                    : 'Findings recorded during this job appear here.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 13, color: GasPalette.ink2)),
+          ]),
+        )
+      else
+        for (final f in findings) _findingCard(f, canEdit, author, imageUrl),
+    ]);
   }
 
-  // Save observations to backend
-  Future<void> _saveObservations(String observations) async {
-    try {
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/update/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'observations': observations,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Observations saved successfully'),
-            backgroundColor: Constants.ctaColorLight,
-          ),
-        );
-        // Reload maintenance data to get the latest state
-        _loadMaintenanceDetail();
-      } else {
-        throw Exception('Server returned ${response.statusCode}');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save observations: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+  Widget _findingCard(Map<String, dynamic> f, bool canEdit, String Function(dynamic) author,
+      String Function(String) imageUrl) {
+    final critical = f['is_critical'] == true;
+    final id = '${f['id'] ?? ''}';
+    final images = (f['images'] as List? ?? const []).whereType<Map>().toList();
+    final category = '${f['category_display'] ?? f['category'] ?? ''}'.replaceAll('_', ' ');
+    final (bg, fg, icon) = switch ('${f['category']}') {
+      'issue' || 'problem' || 'defect' => (GasPalette.critSoft, GasPalette.critInk, Iconsax.danger),
+      'recommendation' => (GasPalette.seriesSoft, GasPalette.series, Iconsax.lamp_charge),
+      'measurement' || 'reading' => (GasPalette.panelAlt, GasPalette.ink, Iconsax.chart_2),
+      _ => (GasPalette.panelAlt, GasPalette.ink2, Iconsax.note_2),
+    };
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: Tone.bg(Colors.white),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: critical ? GasPalette.critLine : GasPalette.border)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Wrap(spacing: 6, runSpacing: 6, children: [
+            if (category.isNotEmpty)
+              MaintenancePill(text: '${category[0].toUpperCase()}${category.substring(1)}', bg: bg, fg: fg, icon: icon),
+            if (critical) MaintenancePill(text: 'Critical', bg: GasPalette.critSoft, fg: GasPalette.critInk, icon: Iconsax.danger),
+          ]),
+          const SizedBox(height: 8),
+          Text('${f['text'] ?? ''}', style: GoogleFonts.inter(fontSize: 14.5, height: 1.45, color: GasPalette.ink)),
+          if (images.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 72,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: images.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, i) {
+                  final url = '${images[i]['url'] ?? ''}';
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () => _showImagePreview(url, '${images[i]['filename'] ?? 'Photo'}'),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(imageUrl(url), width: 72, height: 72, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                              width: 72, height: 72, color: GasPalette.panelAlt,
+                              child: Icon(Iconsax.gallery_slash, color: GasPalette.ink2))),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Row(children: [
+            Icon(Iconsax.user, size: 14, color: GasPalette.ink2),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                  '${author(f['created_by'])}${f['created_at'] == null ? '' : ' · ${maintenanceWhen(f['created_at'], done: true)}'}',
+                  style: GoogleFonts.inter(fontSize: 12.5, color: GasPalette.ink2)),
+            ),
+            if (canEdit && id.isNotEmpty)
+              TextButton.icon(
+                onPressed: () => _uploadObservationImage(id),
+                icon: const Icon(Iconsax.camera, size: 16),
+                label: const Text('Add photo'),
+              ),
+          ]),
+        ]),
+      ),
+    );
   }
 
   // Simple Add Observation Dialog
@@ -5790,7 +2873,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       context: context,
       barrierDismissible: true,
       builder: (context) => MobileAlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: Tone.bg(Colors.white),
         title: Text(
           'Add Finding',
           style: GoogleFonts.inter(
@@ -5831,16 +2914,14 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 try {
                   await _addObservation(controller.text.trim());
                   Navigator.of(context).pop();
-                } catch (e) {
-                  print('Error adding finding: $e');
-                }
+                } catch (e) {}
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: isPhoneLayout(context)
                   ? GasPalette.primary
                   : Constants.ctaColorLight,
-              foregroundColor: Colors.white,
+              foregroundColor: Tone.fg(Colors.white),
             ),
             child: Text('Add'),
           ),
@@ -5861,24 +2942,14 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         'is_critical': false,
       };
 
-      print('=== ADDING FINDING ===');
-      print(
-          'URL: ${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/observations/');
-      print('Headers: ${ApiConfig.headers}');
-      print('Request Body: ${json.encode(requestBody)}');
-      print('==========================');
-
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/observations/'),
-        headers: ApiConfig.headers,
-        body: json.encode(requestBody),
-      );
-
-      print('=== FINDING RESPONSE ===');
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-      print('============================');
+      final response = await http
+          .post(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/observations/'),
+            headers: await ApiConfig.authHeaders(),
+            body: json.encode(requestBody),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -5897,7 +2968,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to add finding: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -5916,11 +2987,11 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
             width: 400,
             padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Tone.bg(Colors.black).withOpacity(0.1),
                   blurRadius: 20,
                   offset: Offset(0, 8),
                 ),
@@ -5951,13 +3022,13 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
+                          color: Tone.fg(Colors.grey[800]),
                         ),
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.close, color: Colors.grey[600]),
+                      icon: Icon(Icons.close, color: Tone.fg(Colors.grey[600])),
                     ),
                   ],
                 ),
@@ -5966,7 +3037,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   'Select images or videos to upload for this maintenance task.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Tone.fg(Colors.grey[600]),
                   ),
                 ),
                 SizedBox(height: 24),
@@ -5981,7 +3052,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           backgroundColor: isPhoneLayout(context)
                               ? GasPalette.primary
                               : Constants.ctaColorLight,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Tone.fg(Colors.white),
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),
@@ -5996,7 +3067,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           backgroundColor: isPhoneLayout(context)
                               ? GasPalette.primary
                               : Constants.ctaColorLight,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Tone.fg(Colors.white),
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),
@@ -6024,11 +3095,11 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
             width: 450,
             padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Tone.bg(Colors.black).withOpacity(0.1),
                   blurRadius: 20,
                   offset: Offset(0, 8),
                 ),
@@ -6059,13 +3130,13 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
+                          color: Tone.fg(Colors.grey[800]),
                         ),
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.close, color: Colors.grey[600]),
+                      icon: Icon(Icons.close, color: Tone.fg(Colors.grey[600])),
                     ),
                   ],
                 ),
@@ -6074,7 +3145,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   'Upload a document with description for this maintenance task.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Tone.fg(Colors.grey[600]),
                   ),
                 ),
                 SizedBox(height: 20),
@@ -6083,7 +3154,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: Tone.fg(Colors.grey[800]),
                   ),
                 ),
                 SizedBox(height: 8),
@@ -6095,7 +3166,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         hintText: 'Enter document description...',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(color: Tone.bg(Colors.grey[300])),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -6118,7 +3189,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       backgroundColor: isPhoneLayout(context)
                           ? GasPalette.primary
                           : Constants.ctaColorLight,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Tone.fg(Colors.white),
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
@@ -6159,7 +3230,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
           SnackBar(
             content:
                 Text('${result.files.length} file(s) uploaded successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: Tone.bg(Colors.green),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -6171,7 +3242,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to upload media: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -6195,7 +3266,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Document uploaded successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: Tone.bg(Colors.green),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -6207,7 +3278,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to upload document: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -6222,7 +3293,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
     // Add authorization header
     final token = await Sharedprefs.getAuthTokenPreference();
-    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Authorization'] = 'Token $token';
 
     // Add file
     if (file.bytes != null) {
@@ -6246,18 +3317,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         (await SharedPrefs.getBusinessId()).toString();
     request.fields['user_id'] = (await SharedPrefs.getUserId()).toString();
 
-    print('=== UPLOADING MEDIA FILE ===');
-    print('File: ${file.name}');
-    print('Type: $type');
-    print('Size: ${file.size}');
-    print('URL: $url');
-    print('Fields: ${request.fields}');
-
-    final response = await request.send();
-    final responseData = await response.stream.bytesToString();
-
-    print('Upload response: ${response.statusCode}');
-    print('Upload response body: $responseData');
+    final response = await request.send().timeout(const Duration(seconds: 30));
+    await response.stream.drain<void>().timeout(const Duration(seconds: 30));
 
     if (response.statusCode != 200) {
       throw Exception('Failed to upload media: ${response.statusCode}');
@@ -6273,7 +3334,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
     // Add authorization header
     final token = await Sharedprefs.getAuthTokenPreference();
-    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Authorization'] = 'Token $token';
 
     // Add file
     if (file.bytes != null) {
@@ -6297,31 +3358,12 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         (await SharedPrefs.getBusinessId()).toString();
     request.fields['user_id'] = (await SharedPrefs.getUserId()).toString();
 
-    print('=== UPLOADING DOCUMENT FILE ===');
-    print('File: ${file.name}');
-    print('Description: $description');
-    print('Size: ${file.size}');
-    print('URL: $url');
-    print('Fields: ${request.fields}');
-
-    final response = await request.send();
-    final responseData = await response.stream.bytesToString();
-
-    print('Upload response: ${response.statusCode}');
-    print('Upload response body: $responseData');
+    final response = await request.send().timeout(const Duration(seconds: 30));
+    await response.stream.drain<void>().timeout(const Duration(seconds: 30));
 
     if (response.statusCode != 200) {
       throw Exception('Failed to upload document: ${response.statusCode}');
     }
-  }
-
-  void _showNotImplemented(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature not implemented yet'),
-        backgroundColor: Colors.orange,
-      ),
-    );
   }
 
   // Upload image for parts section
@@ -6340,7 +3382,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
           // Add authorization header
           final token = await Sharedprefs.getAuthTokenPreference();
-          request.headers['Authorization'] = 'Bearer $token';
+          request.headers['Authorization'] = 'Token $token';
 
           // Add file
           if (file.bytes != null) {
@@ -6359,7 +3401,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
           }
           request.fields['caption'] = '';
 
-          final response = await request.send();
+          final response =
+              await request.send().timeout(const Duration(seconds: 30));
           if (response.statusCode != 200) {
             throw Exception('Failed to upload image');
           }
@@ -6368,7 +3411,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Image(s) uploaded successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: Tone.bg(Colors.green),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -6380,7 +3423,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to upload image: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -6403,7 +3446,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
           // Add authorization header
           final token = await Sharedprefs.getAuthTokenPreference();
-          request.headers['Authorization'] = 'Bearer $token';
+          request.headers['Authorization'] = 'Token $token';
 
           // Add file
           if (file.bytes != null) {
@@ -6416,7 +3459,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
           request.fields['caption'] = '';
 
-          final response = await request.send();
+          final response =
+              await request.send().timeout(const Duration(seconds: 30));
           if (response.statusCode != 200) {
             throw Exception('Failed to upload image');
           }
@@ -6425,7 +3469,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Image(s) uploaded successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: Tone.bg(Colors.green),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -6437,7 +3481,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to upload image: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -6452,15 +3496,15 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         Uri.parse(
             '${Constants.articBaseUrl2}api/maintenance/${widget.maintenanceId}/$section/$imageId/delete/'),
         headers: {
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Token $token',
         },
-      );
+      ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Image deleted'),
-            backgroundColor: Colors.green,
+            backgroundColor: Tone.bg(Colors.green),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -6472,7 +3516,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to delete image: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -6492,14 +3536,14 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         SizedBox(height: 16),
         Row(
           children: [
-            Icon(Icons.photo_library, size: 18, color: Colors.grey[600]),
+            Icon(Icons.photo_library, size: 18, color: Tone.fg(Colors.grey[600])),
             SizedBox(width: 8),
             Text(
               'Images (${images.length})',
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+                color: Tone.fg(Colors.grey[700]),
               ),
             ),
           ],
@@ -6525,7 +3569,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         height: 120,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: Tone.bg(Colors.grey[300])),
                           image: DecorationImage(
                             image: NetworkImage(imageUrl.startsWith('http')
                                 ? imageUrl
@@ -6544,13 +3588,13 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           child: Container(
                             padding: EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: Colors.red[400],
+                              color: Tone.bg(Colors.red[400]),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
                               Icons.close,
                               size: 14,
-                              color: Colors.white,
+                              color: Tone.fg(Colors.white),
                             ),
                           ),
                         ),
@@ -6574,7 +3618,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
         child: Container(
           constraints: BoxConstraints(maxWidth: 800, maxHeight: 600),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -6583,7 +3627,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+                  border: Border(bottom: BorderSide(color: Tone.bg(Colors.grey[200]))),
                 ),
                 child: Row(
                   children: [
@@ -6614,7 +3658,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                        Icon(Icons.broken_image, size: 48, color: Tone.fg(Colors.grey)),
                         SizedBox(height: 16),
                         Text('Failed to load image'),
                       ],
@@ -6637,15 +3681,17 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       final materials = <String>[
         ...rawMaterials.map((material) => material.toString())
       ];
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/update/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'parts_used': parts,
-          'materials_used': materials,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/update/'),
+            headers: await ApiConfig.authHeaders(),
+            body: json.encode({
+              'parts_used': parts,
+              'materials_used': materials,
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -6661,257 +3707,28 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to save: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
         ),
       );
     }
-  }
-
-  Widget _buildDocumentationSection(String title, List<dynamic>? items) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          SizedBox(height: 12),
-          if (items != null && items.isNotEmpty)
-            ...items
-                .map((item) => Padding(
-                      padding: EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        children: [
-                          Icon(Icons.fiber_manual_record,
-                              size: 8, color: Colors.grey[600]),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              item.toString(),
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ))
-                .toList()
-          else
-            Text(
-              'No items recorded',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.grey[500],
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPhotosSection() {
-    final beforePhotos = _maintenance['before_photos'] as List<dynamic>? ?? [];
-    final afterPhotos = _maintenance['after_photos'] as List<dynamic>? ?? [];
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Photos & Documentation',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          SizedBox(height: 16),
-          if (beforePhotos.isNotEmpty) ...[
-            Text(
-              'Before Photos',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-            ),
-            SizedBox(height: 8),
-            _buildPhotoGrid(beforePhotos),
-            SizedBox(height: 16),
-          ],
-          if (afterPhotos.isNotEmpty) ...[
-            Text(
-              'After Photos',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-            ),
-            SizedBox(height: 8),
-            _buildPhotoGrid(afterPhotos),
-          ],
-          if (beforePhotos.isEmpty && afterPhotos.isEmpty)
-            Center(
-              child: Column(
-                children: [
-                  Icon(Icons.photo_library, size: 48, color: Colors.grey[400]),
-                  SizedBox(height: 8),
-                  Text(
-                    'No photos available',
-                    style: GoogleFonts.inter(color: Colors.grey[500]),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPhotoGrid(List<dynamic> photos) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
-      itemCount: photos.length,
-      itemBuilder: (context, index) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            Icons.image,
-            color: Colors.grey[500],
-            size: 32,
-          ),
-        );
-      },
-    );
   }
 
   Widget _buildActionButton() {
     final status = _maintenance['status'];
-
-    if (status == 'scheduled') {
-      return FloatingActionButton.extended(
-        onPressed: () => _updateStatus('start'),
-        backgroundColor: Constants.ctaColorLight,
-        icon: Icon(Icons.play_arrow, color: Colors.white),
-        label: Text(
-          'Start Maintenance',
-          style: GoogleFonts.inter(
-              color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-      );
-    } else if (status == 'in_progress') {
-      return FloatingActionButton.extended(
-        onPressed: () => _updateStatus('complete'),
-        backgroundColor: Color(0xFF1976D2),
-        icon: Icon(Icons.check, color: Colors.white),
-        label: Text(
-          'Complete',
-          style: GoogleFonts.inter(
-              color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-      );
-    }
-
-    return Container();
-  }
-
-  // Helper Methods
-  IconData _getStatusIcon(String? status) {
-    switch (status) {
-      case 'completed':
-        return Icons.check_circle;
-      case 'in_progress':
-        return Icons.settings;
-      case 'scheduled':
-        return Icons.schedule;
-      case 'overdue':
-        return Icons.warning;
-      case 'cancelled':
-        return Icons.cancel;
-      default:
-        return Icons.help;
-    }
-  }
-
-  Color _getStatusColor(String? status) {
-    switch (status) {
-      case 'completed':
-        return Color(0xFF388E3C);
-      case 'in_progress':
-        return Color(0xFF1976D2);
-      case 'scheduled':
-        return Color(0xFF7B1FA2);
-      case 'overdue':
-        return Color(0xFFD32F2F);
-      case 'cancelled':
-        return Color(0xFF616161);
-      default:
-        return Color(0xFF616161);
-    }
-  }
-
-  String _formatDateTime(String? dateTime) {
-    if (dateTime == null) return '';
-    try {
-      final date = DateTime.parse(dateTime);
-      return DateFormat('MMM d, yyyy HH:mm').format(date);
-    } catch (e) {
-      return dateTime;
-    }
-  }
-
-  String _formatDate(String? dateTime) {
-    if (dateTime == null) return '';
-    try {
-      final date = DateTime.parse(dateTime);
-      return DateFormat('MMM d, yyyy').format(date);
-    } catch (e) {
-      return dateTime;
-    }
+    final start = status == 'scheduled' || status == 'overdue';
+    if (!start && status != 'in_progress') return const SizedBox.shrink();
+    return FloatingActionButton.extended(
+      heroTag: 'maintenance-action',
+      elevation: 2,
+      shape: const StadiumBorder(),
+      backgroundColor: start ? GasPalette.primary : GasPalette.good,
+      foregroundColor: Tone.fg(Colors.white),
+      onPressed: _updatingStatus ? null : () => _updateStatus(start ? 'start' : 'complete'),
+      icon: _updatingStatus
+          ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Tone.fg(Colors.white)))
+          : Icon(start ? Iconsax.play : Iconsax.tick_circle),
+      label: Text(start ? 'Start job' : 'Mark complete', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+    );
   }
 
   int _getCompletedCount() {
@@ -6925,84 +3742,68 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
   // Action Methods
   Future<void> _updateStatus(String action) async {
+    if (_updatingStatus) return;
+    if (action == 'complete' &&
+        _checklistItems.any((item) =>
+            item['is_critical'] == true && item['is_completed'] != true)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Complete all critical checklist items before closing this maintenance.')));
+      _tabController.animateTo(1);
+      return;
+    }
+    setState(() => _updatingStatus = true);
     try {
-      final url =
-          '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/status/';
-      print(
-          '🔄 Updating status: $action for maintenance ID: ${widget.maintenanceId}');
-      print('🌐 API URL: $url');
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'action': action,
-          'user_id': await SharedPrefs.getUserId(),
-        }),
-      );
-
-      print('📡 Response status: ${response.statusCode}');
-      print('📋 Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        if (responseData['success'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Status updated successfully'),
-              backgroundColor: Constants.ctaColorLight,
-            ),
-          );
-          _loadMaintenanceDetail();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  'Failed to update status: ${responseData['message'] ?? 'Unknown error'}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Server error: ${response.statusCode} - ${response.body}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ Error updating status: $e');
+      final response = await http
+          .post(
+              Uri.parse(
+                  '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/status/'),
+              headers: await ApiConfig.authHeaders(),
+              body: jsonEncode(
+                  {'action': action, 'user_id': await SharedPrefs.getUserId()}))
+          .timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200 ||
+          jsonDecode(response.body)['success'] != true)
+        throw StateError('Not saved');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update status: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+          const SnackBar(content: Text('Maintenance status updated')));
+      await _loadMaintenanceDetail();
+    } catch (_) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Unable to update status. Check your connection and retry.')));
+    } finally {
+      if (mounted) setState(() => _updatingStatus = false);
     }
   }
 
   Future<void> _toggleChecklistItem(Map<String, dynamic> item) async {
     try {
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/checklist/${item['id']}/update/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'mark_completed': !item['is_completed'],
-          'user_id': await SharedPrefs.getUserId(),
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/checklist/${item['id']}/update/'),
+            headers: await ApiConfig.authHeaders(),
+            body: json.encode({
+              'mark_completed': !item['is_completed'],
+              'user_id': await SharedPrefs.getUserId(),
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
 
+      if (response.statusCode != 200) throw StateError('Not saved');
+      if (!mounted) return;
       if (response.statusCode == 200) {
         _loadMaintenanceDetail();
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to update checklist: $e'),
-          backgroundColor: Colors.red,
+          content: Text('Unable to update checklist. Please retry.'),
+          backgroundColor: Tone.bg(Colors.red),
         ),
       );
     }
@@ -7019,7 +3820,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => MobileDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: Tone.bg(Colors.white),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -7029,7 +3830,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
             constraints: BoxConstraints(maxWidth: 500),
             padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -7068,7 +3869,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                             'Create a new maintenance check item',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: Tone.fg(Colors.grey[600]),
                             ),
                           ),
                         ],
@@ -7078,9 +3879,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       onPressed: _isSubmitting
                           ? null
                           : () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.close, color: Colors.grey[600]),
+                      icon: Icon(Icons.close, color: Tone.fg(Colors.grey[600])),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey[100],
+                        backgroundColor: Tone.bg(Colors.grey[100]),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -7095,9 +3896,9 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.grey[50],
+                    color: Tone.bg(Colors.grey[50]),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!, width: 1),
+                    border: Border.all(color: Tone.bg(Colors.grey[200]), width: 1),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -7118,18 +3919,18 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                             InputDecoration(
                               hintText: 'e.g., Check compressor oil levels',
                               hintStyle: GoogleFonts.inter(
-                                color: Colors.grey[500],
+                                color: Tone.fg(Colors.grey[500]),
                                 fontSize: 14,
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide:
-                                    BorderSide(color: Colors.grey[300]!),
+                                    BorderSide(color: Tone.bg(Colors.grey[300])),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide:
-                                    BorderSide(color: Colors.grey[300]!),
+                                    BorderSide(color: Tone.bg(Colors.grey[300])),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -7137,7 +3938,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                     color: Constants.ctaColorLight, width: 2),
                               ),
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: Tone.bg(Colors.white),
                               contentPadding: EdgeInsets.all(16),
                             )),
                         style: GoogleFonts.inter(fontSize: 14),
@@ -7162,18 +3963,18 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                             InputDecoration(
                               hintText: 'Additional details or instructions',
                               hintStyle: GoogleFonts.inter(
-                                color: Colors.grey[500],
+                                color: Tone.fg(Colors.grey[500]),
                                 fontSize: 14,
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide:
-                                    BorderSide(color: Colors.grey[300]!),
+                                    BorderSide(color: Tone.bg(Colors.grey[300])),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide:
-                                    BorderSide(color: Colors.grey[300]!),
+                                    BorderSide(color: Tone.bg(Colors.grey[300])),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -7181,7 +3982,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                     color: Constants.ctaColorLight, width: 2),
                               ),
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: Tone.bg(Colors.white),
                               contentPadding: EdgeInsets.all(16),
                             )),
                         style: GoogleFonts.inter(fontSize: 14),
@@ -7195,13 +3996,13 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: _isCritical
-                              ? Colors.orange.withOpacity(0.1)
-                              : Colors.white,
+                              ? Tone.bg(Colors.orange).withOpacity(0.1)
+                              : Tone.bg(Colors.white),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: _isCritical
-                                ? Colors.orange.withOpacity(0.3)
-                                : Colors.grey[300]!,
+                                ? Tone.bg(Colors.orange).withOpacity(0.3)
+                                : Tone.bg(Colors.grey[300]),
                           ),
                         ),
                         child: Row(
@@ -7213,7 +4014,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                   _isCritical = value ?? false;
                                 });
                               },
-                              activeColor: Colors.orange,
+                              activeColor: Tone.auto(Colors.orange),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4),
                               ),
@@ -7229,15 +4030,15 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: _isCritical
-                                          ? Colors.orange[800]
-                                          : Colors.grey[800],
+                                          ? Tone.fg(Colors.orange[800])
+                                          : Tone.fg(Colors.grey[800]),
                                     ),
                                   ),
                                   Text(
                                     'Critical items require mandatory completion',
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: Tone.fg(Colors.grey[600]),
                                     ),
                                   ),
                                 ],
@@ -7272,7 +4073,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey[600],
+                            color: Tone.fg(Colors.grey[600]),
                           ),
                         ),
                       ),
@@ -7291,7 +4092,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                     SnackBar(
                                       content:
                                           Text('Please enter a description'),
-                                      backgroundColor: Colors.red,
+                                      backgroundColor: Tone.bg(Colors.red),
                                       behavior: SnackBarBehavior.floating,
                                     ),
                                   );
@@ -7318,7 +4119,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           backgroundColor: isPhoneLayout(context)
                               ? GasPalette.primary
                               : Constants.ctaColorLight,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Tone.fg(Colors.white),
                           padding: EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
@@ -7336,7 +4137,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
+                                          Tone.fg(Colors.white)),
                                     ),
                                   ),
                                   SizedBox(width: 8),
@@ -7374,17 +4175,19 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     bool isCritical = false,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/checklist/add/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'description': description,
-          if (notes != null) 'notes': notes,
-          'is_critical': isCritical,
-          'user_id': await SharedPrefs.getUserId(),
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/checklist/add/'),
+            headers: await ApiConfig.authHeaders(),
+            body: json.encode({
+              'description': description,
+              if (notes != null) 'notes': notes,
+              'is_critical': isCritical,
+              'user_id': await SharedPrefs.getUserId(),
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -7401,7 +4204,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to add checklist item: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
         ),
       );
       rethrow;
@@ -7440,7 +4243,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               },
             ),
             ListTile(
-              leading: Icon(Icons.edit, color: Colors.blue),
+              leading: Icon(Icons.edit, color: Tone.fg(Colors.blue)),
               title: Text('Edit Item'),
               onTap: () {
                 Navigator.of(context).pop();
@@ -7448,7 +4251,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
               },
             ),
             ListTile(
-              leading: Icon(Icons.delete, color: Colors.red),
+              leading: Icon(Icons.delete, color: Tone.fg(Colors.red)),
               title: Text('Delete Item'),
               onTap: () {
                 Navigator.of(context).pop();
@@ -7529,14 +4332,14 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                           _isCritical = value ?? false;
                         });
                       },
-                      activeColor: Colors.orange,
+                      activeColor: Tone.auto(Colors.orange),
                     ),
                     Expanded(
                       child: Text(
                         'Mark as Critical Item',
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: Colors.grey[700],
+                          color: Tone.fg(Colors.grey[700]),
                         ),
                       ),
                     ),
@@ -7559,7 +4362,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Please enter a description'),
-                            backgroundColor: Colors.red,
+                            backgroundColor: Tone.bg(Colors.red),
                           ),
                         );
                         return;
@@ -7585,7 +4388,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                 backgroundColor: isPhoneLayout(context)
                     ? GasPalette.primary
                     : Constants.ctaColorLight,
-                foregroundColor: Colors.white,
+                foregroundColor: Tone.fg(Colors.white),
               ),
               child: _isSubmitting
                   ? SizedBox(
@@ -7593,7 +4396,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Tone.fg(Colors.white)),
                       ),
                     )
                   : Text('Update Item'),
@@ -7611,17 +4414,19 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
     bool isCritical = false,
   }) async {
     try {
-      final response = await http.put(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/checklist/$itemId/update/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'description': description,
-          if (notes != null) 'notes': notes,
-          'is_critical': isCritical,
-          'user_id': await SharedPrefs.getUserId(),
-        }),
-      );
+      final response = await http
+          .put(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/checklist/$itemId/update/'),
+            headers: await ApiConfig.authHeaders(),
+            body: json.encode({
+              'description': description,
+              if (notes != null) 'notes': notes,
+              'is_critical': isCritical,
+              'user_id': await SharedPrefs.getUserId(),
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -7638,7 +4443,7 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update checklist item: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
         ),
       );
       rethrow;
@@ -7666,8 +4471,8 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
             },
             style: ElevatedButton.styleFrom(
               backgroundColor:
-                  isPhoneLayout(context) ? GasPalette.primary : Colors.red,
-              foregroundColor: Colors.white,
+                  isPhoneLayout(context) ? GasPalette.primary : Tone.bg(Colors.red),
+              foregroundColor: Tone.fg(Colors.white),
             ),
             child: Text('Delete'),
           ),
@@ -7678,14 +4483,16 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
 
   Future<void> _deleteChecklistItem(String itemId) async {
     try {
-      final response = await http.delete(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/checklist/$itemId/delete/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'user_id': await SharedPrefs.getUserId(),
-        }),
-      );
+      final response = await http
+          .delete(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/checklist/$itemId/delete/'),
+            headers: await ApiConfig.authHeaders(),
+            body: json.encode({
+              'user_id': await SharedPrefs.getUserId(),
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -7702,26 +4509,55 @@ class _MaintenanceDetailScreenState extends State<MaintenanceDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to delete checklist item: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
         ),
       );
     }
   }
 
-  void _handleMenuAction(String action) {
-    switch (action) {
-      case 'edit':
-        // Navigate to edit screen
-        break;
-      case 'duplicate':
-        // Show duplicate dialog
-        break;
-      case 'export':
-        // Export maintenance record
-        break;
-      case 'delete':
-        // Show delete confirmation
-        break;
+  Future<void> _handleMenuAction(String action) async {
+    if (action == 'edit' || action == 'duplicate') {
+      final saved = await showMobileDialog<bool>(
+          context: context,
+          builder: (_) => MaintenanceEditorDialog(
+              record: _maintenance, duplicate: action == 'duplicate'));
+      if (saved == true && mounted) await _loadMaintenanceDetail();
+    } else if (action == 'export') {
+      await showMobileDialog(
+          context: context,
+          builder: (_) => MaintenanceReportsDialog(
+              initialMaintenanceId: widget.maintenanceId));
+    } else if (action == 'delete') {
+      final confirmed = await showMobileDialog<bool>(
+          context: context,
+          builder: (dialogContext) => MobileAlertDialog(
+                  title: const Text('Delete maintenance?'),
+                  content: const Text(
+                      'This removes this service record permanently.'),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, false),
+                        child: const Text('Keep record')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        child: const Text('Delete'))
+                  ]));
+      if (confirmed != true || !mounted) return;
+      try {
+        final response = await http
+            .delete(
+                Uri.parse(
+                    '${ApiConfig.baseUrl}api/maintenance/${widget.maintenanceId}/delete/'),
+                headers: await ApiConfig.authHeaders())
+            .timeout(const Duration(seconds: 20));
+        if (response.statusCode != 200) throw StateError('Not deleted');
+        if (mounted) Navigator.pop(context, true);
+      } catch (_) {
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text(
+                  'Unable to delete this maintenance record. Please retry.')));
+      }
     }
   }
 }
@@ -7741,7 +4577,7 @@ class MaintenanceType {
 
   factory MaintenanceType.fromJson(Map<String, dynamic> json) {
     return MaintenanceType(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       category: json['category'] ?? '',
       categoryDisplay: json['category_display'] ?? '',
@@ -7769,1173 +4605,11 @@ class ChecklistItem {
   }
 }
 
-class CreateMaintenanceDialog extends StatefulWidget {
-  const CreateMaintenanceDialog({Key? key}) : super(key: key);
-
-  @override
-  _CreateMaintenanceDialogState createState() =>
-      _CreateMaintenanceDialogState();
-}
-
-class _CreateMaintenanceDialogState extends State<CreateMaintenanceDialog> {
-  final _formKey = GlobalKey<FormState>();
-  // Required fields
-  final _workDescriptionController = TextEditingController();
-  int? _selectedDeviceId;
-  String? _selectedMaintenanceTypeId;
-  DateTime _scheduledDate = DateTime.now();
-  TimeOfDay _scheduledTime = TimeOfDay.now();
-  // Optional fields
-  String _selectedStatus = 'scheduled';
-  String _selectedPriority = 'normal';
-  String? _selectedAssignedToId;
-  final _estimatedCostController = TextEditingController();
-  final _estimatedDurationController = TextEditingController();
-  final _partsUsedController = TextEditingController();
-  final _materialsUsedController = TextEditingController();
-  final _externalContractorController = TextEditingController();
-  final _safetyPrecautionsController = TextEditingController();
-  // Checklist items
-  List<ChecklistItem> _checklistItems = [];
-  final _newChecklistController = TextEditingController();
-  // Data lists
-  List<Device> _devices = [];
-  List<MaintenanceType> _maintenanceTypes = [];
-  List<Map<String, dynamic>> _assignableUsers = [];
-  bool _isLoading = true;
-  bool _isSubmitting = false;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  @override
-  void dispose() {
-    _workDescriptionController.dispose();
-    _estimatedCostController.dispose();
-    _estimatedDurationController.dispose();
-    _partsUsedController.dispose();
-    _materialsUsedController.dispose();
-    _externalContractorController.dispose();
-    _safetyPrecautionsController.dispose();
-    _newChecklistController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      await Future.wait([
-        _loadDevices(),
-        _loadMaintenanceTypes(),
-        _loadAssignableUsers(),
-      ]);
-    } catch (e) {
-      setState(() {
-        _error = 'Failed to load required data: ${e.toString()}';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _loadDevices() async {
-    try {
-      int? businessId = await Sharedprefs.getBusinessUidSharedPreference();
-      if (businessId == null) throw Exception('Business ID not found');
-
-      var headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Token ${await Sharedprefs.getAuthTokenPreference()}',
-      };
-
-      var request = http.Request(
-          'POST', Uri.parse('${Constants.articBaseUrl2}api/devices/list/'));
-      request.body = json.encode({
-        'business_id': businessId,
-        'include_unit_details': true,
-      });
-      request.headers.addAll(headers);
-
-      http.StreamedResponse response = await request.send();
-      if (response.statusCode == 200) {
-        final responseBody = await response.stream.bytesToString();
-        final data = json.decode(responseBody);
-        if (data['devices'] != null) {
-          _devices = (data['devices'] as List)
-              .map((deviceData) => Device.fromJson(deviceData))
-              .toList();
-        }
-      } else {
-        throw Exception('Failed to load devices: ${response.reasonPhrase}');
-      }
-    } catch (e) {
-      _devices = [
-        Device(id: 1, name: 'Main Production Server', deviceId: 'dev-01'),
-        Device(id: 2, name: 'Backup NAS Storage', deviceId: 'dev-02'),
-        Device(id: 3, name: 'Office HVAC Unit', deviceId: 'dev-03'),
-      ];
-    }
-  }
-
-  Future<void> _loadMaintenanceTypes() async {
-    try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/types/'),
-        headers: ApiConfig.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _maintenanceTypes = (data['maintenance_types'] as List)
-            .map((item) => MaintenanceType.fromJson(item))
-            .toList();
-      } else {
-        print('Failed to load maintenance types: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error loading maintenance types: $e');
-    }
-  }
-
-  Future<void> _loadAssignableUsers() async {
-    try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/assignable-users/'),
-        headers: ApiConfig.headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _assignableUsers = (data['users'] as List)
-            .map((user) => {
-                  'id': user['id'].toString(),
-                  'name': user['full_name'] ?? user['username'] ?? 'Unknown',
-                })
-            .toList();
-      } else {
-        // Fallback to empty list if API fails
-        _assignableUsers = [];
-      }
-    } catch (e) {
-      print('Error loading assignable users: $e');
-      _assignableUsers = [];
-    }
-  }
-
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSubmitting = true);
-
-    try {
-      final scheduledDateTime = DateTime(
-        _scheduledDate.year,
-        _scheduledDate.month,
-        _scheduledDate.day,
-        _scheduledTime.hour,
-        _scheduledTime.minute,
-      );
-
-      final payload = {
-        'device_id': _selectedDeviceId!,
-        'maintenance_type_id': _selectedMaintenanceTypeId!,
-        'scheduled_date': scheduledDateTime.toIso8601String(),
-        'work_description': _workDescriptionController.text,
-        'status': _selectedStatus,
-        'priority': _selectedPriority,
-        if (_selectedAssignedToId != null)
-          'assigned_to_id': int.parse(_selectedAssignedToId!),
-        if (_estimatedCostController.text.isNotEmpty)
-          'estimated_cost': double.parse(_estimatedCostController.text),
-        if (_estimatedDurationController.text.isNotEmpty)
-          'estimated_duration_hours':
-              double.parse(_estimatedDurationController.text),
-        if (_partsUsedController.text.isNotEmpty)
-          'parts_used': _partsUsedController.text
-              .split(',')
-              .map((e) => e.trim())
-              .toList(),
-        if (_materialsUsedController.text.isNotEmpty)
-          'materials_used': _materialsUsedController.text
-              .split(',')
-              .map((e) => e.trim())
-              .toList(),
-        if (_externalContractorController.text.isNotEmpty)
-          'external_contractor': _externalContractorController.text,
-        if (_safetyPrecautionsController.text.isNotEmpty)
-          'safety_precautions': _safetyPrecautionsController.text,
-        if (_checklistItems.isNotEmpty)
-          'checklist_items':
-              _checklistItems.map((item) => item.toJson()).toList(),
-      };
-      print(payload);
-
-      final response = await http.post(
-        Uri.parse('${Constants.articBaseUrl2}api/maintenance/create/'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization':
-              'Bearer ${await Sharedprefs.getAuthTokenPreference()}',
-        },
-        body: jsonEncode(payload),
-      );
-
-      if (response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 12),
-                Text(
-                  responseData['message'] ??
-                      'Maintenance scheduled successfully!',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-            backgroundColor: const Color(0xFF10B981),
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-        Navigator.of(context).pop(true);
-      } else {
-        throw Exception('Failed to create maintenance: ${response.body}');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Error: ${e.toString()}',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    } finally {
-      setState(() => _isSubmitting = false);
-    }
-  }
-
-  void _resetForm() {
-    _formKey.currentState?.reset();
-    _workDescriptionController.clear();
-    _estimatedCostController.clear();
-    _estimatedDurationController.clear();
-    _partsUsedController.clear();
-    _materialsUsedController.clear();
-    _externalContractorController.clear();
-    _safetyPrecautionsController.clear();
-    _newChecklistController.clear();
-    setState(() {
-      _selectedDeviceId = null;
-      _selectedMaintenanceTypeId = null;
-      _scheduledDate = DateTime.now();
-      _scheduledTime = TimeOfDay.now();
-      _selectedStatus = 'scheduled';
-      _selectedPriority = 'normal';
-      _selectedAssignedToId = null;
-      _checklistItems.clear();
-    });
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _scheduledDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2101),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Constants.ctaColorLight,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-            dialogBackgroundColor: Colors.white,
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != _scheduledDate) {
-      setState(() {
-        _scheduledDate = picked;
-      });
-    }
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: _scheduledTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Constants.ctaColorLight,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-            dialogBackgroundColor: Colors.white,
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != _scheduledTime) {
-      setState(() {
-        _scheduledTime = picked;
-      });
-    }
-  }
-
-  void _addChecklistItem() {
-    if (_newChecklistController.text.isNotEmpty) {
-      setState(() {
-        _checklistItems
-            .add(ChecklistItem(description: _newChecklistController.text));
-        _newChecklistController.clear();
-      });
-    }
-  }
-
-  void _removeChecklistItem(int index) {
-    setState(() {
-      _checklistItems.removeAt(index);
-    });
-  }
-
-  Widget _buildSectionHeader(String title, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: Colors.white, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF1F2937),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  InputDecoration _buildInputDecoration(String label,
-      {String? hint, IconData? icon, Color? iconColor}) {
-    return mobileInputDecoration(
-        context,
-        InputDecoration(
-          labelText: label,
-          hintText: hint,
-          prefixIcon: icon != null
-              ? Icon(icon,
-                  color: iconColor ?? const Color(0xFF6B7280), size: 20)
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Constants.ctaColorLight, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-          ),
-          filled: true,
-          fillColor: const Color(0xFFFAFAFA),
-          labelStyle: GoogleFonts.inter(
-            fontSize: 14,
-            color: const Color(0xFF6B7280),
-            fontWeight: FontWeight.w500,
-          ),
-          hintStyle:
-              GoogleFonts.inter(fontSize: 14, color: const Color(0xFF9CA3AF)),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        ));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-
-    // Use full screen scaffold for mobile, dialog for desktop
-    if (isMobile) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Constants.ctaColorLight,
-          elevation: 0,
-          leading: IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.build_circle,
-                    color: Colors.white, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'Schedule Maintenance',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-        body: _buildFormContent(),
-      );
-    }
-
-    return MobileDialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(16),
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.9,
-        constraints: const BoxConstraints(maxWidth: 600),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 30,
-                offset: const Offset(0, 10)),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Modern Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Constants.ctaColorLight,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.build_circle,
-                        color: Colors.white, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Schedule Maintenance',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close_rounded,
-                        color: Colors.white.withOpacity(0.9), size: 20),
-                  ),
-                ],
-              ),
-            ),
-            // Form Content for desktop
-            Expanded(child: _buildFormContent()),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFormContent() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline,
-                  size: 64, color: const Color(0xFFEF4444)),
-              const SizedBox(height: 16),
-              Text(
-                _error!,
-                style: GoogleFonts.inter(
-                    fontSize: 14, fontWeight: FontWeight.w500),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Container(
-                decoration: mobileFlatDecoration(
-                    context,
-                    BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: LinearGradient(
-                        colors: [
-                          Constants.ctaColorLight,
-                          Constants.ctaColorLight.withOpacity(0.8)
-                        ],
-                      ),
-                    )),
-                child: ElevatedButton(
-                  onPressed: _loadData,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isPhoneLayout(context)
-                        ? GasPalette.primary
-                        : Colors.transparent,
-                    foregroundColor: Colors.white,
-                    shadowColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                            isPhoneLayout(context) ? 32 : 12)),
-                  ),
-                  child: Text(
-                    'Retry',
-                    style: GoogleFonts.inter(
-                        fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Main form content
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Required Fields Section
-            _buildSectionHeader(
-                'Required Information', const Color(0xFFEF4444), Icons.star),
-            const SizedBox(height: 20),
-            DropdownButtonFormField<int>(
-              value: _selectedDeviceId,
-              decoration: _buildInputDecoration('Device *',
-                  icon: Icons.devices, iconColor: const Color(0xFFEF4444)),
-              style:
-                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-              items: _devices.map((device) {
-                return DropdownMenuItem(
-                  value: device.id,
-                  child: Text(device.name,
-                      style: GoogleFonts.inter(
-                          fontSize: 14, fontWeight: FontWeight.w500)),
-                );
-              }).toList(),
-              onChanged: (value) => setState(() => _selectedDeviceId = value),
-              validator: (value) =>
-                  value == null ? 'Please select a device' : null,
-            ),
-            const SizedBox(height: 20),
-            DropdownButtonFormField<String>(
-              value: _selectedMaintenanceTypeId,
-              decoration: _buildInputDecoration('Maintenance Type *',
-                  icon: Icons.build, iconColor: const Color(0xFFEF4444)),
-              style:
-                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-              isExpanded: true,
-              itemHeight: 60,
-              items: _maintenanceTypes.map((type) {
-                return DropdownMenuItem(
-                  value: type.id,
-                  child: Text(
-                    '${type.name} (${type.categoryDisplay})',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) =>
-                  setState(() => _selectedMaintenanceTypeId = value),
-              validator: (value) =>
-                  value == null ? 'Please select a maintenance type' : null,
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _workDescriptionController,
-              decoration: _buildInputDecoration(
-                'Work Description *',
-                hint: 'e.g., Monthly compressor inspection and cleaning',
-                icon: Icons.description,
-                iconColor: const Color(0xFFEF4444),
-              ),
-              style:
-                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-              maxLines: 3,
-              validator: (value) => value == null || value.isEmpty
-                  ? 'Please enter work description'
-                  : null,
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFAFAFA),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: const Color(0xFFE5E7EB), width: 1.5),
-                    ),
-                    child: InkWell(
-                      onTap: () => _selectDate(context),
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_today,
-                              color: const Color(0xFFEF4444), size: 20),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Date *',
-                                    style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF6B7280))),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat.yMMMd().format(_scheduledDate),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF1F2937)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFAFAFA),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: const Color(0xFFE5E7EB), width: 1.5),
-                    ),
-                    child: InkWell(
-                      onTap: () => _selectTime(context),
-                      child: Row(
-                        children: [
-                          Icon(Icons.access_time,
-                              color: const Color(0xFFEF4444), size: 20),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Time *',
-                                    style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF6B7280))),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _scheduledTime.format(context),
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF1F2937)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-            // Optional Fields Section
-            _buildSectionHeader(
-                'Optional Information', const Color(0xFF3B82F6), Icons.tune),
-            const SizedBox(height: 20),
-            MobileFormRow(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedStatus,
-                    decoration: _buildInputDecoration('Status',
-                        icon: Icons.flag, iconColor: const Color(0xFF3B82F6)),
-                    style: GoogleFonts.inter(
-                        fontSize: 14, fontWeight: FontWeight.w500),
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'scheduled', child: Text('Scheduled')),
-                      DropdownMenuItem(
-                          value: 'in_progress', child: Text('In Progress')),
-                      DropdownMenuItem(
-                          value: 'completed', child: Text('Completed')),
-                      DropdownMenuItem(
-                          value: 'cancelled', child: Text('Cancelled')),
-                      DropdownMenuItem(
-                          value: 'overdue', child: Text('Overdue')),
-                    ],
-                    onChanged: (value) =>
-                        setState(() => _selectedStatus = value!),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedPriority,
-                    decoration: _buildInputDecoration('Priority',
-                        icon: Icons.priority_high,
-                        iconColor: const Color(0xFF3B82F6)),
-                    style: GoogleFonts.inter(
-                        fontSize: 14, fontWeight: FontWeight.w500),
-                    items: const [
-                      DropdownMenuItem(value: 'low', child: Text('Low')),
-                      DropdownMenuItem(value: 'normal', child: Text('Normal')),
-                      DropdownMenuItem(value: 'high', child: Text('High')),
-                      DropdownMenuItem(
-                          value: 'critical', child: Text('Critical')),
-                    ],
-                    onChanged: (value) =>
-                        setState(() => _selectedPriority = value!),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            DropdownButtonFormField<String>(
-              value: _selectedAssignedToId,
-              decoration: _buildInputDecoration('Assigned To',
-                  icon: Icons.person, iconColor: const Color(0xFF3B82F6)),
-              style:
-                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('Unassigned')),
-                ..._assignableUsers.map((user) {
-                  return DropdownMenuItem(
-                    value: user['id'].toString(),
-                    child: Text(user['name'],
-                        style: GoogleFonts.inter(
-                            fontSize: 14, fontWeight: FontWeight.w500)),
-                  );
-                }),
-              ],
-              onChanged: (value) =>
-                  setState(() => _selectedAssignedToId = value),
-            ),
-            const SizedBox(height: 20),
-            MobileFormRow(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _estimatedCostController,
-                    decoration: _buildInputDecoration('Estimated Cost',
-                        hint: '150.00',
-                        icon: Icons.attach_money,
-                        iconColor: const Color(0xFF3B82F6)),
-                    style: GoogleFonts.inter(
-                        fontSize: 14, fontWeight: FontWeight.w500),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    validator: (value) {
-                      if (value != null && value.isNotEmpty) {
-                        if (double.tryParse(value) == null ||
-                            double.parse(value) < 0) {
-                          return 'Enter a valid positive number';
-                        }
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: TextFormField(
-                    controller: _estimatedDurationController,
-                    decoration: _buildInputDecoration('Duration (Hours)',
-                        hint: '3.5',
-                        icon: Icons.timer,
-                        iconColor: const Color(0xFF3B82F6)),
-                    style: GoogleFonts.inter(
-                        fontSize: 14, fontWeight: FontWeight.w500),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    validator: (value) {
-                      if (value != null && value.isNotEmpty) {
-                        if (double.tryParse(value) == null ||
-                            double.parse(value) <= 0) {
-                          return 'Enter a valid positive number';
-                        }
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _partsUsedController,
-              decoration: _buildInputDecoration(
-                'Parts Used',
-                hint: 'Air Filter, Lubricant Oil (comma separated)',
-                icon: Icons.build_circle,
-                iconColor: const Color(0xFF3B82F6),
-              ),
-              style:
-                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-              validator: (value) {
-                if (value != null && value.isNotEmpty) {
-                  if (!RegExp(r'^[\w\s,.-]+$').hasMatch(value)) {
-                    return 'Enter valid parts (comma separated)';
-                  }
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _materialsUsedController,
-              decoration: _buildInputDecoration(
-                'Materials Used',
-                hint:
-                    'Cleaning Solution, Replacement Gaskets (comma separated)',
-                icon: Icons.handyman,
-                iconColor: const Color(0xFF3B82F6),
-              ),
-              style:
-                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-              validator: (value) {
-                if (value != null && value.isNotEmpty) {
-                  if (!RegExp(r'^[\w\s,.-]+$').hasMatch(value)) {
-                    return 'Enter valid materials (comma separated)';
-                  }
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _externalContractorController,
-              decoration: _buildInputDecoration('External Contractor',
-                  hint: 'Contractor information',
-                  icon: Icons.business,
-                  iconColor: const Color(0xFF3B82F6)),
-              style:
-                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _safetyPrecautionsController,
-              decoration: _buildInputDecoration(
-                'Safety Precautions',
-                hint: 'Turn off main power, wear safety goggles',
-                icon: Icons.security,
-                iconColor: const Color(0xFF3B82F6),
-              ),
-              style:
-                  GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-              maxLines: 2,
-            ),
-            const SizedBox(height: 40),
-            // Checklist Section
-            _buildSectionHeader('Maintenance Checklist',
-                const Color(0xFFF59E0B), Icons.checklist),
-            const SizedBox(height: 20),
-            if (_checklistItems.isNotEmpty) ...[
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: _checklistItems.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    ChecklistItem item = entry.value;
-                    return Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: index < _checklistItems.length - 1
-                            ? const Border(
-                                bottom: BorderSide(color: Color(0xFFE5E7EB)))
-                            : null,
-                      ),
-                      child: Row(
-                        children: [
-                          Checkbox(
-                            value: item.isCritical,
-                            onChanged: (value) {
-                              setState(() {
-                                item.isCritical = value ?? false;
-                              });
-                            },
-                            activeColor: Constants.ctaColorLight,
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.description,
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF1F2937)),
-                                ),
-                                if (item.isCritical)
-                                  Text(
-                                    'Critical',
-                                    style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFFEF4444)),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline,
-                                color: Color(0xFFEF4444)),
-                            onPressed: () => _removeChecklistItem(index),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-            MobileFormRow(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _newChecklistController,
-                    decoration: _buildInputDecoration(
-                      'Add Checklist Item',
-                      hint: 'Check compressor oil levels',
-                      icon: Icons.add_task,
-                      iconColor: const Color(0xFFF59E0B),
-                    ),
-                    style: GoogleFonts.inter(
-                        fontSize: 14, fontWeight: FontWeight.w500),
-                    // onSubmitted: (_) => _addChecklistItem(),
-                    validator: (value) {
-                      if (value != null && value.isNotEmpty) {
-                        if (!RegExp(r'^[\w\s.-]+$').hasMatch(value)) {
-                          return 'Enter a valid checklist item';
-                        }
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: Constants.ctaColorLight),
-                  child: IconButton(
-                    onPressed: _addChecklistItem,
-                    icon: const Icon(Icons.add_rounded, color: Colors.white),
-                    tooltip: 'Add Item',
-                  ),
-                ),
-              ],
-            ),
-
-            // Footer Actions
-            const SizedBox(height: 40),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFAFAFA),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                alignment: WrapAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: _isSubmitting ? null : _resetForm,
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                            isPhoneLayout(context) ? 32 : 8),
-                        side: const BorderSide(color: Color(0xFFE5E7EB)),
-                      ),
-                    ),
-                    child: Text('Reset',
-                        style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: const Color(0xFF6B7280))),
-                  ),
-                  TextButton(
-                    onPressed:
-                        _isSubmitting ? null : () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                            isPhoneLayout(context) ? 32 : 8),
-                        side: const BorderSide(color: Color(0xFFE5E7EB)),
-                      ),
-                    ),
-                    child: Text('Cancel',
-                        style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: const Color(0xFF6B7280))),
-                  ),
-                  ElevatedButton(
-                    onPressed: _isSubmitting ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isPhoneLayout(context)
-                          ? GasPalette.primary
-                          : Constants.ctaColorLight,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                              isPhoneLayout(context) ? 32 : 8)),
-                    ),
-                    child: _isSubmitting
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white))),
-                              const SizedBox(width: 8),
-                              Text('Scheduling...',
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600)),
-                            ],
-                          )
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.build_circle, size: 18),
-                              const SizedBox(width: 8),
-                              Text('Schedule Maintenance',
-                                  style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Maintenance Reports Dialog
 class MaintenanceReportsDialog extends StatefulWidget {
+  const MaintenanceReportsDialog(
+      {super.key, this.initialMaintenanceId, this.pdfSaver});
+  final String? initialMaintenanceId;
+  final Future<void> Function(Uint8List bytes, String filename)? pdfSaver;
   @override
   _MaintenanceReportsDialogState createState() =>
       _MaintenanceReportsDialogState();
@@ -8953,6 +4627,10 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
   void initState() {
     super.initState();
     _loadMonthlyReports();
+    if (widget.initialMaintenanceId != null)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _generateDetailedPDF(widget.initialMaintenanceId!);
+      });
   }
 
   Future<void> _loadMonthlyReports() async {
@@ -8962,17 +4640,20 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/reports/monthly/'),
-        headers: ApiConfig.headers,
-        body: json.encode({
-          'business_id': await SharedPrefs.getBusinessId(),
-          'year': _selectedYear,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}api/maintenance/reports/monthly/'),
+            headers: await ApiConfig.authHeaders(),
+            body: json.encode({
+              'business_id': await SharedPrefs.getBusinessId(),
+              'year': _selectedYear,
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (!mounted) return;
         setState(() {
           _monthlyReports = data['reports'];
         });
@@ -8980,13 +4661,15 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
         throw Exception('Failed to load monthly reports');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _error = 'Failed to load reports: ${e.toString()}';
+        _error = 'Unable to load reports. Check your connection and retry.';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+        });
     }
   }
 
@@ -8997,14 +4680,17 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
     });
 
     try {
-      final response = await http.get(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/reports/$year/$month/records/?business_id=${await SharedPrefs.getBusinessId()}'),
-        headers: ApiConfig.headers,
-      );
+      final response = await http
+          .get(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/reports/$year/$month/records/?business_id=${await SharedPrefs.getBusinessId()}'),
+            headers: await ApiConfig.authHeaders(),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (!mounted) return;
         setState(() {
           _selectedMonthRecords = data['maintenance_records'];
         });
@@ -9012,17 +4698,20 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
         throw Exception('Failed to load month records');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _error = 'Failed to load month records: ${e.toString()}';
+        _error = 'Unable to load records. Check your connection and retry.';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted)
+        setState(() {
+          _isLoading = false;
+        });
     }
   }
 
   Future<void> _generateDetailedPDF(String maintenanceId) async {
+    bool loadingDialogOpen = true;
     try {
       // Show loading dialog
       showDialog(
@@ -9032,7 +4721,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
           child: Container(
             padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -9057,23 +4746,29 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
       );
 
       // Fetch comprehensive maintenance data
-      final detailResponse = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}api/maintenance/$maintenanceId/'),
-        headers: ApiConfig.headers,
-      );
+      final detailResponse = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}api/maintenance/$maintenanceId/'),
+            headers: await ApiConfig.authHeaders(),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (detailResponse.statusCode != 200) {
         throw Exception('Failed to fetch maintenance details');
       }
 
-      final maintenanceData = json.decode(detailResponse.body);
+      final detailEnvelope = json.decode(detailResponse.body);
+      final maintenanceData =
+          Map<String, dynamic>.from(detailEnvelope['maintenance']);
 
       // Fetch observations
-      final observationsResponse = await http.get(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/$maintenanceId/observations/'),
-        headers: ApiConfig.headers,
-      );
+      final observationsResponse = await http
+          .get(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/$maintenanceId/observations/'),
+            headers: await ApiConfig.authHeaders(),
+          )
+          .timeout(const Duration(seconds: 20));
 
       List<dynamic> observations = [];
       if (observationsResponse.statusCode == 200) {
@@ -9088,226 +4783,32 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
           maintenanceData,
           observations,
         );
-      } catch (pdfError, pdfStack) {
-        print('Error building PDF: $pdfError');
-        print('PDF Stack: $pdfStack');
+      } catch (pdfError) {
         throw Exception('PDF Generation Error: $pdfError');
       }
 
       if (!mounted) return;
       Navigator.pop(context); // Close loading dialog
+      loadingDialogOpen = false;
 
       // Save PDF to device
       await _savePdfToDevice(
         pdfBytes,
         'maintenance_report_${maintenanceId}_${DateTime.now().millisecondsSinceEpoch}.pdf',
       );
-    } catch (e, stackTrace) {
-      print('Error in _generateDetailedPDF: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       if (mounted) {
         try {
-          Navigator.pop(context); // Close loading dialog if open
+          if (loadingDialogOpen)
+            Navigator.pop(context); // Close only the loading dialog
         } catch (_) {
           // Dialog might not be open
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to generate PDF: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _generateSampleDetailedPDF() async {
-    try {
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Center(
-          child: Container(
-            padding: EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Generating Sample Report...',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      // Create comprehensive sample maintenance data
-      final sampleData = {
-        'id': 'SAMPLE-${DateTime.now().millisecondsSinceEpoch}',
-        'device': {
-          'name': 'Refrigeration Unit #5',
-          'device_id': 'REFR-005',
-          'device_type': 'Commercial Refrigerator',
-          'location': 'Building A - Cold Storage Room 3',
-        },
-        'maintenance_type': {
-          'name': 'Preventive Maintenance',
-          'category': 'preventive',
-        },
-        'priority': 'high',
-        'status': 'completed',
-        'status_display': 'Completed',
-        'scheduled_date':
-            DateTime.now().subtract(Duration(days: 2)).toIso8601String(),
-        'actual_start_date': DateTime.now()
-            .subtract(Duration(days: 2, hours: 1))
-            .toIso8601String(),
-        'actual_end_date':
-            DateTime.now().subtract(Duration(days: 2)).toIso8601String(),
-        'actual_duration_hours': 2.5,
-        'assigned_to': {
-          'name': 'John Smith',
-        },
-        'performed_by': {
-          'name': 'John Smith',
-        },
-        'supervised_by': {
-          'name': 'Sarah Johnson',
-        },
-        'description':
-            'Scheduled quarterly preventive maintenance for refrigeration unit to ensure optimal performance and prevent equipment failure.',
-        'work_performed':
-            'Conducted comprehensive inspection of refrigeration system including:\n- Cleaned condenser and evaporator coils\n- Checked and adjusted refrigerant levels\n- Inspected and lubricated motor bearings\n- Tested temperature control accuracy\n- Verified door seals and gaskets\n- Cleaned drain lines and condensate pans\n- Calibrated temperature sensors',
-        'parts_used':
-            '- Replacement air filter (Model AF-2500)\n- Compressor oil (1 quart)\n- Door gasket sealant\n- Cleaning solution (2 bottles)',
-        'estimated_cost': 450.00,
-        'actual_cost': 425.50,
-        'outcome': 'successful',
-        'notes':
-            'Unit is operating within normal parameters. Temperature stability improved after calibration. Recommend monitoring for the next 48 hours to ensure sustained performance.',
-        'recommendations':
-            'Schedule next preventive maintenance in 3 months. Consider installing smart temperature monitoring sensor for real-time alerts. Minor wear detected on compressor belt - plan replacement during next maintenance cycle.',
-        'next_scheduled_date':
-            DateTime.now().add(Duration(days: 90)).toIso8601String(),
-        'checklist_items': [
-          {
-            'description': 'Visual inspection of unit exterior',
-            'is_completed': true,
-            'notes': 'No visible damage or corrosion',
-          },
-          {
-            'description': 'Check temperature readings',
-            'is_completed': true,
-            'notes': 'All within spec: -5°C to 0°C',
-          },
-          {
-            'description': 'Clean condenser coils',
-            'is_completed': true,
-            'notes': 'Moderate dust buildup removed',
-          },
-          {
-            'description': 'Inspect door seals',
-            'is_completed': true,
-            'notes': 'Good condition, no leaks detected',
-          },
-          {
-            'description': 'Test temperature controls',
-            'is_completed': true,
-            'notes': 'Calibrated and functioning correctly',
-          },
-          {
-            'description': 'Lubricate moving parts',
-            'is_completed': true,
-            'notes': 'All bearings and hinges lubricated',
-          },
-          {
-            'description': 'Check electrical connections',
-            'is_completed': true,
-            'notes': 'All connections secure, no overheating',
-          },
-          {
-            'description': 'Document all findings',
-            'is_completed': true,
-            'notes': 'Complete maintenance log updated',
-          },
-        ],
-      };
-
-      final sampleObservations = [
-        {
-          'category': {'name': 'Mechanical'},
-          'description':
-              'Minor wear observed on compressor drive belt. No immediate action required but should be monitored.',
-          'severity': 'low',
-        },
-        {
-          'category': {'name': 'Electrical'},
-          'description':
-              'All electrical connections secure. Power consumption within normal range.',
-          'severity': 'normal',
-        },
-        {
-          'category': {'name': 'Performance'},
-          'description':
-              'Temperature recovery time improved by 15% after coil cleaning and calibration.',
-          'severity': 'normal',
-        },
-        {
-          'category': {'name': 'Safety'},
-          'description':
-              'All safety systems operational. Emergency shut-off tested successfully.',
-          'severity': 'normal',
-        },
-      ];
-
-      // Generate professional PDF
-      Uint8List pdfBytes;
-      try {
-        pdfBytes = await _buildProfessionalMaintenancePDF(
-          sampleData,
-          sampleObservations,
-        );
-      } catch (pdfError, pdfStack) {
-        print('Error building sample PDF: $pdfError');
-        print('PDF Stack: $pdfStack');
-        throw Exception('PDF Generation Error: $pdfError');
-      }
-
-      if (!mounted) return;
-      Navigator.pop(context); // Close loading dialog
-
-      // Save PDF to device
-      await _savePdfToDevice(
-        pdfBytes,
-        'sample_maintenance_report_${DateTime.now().millisecondsSinceEpoch}.pdf',
-      );
-    } catch (e, stackTrace) {
-      print('Error in _generateSampleDetailedPDF: $e');
-      print('Stack trace: $stackTrace');
-      if (mounted) {
-        try {
-          Navigator.pop(context); // Close loading dialog if open
-        } catch (_) {
-          // Dialog might not be open
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to generate sample PDF: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text(
+                'Unable to generate the report. Check your connection and retry.'),
+            backgroundColor: Tone.bg(Colors.red),
           ),
         );
       }
@@ -9315,6 +4816,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
   }
 
   Future<void> _generateMonthlySummaryPDF(int year, int month) async {
+    bool loadingDialogOpen = true;
     try {
       // Show loading dialog
       showDialog(
@@ -9324,7 +4826,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
           child: Container(
             padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -9349,11 +4851,13 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
       );
 
       // Fetch monthly records data
-      final response = await http.get(
-        Uri.parse(
-            '${ApiConfig.baseUrl}api/maintenance/reports/$year/$month/records/?business_id=${await SharedPrefs.getBusinessId()}'),
-        headers: ApiConfig.headers,
-      );
+      final response = await http
+          .get(
+            Uri.parse(
+                '${ApiConfig.baseUrl}api/maintenance/reports/$year/$month/records/?business_id=${await SharedPrefs.getBusinessId()}'),
+            headers: await ApiConfig.authHeaders(),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode != 200) {
         throw Exception('Failed to fetch monthly records');
@@ -9373,7 +4877,9 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
         monthStats,
       );
 
+      if (!mounted) return;
       Navigator.pop(context); // Close loading dialog
+      loadingDialogOpen = false;
 
       // Save PDF to device
       await _savePdfToDevice(
@@ -9382,11 +4888,12 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
       );
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog if open
+        if (loadingDialogOpen) Navigator.pop(context); // Close only the loader
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to generate monthly PDF: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text(
+                'Unable to generate the monthly report. Check your connection and retry.'),
+            backgroundColor: Tone.bg(Colors.red),
           ),
         );
       }
@@ -9909,7 +5416,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
               pw.Padding(
                 padding: pw.EdgeInsets.all(6),
                 child: pw.Text(
-                  itemMap['is_completed'] == true ? '✓ Completed' : '○ Pending',
+                  itemMap['is_completed'] == true ? 'Completed' : 'Pending',
                   style: pw.TextStyle(fontSize: 9),
                 ),
               ),
@@ -10459,8 +5966,9 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 children: [
-                  pw.Icon(pw.IconData(0xe192),
-                      size: 16, color: PdfColors.blue600),
+                  pw.Text('Time',
+                      style:
+                          pw.TextStyle(fontSize: 9, color: PdfColors.blue600)),
                   pw.SizedBox(width: 8),
                   pw.Text(
                     'Total Duration: $duration hours',
@@ -10489,11 +5997,8 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
             shape: pw.BoxShape.circle,
           ),
           child: pw.Center(
-            child: pw.Icon(
-              completed ? pw.IconData(0xe5ca) : pw.IconData(0xe5d5),
-              color: PdfColors.white,
-              size: 20,
-            ),
+            child: pw.Text(completed ? 'Done' : 'Due',
+                style: pw.TextStyle(color: PdfColors.white, fontSize: 9)),
           ),
         ),
         pw.SizedBox(height: 8),
@@ -10620,179 +6125,37 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
   }
 
   Future<void> _savePdfToDevice(Uint8List pdfBytes, String fileName) async {
-    try {
-      // Request storage permission for mobile platforms
-      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-        final status = await Permission.storage.request();
-        if (!status.isGranted) {
-          throw Exception('Storage permission denied');
-        }
-      }
-
-      // Save PDF using platform-specific implementation
-      await PdfSaver.savePdf(pdfBytes, fileName);
-
-      // Show success message
-      if (mounted) {
-        if (kIsWeb) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content:
-                  Text('PDF downloaded to your browser\'s download folder'),
-              backgroundColor: Constants.ctaColorLight,
-              action: SnackBarAction(
-                label: 'OK',
-                textColor: Colors.white,
-                onPressed: () {},
-              ),
-            ),
-          );
-        } else {
-          // For non-web platforms, show dialog with option to open
-          final String downloadPath = Platform.isAndroid
-              ? 'Downloads folder'
-              : Platform.isIOS
-                  ? 'Files app'
-                  : 'Downloads folder';
-
-          showMobileDialog(
-            context: context,
-            builder: (context) => MobileAlertDialog(
-              title: Text(
-                'PDF Saved Successfully',
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-              ),
-              content: Text(
-                'The PDF has been saved to your $downloadPath',
-                style: GoogleFonts.inter(),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Close'),
-                ),
-                if (!Platform.isIOS) // iOS doesn't support direct file opening
-                  ElevatedButton(
-                    onPressed: () async {
-                      Navigator.of(context).pop();
-                      try {
-                        // Construct the file path based on platform
-                        String filePath;
-                        if (Platform.isAndroid) {
-                          filePath = '/storage/emulated/0/Download/$fileName';
-                        } else {
-                          // For desktop, we'd need to get the downloads directory
-                          // This is a simplified approach
-                          filePath = fileName;
-                        }
-
-                        final result = await OpenFile.open(filePath);
-                        if (result.type != ResultType.done) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Could not open PDF: ${result.message}'),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Could not open PDF: $e'),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                        }
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isPhoneLayout(context)
-                          ? GasPalette.primary
-                          : Constants.ctaColorLight,
-                    ),
-                    child: Text('Open PDF'),
-                  ),
-              ],
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save PDF: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    if (widget.pdfSaver != null) {
+      await widget.pdfSaver!(pdfBytes, fileName);
+      return;
     }
-  }
-
-  void _showPDFDownloadSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Constants.ctaColorLight,
-      ),
-    );
-  }
-
-  Widget _buildStatBadge(String text, dynamic value, Color color) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        value != null ? '$text: $value' : text,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: color,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfessionalStatBadge(String text, dynamic value) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Constants.ctaColorLight.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        value != null ? '$text: $value' : text,
-        style: GoogleFonts.inter(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          color: Constants.ctaColorLight,
-        ),
-      ),
-    );
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      // The native chooser supports Save to Files / Downloads without broad
+      // storage permission or assumptions about a platform's filesystem path.
+      await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+      return;
+    }
+    await PdfSaver.savePdf(pdfBytes, fileName);
+    if (mounted)
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Report downloaded.')));
   }
 
   // Helper methods for status colors and icons
   Color _getStatusColor(String? status) {
     switch (status) {
       case 'completed':
-        return Color(0xFF388E3C);
+        return Tone.auto(Color(0xFF388E3C));
       case 'in_progress':
-        return Color(0xFF1976D2);
+        return Tone.auto(Color(0xFF1976D2));
       case 'scheduled':
-        return Color(0xFF7B1FA2);
+        return Tone.auto(Color(0xFF7B1FA2));
       case 'overdue':
-        return Color(0xFFD32F2F);
+        return Tone.auto(Color(0xFFD32F2F));
       case 'cancelled':
-        return Color(0xFF616161);
+        return Tone.auto(Color(0xFF616161));
       default:
-        return Color(0xFF616161);
+        return Tone.auto(Color(0xFF616161));
     }
   }
 
@@ -10821,43 +6184,16 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
     // Use full screen scaffold for mobile
     if (isMobile) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Tone.bg(Colors.white),
         appBar: AppBar(
           backgroundColor: Constants.ctaColorLight,
           elevation: 0,
           leading: IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: Icon(Icons.arrow_back, color: Tone.fg(Colors.white)),
           ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.assessment_outlined,
-                    color: Colors.white, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'Maintenance Reports',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            IconButton(
-              onPressed: _generateSampleDetailedPDF,
-              icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-              tooltip: 'Generate Sample Report',
-            ),
-          ],
+          title: Text('Maintenance reports',
+              style: TextStyle(fontSize: 18, color: Tone.fg(Colors.white))),
         ),
         body: _buildReportsContent(isMobile: true),
       );
@@ -10871,11 +6207,11 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
             height: MediaQuery.of(context).size.height * 0.9,
             constraints: BoxConstraints(maxWidth: 1200),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Tone.bg(Colors.black).withOpacity(0.1),
                   blurRadius: 20,
                   offset: Offset(0, 8),
                 ),
@@ -10886,14 +6222,14 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
               Container(
                 padding: EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
                   ),
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.grey[200]!,
+                      color: Tone.bg(Colors.grey[200]),
                       width: 1,
                     ),
                   ),
@@ -10922,7 +6258,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                             style: GoogleFonts.inter(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              color: Colors.grey[900],
+                              color: Tone.fg(Colors.grey[900]),
                             ),
                           ),
                           SizedBox(height: 4),
@@ -10930,40 +6266,21 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                             'Generate and download comprehensive maintenance reports',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: Tone.fg(Colors.grey[600]),
                             ),
                           ),
                         ],
                       ),
                     ),
                     Spacer(),
-                    ElevatedButton.icon(
-                      onPressed: _generateSampleDetailedPDF,
-                      icon: Icon(Icons.picture_as_pdf, size: 18),
-                      label: Text('Generate Sample Report'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isPhoneLayout(context)
-                            ? GasPalette.primary
-                            : Constants.ctaColorLight,
-                        foregroundColor: Colors.white,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                              isPhoneLayout(context) ? 32 : 8),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
-                    SizedBox(width: 12),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
                       icon: Icon(
                         Icons.close,
-                        color: Colors.grey[600],
+                        color: Tone.fg(Colors.grey[600]),
                       ),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey[100],
+                        backgroundColor: Tone.bg(Colors.grey[100]),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -10979,7 +6296,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
 
   Widget _buildReportsContent({required bool isMobile}) {
     return Container(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       child: Column(children: [
         // Year Selection Bar
         Container(
@@ -10993,7 +6310,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                        color: Tone.fg(Colors.grey[800]),
                       ),
                     ),
                     SizedBox(height: 8),
@@ -11050,7 +6367,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                        color: Tone.fg(Colors.grey[800]),
                       ),
                     ),
                     SizedBox(width: 16),
@@ -11110,11 +6427,11 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.error_outline,
-                              color: Colors.red, size: 48),
+                              color: Tone.fg(Colors.red), size: 48),
                           SizedBox(height: 16),
                           Text(_error,
                               style:
-                                  GoogleFonts.inter(color: Colors.grey[600])),
+                                  GoogleFonts.inter(color: Tone.fg(Colors.grey[600]))),
                           SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: _loadMonthlyReports,
@@ -11130,6 +6447,16 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
   }
 
   Widget _buildMonthsGrid(bool isMobile) {
+    if (_monthlyReports.isEmpty ||
+        _monthlyReports.every((month) => (month['total_records'] ?? 0) == 0)) {
+      return const SingleChildScrollView(
+          padding: EdgeInsets.all(24),
+          child: AppEmptyState(
+              kind: AppEmptyStateKind.records,
+              title: 'No maintenance reports yet',
+              message:
+                  'Schedule and complete maintenance to build your service history. Reports use your saved records only.'));
+    }
     return SingleChildScrollView(
       padding: EdgeInsets.all(isMobile ? 12 : 24),
       child: Column(
@@ -11140,7 +6467,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
             style: GoogleFonts.inter(
               fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: Tone.fg(Colors.grey[800]),
             ),
           ),
           SizedBox(height: 16),
@@ -11148,10 +6475,10 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isMobile ? 2 : 4,
+              crossAxisCount: isMobile ? 1 : 4,
               crossAxisSpacing: isMobile ? 8 : 16,
               mainAxisSpacing: isMobile ? 8 : 16,
-              childAspectRatio: isMobile ? 1.2 : 1.5,
+              childAspectRatio: isMobile ? 3.2 : 1.5,
             ),
             itemCount: _monthlyReports.length,
             itemBuilder: (context, index) {
@@ -11169,7 +6496,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                   style: GoogleFonts.inter(
                     fontSize: isMobile ? 16 : 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: Tone.fg(Colors.grey[800]),
                   ),
                 ),
                 ElevatedButton.icon(
@@ -11183,7 +6510,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                     backgroundColor: isPhoneLayout(context)
                         ? GasPalette.primary
                         : Constants.ctaColorLight,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Tone.fg(Colors.white),
                     padding: EdgeInsets.symmetric(
                       horizontal: isMobile ? 12 : 16,
                       vertical: isMobile ? 8 : 12,
@@ -11199,7 +6526,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                   padding: EdgeInsets.all(32),
                   child: Text(
                     'No records for this month',
-                    style: GoogleFonts.inter(color: Colors.grey[500]),
+                    style: GoogleFonts.inter(color: Tone.fg(Colors.grey[500])),
                   ),
                 ),
               )
@@ -11234,10 +6561,10 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
         decoration: BoxDecoration(
           color: isSelected
               ? Constants.ctaColorLight.withOpacity(0.1)
-              : Colors.white,
+              : Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Constants.ctaColorLight : Colors.grey[300]!,
+            color: isSelected ? Constants.ctaColorLight : Tone.bg(Colors.grey[300]),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -11249,7 +6576,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
               style: GoogleFonts.inter(
                 fontSize: isMobile ? 14 : 16,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Constants.ctaColorLight : Colors.grey[800],
+                color: isSelected ? Constants.ctaColorLight : Tone.fg(Colors.grey[800]),
               ),
             ),
             SizedBox(height: 8),
@@ -11257,7 +6584,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
               '${report['total_records'] ?? 0} records',
               style: GoogleFonts.inter(
                 fontSize: isMobile ? 12 : 14,
-                color: Colors.grey[600],
+                color: Tone.fg(Colors.grey[600]),
               ),
             ),
           ],
@@ -11271,9 +6598,9 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
       margin: EdgeInsets.only(bottom: 8),
       padding: EdgeInsets.all(isMobile ? 12 : 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Tone.bg(Colors.grey[200])),
       ),
       child: Row(
         children: [
@@ -11299,7 +6626,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                   style: GoogleFonts.inter(
                     fontSize: isMobile ? 13 : 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: Tone.fg(Colors.grey[800]),
                   ),
                 ),
                 SizedBox(height: 4),
@@ -11307,7 +6634,7 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
                   record['maintenance_type']?['name'] ?? 'Maintenance',
                   style: GoogleFonts.inter(
                     fontSize: isMobile ? 11 : 12,
-                    color: Colors.grey[600],
+                    color: Tone.fg(Colors.grey[600]),
                   ),
                 ),
               ],
@@ -11322,25 +6649,6 @@ class _MaintenanceReportsDialogState extends State<MaintenanceReportsDialog> {
       ),
     );
   }
-}
-
-class _MaintenanceMetadataRow extends StatelessWidget {
-  const _MaintenanceMetadataRow(
-      {required this.children,
-      this.spacing = 0,
-      this.runSpacing = 0,
-      this.crossAxisAlignment = WrapCrossAlignment.start});
-  final List<Widget> children;
-  final double spacing, runSpacing;
-  final WrapCrossAlignment crossAxisAlignment;
-  @override
-  Widget build(BuildContext context) => isPhoneLayout(context)
-      ? Wrap(
-          spacing: spacing,
-          runSpacing: runSpacing,
-          crossAxisAlignment: crossAxisAlignment,
-          children: children.where((child) => child is! Spacer).toList())
-      : Row(children: children);
 }
 
 class _MaintenanceFormSurface extends StatelessWidget {
@@ -11362,5 +6670,306 @@ class _MaintenanceFormSurface extends StatelessWidget {
           mobileInputDecoration(context, const InputDecoration(isDense: true)),
       child: child,
     );
+  }
+}
+
+/// One service schedule form for phones and larger displays.
+class MaintenanceEditorDialog extends StatefulWidget {
+  const MaintenanceEditorDialog(
+      {super.key, required this.record, this.duplicate = false});
+  final Map<String, dynamic> record;
+  final bool duplicate;
+  @override
+  State<MaintenanceEditorDialog> createState() =>
+      _MaintenanceEditorDialogState();
+}
+
+class _MaintenanceEditorDialogState extends State<MaintenanceEditorDialog> {
+  final _requestIdentity = _MaintenanceRequestIdentity();
+  final _form = GlobalKey<FormState>();
+  late final TextEditingController _description, _cost, _duration;
+  late DateTime _scheduled;
+  late String _priority;
+  String? _assigned;
+  List<dynamic> _users = [];
+  bool _loading = true, _saving = false;
+  String? _error;
+  @override
+  void initState() {
+    super.initState();
+    _description =
+        TextEditingController(text: widget.record['work_description'] ?? '');
+    _cost = TextEditingController(
+        text: widget.record['estimated_cost']?.toString() ?? '');
+    _duration = TextEditingController(
+        text: widget.record['estimated_duration_hours']?.toString() ?? '');
+    _scheduled = widget.duplicate
+        ? DateTime.now()
+        : DateTime.parse(widget.record['scheduled_date']).toLocal();
+    _priority = widget.record['priority'] ?? 'normal';
+    _assigned = widget.record['assigned_to']?['id']?.toString();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _description.dispose();
+    _cost.dispose();
+    _duration.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final response = await http
+          .get(
+              Uri.parse(
+                  '${ApiConfig.baseUrl}api/maintenance/assignable-users/?business_id=${await SharedPrefs.getBusinessId()}'),
+              headers: await ApiConfig.authHeaders())
+          .timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200) throw StateError('Unavailable');
+      if (mounted)
+        setState(() {
+          _users = jsonDecode(response.body)['users'];
+          if (_assigned != null &&
+              !_users.any((u) => u['id'].toString() == _assigned))
+            _assigned = null;
+        });
+    } catch (_) {
+      if (mounted)
+        setState(
+            () => _error = 'Unable to load your team. Retry before saving.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String? _number(String? value, {bool positive = false}) {
+    if (value == null || value.trim().isEmpty) return null;
+    final n = double.tryParse(value);
+    return n == null || !n.isFinite || n < 0 || (positive && n == 0)
+        ? 'Enter a valid ${positive ? 'positive ' : ''}number'
+        : null;
+  }
+
+  Future<void> _save() async {
+    if (_saving || !_form.currentState!.validate()) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final response = await http
+          .post(
+              Uri.parse(
+                  '${ApiConfig.baseUrl}api/maintenance/${widget.duplicate ? 'create' : "${widget.record['id']}/update"}/'),
+              headers: await ApiConfig.authHeaders(),
+              body: jsonEncode(_requestIdentity.apply({
+                'work_description': _description.text.trim(),
+                'priority': _priority,
+                'assigned_to_id':
+                    _assigned == null ? null : int.parse(_assigned!),
+                'scheduled_date': _scheduled.toUtc().toIso8601String(),
+                'estimated_cost': double.tryParse(_cost.text),
+                'estimated_duration_hours': double.tryParse(_duration.text),
+                if (widget.duplicate) ...{
+                  'device_id': widget.record['device']['id'],
+                  'maintenance_type_id': widget.record['maintenance_type']
+                      ['id'],
+                  'status': 'scheduled'
+                }
+              })))
+          .timeout(const Duration(seconds: 20));
+      if (response.statusCode != (widget.duplicate ? 201 : 200))
+        throw StateError('Not saved');
+      if (mounted) Navigator.pop(context, true);
+    } catch (_) {
+      if (mounted)
+        setState(() => _error =
+            'Unable to save changes. Your entries are kept; please retry.');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => _MaintenanceEditorSurface(
+      title: widget.duplicate ? 'Duplicate maintenance' : 'Edit maintenance',
+      busy: _saving,
+      child: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _users.isEmpty && _error != null
+              ? AppEmptyState(
+                  title: 'Unable to load your team',
+                  message: _error!,
+                  actionLabel: 'Retry',
+                  onAction: _load)
+              : Form(
+                  key: _form,
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(widget.record['device']?['name'] ?? 'Equipment',
+                            style: Theme.of(context).textTheme.titleLarge),
+                        const SizedBox(height: 24),
+                        TextFormField(
+                            key: const ValueKey('maintenance-description'),
+                            controller: _description,
+                            maxLines: 3,
+                            decoration: const InputDecoration(
+                                labelText: 'Work description'),
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'Describe the work'
+                                : null),
+                        const SizedBox(height: 20),
+                        DropdownButtonFormField<String>(
+                            initialValue: _priority,
+                            decoration:
+                                const InputDecoration(labelText: 'Priority'),
+                            items: [
+                              'low',
+                              'normal',
+                              'high',
+                              'critical',
+                              'emergency'
+                            ]
+                                .map((v) => DropdownMenuItem(
+                                    value: v,
+                                    child: Text(
+                                        v[0].toUpperCase() + v.substring(1))))
+                                .toList(),
+                            onChanged: _saving
+                                ? null
+                                : (v) => setState(() => _priority = v!)),
+                        const SizedBox(height: 20),
+                        DropdownButtonFormField<String>(
+                            initialValue: _assigned,
+                            isExpanded: true,
+                            decoration:
+                                const InputDecoration(labelText: 'Assigned to'),
+                            items: [
+                              const DropdownMenuItem<String>(
+                                  value: null, child: Text('Unassigned')),
+                              ..._users.map((u) => DropdownMenuItem(
+                                  value: u['id'].toString(),
+                                  child: Text(u['full_name'] ?? u['username'],
+                                      overflow: TextOverflow.ellipsis)))
+                            ],
+                            onChanged: _saving
+                                ? null
+                                : (v) => setState(() => _assigned = v)),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                            controller: _cost,
+                            decoration: const InputDecoration(
+                                labelText: 'Estimated cost'),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            validator: _number),
+                        const SizedBox(height: 20),
+                        TextFormField(
+                            controller: _duration,
+                            decoration: const InputDecoration(
+                                labelText: 'Estimated hours'),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            validator: (v) => _number(v, positive: true)),
+                        const SizedBox(height: 20),
+                        OutlinedButton(
+                            onPressed: _saving
+                                ? null
+                                : () async {
+                                    final date = await showDatePicker(
+                                        context: context,
+                                        initialDate: _scheduled,
+                                        firstDate: DateTime(2020),
+                                        lastDate: DateTime(2100));
+                                    if (date == null || !mounted) return;
+                                    final time = await showTimePicker(
+                                        context: context,
+                                        initialTime:
+                                            TimeOfDay.fromDateTime(_scheduled));
+                                    if (time != null && mounted)
+                                      setState(() => _scheduled = DateTime(
+                                          date.year,
+                                          date.month,
+                                          date.day,
+                                          time.hour,
+                                          time.minute));
+                                  },
+                            child: Text(
+                                'Scheduled: ${DateFormat.yMMMd().add_Hm().format(_scheduled)}')),
+                        if (_error != null)
+                          Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Text(_error!,
+                                  style: TextStyle(color: Tone.fg(Colors.red)))),
+                        const SizedBox(height: 24),
+                        FilledButton(
+                            onPressed: _saving ? null : _save,
+                            child: Text(_saving
+                                ? 'Saving…'
+                                : widget.duplicate
+                                    ? 'Create copy'
+                                    : 'Save changes')),
+                      ])));
+}
+
+class _MaintenanceEditorSurface extends StatelessWidget {
+  const _MaintenanceEditorSurface(
+      {required this.title, required this.child, this.busy = false});
+  final String title;
+  final Widget child;
+  final bool busy;
+  @override
+  Widget build(BuildContext context) {
+    final body = SafeArea(
+        child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24), child: child));
+    return PopScope(
+        canPop: !busy,
+        child: isPhoneLayout(context)
+            ? Scaffold(
+                appBar: AppBar(
+                    title: Text(title), automaticallyImplyLeading: !busy),
+                body: body)
+            : Dialog(
+                child: ConstrainedBox(
+                    constraints:
+                        const BoxConstraints(maxWidth: 560, maxHeight: 720),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 12, 0),
+                          child: Row(children: [
+                            Expanded(
+                                child: Text(title,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge)),
+                            IconButton(
+                                onPressed:
+                                    busy ? null : () => Navigator.pop(context),
+                                icon: const Icon(Icons.close))
+                          ])),
+                      Flexible(child: body)
+                    ]))));
+  }
+}
+
+/// Retrying an unchanged form identifies the original operation after a lost response.
+class _MaintenanceRequestIdentity {
+  String? _fingerprint;
+  String? _requestId;
+  Map<String, dynamic> apply(Map<String, dynamic> payload) {
+    final fingerprint = jsonEncode(payload);
+    if (fingerprint != _fingerprint) {
+      _fingerprint = fingerprint;
+      _requestId = const Uuid().v4();
+    }
+    return {...payload, 'client_request_id': _requestId};
   }
 }

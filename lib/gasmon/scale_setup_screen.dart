@@ -3,6 +3,7 @@
 /// the spot, then wait until the server receives its first weight reading.
 library;
 
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_forms.dart';
 
 import 'dart:async';
@@ -20,8 +21,8 @@ import 'gas_core.dart';
 import 'gas_theme.dart';
 import 'gas_widgets.dart';
 import 'scale_ble.dart';
+import 'scale_connection_identity.dart';
 
-const String kMqttHost = 'api.articsentinel.com';
 const int kMqttTlsPort = 8883;
 
 class ScaleSetupScreen extends StatefulWidget {
@@ -55,6 +56,8 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
   /// Set once the login was issued and handed to the scale, or why not.
   bool _loginSent = false;
   bool _issuing = false;
+  bool _sending = false;
+  Map<String, dynamic>? _pendingSettings;
   String? _loginNote;
   bool _hideWifiPassword = true;
   DirectFormat _format = DirectFormat.json;
@@ -82,6 +85,7 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
     _scanSub?.cancel();
     _adapterSub?.cancel();
     _readingTimer?.cancel();
+    _pendingSettings = null;
     if (!kIsWeb) FlutterBluePlus.stopScan();
     _prov.removeListener(_onProvChanged);
     _prov.dispose();
@@ -93,6 +97,9 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
 
   void _onProvChanged() {
     if (!mounted) return;
+    if (_prov.stage == ScaleSetupStage.connected && _sentAt != null) {
+      _loginSent = _sendServerLogin && _pendingSettings != null;
+    }
     setState(() {});
     if (_prov.stage == ScaleSetupStage.connected && _readingTimer == null) {
       _waitForFirstReading();
@@ -102,8 +109,9 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
   // ---------------------------------------------------------------- scanning
 
   Future<bool> _ensurePermissions() async {
-    if (defaultTargetPlatform != TargetPlatform.android)
+    if (defaultTargetPlatform != TargetPlatform.android) {
       return true; // iOS prompts itself
+    }
     final results = await [
       ph.Permission.bluetoothScan,
       ph.Permission.bluetoothConnect,
@@ -174,6 +182,7 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
   // ------------------------------------------------------------ Wi-Fi + send
 
   Future<void> _send() async {
+    if (_sending || _issuing) return;
     final ssid = _ssid.text.trim();
     if (ssid.isEmpty) {
       _snack('Choose or type the Wi-Fi network name.');
@@ -184,26 +193,43 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
       _snack('BSSID must look like aa:bb:cc:dd:ee:ff, or be left empty.');
       return;
     }
-    final bssid = bssidText.isEmpty ? null : bssidText.toLowerCase();
-    final settings = _canSendLogin && _sendServerLogin ? await _issueLogin() : null;
-    if (!mounted) return;
-    _loginSent = settings != null;
-    _sentAt = DateTime.now();
-    if (_prov.stage == ScaleSetupStage.direct) {
-      await _prov.sendDirect(
-          ssid: ssid,
-          password: _wifiPassword.text,
-          format: _format,
-          bssid: bssid,
-          scaleSettings: settings);
-      if (_prov.stage == ScaleSetupStage.failed) _waitForFirstReading();
+    if (_sendServerLogin && !_canSendLogin) {
+      _snack(
+          'This scale cannot receive automatic setup in this mode. Use JSON or ask for a firmware update. Advanced options allow Wi-Fi-only setup for an already configured scale.');
       return;
     }
-    await _prov.sendWifi(
-        ssid: ssid,
-        password: _wifiPassword.text,
-        bssid: bssid,
-        scaleSettings: settings);
+    setState(() => _sending = true);
+    try {
+      final settings = _sendServerLogin ? await _issueLogin() : null;
+      if (!mounted || (_sendServerLogin && settings == null)) return;
+      _readingTimer?.cancel();
+      _readingTimer = null;
+      _firstGrossKg = null;
+      _readingTimedOut = false;
+      _loginSent = false;
+      _sentAt = DateTime.now();
+      final bssid = bssidText.isEmpty ? null : bssidText.toLowerCase();
+      if (_prov.stage == ScaleSetupStage.direct) {
+        await _prov.sendDirect(
+            ssid: ssid,
+            password: _wifiPassword.text,
+            format: _format,
+            bssid: bssid,
+            scaleSettings: settings);
+      } else {
+        await _prov.sendWifi(
+            ssid: ssid,
+            password: _wifiPassword.text,
+            bssid: bssid,
+            scaleSettings: settings);
+      }
+      if (!mounted) return;
+      setState(() => _loginSent =
+          settings != null && _prov.stage == ScaleSetupStage.connected);
+      if (_prov.stage == ScaleSetupStage.failed) _waitForFirstReading();
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   /// The login rides along with the Wi-Fi details: in the scale's custom-data
@@ -212,24 +238,30 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
       ? _format == DirectFormat.json
       : _prov.hasCustomData;
 
-  /// Asks the server for a fresh login for this scale. On failure the Wi-Fi
-  /// details still go out, and the reason is shown with the result.
+  /// Reuse the in-memory login on transport retries. Never silently send only
+  /// Wi-Fi when automatic registration failed, and never persist the password.
   Future<Map<String, dynamic>?> _issueLogin() async {
     final deviceId = widget.device.id;
     if (deviceId == null) return null;
+    if (_pendingSettings != null) return _pendingSettings;
     setState(() {
       _issuing = true;
       _loginNote = null;
     });
     try {
       final creds = await GasApi.issueCredentials(deviceId: deviceId);
-      return creds.settings;
+      _pendingSettings = validatedScaleSettings(creds.settings,
+          registeredId: deviceId, deviceId: widget.device.deviceId);
+      return _pendingSettings;
     } catch (e) {
-      final why = e is GasApiException ? e.message : 'the server couldn\'t be reached';
+      final why = e is GasApiException
+          ? e.message
+          : e is FormatException
+              ? e.message
+              : 'the server could not be reached';
       if (mounted) {
         setState(() => _loginNote =
-            'The server login wasn\'t sent ($why). The scale gets Wi-Fi only '
-            'and keeps any login it already has. Run Connect scale again to retry.');
+            'Automatic setup paused: $why No Wi-Fi details were sent. Please retry.');
       }
       return null;
     } finally {
@@ -253,13 +285,14 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
         final r = await GasApi.load(
             deviceId: deviceId, demoKey: widget.device.deviceId);
         final latest = r.data.hasReadings ? r.data.latest : null;
-        final since =
-            (_sentAt ?? DateTime.now()).subtract(const Duration(minutes: 1));
-        if (latest != null && latest.at.isAfter(since)) {
+        if (latest != null &&
+            isReadingAfterSetup(latest.at, _sentAt, DateTime.now())) {
           t.cancel();
-          if (mounted)
+          if (mounted) {
+            _pendingSettings = null;
             setState(
                 () => _firstGrossKg = r.data.scaleGrossKg ?? latest.weightKg);
+          }
         }
       } catch (e) {
         debugPrint('[scale] waiting for first reading: $e');
@@ -289,10 +322,10 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Tone.bg(Colors.white),
       appBar: AppBar(
         backgroundColor: GasPalette.navy,
-        foregroundColor: Colors.white,
+        foregroundColor: Tone.fg(Colors.white),
         title: Text('Connect scale · ${widget.device.deviceId}'),
       ),
       body: SafeArea(
@@ -364,7 +397,8 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
   Widget _intro() {
     return Text(
       'Put the scale in setup mode (it advertises over Bluetooth), keep your '
-      'phone within a few metres, then find it below.',
+      'phone within a few metres, then find it below. Choose your Wi-Fi and we send '
+      'this scale’s ID, topic and private login automatically. No IDs to type.',
       style: gasBody(context).copyWith(color: GasPalette.ink2),
     );
   }
@@ -401,11 +435,11 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
             style: FilledButton.styleFrom(backgroundColor: GasPalette.primary),
             onPressed: _scanning ? null : _startScan,
             icon: _scanning
-                ? const SizedBox(
+                ? SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
+                        strokeWidth: 2, color: Tone.fg(Colors.white)))
                 : const Icon(Icons.bluetooth_searching),
             label: Text(_scanning ? 'Searching…' : 'Find scale'),
           ),
@@ -413,8 +447,7 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
           for (final r in visible)
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading:
-                  const Icon(Icons.scale_outlined, color: GasPalette.flame),
+              leading: Icon(Icons.scale_outlined, color: GasPalette.flame),
               title: Text(_nameOf(r.device, r)),
               subtitle: Text('${r.device.remoteId} · signal ${r.rssi} dBm'),
               trailing: const Icon(Icons.chevron_right),
@@ -442,7 +475,8 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
         children: [
           GEyebrow('2 · Wi-Fi for ${_nameOf(_selected)}',
               trailing: TextButton(
-                  onPressed: _startOver, child: const Text('Start over'))),
+                  onPressed: _sending || _issuing ? null : _startOver,
+                  child: const Text('Start over'))),
           const SizedBox(height: 4),
           Text('The scale needs a 2.4 GHz network.', style: gasSmall(context)),
           if (_prov.error != null) ...[
@@ -506,13 +540,13 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
                 )),
           ),
           _bssidField(),
-          if (_canSendLogin) _loginToggle(),
+          _loginToggle(),
           const SizedBox(height: 16),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: GasPalette.primary),
-            onPressed: scanning || _issuing ? null : _send,
+            onPressed: scanning || _issuing || _sending ? null : _send,
             child: Text(_issuing
-                ? 'Getting the server login…'
+                ? 'Preparing automatic setup…'
                 : 'Connect scale to Wi-Fi'),
           ),
           if (_loginNote != null) _loginWarning(),
@@ -531,7 +565,8 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
         children: [
           GEyebrow('2 · Wi-Fi for ${_nameOf(_selected)}',
               trailing: TextButton(
-                  onPressed: _startOver, child: const Text('Start over'))),
+                  onPressed: _sending || _issuing ? null : _startOver,
+                  child: const Text('Start over'))),
           const SizedBox(height: 4),
           Text(
             'This scale has its own Bluetooth setup. The app writes the Wi-Fi details '
@@ -542,69 +577,84 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
           TextField(
             controller: _ssid,
             onChanged: (_) => setState(() {}),
-            decoration: mobileInputDecoration(context, InputDecoration(
-                labelText: 'Network name', border: OutlineInputBorder())),
+            decoration: mobileInputDecoration(
+                context,
+                InputDecoration(
+                    labelText: 'Network name', border: OutlineInputBorder())),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _wifiPassword,
             obscureText: _hideWifiPassword,
-            decoration: mobileInputDecoration(context, InputDecoration(
-              labelText: 'Wi-Fi password',
-              border: const OutlineInputBorder(),
-              suffixIcon: IconButton(
-                icon: Icon(_hideWifiPassword
-                    ? Icons.visibility
-                    : Icons.visibility_off),
-                onPressed: () =>
-                    setState(() => _hideWifiPassword = !_hideWifiPassword),
-              ),
-            )),
+            decoration: mobileInputDecoration(
+                context,
+                InputDecoration(
+                  labelText: 'Wi-Fi password',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(_hideWifiPassword
+                        ? Icons.visibility
+                        : Icons.visibility_off),
+                    onPressed: () =>
+                        setState(() => _hideWifiPassword = !_hideWifiPassword),
+                  ),
+                )),
           ),
           _bssidField(),
           const SizedBox(height: 4),
-          DropdownButtonFormField<GattEntry>(
-            isExpanded: true,
-            initialValue: _prov.writeTarget,
-            decoration: mobileInputDecoration(context, InputDecoration(
-              labelText: 'Write to characteristic',
-              border: OutlineInputBorder(),
-            )),
-            items: [
-              for (final e in writable)
-                DropdownMenuItem(
-                    value: e,
-                    child: Text(e.label, overflow: TextOverflow.ellipsis)),
-            ],
-            onChanged: (e) {
-              if (e != null) _prov.chooseWriteTarget(e);
-            },
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<DirectFormat>(
-            isExpanded: true,
-            initialValue: _format,
-            decoration: mobileInputDecoration(context, InputDecoration(
-              labelText: 'Format',
-              helperText: 'Use the format the scale firmware expects.',
-              border: OutlineInputBorder(),
-            )),
-            items: [
-              for (final f in DirectFormat.values)
-                DropdownMenuItem(
-                    value: f,
-                    child: Text(f.label, overflow: TextOverflow.ellipsis)),
-            ],
-            onChanged: (f) => setState(() => _format = f ?? _format),
-          ),
-          if (_canSendLogin) _loginToggle(),
+          ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text('Advanced Bluetooth options'),
+              children: [
+                DropdownButtonFormField<GattEntry>(
+                  isExpanded: true,
+                  initialValue: _prov.writeTarget,
+                  decoration: mobileInputDecoration(
+                      context,
+                      InputDecoration(
+                        labelText: 'Write to characteristic',
+                        border: OutlineInputBorder(),
+                      )),
+                  items: [
+                    for (final e in writable)
+                      DropdownMenuItem(
+                          value: e,
+                          child:
+                              Text(e.label, overflow: TextOverflow.ellipsis)),
+                  ],
+                  onChanged: (e) {
+                    if (e != null) _prov.chooseWriteTarget(e);
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<DirectFormat>(
+                  isExpanded: true,
+                  initialValue: _format,
+                  decoration: mobileInputDecoration(
+                      context,
+                      InputDecoration(
+                        labelText: 'Format',
+                        helperText:
+                            'Use the format the scale firmware expects.',
+                        border: OutlineInputBorder(),
+                      )),
+                  items: [
+                    for (final f in DirectFormat.values)
+                      DropdownMenuItem(
+                          value: f,
+                          child:
+                              Text(f.label, overflow: TextOverflow.ellipsis)),
+                  ],
+                  onChanged: (f) => setState(() => _format = f ?? _format),
+                ),
+              ]),
+          _loginToggle(),
           const SizedBox(height: 16),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: GasPalette.primary),
-            onPressed: _issuing ? null : _send,
-            child: Text(_issuing
-                ? 'Getting the server login…'
-                : 'Write Wi-Fi to scale'),
+            onPressed: _issuing || _sending ? null : _send,
+            child:
+                Text(_issuing ? 'Preparing automatic setup…' : 'Connect scale'),
           ),
           if (_loginNote != null) _loginWarning(),
           const SizedBox(height: 8),
@@ -622,7 +672,7 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
                       style: const TextStyle(
                           fontFamily: 'monospace', fontSize: 12)),
                   subtitle: Text(
-                    '${e.propsText}${e.value != null && e.value!.isNotEmpty ? '\nvalue: ${e.value}' : ''}',
+                    e.propsText,
                     style: gasSmall(context),
                   ),
                 ),
@@ -657,17 +707,37 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
   Widget _loginToggle() {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      child: SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        value: _sendServerLogin,
-        onChanged: (v) => setState(() => _sendServerLogin = v),
-        title: const Text('Set up the server login'),
-        subtitle: Text(
-          'ArticSentinel creates a new password for ${widget.device.deviceId} and sends it '
-          'to the scale with the Wi-Fi details, so nobody types it. It replaces any earlier '
-          'password; turn this off to keep the one the scale has.',
-        ),
-      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Connection set up for you', style: gasTitle(context)),
+        const SizedBox(height: 6),
+        Text(
+            'Your scale gets its own connection ID, topic and private password. '
+            'The ID is a label, not a password. Only this scale’s login is replaced during setup.',
+            style: gasSmall(context)),
+        if (!_canSendLogin)
+          Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                  'This setup mode accepts Wi-Fi only. Automatic connection setup needs JSON or a supported secure setup endpoint.',
+                  style: gasSmall(context).copyWith(color: GasPalette.warn))),
+        ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: const Text('Existing scale options'),
+            children: [
+              SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _sendServerLogin,
+                  onChanged: _sending
+                      ? null
+                      : (v) => setState(() => _sendServerLogin = v),
+                  title: const Text('Set up connection automatically'),
+                  subtitle: const Text(
+                      'Leave on for a new scale. Turn off only to change Wi-Fi on a scale that already has its own working server login.')),
+              SelectableText(
+                  'Connection ID: ${assignedScaleClientId(widget.device.id) ?? 'Save the device first'}',
+                  style: gasSmall(context)),
+            ]),
+      ]),
     );
   }
 
@@ -705,16 +775,17 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const GEyebrow('3 · Connected'),
+          GEyebrow(
+              gotReading ? '3 · Scale connected' : '3 · Checking connection'),
           const SizedBox(height: 10),
           Row(children: [
-            const Icon(Icons.wifi, color: GasPalette.good),
+            Icon(Icons.wifi, color: GasPalette.good),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 _prov.scaleIp != null
                     ? 'On ${_ssid.text.trim()} · IP ${_prov.scaleIp}'
-                    : 'Wi-Fi details accepted',
+                    : 'Wi-Fi details sent — waiting for a new reading',
                 style: gasBody(context),
               ),
             ),
@@ -722,29 +793,21 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
           if (_loginSent) ...[
             const SizedBox(height: 8),
             Row(children: [
-              const Icon(Icons.lock_outline, color: GasPalette.good),
+              Icon(Icons.lock_outline, color: GasPalette.good),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                    'Server login sent to the scale ($kMqttHost, port $kMqttTlsPort)',
+                    'This scale’s connection ID, topic and private login were sent automatically.',
                     style: gasBody(context)),
               ),
             ]),
           ] else if (_loginNote != null)
             _loginWarning(),
-          for (final reply in _prov.directReplies) ...[
-            const SizedBox(height: 4),
-            Text('Scale said: $reply', style: gasSmall(context)),
-          ],
-          if (_prov.customDataReply != null) ...[
-            const SizedBox(height: 6),
-            Text('Scale replied to the server login: ${_prov.customDataReply}',
-                style: gasSmall(context)),
-          ],
+          // Firmware replies can echo Wi-Fi or broker secrets; never render them.
           const SizedBox(height: 14),
           if (gotReading)
             Row(children: [
-              const Icon(Icons.check_circle, color: GasPalette.good),
+              Icon(Icons.check_circle, color: GasPalette.good),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -756,10 +819,9 @@ class _ScaleSetupScreenState extends State<ScaleSetupScreen> {
           else if (_readingTimedOut)
             Text(
               _loginSent
-                  ? 'No reading reached the server within 3 minutes. The scale is on Wi-Fi and was '
-                      'sent its server login; check that its firmware uses it '
-                      '(mqtt_user/mqtt_pass, $kMqttHost port $kMqttTlsPort, TLS).'
-                  : 'No reading reached the server within 3 minutes. The scale is on Wi-Fi, so check its '
+                  ? 'No new reading reached the server within 3 minutes. Connection details were '
+                      'sent, but setup is not confirmed. Check power and Wi-Fi. Older firmware may need a one-time update to save automatic connection settings.'
+                  : 'No new reading reached the server within 3 minutes. Check Wi-Fi and the scale’s '
                       'server login (Device ID ${widget.device.deviceId}, port $kMqttTlsPort).',
               style: gasSmall(context).copyWith(color: GasPalette.warn),
             )

@@ -139,6 +139,11 @@ class DeviceSetupService {
                   'is_active': true,
                   if (draft.location?.trim().isNotEmpty == true)
                     'location': draft.location!.trim(),
+                  if (draft.targetTempMin != null)
+                    'target_temp_min': draft.targetTempMin,
+                  if (draft.targetTempMax != null)
+                    'target_temp_max': draft.targetTempMax,
+                  if (draft.phaseType != null) 'phase_type': draft.phaseType,
                 }),
               )
               .timeout(requestTimeout);

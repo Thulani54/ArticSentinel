@@ -1,3 +1,4 @@
+import 'app_tone.dart';
 import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
@@ -49,6 +50,7 @@ class _AIChatPanelState extends State<AIChatPanel> {
   String? _sessionId;
   bool _busy = false;
   String? _error;
+  String? _failedText;
 
   static const _defaultSuggestions = [
     'Any issues with this unit?',
@@ -124,9 +126,16 @@ class _AIChatPanelState extends State<AIChatPanel> {
       return;
     }
 
+    // Prior turns only — the server appends `message` itself.
+    final history = _turns
+        .where((t) => t.role == 'user' || t.role == 'assistant')
+        .map((t) => {'role': t.role, 'content': t.content})
+        .toList();
+
     setState(() {
       _busy = true;
       _error = null;
+      _failedText = null;
       _turns.add(_ChatTurn('user', text));
       _suggestedFollowups = const [];
     });
@@ -138,10 +147,7 @@ class _AIChatPanelState extends State<AIChatPanel> {
         businessId: Constants.myBusiness.businessUid,
         deviceId: deviceId,
         message: text,
-        history: _turns
-            .where((t) => t.role == 'user' || t.role == 'assistant')
-            .map((t) => {'role': t.role, 'content': t.content})
-            .toList(),
+        history: history,
         sessionId: _sessionId,
       );
       if (!mounted) return;
@@ -157,9 +163,22 @@ class _AIChatPanelState extends State<AIChatPanel> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = e is AIAssistantException
+            ? e.message
+            : 'Something went wrong. Please try again.';
+        _failedText = text;
       });
     }
+  }
+
+  void _retry() {
+    final text = _failedText;
+    if (text == null || _busy) return;
+    // Drop the unanswered question so it isn't shown or sent twice.
+    if (_turns.isNotEmpty && _turns.last.role == 'user' && _turns.last.content == text) {
+      _turns.removeLast();
+    }
+    _send(text);
   }
 
   void _scrollToBottom() {
@@ -179,6 +198,7 @@ class _AIChatPanelState extends State<AIChatPanel> {
       _turns.clear();
       _sessionId = null;
       _error = null;
+      _failedText = null;
       _suggestedFollowups = const [];
     });
     final key = _storageKey;
@@ -195,11 +215,11 @@ class _AIChatPanelState extends State<AIChatPanel> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(Constants.spacingMd),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE5E7EB))),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       padding: EdgeInsets.all(Constants.spacingLg),
@@ -264,7 +284,22 @@ class _AIChatPanelState extends State<AIChatPanel> {
           ],
           if (_error != null) ...[
             SizedBox(height: Constants.spacingSm),
-            Text(_error!, style: GoogleFonts.inter(fontSize: 12, color: Constants.criticalColor)),
+            Row(
+              children: [
+                Icon(Iconsax.info_circle, size: 16, color: Constants.criticalColor),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(_error!,
+                      style: GoogleFonts.inter(fontSize: 12, color: Constants.criticalColor)),
+                ),
+                if (_failedText != null)
+                  TextButton(
+                    onPressed: _busy ? null : _retry,
+                    child: Text('Retry',
+                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+              ],
+            ),
           ],
           SizedBox(height: Constants.spacingMd),
           Row(
@@ -281,11 +316,11 @@ class _AIChatPanelState extends State<AIChatPanel> {
                     hintStyle: GoogleFonts.inter(fontSize: 13, color: Constants.ctaTextColor),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      borderSide: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                      borderSide: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -302,15 +337,15 @@ class _AIChatPanelState extends State<AIChatPanel> {
                 onPressed: _busy ? null : () => _send(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Constants.ctaColorLight,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Tone.fg(Colors.white),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: _busy
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Tone.fg(Colors.white)),
                       )
                     : const Icon(Iconsax.send_1, size: 18),
               ),
@@ -343,7 +378,7 @@ class _Bubble extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.82),
         decoration: BoxDecoration(
-          color: isUser ? Constants.ctaColorLight : const Color(0xFFF1F5F9),
+          color: isUser ? Constants.ctaColorLight : Tone.bg(const Color(0xFFF1F5F9)),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
@@ -355,7 +390,7 @@ class _Bubble extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   height: 1.4,
-                  color: Colors.white,
+                  color: Tone.fg(Colors.white),
                 ),
               )
             else
@@ -364,11 +399,11 @@ class _Bubble extends StatelessWidget {
                 shrinkWrap: true,
                 selectable: true,
                 styleSheet: MarkdownStyleSheet(
-                  p: GoogleFonts.inter(fontSize: 13, height: 1.45, color: const Color(0xFF111827)),
-                  strong: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
-                  em: GoogleFonts.inter(fontSize: 13, fontStyle: FontStyle.italic, color: const Color(0xFF111827)),
-                  listBullet: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF111827)),
-                  code: GoogleFonts.robotoMono(fontSize: 12, backgroundColor: const Color(0xFFE5E7EB)),
+                  p: GoogleFonts.inter(fontSize: 13, height: 1.45, color: Tone.fg(const Color(0xFF111827))),
+                  strong: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Tone.fg(const Color(0xFF111827))),
+                  em: GoogleFonts.inter(fontSize: 13, fontStyle: FontStyle.italic, color: Tone.fg(const Color(0xFF111827))),
+                  listBullet: GoogleFonts.inter(fontSize: 13, color: Tone.fg(const Color(0xFF111827))),
+                  code: GoogleFonts.robotoMono(fontSize: 12, backgroundColor: Tone.bg(const Color(0xFFE5E7EB))),
                 ),
               ),
             if (turn.toolCalls.isNotEmpty) ...[
@@ -380,13 +415,13 @@ class _Bubble extends StatelessWidget {
                     .map((tc) => Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Tone.bg(Colors.white),
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                            border: Border.all(color: Tone.bg(const Color(0xFFE5E7EB))),
                           ),
                           child: Text(
                             '${tc['name']}',
-                            style: GoogleFonts.robotoMono(fontSize: 10, color: const Color(0xFF6B7280)),
+                            style: GoogleFonts.robotoMono(fontSize: 10, color: Tone.fg(const Color(0xFF6B7280))),
                           ),
                         ))
                     .toList(),
@@ -429,7 +464,7 @@ class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerPro
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
+          color: Tone.bg(const Color(0xFFF1F5F9)),
           borderRadius: BorderRadius.circular(10),
         ),
         child: AnimatedBuilder(
@@ -448,8 +483,8 @@ class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerPro
                     child: Container(
                       width: 7,
                       height: 7,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF94A3B8),
+                      decoration: BoxDecoration(
+                        color: Tone.bg(Color(0xFF94A3B8)),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -479,8 +514,8 @@ class _Suggestions extends StatelessWidget {
           .map(
             (s) => ActionChip(
               label: Text(s, style: GoogleFonts.inter(fontSize: compact ? 11 : 12)),
-              backgroundColor: compact ? Colors.white : const Color(0xFFF8FAFC),
-              side: const BorderSide(color: Color(0xFFE5E7EB)),
+              backgroundColor: compact ? Tone.bg(Colors.white) : Tone.bg(const Color(0xFFF8FAFC)),
+              side: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
               visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
               onPressed: () => onTap(s),
             ),

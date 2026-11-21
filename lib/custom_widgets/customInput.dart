@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../gasmon/gas_theme.dart';
 import '../widgets/mobile_forms.dart';
 import 'package:flutter/material.dart';
@@ -70,25 +71,25 @@ class CustomInput extends StatelessWidget {
               prefixIcon: prefix,
               suffixIcon: suffix,
               hintStyle: GoogleFonts.inter(
-                textStyle: const TextStyle(
+                textStyle: TextStyle(
                     fontSize: 13.5,
-                    color: Colors.black,
+                    color: Tone.fg(Colors.black),
                     letterSpacing: 0,
                     fontWeight: FontWeight.w500),
               ),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF161929)),
+                borderSide: BorderSide(color: Tone.bg(Color(0xFF161929))),
                 borderRadius: BorderRadius.circular(4),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.white),
+                borderSide: BorderSide(color: Tone.bg(Colors.white)),
                 borderRadius: BorderRadius.circular(4),
               ),
             )),
-        style: const TextStyle(
-            color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13.5),
+        style: TextStyle(
+            color: Tone.fg(Colors.black), fontWeight: FontWeight.bold, fontSize: 13.5),
       ),
     );
   }
@@ -154,17 +155,17 @@ class CustomInputTransparent1 extends StatelessWidget {
               prefixIcon: prefix,
               suffixIcon: suffix,
               filled: true,
-              fillColor: Colors.grey.withOpacity(0.1),
+              fillColor: Tone.bg(Colors.grey).withOpacity(0.1),
               hintStyle: GoogleFonts.inter(
                 textStyle: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey,
+                    color: Tone.fg(Colors.grey),
                     letterSpacing: 0,
                     fontWeight: FontWeight.normal),
               ),
               contentPadding: EdgeInsets.only(left: 16, top: 16),
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey.withOpacity(0.0)),
+                borderSide: BorderSide(color: Tone.bg(Colors.grey).withOpacity(0.0)),
                 borderRadius: BorderRadius.circular(32),
               ),
               focusedBorder: OutlineInputBorder(
@@ -173,7 +174,7 @@ class CustomInputTransparent1 extends StatelessWidget {
               ),
             )),
         style: TextStyle(
-            color: Colors.black, fontWeight: FontWeight.normal, fontSize: 13.5),
+            color: Tone.fg(Colors.black), fontWeight: FontWeight.normal, fontSize: 13.5),
       ),
     );
   }
@@ -235,7 +236,7 @@ class CustomInputTransparent extends StatelessWidget {
               hintStyle: GoogleFonts.inter(
                 textStyle: TextStyle(
                     fontSize: 13.5,
-                    color: Colors.grey,
+                    color: Tone.fg(Colors.grey),
                     letterSpacing: 0,
                     fontWeight: FontWeight.w500),
               ),
@@ -243,7 +244,7 @@ class CustomInputTransparent extends StatelessWidget {
                   EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(
-                    color: Colors.grey!.withOpacity(0.65), width: 0.7),
+                    color: Tone.bg(Colors.grey).withOpacity(0.65), width: 0.7),
                 borderRadius: BorderRadius.circular(360),
               ),
               focusedBorder: OutlineInputBorder(
@@ -252,7 +253,7 @@ class CustomInputTransparent extends StatelessWidget {
               ),
             )),
         style: isPhoneLayout(context)
-            ? const TextStyle(
+            ? TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 13.5,
                 letterSpacing: 0,
@@ -264,7 +265,7 @@ class CustomInputTransparent extends StatelessWidget {
                     fontSize: 13.5,
                     letterSpacing: 0,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black),
+                    color: Tone.fg(Colors.black)),
               ),
       ),
     );
@@ -305,7 +306,7 @@ class CustomInputTransparentOption extends StatelessWidget {
             bottomLeft: Radius.circular(6),
             bottomRight: Radius.circular(6)),
 
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
       ),
       padding: EdgeInsets.only(left: 0, right: 0, top: 0, bottom: 0),
       width: MediaQuery.of(context).size.width,
@@ -335,7 +336,7 @@ class CustomInputTransparentOption extends StatelessWidget {
               hintStyle: GoogleFonts.inter(
                 textStyle: TextStyle(
                     fontSize: 13.5,
-                    color: Colors.grey,
+                    color: Tone.fg(Colors.grey),
                     letterSpacing: 0,
                     fontWeight: FontWeight.w500),
               ),
@@ -343,7 +344,7 @@ class CustomInputTransparentOption extends StatelessWidget {
                   EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(
-                    color: Colors.grey!.withOpacity(0.45), width: 0.5),
+                    color: Tone.bg(Colors.grey).withOpacity(0.45), width: 0.5),
                 borderRadius: BorderRadius.circular(4),
               ),
               focusedBorder: OutlineInputBorder(
@@ -352,7 +353,7 @@ class CustomInputTransparentOption extends StatelessWidget {
               ),
             )),
         style: isPhoneLayout(context)
-            ? const TextStyle(
+            ? TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 13.5,
                 letterSpacing: 0,
@@ -364,7 +365,7 @@ class CustomInputTransparentOption extends StatelessWidget {
                     fontSize: 13.5,
                     letterSpacing: 0,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black),
+                    color: Tone.fg(Colors.black)),
               ),
       ),
     );

@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import 'package:flutter/material.dart';
 import '../models/device.dart';
 import '../services/device_alert_rules.dart';
@@ -149,9 +150,9 @@ class _DeviceAlertRulesScreenState extends State<DeviceAlertRulesScreen> {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-            color: const Color(0xFFF7F8FA),
+            color: Tone.bg(const Color(0xFFF7F8FA)),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E5EA))),
+            border: Border.all(color: Tone.bg(const Color(0xFFE2E5EA)))),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
@@ -234,18 +235,18 @@ class _DeviceAlertRulesScreenState extends State<DeviceAlertRulesScreen> {
             const SizedBox(height: 8),
             Text(
                 'Re-arms after the reading recovers by ${spec['reset_margin']} ${spec['unit']}.',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF616B7A))),
+                style: TextStyle(fontSize: 12, color: Tone.fg(Color(0xFF616B7A)))),
           ],
         ]));
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Tone.bg(Colors.white),
       appBar: AppBar(
           title: const Text('My device alerts'),
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF252C44)),
+          backgroundColor: Tone.bg(Colors.white),
+          foregroundColor: Tone.fg(const Color(0xFF252C44))),
       body: SafeArea(
           child: Column(children: [
         Expanded(
@@ -264,7 +265,7 @@ class _DeviceAlertRulesScreenState extends State<DeviceAlertRulesScreen> {
                       const SizedBox(height: 20),
                       if (_error != null) ...[
                         Text(_error!,
-                            style: const TextStyle(color: Colors.red)),
+                            style: TextStyle(color: Tone.fg(Colors.red))),
                         TextButton(
                             onPressed: _saving ? null : _load,
                             child: const Text('Reload saved rules')),

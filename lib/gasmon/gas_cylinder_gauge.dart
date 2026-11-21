@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../widgets/app_tone.dart';
 
 import '../widgets/mobile_forms.dart';
 import 'gas_core.dart';
@@ -78,7 +79,7 @@ class _CylinderPainter extends CustomPainter {
   final bool mobile;
 
   static const _steel = Color(0xFF8496A5);
-  static const _emptyFill = Color(0xFFF2F6F9);
+  static Color get _emptyFill => Tone.bg(const Color(0xFFF2F6F9));
   static const _liquid = Color(0xFFED6A24);
   static const _hardware = Color(0xFF6D7F8D);
 
@@ -131,7 +132,7 @@ class _CylinderPainter extends CustomPainter {
           Rect.fromLTRB(cx - width * .20, top - 19, cx + width * .20, top + 4),
           const Radius.circular(7),
         ),
-        Paint()..color = const Color(0xFFB7C3CC),
+        Paint()..color = Tone.auto(const Color(0xFFB7C3CC)),
       );
     }
     canvas.drawPath(body, Paint()..color = _emptyFill);
@@ -170,7 +171,7 @@ class _CylinderPainter extends CustomPainter {
             ..strokeWidth = 1.2);
       text.text = TextSpan(
           text: '$value',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Inter',
             fontSize: 9.5,
             color: GasPalette.ink2,
@@ -187,7 +188,7 @@ class _CylinderPainter extends CustomPainter {
             center: Offset(cx, readoutY + 12), width: width * .77, height: 67),
         const Radius.circular(12),
       ),
-      Paint()..color = Colors.white,
+      Paint()..color = Tone.auto(Colors.white),
     );
     final pct = TextPainter(
         textDirection: TextDirection.ltr, textAlign: TextAlign.center)
@@ -207,7 +208,7 @@ class _CylinderPainter extends CustomPainter {
       ..text = TextSpan(
           text:
               '${netKg.toStringAsFixed(1)} of ${capacityKg.toStringAsFixed(1)} kg',
-          style: const TextStyle(
+          style: TextStyle(
               fontFamily: 'Inter', fontSize: 10.5, color: GasPalette.ink2))
       ..layout(maxWidth: width * .72);
     sub.paint(
@@ -271,7 +272,7 @@ class _CylinderPainter extends CustomPainter {
   void _paintTankHardware(Canvas canvas, Rect body) {
     final cx = body.center.dx, width = body.width;
     final steel = Paint()..color = _hardware;
-    const brass = Color(0xFFB78B46);
+    final brass = Tone.auto(Color(0xFFB78B46));
 
     // The foot ring sits behind the curved bottom of the pressure vessel.
     canvas.drawRRect(
@@ -291,7 +292,7 @@ class _CylinderPainter extends CustomPainter {
               height: 3),
           const Radius.circular(1.5),
         ),
-        Paint()..color = const Color(0xFFDCE6EC),
+        Paint()..color = Tone.auto(const Color(0xFFDCE6EC)),
       );
     }
 

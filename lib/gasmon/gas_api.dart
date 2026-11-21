@@ -3,6 +3,8 @@
 /// [GasDeviceData] the dashboard renders. Missing readings remain empty.
 library;
 
+import '../services/offline_read_client.dart';
+
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -61,7 +63,7 @@ class GasConfig {
 
 /// Broker login issued by api/gas/credentials/issue/, in the shape the scale
 /// receives over Bluetooth: device_id, mqtt_host, mqtt_port, mqtt_user,
-/// mqtt_pass and topic.
+/// mqtt_pass, mqtt_client_id, mqtt_tls and topic.
 class ScaleCredentials {
   const ScaleCredentials(this.settings);
 
@@ -90,9 +92,10 @@ class GasApi {
   }
 
   static Future<Map<String, dynamic>> _post(
-      String path, Map<String, dynamic> body) async {
+      String path, Map<String, dynamic> body,
+      {OfflineReadClient? reader}) async {
     final businessId = await Sharedprefs.getBusinessUidSharedPreference();
-    final response = await http.post(
+    final response = await (reader?.post ?? http.post)(
       Uri.parse('${Constants.articBaseUrl2}api/gas/$path'),
       headers: await _headers(),
       body: jsonEncode({'business_id': businessId, ...body}),
@@ -121,11 +124,16 @@ class GasApi {
   static Future<({GasDeviceData data, GasConfig config})> load({
     required int deviceId,
     required String demoKey,
+    OfflineReadClient? reader,
   }) async {
-    final resp = await _post('readings/', {
-      'device_id': deviceId,
-      'days': historyDays,
-    }).timeout(
+    final resp = await _post(
+            'readings/',
+            {
+              'device_id': deviceId,
+              'days': historyDays,
+            },
+            reader: reader)
+        .timeout(
       const Duration(seconds: 20),
       onTimeout: () => throw GasApiException(
         'The scale readings request timed out. Check your connection and retry.',
@@ -173,7 +181,11 @@ class GasApi {
   /// earlier one.
   static Future<ScaleCredentials> issueCredentials(
       {required int deviceId}) async {
-    final resp = await _post('credentials/issue/', {'device_id': deviceId});
+    final resp = await _post('credentials/issue/', {
+      'device_id': deviceId
+    }).timeout(const Duration(seconds: 20),
+        onTimeout: () => throw GasApiException(
+            'Connection setup timed out. Check your internet connection and retry.'));
     return ScaleCredentials(
         Map<String, dynamic>.from(resp['credentials'] as Map));
   }

@@ -1,0 +1,15 @@
+{
+  "index_sha256": "7ee1f3572b37945b4209dd38ab9f9a321fa7283d3416e1a5185a4d9f9e040802",
+  "index_matches_build": true,
+  "assets": [
+    {
+      "path": "/assets/index-BaAcEHEG.js",
+      "matches_build": true
+    },
+    {
+      "path": "/assets/index-95wqUwOG.css",
+      "matches_build": true
+    }
+  ],
+  "api_proxy_status": "403"
+}

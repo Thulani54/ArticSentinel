@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 import 'dart:math';
@@ -86,7 +87,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                   child: Center(
                                     child: Icon(
                                       Icons.search,
-                                      color: Colors.white,
+                                      color: Tone.fg(Colors.white),
                                     ),
                                   ),
                                 ),
@@ -97,16 +98,16 @@ class _LivestockManagementState extends State<LivestockManagement> {
                           hintStyle: GoogleFonts.inter(
                             textStyle: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey,
+                                color: Tone.fg(Colors.grey),
                                 letterSpacing: 0,
                                 fontWeight: FontWeight.normal),
                           ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: Tone.bg(Colors.white),
                           contentPadding: EdgeInsets.only(left: 16),
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(
-                                color: Colors.grey.withOpacity(0.35)),
+                                color: Tone.bg(Colors.grey).withOpacity(0.35)),
                             borderRadius: BorderRadius.circular(360),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -140,7 +141,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                       style: GoogleFonts.inter(
                         textStyle: TextStyle(
                             fontSize: 13,
-                            color: Colors.white,
+                            color: Tone.fg(Colors.white),
                             letterSpacing: 0,
                             fontWeight: FontWeight.w400),
                       ),
@@ -170,7 +171,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
           padding: const EdgeInsets.only(left: 24, right: 24),
           child: Divider(
             thickness: 0.5,
-            color: Colors.black54,
+            color: Tone.bg(Colors.black54),
           ),
         ),
         SizedBox(
@@ -180,8 +181,8 @@ class _LivestockManagementState extends State<LivestockManagement> {
           padding: const EdgeInsets.only(left: 24, right: 24),
           child: CustomCard(
             elevation: 5,
-            color: Colors.white,
-            surfaceTintColor: Colors.white,
+            color: Tone.auto(Colors.white),
+            surfaceTintColor: Tone.bg(Colors.white),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Container(
@@ -203,9 +204,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
           child: Text(
             "Animal By Breed",
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(
+              textStyle: TextStyle(
                   fontSize: 18,
-                  color: Colors.black,
+                  color: Tone.fg(Colors.black),
                   letterSpacing: 0,
                   fontWeight: FontWeight.normal),
             ),
@@ -218,8 +219,8 @@ class _LivestockManagementState extends State<LivestockManagement> {
           padding: const EdgeInsets.only(left: 24, right: 24),
           child: CustomCard(
             elevation: 5,
-            color: Colors.white,
-            surfaceTintColor: Colors.white,
+            color: Tone.auto(Colors.white),
+            surfaceTintColor: Tone.bg(Colors.white),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Container(
@@ -247,9 +248,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                           child: Text(
                             "#",
                             style: GoogleFonts.inter(
-                              textStyle: const TextStyle(
+                              textStyle: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   letterSpacing: 0,
                                   fontWeight: FontWeight.w500),
                             ),
@@ -262,9 +263,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                           child: Text(
                             "Name",
                             style: GoogleFonts.inter(
-                              textStyle: const TextStyle(
+                              textStyle: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   letterSpacing: 0,
                                   fontWeight: FontWeight.w500),
                             ),
@@ -277,9 +278,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                           child: Text(
                             "Popularity",
                             style: GoogleFonts.inter(
-                              textStyle: const TextStyle(
+                              textStyle: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   letterSpacing: 0,
                                   fontWeight: FontWeight.w500),
                             ),
@@ -293,9 +294,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                           child: Text(
                             "Sales",
                             style: GoogleFonts.inter(
-                              textStyle: const TextStyle(
+                              textStyle: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   letterSpacing: 0,
                                   fontWeight: FontWeight.w500),
                             ),
@@ -326,9 +327,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                     child: Text(
                                       animalBreedList[index].id.toString(),
                                       style: GoogleFonts.inter(
-                                        textStyle: const TextStyle(
+                                        textStyle: TextStyle(
                                             fontSize: 14,
-                                            color: Colors.black,
+                                            color: Tone.fg(Colors.black),
                                             letterSpacing: 0,
                                             fontWeight: FontWeight.w500),
                                       ),
@@ -341,9 +342,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                     child: Text(
                                       animalBreedList[index].breedName,
                                       style: GoogleFonts.inter(
-                                        textStyle: const TextStyle(
+                                        textStyle: TextStyle(
                                             fontSize: 14,
-                                            color: Colors.black,
+                                            color: Tone.fg(Colors.black),
                                             letterSpacing: 0,
                                             fontWeight: FontWeight.w500),
                                       ),
@@ -371,14 +372,14 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                   color:
                                                       Constants.ctaColorGreen,
                                                   backgroundColor:
-                                                      Colors.grey.shade300),
+                                                      Tone.bg(Colors.grey.shade300)),
                                               Center(
                                                 child: Text(
                                                   "${(animalBreedList[index].popularity)}",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 13,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -402,9 +403,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                       child: Text(
                                         "${animalBreedList[index].sales}%",
                                         style: GoogleFonts.inter(
-                                          textStyle: const TextStyle(
+                                          textStyle: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.black,
+                                              color: Tone.fg(Colors.black),
                                               letterSpacing: 0,
                                               fontWeight: FontWeight.w500),
                                         ),
@@ -424,7 +425,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                         ),
                                         Divider(
                                           thickness: 0.5,
-                                          color: Colors.black54,
+                                          color: Tone.bg(Colors.black54),
                                         ),
                                         SizedBox(
                                           height: 16,
@@ -449,9 +450,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
           child: Text(
             "Recent Added",
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(
+              textStyle: TextStyle(
                   fontSize: 18,
-                  color: Colors.black,
+                  color: Tone.fg(Colors.black),
                   letterSpacing: 0,
                   fontWeight: FontWeight.normal),
             ),
@@ -464,8 +465,8 @@ class _LivestockManagementState extends State<LivestockManagement> {
           padding: const EdgeInsets.only(left: 24, right: 24),
           child: CustomCard(
             elevation: 5,
-            color: Colors.white,
-            surfaceTintColor: Colors.white,
+            color: Tone.auto(Colors.white),
+            surfaceTintColor: Tone.bg(Colors.white),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Container(
@@ -493,9 +494,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                           child: Text(
                             "#",
                             style: GoogleFonts.inter(
-                              textStyle: const TextStyle(
+                              textStyle: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   letterSpacing: 0,
                                   fontWeight: FontWeight.w500),
                             ),
@@ -508,9 +509,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                           child: Text(
                             "Device",
                             style: GoogleFonts.inter(
-                              textStyle: const TextStyle(
+                              textStyle: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   letterSpacing: 0,
                                   fontWeight: FontWeight.w500),
                             ),
@@ -523,9 +524,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                           child: Text(
                             "Type",
                             style: GoogleFonts.inter(
-                              textStyle: const TextStyle(
+                              textStyle: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   letterSpacing: 0,
                                   fontWeight: FontWeight.w500),
                             ),
@@ -538,9 +539,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                           child: Text(
                             "Allocated To",
                             style: GoogleFonts.inter(
-                              textStyle: const TextStyle(
+                              textStyle: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   letterSpacing: 0,
                                   fontWeight: FontWeight.w500),
                             ),
@@ -553,9 +554,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                           child: Text(
                             "Status",
                             style: GoogleFonts.inter(
-                              textStyle: const TextStyle(
+                              textStyle: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   letterSpacing: 0,
                                   fontWeight: FontWeight.w500),
                             ),
@@ -570,9 +571,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                             child: Text(
                               "Action",
                               style: GoogleFonts.inter(
-                                textStyle: const TextStyle(
+                                textStyle: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.white,
+                                    color: Tone.fg(Colors.white),
                                     letterSpacing: 0,
                                     fontWeight: FontWeight.w500),
                               ),
@@ -618,9 +619,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                               .id
                                               .toString(),
                                           style: GoogleFonts.inter(
-                                            textStyle: const TextStyle(
+                                            textStyle: TextStyle(
                                                 fontSize: 14,
-                                                color: Colors.black,
+                                                color: Tone.fg(Colors.black),
                                                 letterSpacing: 0,
                                                 fontWeight: FontWeight.w500),
                                           ),
@@ -635,9 +636,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                               .device
                                               .deviceId,
                                           style: GoogleFonts.inter(
-                                            textStyle: const TextStyle(
+                                            textStyle: TextStyle(
                                                 fontSize: 14,
-                                                color: Colors.black,
+                                                color: Tone.fg(Colors.black),
                                                 letterSpacing: 0,
                                                 fontWeight: FontWeight.w500),
                                           ),
@@ -652,9 +653,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                               .device
                                               .iccid,
                                           style: GoogleFonts.inter(
-                                            textStyle: const TextStyle(
+                                            textStyle: TextStyle(
                                                 fontSize: 14,
-                                                color: Colors.black,
+                                                color: Tone.fg(Colors.black),
                                                 letterSpacing: 0,
                                                 fontWeight: FontWeight.w500),
                                           ),
@@ -667,9 +668,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                         child: Text(
                                           recentAddedLivestock[index].name,
                                           style: GoogleFonts.inter(
-                                            textStyle: const TextStyle(
+                                            textStyle: TextStyle(
                                                 fontSize: 14,
-                                                color: Colors.black,
+                                                color: Tone.fg(Colors.black),
                                                 letterSpacing: 0,
                                                 fontWeight: FontWeight.w500),
                                           ),
@@ -684,9 +685,9 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                               .device
                                               .currentStatus,
                                           style: GoogleFonts.inter(
-                                            textStyle: const TextStyle(
+                                            textStyle: TextStyle(
                                                 fontSize: 14,
-                                                color: Colors.black,
+                                                color: Tone.fg(Colors.black),
                                                 letterSpacing: 0,
                                                 fontWeight: FontWeight.w500),
                                           ),
@@ -742,7 +743,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                           color:
                                                               tableColorIndex ==
                                                                       index
-                                                                  ? Colors.white
+                                                                  ? Tone.fg(Colors.white)
                                                                   : Colors
                                                                       .black,
                                                           letterSpacing: 0,
@@ -802,7 +803,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                           color:
                                                               tableColorIndex1 ==
                                                                       index
-                                                                  ? Colors.white
+                                                                  ? Tone.fg(Colors.white)
                                                                   : Colors
                                                                       .black,
                                                           letterSpacing: 0,
@@ -860,14 +861,14 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                                         ),
                                                                         decoration: BoxDecoration(
                                                                           color:
-                                                                              Colors.white,
+                                                                              Tone.bg(Colors.white),
                                                                           shape:
                                                                               BoxShape.rectangle,
                                                                           borderRadius:
                                                                               BorderRadius.circular(24),
-                                                                          boxShadow: const [
+                                                                          boxShadow: [
                                                                             BoxShadow(
-                                                                              color: Colors.black26,
+                                                                              color: Tone.bg(Colors.black26),
                                                                               blurRadius: 10.0,
                                                                               offset: Offset(0.0, 10.0),
                                                                             ),
@@ -899,13 +900,13 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                                                         TextSpan(
                                                                                           text: "Are sure you want to delete",
                                                                                           style: GoogleFonts.inter(
-                                                                                            textStyle: const TextStyle(fontSize: 16, color: Colors.black54, letterSpacing: 0, fontWeight: FontWeight.bold),
+                                                                                            textStyle: TextStyle(fontSize: 16, color: Tone.fg(Colors.black54), letterSpacing: 0, fontWeight: FontWeight.bold),
                                                                                           ),
                                                                                         ),
                                                                                         TextSpan(
                                                                                           text: "\t${live.name}?",
                                                                                           style: GoogleFonts.inter(
-                                                                                            textStyle: const TextStyle(fontSize: 18, color: Colors.black, letterSpacing: 0, fontWeight: FontWeight.bold),
+                                                                                            textStyle: TextStyle(fontSize: 18, color: Tone.fg(Colors.black), letterSpacing: 0, fontWeight: FontWeight.bold),
                                                                                           ),
                                                                                         ),
                                                                                       ],
@@ -935,7 +936,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                                                       ),
                                                                                   child: Text(
                                                                                     'Cancel',
-                                                                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                                                                    style: TextStyle(color: Tone.fg(Colors.white), fontWeight: FontWeight.w600),
                                                                                   ),
                                                                                 ),
                                                                                 TextButton(
@@ -954,7 +955,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                                                       ),
                                                                                   child: Text(
                                                                                     'Confrim',
-                                                                                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+                                                                                    style: TextStyle(color: Tone.fg(Colors.black), fontWeight: FontWeight.w600),
                                                                                   ),
                                                                                 ),
                                                                               ],
@@ -974,7 +975,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                                           color:
                                                               tableColorIndex2 ==
                                                                       index
-                                                                  ? Colors.white
+                                                                  ? Tone.fg(Colors.white)
                                                                   : Colors
                                                                       .black,
                                                           letterSpacing: 0,
@@ -1002,7 +1003,7 @@ class _LivestockManagementState extends State<LivestockManagement> {
                                             ),
                                             Divider(
                                               thickness: 0.5,
-                                              color: Colors.black54,
+                                              color: Tone.bg(Colors.black54),
                                             ),
                                             SizedBox(
                                               height: 16,
@@ -1132,9 +1133,9 @@ class BarChartSample2State extends State<BarChartSample2> {
               Text(
                 "Active Animal",
                 style: GoogleFonts.inter(
-                  textStyle: const TextStyle(
+                  textStyle: TextStyle(
                       fontSize: 18,
-                      color: Colors.black,
+                      color: Tone.fg(Colors.black),
                       letterSpacing: 0,
                       fontWeight: FontWeight.normal),
                 ),
@@ -1145,7 +1146,7 @@ class BarChartSample2State extends State<BarChartSample2> {
                 decoration: BoxDecoration(
                     border:
                         Border.all(color: Constants.ctaColorGreen, width: 1.0),
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Tone.bg(Colors.grey).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(32)),
                 child: Center(
                   child: DropdownButton<String>(
@@ -1155,7 +1156,7 @@ class BarChartSample2State extends State<BarChartSample2> {
                       padding: const EdgeInsets.only(left: 8.0),
                       child: Text(
                         "Select Period",
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                        style: TextStyle(color: Tone.fg(Colors.grey), fontSize: 14),
                       ),
                     ),
                     onChanged: (String? newValue) {
@@ -1170,7 +1171,7 @@ class BarChartSample2State extends State<BarChartSample2> {
                               child: Padding(
                                 padding: const EdgeInsets.only(left: 8.0),
                                 child: Text("${item}",
-                                    style: TextStyle(color: Colors.black)),
+                                    style: TextStyle(color: Tone.fg(Colors.black))),
                               ),
                             ),
                             value: item);
@@ -1200,7 +1201,7 @@ class BarChartSample2State extends State<BarChartSample2> {
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: ((group) {
-                      return Colors.grey;
+                      return Tone.auto(Colors.grey);
                     }),
                     getTooltipItem: (a, b, c, d) => null,
                   ),
@@ -1297,9 +1298,9 @@ class BarChartSample2State extends State<BarChartSample2> {
               Text(
                 "Within Range",
                 style: GoogleFonts.inter(
-                  textStyle: const TextStyle(
+                  textStyle: TextStyle(
                       fontSize: 14,
-                      color: Colors.black,
+                      color: Tone.fg(Colors.black),
                       letterSpacing: 0,
                       fontWeight: FontWeight.w400),
                 ),
@@ -1320,9 +1321,9 @@ class BarChartSample2State extends State<BarChartSample2> {
               Text(
                 "Product",
                 style: GoogleFonts.inter(
-                  textStyle: const TextStyle(
+                  textStyle: TextStyle(
                       fontSize: 14,
-                      color: Colors.black,
+                      color: Tone.fg(Colors.black),
                       letterSpacing: 0,
                       fontWeight: FontWeight.w400),
                 ),
@@ -1338,8 +1339,8 @@ class BarChartSample2State extends State<BarChartSample2> {
   }
 
   Widget leftTitles(double value, TitleMeta meta) {
-    const style = TextStyle(
-      color: Color(0xffAAAAAA),
+    final style = TextStyle(
+      color: Tone.fg(Color(0xffAAAAAA)),
       fontWeight: FontWeight.w500,
       fontSize: 14,
     );
@@ -1371,8 +1372,8 @@ class BarChartSample2State extends State<BarChartSample2> {
 
     final Widget text = Text(
       titles[value.toInt()],
-      style: const TextStyle(
-        color: Color(0xffAAAAAA),
+      style: TextStyle(
+        color: Tone.fg(Color(0xffAAAAAA)),
         fontWeight: FontWeight.w500,
         fontSize: 14,
       ),
@@ -1413,7 +1414,7 @@ class BarChartSample2State extends State<BarChartSample2> {
         Container(
           width: width,
           height: 10,
-          color: Colors.white.withOpacity(0.4),
+          color: Tone.bg(Colors.white).withOpacity(0.4),
         ),
         const SizedBox(
           width: space,
@@ -1421,7 +1422,7 @@ class BarChartSample2State extends State<BarChartSample2> {
         Container(
           width: width,
           height: 28,
-          color: Colors.white.withOpacity(0.8),
+          color: Tone.bg(Colors.white).withOpacity(0.8),
         ),
         const SizedBox(
           width: space,
@@ -1429,7 +1430,7 @@ class BarChartSample2State extends State<BarChartSample2> {
         Container(
           width: width,
           height: 42,
-          color: Colors.white.withOpacity(1),
+          color: Tone.bg(Colors.white).withOpacity(1),
         ),
         const SizedBox(
           width: space,
@@ -1437,7 +1438,7 @@ class BarChartSample2State extends State<BarChartSample2> {
         Container(
           width: width,
           height: 28,
-          color: Colors.white.withOpacity(0.8),
+          color: Tone.bg(Colors.white).withOpacity(0.8),
         ),
         const SizedBox(
           width: space,
@@ -1445,7 +1446,7 @@ class BarChartSample2State extends State<BarChartSample2> {
         Container(
           width: width,
           height: 10,
-          color: Colors.white.withOpacity(0.4),
+          color: Tone.bg(Colors.white).withOpacity(0.4),
         ),
       ],
     );
@@ -1504,29 +1505,29 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
   //TextEditingController _colorVariant3Controller = TextEditingController();
   //FocusNode colorVariant3FocusNode = FocusNode();
 
-  Color colorVariant1 = Colors.white;
-  Color colorVariant2 = Colors.white;
-  Color colorVariant3 = Colors.white;
+  Color colorVariant1 = Tone.auto(Colors.white);
+  Color colorVariant2 = Tone.auto(Colors.white);
+  Color colorVariant3 = Tone.auto(Colors.white);
 
   Color getColorFromString(String colorString) {
     switch (colorString.toLowerCase()) {
       case 'black':
-        return Colors.black;
+        return Tone.auto(Colors.black);
       case 'white':
-        return Colors.white;
+        return Tone.auto(Colors.white);
       case 'red':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       case 'green':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'grey':
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
       case 'blue':
-        return Colors.blue;
+        return Tone.auto(Colors.blue);
       case 'brown':
-        return Colors.brown;
+        return Tone.auto(Colors.brown);
       // Add more colors as needed
       default:
-        return Colors.white; // Default color if not found
+        return Tone.auto(Colors.white); // Default color if not found
     }
   }
 
@@ -1553,12 +1554,12 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                         maxWidth: 900,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Tone.bg(Colors.white),
                         shape: BoxShape.rectangle,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(
-                            color: Colors.black26,
+                            color: Tone.bg(Colors.black26),
                             blurRadius: 10.0,
                             offset: Offset(0.0, 10.0),
                           ),
@@ -1594,9 +1595,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                   Text(
                                     "Add Livestock",
                                     style: GoogleFonts.inter(
-                                      textStyle: const TextStyle(
+                                      textStyle: TextStyle(
                                           fontSize: 18,
-                                          color: Colors.white,
+                                          color: Tone.fg(Colors.white),
                                           letterSpacing: 0,
                                           fontWeight: FontWeight.normal),
                                     ),
@@ -1613,8 +1614,8 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                             padding: const EdgeInsets.only(left: 24, right: 24),
                             child: CustomCard(
                               elevation: 5,
-                              color: Colors.white,
-                              surfaceTintColor: Colors.white,
+                              color: Tone.auto(Colors.white),
+                              surfaceTintColor: Tone.bg(Colors.white),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12)),
                               child: Container(
@@ -1646,7 +1647,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                     fontSize: 16,
                                                     fontWeight:
                                                         FontWeight.normal,
-                                                    color: Colors.black),
+                                                    color: Tone.fg(Colors.black)),
                                               ),
                                               SizedBox(
                                                 height: 4,
@@ -1676,7 +1677,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                         width: 120,
                                                         height: 45,
                                                         decoration: BoxDecoration(
-                                                            color: Colors.grey
+                                                            color: Tone.bg(Colors.grey)
                                                                 .withOpacity(
                                                                     0.1),
                                                             borderRadius:
@@ -1687,7 +1688,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                           child: DropdownButton<
                                                               String>(
                                                             dropdownColor:
-                                                                Colors.white,
+                                                                Tone.bg(Colors.white),
                                                             padding:
                                                                 EdgeInsets.only(
                                                                     left: 12,
@@ -1746,7 +1747,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                                       item,
                                                                       style: TextStyle(
                                                                           color:
-                                                                              Colors.black),
+                                                                              Tone.fg(Colors.black)),
                                                                     ),
                                                                   ),
                                                                 );
@@ -1806,7 +1807,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                     ),
                                     Divider(
                                       thickness: 0.5,
-                                      color: Colors.black54,
+                                      color: Tone.bg(Colors.black54),
                                     ),
                                     SizedBox(
                                       height: 12,
@@ -1830,7 +1831,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                     fontSize: 16,
                                                     fontWeight:
                                                         FontWeight.normal,
-                                                    color: Colors.black),
+                                                    color: Tone.fg(Colors.black)),
                                               ),
                                               SizedBox(
                                                 height: 4,
@@ -1967,7 +1968,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                         width: 120,
                                                         height: 45,
                                                         decoration: BoxDecoration(
-                                                            color: Colors.grey
+                                                            color: Tone.bg(Colors.grey)
                                                                 .withOpacity(
                                                                     0.1),
                                                             borderRadius:
@@ -1978,7 +1979,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                           child: DropdownButton<
                                                               String>(
                                                             dropdownColor:
-                                                                Colors.white,
+                                                                Tone.bg(Colors.white),
                                                             padding:
                                                                 EdgeInsets.only(
                                                                     left: 12,
@@ -2031,7 +2032,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                                       item.toString(),
                                                                       style: TextStyle(
                                                                           color:
-                                                                              Colors.black),
+                                                                              Tone.fg(Colors.black)),
                                                                     ),
                                                                   ),
                                                                 );
@@ -2067,7 +2068,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                     ),
                                     Divider(
                                       thickness: 0.5,
-                                      color: Colors.black54,
+                                      color: Tone.bg(Colors.black54),
                                     ),
                                     SizedBox(
                                       height: 12,
@@ -2083,7 +2084,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                           style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.normal,
-                                              color: Colors.black),
+                                              color: Tone.fg(Colors.black)),
                                         ),
                                         Expanded(child: Container()),
                                         Transform.scale(
@@ -2095,8 +2096,8 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                   width: 1.2,
                                                   color:
                                                       Constants.ctaColorGreen),
-                                              activeColor: Colors.blue,
-                                              checkColor: Colors.white,
+                                              activeColor: Tone.auto(Colors.blue),
+                                              checkColor: Tone.fg(Colors.white),
                                               shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(
@@ -2115,7 +2116,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                           style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w500,
-                                              color: Colors.black),
+                                              color: Tone.fg(Colors.black)),
                                         ),
                                         SizedBox(
                                           width: 40,
@@ -2129,8 +2130,8 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                   width: 1.2,
                                                   color:
                                                       Constants.ctaColorGreen),
-                                              activeColor: Colors.blue,
-                                              checkColor: Colors.white,
+                                              activeColor: Tone.auto(Colors.blue),
+                                              checkColor: Tone.fg(Colors.white),
                                               shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(
@@ -2149,7 +2150,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                           style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w500,
-                                              color: Colors.black),
+                                              color: Tone.fg(Colors.black)),
                                         ),
                                       ],
                                     ),
@@ -2158,7 +2159,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                     ),
                                     Divider(
                                       thickness: 0.5,
-                                      color: Colors.black54,
+                                      color: Tone.bg(Colors.black54),
                                     ),
                                     SizedBox(
                                       height: 12,
@@ -2182,7 +2183,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                     fontSize: 16,
                                                     fontWeight:
                                                         FontWeight.normal,
-                                                    color: Colors.black),
+                                                    color: Tone.fg(Colors.black)),
                                               ),
                                               SizedBox(
                                                 height: 4,
@@ -2376,9 +2377,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                 child: Text(
                                                   "Name",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -2429,9 +2430,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                 child: Text(
                                                   "Species",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -2482,9 +2483,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                 child: Text(
                                                   "Breed",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -2541,9 +2542,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                 child: Text(
                                                   "Age",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -2594,9 +2595,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                 child: Text(
                                                   "Weight",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -2647,9 +2648,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                 child: Text(
                                                   "Health Status",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -2707,9 +2708,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                 child: Text(
                                                   "Birth Date",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -2743,9 +2744,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                 child: Text(
                                                   "Last Vet Visit",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -2779,9 +2780,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                 child: Text(
                                                   "Vaccination Status",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -2839,9 +2840,9 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                 child: Text(
                                                   "Medication History",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.normal),
@@ -2890,8 +2891,8 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                   width: 1.2,
                                                   color:
                                                       Constants.ctaColorGreen),
-                                              activeColor: Colors.blue,
-                                              checkColor: Colors.white,
+                                              activeColor: Tone.auto(Colors.blue),
+                                              checkColor: Tone.fg(Colors.white),
                                               shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(
@@ -2910,7 +2911,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                           style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w500,
-                                              color: Colors.black),
+                                              color: Tone.fg(Colors.black)),
                                         ),
                                         SizedBox(
                                           width: 22,
@@ -2924,8 +2925,8 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                                   width: 1.2,
                                                   color:
                                                       Constants.ctaColorGreen),
-                                              activeColor: Colors.blue,
-                                              checkColor: Colors.white,
+                                              activeColor: Tone.auto(Colors.blue),
+                                              checkColor: Tone.fg(Colors.white),
                                               shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(
@@ -2944,7 +2945,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                           style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w500,
-                                              color: Colors.black),
+                                              color: Tone.fg(Colors.black)),
                                         ),
                                       ],
                                     ),
@@ -2975,7 +2976,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 TextButton(
@@ -2994,7 +2995,7 @@ class _AddLivestockDialogState extends State<AddLivestockDialog> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 )
                               ],

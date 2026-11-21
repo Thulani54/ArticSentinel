@@ -138,7 +138,7 @@ void main() {
       await tester.pumpWidget(
           MaterialApp.router(theme: articMobileTheme(), routerConfig: router));
       await tester.pumpAndSettle();
-      expect(find.byIcon(Iconsax.more), findsOneWidget);
+      expect(find.byTooltip('Open navigation'), findsOneWidget);
       final navigation = tester.widget<ClipRRect>(
           find.byKey(const ValueKey('mobile-navigation-surface')));
       expect(navigation.borderRadius,

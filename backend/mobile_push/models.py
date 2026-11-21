@@ -9,6 +9,7 @@ class PushInstallation(models.Model):
     platform = models.CharField(max_length=10)
     enabled = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
+    last_test_requested_at = models.DateTimeField(null=True, blank=True)
 
 class GasPushState(models.Model):
     device = models.OneToOneField('device.Device', on_delete=models.CASCADE)

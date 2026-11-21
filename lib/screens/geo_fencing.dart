@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
@@ -281,13 +282,13 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 : const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: Tone.bg(const Color(0xFFF1F5F9)),
               borderRadius:
                   BorderRadius.circular(isPhoneLayout(context) ? 32 : 16),
               border: Border.all(
                   color: isPhoneLayout(context)
                       ? GasPalette.border
-                      : const Color(0xFFE2E8F0),
+                      : Tone.bg(const Color(0xFFE2E8F0)),
                   width: 1),
             ),
             child: TabBar(
@@ -300,12 +301,12 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               dividerColor: Colors.transparent,
               indicator: BoxDecoration(
                 color:
-                    isPhoneLayout(context) ? GasPalette.primary : Colors.white,
+                    isPhoneLayout(context) ? GasPalette.primary : Tone.bg(Colors.white),
                 borderRadius:
                     BorderRadius.circular(isPhoneLayout(context) ? 32 : 12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Tone.bg(Colors.black).withOpacity(0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -318,9 +319,9 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               ),
               indicatorSize: TabBarIndicatorSize.tab,
               labelColor: isPhoneLayout(context)
-                  ? Colors.white
+                  ? Tone.fg(Colors.white)
                   : Constants.ctaColorLight,
-              unselectedLabelColor: const Color(0xFF64748B),
+              unselectedLabelColor: Tone.fg(const Color(0xFF64748B)),
               labelStyle: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -405,12 +406,12 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               margin: EdgeInsets.symmetric(horizontal: 16),
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red[50],
+                color: Tone.bg(Colors.red[50]),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red[200]!),
+                border: Border.all(color: Tone.bg(Colors.red[200])),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Tone.bg(Colors.red).withOpacity(0.1),
                     blurRadius: 8,
                     offset: Offset(0, 2),
                   ),
@@ -421,10 +422,10 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red[100],
+                      color: Tone.bg(Colors.red[100]),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.error, color: Colors.red[700], size: 20),
+                    child: Icon(Icons.error, color: Tone.fg(Colors.red[700]), size: 20),
                   ),
                   SizedBox(width: 12),
                   Expanded(
@@ -434,7 +435,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         Text(
                           'Error',
                           style: GoogleFonts.inter(
-                            color: Colors.red[800],
+                            color: Tone.fg(Colors.red[800]),
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
@@ -443,7 +444,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         Text(
                           error,
                           style: GoogleFonts.inter(
-                            color: Colors.red[700],
+                            color: Tone.fg(Colors.red[700]),
                             fontSize: 12,
                           ),
                         ),
@@ -451,7 +452,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     ),
                   ),
                   Material(
-                    color: Colors.red[100],
+                    color: Tone.bg(Colors.red[100]),
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8),
@@ -460,7 +461,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         padding: EdgeInsets.all(8),
                         child: Icon(
                           Icons.refresh,
-                          color: Colors.red[700],
+                          color: Tone.fg(Colors.red[700]),
                           size: 20,
                         ),
                       ),
@@ -511,18 +512,18 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
             decoration: isPhoneLayout(context)
                 ? null
                 : BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     borderRadius: BorderRadius.circular(
                       isPhoneLayout(context) ? 14 : 12,
                     ),
                     border: Border.all(
                       color: isPhoneLayout(context)
                           ? GasPalette.border
-                          : Colors.grey.withOpacity(0.1),
+                          : Tone.bg(Colors.grey).withOpacity(0.1),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Tone.bg(Colors.black).withOpacity(0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -546,7 +547,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1E293B),
+                      color: Tone.fg(const Color(0xFF1E293B)),
                     ),
                   ),
                 ),
@@ -565,10 +566,10 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                border: Border.all(color: Tone.bg(Colors.grey).withOpacity(0.1)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Tone.bg(Colors.black).withOpacity(0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -602,11 +603,11 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Tone.bg(Colors.white),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Tone.bg(Colors.black).withOpacity(0.1),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -626,7 +627,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF1E293B),
+                                  color: Tone.fg(const Color(0xFF1E293B)),
                                 ),
                               ),
                             ],
@@ -664,7 +665,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               'Loading units...',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: const Color(0xFF64748B),
+                color: Tone.fg(const Color(0xFF64748B)),
               ),
             ),
           ],
@@ -681,12 +682,12 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.1)),
+            border: Border.all(color: Tone.bg(Colors.grey).withOpacity(0.1)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -702,15 +703,15 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1E293B),
+                  color: Tone.fg(const Color(0xFF1E293B)),
                 ),
               ),
               const Spacer(),
               _buildStatusChip(_getOperationalUnitsCount(), 'Operational',
-                  const Color(0xFF10B981)),
+                  Tone.auto(const Color(0xFF10B981))),
               const SizedBox(width: 8),
               _buildStatusChip(_getMaintenanceUnitsCount(), 'Maintenance',
-                  const Color(0xFFF59E0B)),
+                  Tone.auto(const Color(0xFFF59E0B))),
             ],
           ),
         ),
@@ -749,7 +750,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               'Loading suppliers...',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: const Color(0xFF64748B),
+                color: Tone.fg(const Color(0xFF64748B)),
               ),
             ),
           ],
@@ -773,12 +774,12 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.1)),
+            border: Border.all(color: Tone.bg(Colors.grey).withOpacity(0.1)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -794,7 +795,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1E293B),
+                  color: Tone.fg(const Color(0xFF1E293B)),
                 ),
               ),
               const Spacer(),
@@ -842,8 +843,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   Widget _buildUnitListCard(Unit unit) {
     return CustomCard(
       elevation: 3,
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
+      color: Tone.auto(Colors.white),
+      surfaceTintColor: Tone.bg(Colors.white),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -879,7 +880,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                       margin: EdgeInsets.only(left: 8),
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
+                        color: Tone.bg(Colors.orange).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -887,7 +888,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         style: GoogleFonts.inter(
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
-                          color: Colors.orange[700],
+                          color: Tone.fg(Colors.orange[700]),
                         ),
                       ),
                     ),
@@ -899,7 +900,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+                  color: Tone.fg(Colors.grey[800]),
                 ),
               ),
               SizedBox(height: 4),
@@ -907,21 +908,21 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 '${unit.modelNumber} • S/N: ${unit.serialNumber}',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: Tone.fg(Colors.grey[600]),
                 ),
               ),
               if (unit.location?.isNotEmpty == true) ...[
                 SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.place, size: 14, color: Colors.grey[500]),
+                    Icon(Icons.place, size: 14, color: Tone.fg(Colors.grey[500])),
                     SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         unit.location!,
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: Tone.fg(Colors.grey[600]),
                         ),
                       ),
                     ),
@@ -957,8 +958,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   Widget _buildUnitDetailsCard(Unit unit) {
     return CustomCard(
       elevation: 5,
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
+      color: Tone.auto(Colors.white),
+      surfaceTintColor: Tone.bg(Colors.white),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -974,7 +975,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+                      color: Tone.fg(Colors.grey[800]),
                     ),
                   ),
                 ),
@@ -1013,7 +1014,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
+                  color: Tone.fg(Colors.grey[700]),
                 ),
               ),
               SizedBox(height: 8),
@@ -1036,7 +1037,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
+                  color: Tone.fg(Colors.grey[700]),
                 ),
               ),
               SizedBox(height: 8),
@@ -1055,9 +1056,9 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
       margin: EdgeInsets.only(bottom: 8),
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Tone.bg(Colors.grey[50]),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Tone.bg(Colors.grey[200])),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1069,7 +1070,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 height: 8,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: device['is_online'] ? Colors.green : Colors.red,
+                  color: device['is_online'] ? Tone.bg(Colors.green) : Tone.bg(Colors.red),
                 ),
               ),
               SizedBox(width: 8),
@@ -1079,7 +1080,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey[800],
+                    color: Tone.fg(Colors.grey[800]),
                   ),
                 ),
               ),
@@ -1087,14 +1088,14 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Tone.bg(Colors.orange).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     'Repair Mode',
                     style: GoogleFonts.inter(
                       fontSize: 10,
-                      color: Colors.orange[700],
+                      color: Tone.fg(Colors.orange[700]),
                     ),
                   ),
                 ),
@@ -1105,7 +1106,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
             '${device['device_type']} • ID: ${device['device_id']}',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: Tone.fg(Colors.grey[600]),
             ),
           ),
           if (device['target_temp_min'] != null &&
@@ -1115,7 +1116,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               'Target: ${device['target_temp_min']}°C - ${device['target_temp_max']}°C',
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Tone.fg(Colors.grey[600]),
               ),
             ),
           ],
@@ -1125,7 +1126,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               'Last Service: ${_formatDate(device['last_service_date'])}',
               style: GoogleFonts.inter(
                 fontSize: 11,
-                color: Colors.grey[500],
+                color: Tone.fg(Colors.grey[500]),
               ),
             ),
           ],
@@ -1137,8 +1138,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   Widget _buildSupplierCard(Map<String, dynamic> supplier) {
     return CustomCard(
       elevation: 3,
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
+      color: Tone.auto(Colors.white),
+      surfaceTintColor: Tone.bg(Colors.white),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         padding: EdgeInsets.all(16),
@@ -1170,20 +1171,20 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.1),
+                      color: Tone.bg(Colors.amber).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.star, size: 12, color: Colors.amber[700]),
+                        Icon(Icons.star, size: 12, color: Tone.fg(Colors.amber[700])),
                         SizedBox(width: 4),
                         Text(
                           'Preferred',
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
-                            color: Colors.amber[700],
+                            color: Tone.fg(Colors.amber[700]),
                           ),
                         ),
                       ],
@@ -1197,7 +1198,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+                color: Tone.fg(Colors.grey[800]),
               ),
             ),
             if (supplier['contact_person']?.isNotEmpty == true) ...[
@@ -1206,31 +1207,31 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 'Contact: ${supplier['contact_person']}',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: Tone.fg(Colors.grey[600]),
                 ),
               ),
             ],
             SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.phone, size: 14, color: Colors.grey[500]),
+                Icon(Icons.phone, size: 14, color: Tone.fg(Colors.grey[500])),
                 SizedBox(width: 4),
                 Text(
                   supplier['phone_primary'] ?? '',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: Tone.fg(Colors.grey[600]),
                   ),
                 ),
                 SizedBox(width: 16),
-                Icon(Icons.location_city, size: 14, color: Colors.grey[500]),
+                Icon(Icons.location_city, size: 14, color: Tone.fg(Colors.grey[500])),
                 SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     '${supplier['city']}, ${supplier['province_state']}',
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Tone.fg(Colors.grey[600]),
                     ),
                   ),
                 ),
@@ -1246,7 +1247,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                           ? Icons.star
                           : Icons.star_border,
                       size: 16,
-                      color: Colors.amber,
+                      color: Tone.fg(Colors.amber),
                     );
                   }),
                   SizedBox(width: 8),
@@ -1254,7 +1255,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     '${supplier['rating'].toStringAsFixed(1)}',
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Tone.fg(Colors.grey[600]),
                     ),
                   ),
                 ],
@@ -1266,7 +1267,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 'Delivery Area: ${supplier['delivery_area']}',
                 style: GoogleFonts.inter(
                   fontSize: 11,
-                  color: Colors.grey[500],
+                  color: Tone.fg(Colors.grey[500]),
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1279,7 +1280,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   'Lead Time: ${supplier['lead_time_days']} days',
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: Colors.grey[500],
+                    color: Tone.fg(Colors.grey[500]),
                   ),
                 ),
                 Spacer(),
@@ -1287,14 +1288,14 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: Tone.bg(Colors.green).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       '24/7',
                       style: GoogleFonts.inter(
                         fontSize: 10,
-                        color: Colors.green[700],
+                        color: Tone.fg(Colors.green[700]),
                       ),
                     ),
                   ),
@@ -1306,7 +1307,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 'Specializations: ${supplier['specializations']}',
                 style: GoogleFonts.inter(
                   fontSize: 11,
-                  color: Colors.grey[500],
+                  color: Tone.fg(Colors.grey[500]),
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1330,7 +1331,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               '$label:',
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Tone.fg(Colors.grey[600]),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1340,7 +1341,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               value,
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: Colors.black87,
+                color: Tone.fg(Colors.black87),
               ),
             ),
           ),
@@ -1352,32 +1353,32 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'operational':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'maintenance':
-        return Colors.orange;
+        return Tone.auto(Colors.orange);
       case 'decommissioned':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       default:
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
     }
   }
 
   Color _getSupplierTypeColor(String? type) {
     switch (type) {
       case 'manufacturer':
-        return Colors.blue;
+        return Tone.auto(Colors.blue);
       case 'distributor':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'wholesaler':
-        return Colors.purple;
+        return Tone.auto(Colors.purple);
       case 'retailer':
-        return Colors.orange;
+        return Tone.auto(Colors.orange);
       case 'service':
-        return Colors.teal;
+        return Tone.auto(Colors.teal);
       case 'online':
-        return Colors.indigo;
+        return Tone.auto(Colors.indigo);
       default:
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
     }
   }
 
@@ -1393,7 +1394,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   // Helper Methods for Map View
   Widget _buildMapTypeButton() {
     return Material(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 10),
       elevation: isPhoneLayout(context) ? 0 : 2,
       child: InkWell(
@@ -1416,14 +1417,14 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   decoration: BoxDecoration(
                     color: Constants.ctaColorLight,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white, width: 1),
+                    border: Border.all(color: Tone.bg(Colors.white), width: 1),
                   ),
                   child: Text(
                     _getMapTypeBadgeText(),
                     style: GoogleFonts.inter(
                       fontSize: 8,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Tone.fg(Colors.white),
                     ),
                   ),
                 ),
@@ -1481,7 +1482,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
 
   Widget _buildRefreshButton() {
     return Material(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 10),
       elevation: isPhoneLayout(context) ? 0 : 2,
       child: InkWell(
@@ -1502,12 +1503,12 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   Widget _buildModernUnitDetailsCard(Unit unit) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Tone.bg(Colors.grey).withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Tone.bg(Colors.black).withOpacity(0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1563,7 +1564,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E293B),
+                          color: Tone.fg(const Color(0xFF1E293B)),
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -1572,7 +1573,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         '${unit.modelNumber} • S/N: ${unit.serialNumber}',
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1616,7 +1617,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1E293B),
+                      color: Tone.fg(const Color(0xFF1E293B)),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -1649,7 +1650,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -1682,7 +1683,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -1700,14 +1701,14 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: Tone.bg(const Color(0xFFF8FAFC)),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(16),
                 bottomRight: Radius.circular(16),
               ),
               border: Border(
                 top: BorderSide(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Tone.bg(Colors.grey).withOpacity(0.1),
                   width: 1,
                 ),
               ),
@@ -1729,14 +1730,14 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                           children: [
                             Icon(
                               Icons.info_outline_rounded,
-                              color: Colors.white,
+                              color: Tone.fg(Colors.white),
                               size: 18,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               'Full Details',
                               style: GoogleFonts.inter(
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
                               ),
@@ -1749,7 +1750,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 ),
                 const SizedBox(width: 12),
                 Material(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   borderRadius: BorderRadius.circular(12),
                   elevation: 2,
                   child: InkWell(
@@ -1801,7 +1802,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
+                    color: Tone.fg(const Color(0xFF64748B)),
                     letterSpacing: 0.3,
                   ),
                 ),
@@ -1811,7 +1812,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.fg(const Color(0xFF1E293B)),
                   ),
                 ),
               ],
@@ -1829,8 +1830,8 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
       context: context,
       builder: (context) => MobileDialog(child: Container(
         height: MediaQuery.of(context).size.height * 0.8,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
@@ -1847,12 +1848,12 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1E293B),
+                      color: Tone.fg(const Color(0xFF1E293B)),
                     ),
                   ),
                   const Spacer(),
                   Material(
-                    color: Colors.grey[100],
+                    color: Tone.bg(Colors.grey[100]),
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8),
@@ -1861,7 +1862,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         padding: const EdgeInsets.all(8),
                         child: Icon(
                           Icons.close,
-                          color: Colors.grey[600],
+                          color: Tone.fg(Colors.grey[600]),
                           size: 20,
                         ),
                       ),
@@ -1962,12 +1963,12 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   Widget _buildModernUnitListCard(Unit unit) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Tone.bg(Colors.grey).withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Tone.bg(Colors.black).withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2032,12 +2033,12 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          color: Tone.bg(const Color(0xFF10B981)).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           Icons.location_on_rounded,
-                          color: const Color(0xFF10B981),
+                          color: Tone.fg(const Color(0xFF10B981)),
                           size: 14,
                         ),
                       ),
@@ -2047,7 +2048,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF59E0B).withOpacity(0.1),
+                          color: Tone.bg(const Color(0xFFF59E0B)).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -2056,7 +2057,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                             Icon(
                               Icons.warning_rounded,
                               size: 12,
-                              color: const Color(0xFFF59E0B),
+                              color: Tone.fg(const Color(0xFFF59E0B)),
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -2064,7 +2065,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                               style: GoogleFonts.inter(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFFF59E0B),
+                                color: Tone.fg(const Color(0xFFF59E0B)),
                               ),
                             ),
                           ],
@@ -2081,7 +2082,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.fg(const Color(0xFF1E293B)),
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -2094,7 +2095,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
+                    color: Tone.fg(const Color(0xFF64748B)),
                   ),
                 ),
 
@@ -2121,7 +2122,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF475569),
+                            color: Tone.fg(const Color(0xFF475569)),
                           ),
                         ),
                       ),
@@ -2171,12 +2172,12 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
   Widget _buildModernSupplierCard(dynamic supplier) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Tone.bg(Colors.grey).withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Tone.bg(Colors.black).withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2241,7 +2242,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B).withOpacity(0.1),
+                      color: Tone.bg(const Color(0xFFF59E0B)).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -2250,7 +2251,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         Icon(
                           Icons.star_rounded,
                           size: 12,
-                          color: const Color(0xFFF59E0B),
+                          color: Tone.fg(const Color(0xFFF59E0B)),
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -2258,7 +2259,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFFF59E0B),
+                            color: Tone.fg(const Color(0xFFF59E0B)),
                           ),
                         ),
                       ],
@@ -2275,7 +2276,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: Tone.fg(const Color(0xFF1E293B)),
                 letterSpacing: -0.3,
               ),
             ),
@@ -2287,7 +2288,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF64748B),
+                  color: Tone.fg(const Color(0xFF64748B)),
                 ),
               ),
             ],
@@ -2315,7 +2316,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF475569),
+                    color: Tone.fg(const Color(0xFF475569)),
                   ),
                 ),
                 const Spacer(),
@@ -2338,7 +2339,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF475569),
+                      color: Tone.fg(const Color(0xFF475569)),
                     ),
                     textAlign: TextAlign.end,
                   ),
@@ -2357,7 +2358,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                           ? Icons.star_rounded
                           : Icons.star_border_rounded,
                       size: 14,
-                      color: const Color(0xFFF59E0B),
+                      color: Tone.fg(const Color(0xFFF59E0B)),
                     );
                   }),
                   const SizedBox(width: 8),
@@ -2366,7 +2367,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF475569),
+                      color: Tone.fg(const Color(0xFF475569)),
                     ),
                   ),
                 ],
@@ -2382,7 +2383,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    color: Tone.bg(const Color(0xFF3B82F6)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -2390,7 +2391,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     style: GoogleFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF3B82F6),
+                      color: Tone.fg(const Color(0xFF3B82F6)),
                     ),
                   ),
                 ),
@@ -2400,7 +2401,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      color: Tone.bg(const Color(0xFF10B981)).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -2409,7 +2410,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                         Icon(
                           Icons.access_time_rounded,
                           size: 10,
-                          color: const Color(0xFF10B981),
+                          color: Tone.fg(const Color(0xFF10B981)),
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -2417,7 +2418,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF10B981),
+                            color: Tone.fg(const Color(0xFF10B981)),
                           ),
                         ),
                       ],
@@ -2433,10 +2434,10 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: Tone.bg(const Color(0xFFF8FAFC)),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: const Color(0xFFE2E8F0),
+                    color: Tone.bg(const Color(0xFFE2E8F0)),
                     width: 1,
                   ),
                 ),
@@ -2445,7 +2446,7 @@ class _EnhancedGeoFencingState extends State<EnhancedGeoFencing>
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
+                    color: Tone.fg(const Color(0xFF64748B)),
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

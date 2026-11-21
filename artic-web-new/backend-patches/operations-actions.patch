@@ -1,0 +1,107 @@
+--- a/alerts/views.py
++++ b/alerts/views.py
+@@ -1,3 +1,4 @@
++from rest_framework.permissions import IsAuthenticated
+ from django.shortcuts import render, get_object_or_404
+ from django.http import JsonResponse
+ from django.views.decorators.csrf import csrf_exempt
+@@ -757,13 +758,55 @@
+         )
+ 
+ 
+-@csrf_exempt
+-@permission_classes([AllowAny])
+ @api_view(["POST"])
++@permission_classes([IsAuthenticated])
+ @transaction.atomic
+ def acknowledge_alert(request):
+     """
+     Acknowledge a specific alert.
++    """
++    try:
++        data = request.data
++        business_id = data.get('business_id')
++        alert_id = data.get('alert_id')
++
++        if not business_id or not alert_id:
++            return Response(
++                {"error": "business_id and alert_id are required"},
++                status=status.HTTP_400_BAD_REQUEST
++            )
++
++        business = validate_business_access( business_id)
++        if not business:
++            return Response(
++                {"error": "Access denied to this business"},
++                status=status.HTTP_403_FORBIDDEN
++            )
++
++        alert = get_object_or_404(Alert, id=alert_id, company=business)
++
++        alert.acknowledge(user=request.user)
++
++        return Response({
++            "success": True,
++            "message": "Alert acknowledged successfully",
++            "alert_id": alert_id
++        }, status=status.HTTP_200_OK)
++
++    except Exception as e:
++        logger.error(f"Error acknowledging alert: {str(e)}")
++        return Response(
++            {"error": "Failed to acknowledge alert"},
++            status=status.HTTP_500_INTERNAL_SERVER_ERROR
++        )
++
++
++@api_view(["POST"])
++@permission_classes([IsAuthenticated])
++@transaction.atomic
++def mark_false_positive(request):
++    """
++    Mark a specific alert as a false positive.
+     """
+     try:
+         data = request.data
+--- a/exvr/urls.py
++++ b/exvr/urls.py
+@@ -20,7 +20,7 @@
+ from django.urls import path, include
+ from rest_framework.routers import DefaultRouter
+ 
+-from alerts.views import get_alert_statistics, mark_all_as_read, resolve_alert, acknowledge_alert, \
++from alerts.views import mark_false_positive, get_alert_statistics, mark_all_as_read, resolve_alert, acknowledge_alert, \
+     get_alert_details, get_alerts_by_device, list_alerts, get_alerts_by_status, get_alerts_by_severity
+ from communication.views import get_communication_logs, get_otp_codes, get_communication_queues, \
+     get_communication_stats, get_alert_notification_logs, get_providers, get_provider_detail, get_templates
+@@ -88,7 +88,7 @@
+     # Alert actions
+     path('api/alerts/acknowledge/', acknowledge_alert, name='acknowledge_alert'),
+     path('api/alerts/resolve/', resolve_alert, name='resolve_alert'),
+-    #path('api/alerts/false-positive/', mark_false_positive, name='mark_false_positive'),
++    path('api/alerts/false-positive/', mark_false_positive, name='mark_false_positive'),
+     path('api/alerts/mark-all-read/', mark_all_as_read, name='mark_all_as_read'),
+ 
+     # Alert statistics
+--- a/roles_and_rights/views.py
++++ b/roles_and_rights/views.py
+@@ -11,7 +11,7 @@
+ from django.utils import timezone
+ from django.core.exceptions import ValidationError
+ from rest_framework import viewsets, status
+-from rest_framework.decorators import action
++from rest_framework.decorators import action, api_view, permission_classes
+ from rest_framework.response import Response
+ from rest_framework.permissions import IsAuthenticated
+ from rest_framework import serializers
+@@ -534,8 +534,8 @@
+     return response
+ 
+ 
+-@csrf_exempt
+-@require_http_methods(["POST"])
++@api_view(["POST"])
++@permission_classes([IsAuthenticated])
+ def create_role(request):
+     try:
+         data = json.loads(request.body)

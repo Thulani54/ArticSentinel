@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_forms.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -76,29 +77,29 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
   TextEditingController _attachedByController = TextEditingController();
   FocusNode attachedByFocusNode = FocusNode();
 
-  Color colorVariant1 = Colors.white;
-  Color colorVariant2 = Colors.white;
-  Color colorVariant3 = Colors.white;
+  Color colorVariant1 = Tone.auto(Colors.white);
+  Color colorVariant2 = Tone.auto(Colors.white);
+  Color colorVariant3 = Tone.auto(Colors.white);
 
   Color getColorFromString(String colorString) {
     switch (colorString.toLowerCase()) {
       case 'black':
-        return Colors.black;
+        return Tone.auto(Colors.black);
       case 'white':
-        return Colors.white;
+        return Tone.auto(Colors.white);
       case 'red':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       case 'green':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'grey':
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
       case 'blue':
-        return Colors.blue;
+        return Tone.auto(Colors.blue);
       case 'brown':
-        return Colors.brown;
+        return Tone.auto(Colors.brown);
       // Add more colors as needed
       default:
-        return Colors.white; // Default color if not found
+        return Tone.auto(Colors.white); // Default color if not found
     }
   }
 
@@ -120,12 +121,12 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                     maxWidth: 900,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     shape: BoxShape.rectangle,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Colors.black26,
+                        color: Tone.bg(Colors.black26),
                         blurRadius: 10.0,
                         offset: Offset(0.0, 10.0),
                       ),
@@ -160,9 +161,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                               Text(
                                 "Update Device Info",
                                 style: GoogleFonts.inter(
-                                  textStyle: const TextStyle(
+                                  textStyle: TextStyle(
                                       fontSize: 18,
-                                      color: Colors.white,
+                                      color: Tone.fg(Colors.white),
                                       letterSpacing: 0,
                                       fontWeight: FontWeight.normal),
                                 ),
@@ -179,8 +180,8 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                         padding: const EdgeInsets.only(left: 24, right: 24),
                         child: CustomCard(
                           elevation: 5,
-                          color: Colors.white,
-                          surfaceTintColor: Colors.white,
+                          color: Tone.auto(Colors.white),
+                          surfaceTintColor: Tone.bg(Colors.white),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                           child: Container(
@@ -210,7 +211,7 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.normal,
-                                                color: Colors.black),
+                                                color: Tone.fg(Colors.black)),
                                           ),
                                           SizedBox(
                                             height: 4,
@@ -466,7 +467,7 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                 ),
                                 Divider(
                                   thickness: 0.5,
-                                  color: Colors.black54,
+                                  color: Tone.bg(Colors.black54),
                                 ),
                                 SizedBox(
                                   height: 12,
@@ -488,9 +489,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Created By",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -538,9 +539,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Last Checked By",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -588,9 +589,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Device Attached By",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -642,9 +643,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Current Status ",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -692,9 +693,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Firmware version",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -743,9 +744,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Hardware version",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -801,9 +802,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "IMEII",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -849,9 +850,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Iccid",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -898,9 +899,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Battery Capacity",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -953,9 +954,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Temperature",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1001,9 +1002,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Humidity",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1051,9 +1052,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Pv Power",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1100,9 +1101,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Speed",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1153,9 +1154,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Gps Time",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1202,9 +1203,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Last Available",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1252,9 +1253,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Accuracy",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1306,9 +1307,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Notes",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1355,9 +1356,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "last Checked By",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1405,9 +1406,9 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                             child: Text(
                                               "Device Attached By",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1469,7 +1470,7 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                 style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.normal,
-                                    color: Colors.black),
+                                    color: Tone.fg(Colors.black)),
                               ),
                             ),
                             TextButton(
@@ -1487,7 +1488,7 @@ class _EditDeviceInfoDialogState extends State<EditDeviceInfoDialog> {
                                 style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.black),
+                                    color: Tone.fg(Colors.black)),
                               ),
                             )
                           ],

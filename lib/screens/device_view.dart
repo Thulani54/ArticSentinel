@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
 import '../gasmon/gas_widgets.dart';
@@ -135,12 +136,12 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                     maxWidth: 1200,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     shape: BoxShape.rectangle,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Colors.black26,
+                        color: Tone.bg(Colors.black26),
                         blurRadius: 10.0,
                         offset: Offset(0.0, 10.0),
                       ),
@@ -175,9 +176,9 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                               Text(
                                 widget.deviceModel.deviceId,
                                 style: GoogleFonts.inter(
-                                  textStyle: const TextStyle(
+                                  textStyle: TextStyle(
                                       fontSize: 18,
-                                      color: Colors.white,
+                                      color: Tone.fg(Colors.white),
                                       letterSpacing: 0,
                                       fontWeight: FontWeight.normal),
                                 ),
@@ -195,9 +196,9 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                         child: Text(
                           "Device Information",
                           style: GoogleFonts.inter(
-                            textStyle: const TextStyle(
+                            textStyle: TextStyle(
                                 fontSize: 18,
-                                color: Colors.black,
+                                color: Tone.fg(Colors.black),
                                 letterSpacing: 0,
                                 fontWeight: FontWeight.normal),
                           ),
@@ -208,7 +209,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                       ),
                       Divider(
                         thickness: 1.0,
-                        color: Colors.black,
+                        color: Tone.bg(Colors.black),
                       ),
                       SizedBox(
                         height: 8,
@@ -230,11 +231,11 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: Colors.black, width: 1.0)),
+                                            color: Tone.bg(Colors.black), width: 1.0)),
                                     child: Icon(
                                       FontAwesomeIcons.person,
                                       size: 32,
-                                      color: Colors.black,
+                                      color: Tone.fg(Colors.black),
                                     ),
                                   ),
                                   SizedBox(
@@ -286,7 +287,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -317,7 +318,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -349,7 +350,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -370,7 +371,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                       ),
                       Divider(
                         thickness: 0.5,
-                        color: Colors.black,
+                        color: Tone.bg(Colors.black),
                       ),
                       SizedBox(
                         height: 8,
@@ -392,12 +393,12 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: Colors.black, width: 1.0)),
+                                            color: Tone.bg(Colors.black), width: 1.0)),
                                     child: Center(
                                       child: Icon(
                                         FontAwesomeIcons.cameraRetro,
                                         size: 32,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                       ),
                                     ),
                                   ),
@@ -449,7 +450,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -480,7 +481,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -511,7 +512,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -550,7 +551,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -581,7 +582,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -612,7 +613,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -630,7 +631,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                       ),
                       Divider(
                         thickness: 0.5,
-                        color: Colors.black,
+                        color: Tone.bg(Colors.black),
                       ),
                       SizedBox(
                         height: 8,
@@ -652,12 +653,12 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: Colors.black, width: 1.0)),
+                                            color: Tone.bg(Colors.black), width: 1.0)),
                                     child: Center(
                                       child: Icon(
                                         FontAwesomeIcons.airbnb,
                                         size: 32,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                       ),
                                     ),
                                   ),
@@ -710,7 +711,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -742,7 +743,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -774,7 +775,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -792,7 +793,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                       ),
                       Divider(
                         thickness: 0.5,
-                        color: Colors.black,
+                        color: Tone.bg(Colors.black),
                       ),
                       SizedBox(
                         height: 8,
@@ -814,12 +815,12 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: Colors.black, width: 1.0)),
+                                            color: Tone.bg(Colors.black), width: 1.0)),
                                     child: Center(
                                       child: Icon(
                                         FontAwesomeIcons.locationDot,
                                         size: 32,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                       ),
                                     ),
                                   ),
@@ -871,7 +872,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -902,7 +903,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -934,7 +935,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -973,7 +974,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -1005,7 +1006,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -1037,7 +1038,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),
@@ -1055,7 +1056,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                       ),
                       Divider(
                         thickness: 0.5,
-                        color: Colors.black,
+                        color: Tone.bg(Colors.black),
                       ),
                       SizedBox(
                         height: 8,
@@ -1077,12 +1078,12 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                            color: Colors.black, width: 1.0)),
+                                            color: Tone.bg(Colors.black), width: 1.0)),
                                     child: Center(
                                       child: Icon(
                                         FontAwesomeIcons.noteSticky,
                                         size: 32,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                       ),
                                     ),
                                   ),
@@ -1134,7 +1135,7 @@ class _DeviceViewDialogState extends State<DeviceViewDialog> {
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w500,
-                                                  color: Colors.black),
+                                                  color: Tone.fg(Colors.black)),
                                             ),
                                           ],
                                         ),

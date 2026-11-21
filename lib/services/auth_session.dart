@@ -10,15 +10,32 @@ import '../constants/Constants.dart';
 import '../models/business.dart';
 import 'push_notifications.dart';
 import 'shared_preferences.dart';
+import 'secure_session_store.dart';
+import 'biometric_lock.dart';
+import 'offline_read_client.dart';
 
 class AuthSession {
   AuthSession._();
 
   static Future<void> signOut() async {
     try {
-      await PushNotifications.instance.unregister();
+      await PushNotifications.instance
+          .unregister()
+          .timeout(const Duration(seconds: 15));
     } catch (_) {
       // Local sign-out must still finish when notification services are offline.
+    }
+    try {
+      await SecureSessionStore.instance
+          .clear()
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // clear() invalidates the preference flag before platform deletion.
+    }
+    try {
+      await OfflineReadClient.clearAllSnapshots();
+    } catch (_) {
+      // Failure to delete a cached file must not leave a session signed in.
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(Sharedprefs.sharedPreferenceUserLoggedInKey, false);
@@ -43,6 +60,7 @@ class AuthSession {
     Constants.cellphoneNumber = '';
     Constants.business_name = '';
     Constants.myBusiness = Business.empty();
+    BiometricLock.instance.sessionCleared();
   }
 
   static Future<void> applyLoginResponse(Map<String, dynamic> body,
@@ -50,17 +68,23 @@ class AuthSession {
     final user = body['user'] as Map<String, dynamic>;
     final primaryBusiness = body['primary_business'] as Map<String, dynamic>?;
     final token = body['token'] as String;
+    final previousUser = await Sharedprefs.getUserUidSharedPreference();
+    if (previousUser != null && previousUser != user['user_uid']) {
+      await signOut();
+    }
 
     if (body['business'] != null) {
       Constants.myBusiness =
           Business.fromJson(body['business'] as Map<String, dynamic>);
-      Sharedprefs.saveBusinessDataPreference(Constants.myBusiness);
+      await Sharedprefs.saveBusinessDataPreference(Constants.myBusiness);
+    } else {
+      Constants.myBusiness = Business.empty();
+      await Sharedprefs.saveBusinessDataPreference(Constants.myBusiness);
     }
 
     Constants.myEmail = user['email'];
     Constants.user_uid = user['user_uid'];
     Constants.myDisplayname = '${user['firstname']} ${user['lastname']}';
-    Constants.authToken = token;
     Constants.userType = user['user_type'] ?? '';
     Constants.jobTitle = user['job_title'] ?? '';
     Constants.department = user['department'] ?? '';
@@ -85,23 +109,23 @@ class AuthSession {
       Constants.billingEmail = primaryBusiness['billing_email'] ?? '';
       Constants.supportEmail = primaryBusiness['support_email'] ?? '';
       Constants.emergencyContact = primaryBusiness['emergency_contact'] ?? '';
+    } else {
+      Constants.business_uid = 0;
+      Constants.business_name = '';
+      await Sharedprefs.saveBusinessUidSharedPreference(0);
+      await Sharedprefs.saveBusinessNameSharedPreference('');
     }
 
     Constants.secondaryBusinesses = body['secondary_businesses'] ?? [];
     Constants.totalBusinesses = body['total_businesses'] ?? 0;
 
-    await Sharedprefs.saveUserLoggedInSharedPreference(true);
     await Sharedprefs.saveUserNameSharedPreference(Constants.myDisplayname);
     await Sharedprefs.saveUserEmailSharedPreference(user['email']);
     await Sharedprefs.saveUserUidSharedPreference(user['user_uid']);
-    await Sharedprefs.saveUserPasswordPreference(password);
-    await Sharedprefs.saveAuthTokenPreference(token);
-    await PushNotifications.instance.initialize();
-    await PushNotifications.instance.sync();
 
     if (primaryBusiness != null) {
       await Sharedprefs.saveBusinessUidSharedPreference(
-          primaryBusiness['business_uid'] ?? '');
+          primaryBusiness['business_uid'] ?? 0);
       await Sharedprefs.saveBusinessNameSharedPreference(
           primaryBusiness['business_name'] ?? '');
     }
@@ -125,5 +149,13 @@ class AuthSession {
       await Sharedprefs.saveBusinessPhonePreference(
           primaryBusiness['phone'] ?? '');
     }
+    // Save the account scope first, then publish its secure session.
+    await Sharedprefs.saveAuthTokenPreference(token);
+    Constants.authToken = token;
+    await Sharedprefs.saveUserLoggedInSharedPreference(true);
+    await BiometricLock.instance.sessionAuthenticated();
+    // Registration requires the saved user and business scope.
+    await PushNotifications.instance.initialize();
+    await PushNotifications.instance.sync();
   }
 }

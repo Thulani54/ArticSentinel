@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:io';
@@ -128,14 +129,14 @@ class _SignUpPageState extends State<SignUpPage> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Tone.bg(Colors.white),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: CustomCard(
               elevation: 5,
-              color: Colors.white,
-              surfaceTintColor: Colors.white,
+              color: Tone.auto(Colors.white),
+              surfaceTintColor: Tone.bg(Colors.white),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
               child: Container(
@@ -143,7 +144,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 height: MediaQuery.of(context).size.height,
                 padding: const EdgeInsets.only(left: 24, right: 24, bottom: 16),
                 decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     borderRadius: BorderRadius.circular(12)),
                 constraints: BoxConstraints(
                   maxWidth: 600,
@@ -169,9 +170,9 @@ class _SignUpPageState extends State<SignUpPage> {
                             Text(
                               "Create Business",
                               style: GoogleFonts.inter(
-                                textStyle: const TextStyle(
+                                textStyle: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.black,
+                                    color: Tone.fg(Colors.black),
                                     letterSpacing: 0,
                                     fontWeight: FontWeight.w600),
                               ),
@@ -184,9 +185,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                 Text(
                                   "Business Information",
                                   style: GoogleFonts.inter(
-                                    textStyle: const TextStyle(
+                                    textStyle: TextStyle(
                                         fontSize: 18,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                         letterSpacing: 0,
                                         fontWeight: FontWeight.normal),
                                   ),
@@ -195,7 +196,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                             Divider(
                               thickness: 0.5,
-                              color: Colors.black54,
+                              color: Tone.bg(Colors.black54),
                             ),
                             SizedBox(height: 16),
                             Column(
@@ -210,7 +211,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -242,7 +243,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -274,7 +275,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -306,7 +307,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -346,7 +347,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                           style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.normal,
-                                              color: Colors.black),
+                                              color: Tone.fg(Colors.black)),
                                         ),
                                       ),
                                       Row(
@@ -385,7 +386,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                           style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.normal,
-                                              color: Colors.black),
+                                              color: Tone.fg(Colors.black)),
                                         ),
                                       ),
                                       Row(
@@ -406,7 +407,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                                 : Icon(
                                                     Iconsax.image,
                                                     size: 40,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                   ),
                                           ),
                                           SizedBox(
@@ -466,7 +467,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                                 minimumSize: Size(90, 50)),
                                             icon: Icon(
                                               Iconsax.document_upload,
-                                              color: Colors.black,
+                                              color: Tone.fg(Colors.black),
                                             ),
                                             label: Center(
                                               child: Text(
@@ -474,7 +475,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                                 style: GoogleFonts.inter(
                                                   textStyle: TextStyle(
                                                       fontSize: 13,
-                                                      color: Colors.black,
+                                                      color: Tone.fg(Colors.black),
                                                       letterSpacing: 0,
                                                       fontWeight:
                                                           FontWeight.normal),
@@ -508,7 +509,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                           style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.normal,
-                                              color: Colors.black),
+                                              color: Tone.fg(Colors.black)),
                                         ),
                                       ),
                                       Row(
@@ -546,7 +547,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                           style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.normal,
-                                              color: Colors.black),
+                                              color: Tone.fg(Colors.black)),
                                         ),
                                       ),
                                       Row(
@@ -574,7 +575,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -606,7 +607,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -638,7 +639,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -672,7 +673,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -704,7 +705,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -736,7 +737,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -768,7 +769,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -779,12 +780,12 @@ class _SignUpPageState extends State<SignUpPage> {
                                           height: 45,
                                           decoration: BoxDecoration(
                                               color:
-                                                  Colors.grey.withOpacity(0.1),
+                                                  Tone.bg(Colors.grey).withOpacity(0.1),
                                               borderRadius:
                                                   BorderRadius.circular(360)),
                                           child: Center(
                                             child: DropdownButton<Province>(
-                                              dropdownColor: Colors.white,
+                                              dropdownColor: Tone.bg(Colors.white),
                                               padding: EdgeInsets.only(
                                                   left: 12, right: 12),
                                               borderRadius:
@@ -798,7 +799,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                                 child: Text(
                                                   "Select Province",
                                                   style: TextStyle(
-                                                      color: Colors.grey,
+                                                      color: Tone.fg(Colors.grey),
                                                       fontSize: 14),
                                                 ),
                                               ),
@@ -824,7 +825,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                                           "${item.name}", // Assuming item is of type Industry
                                                           style: TextStyle(
                                                               color:
-                                                                  Colors.black),
+                                                                  Tone.fg(Colors.black)),
                                                         ),
                                                       ),
                                                     ),
@@ -863,7 +864,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -895,7 +896,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -927,7 +928,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.black),
+                                        color: Tone.fg(Colors.black)),
                                   ),
                                 ),
                                 Row(
@@ -975,7 +976,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                   child: Text(
                                     'Back',
                                     style: TextStyle(
-                                        color: Colors.white,
+                                        color: Tone.fg(Colors.white),
                                         fontWeight: FontWeight.w600),
                                   ),
                                 ),
@@ -1275,7 +1276,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                   child: Text(
                                     'Next',
                                     style: TextStyle(
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                         fontWeight: FontWeight.w600),
                                   ),
                                 ),
@@ -1302,9 +1303,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                 Text(
                                   "Create Business",
                                   style: GoogleFonts.inter(
-                                    textStyle: const TextStyle(
+                                    textStyle: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                         letterSpacing: 0,
                                         fontWeight: FontWeight.w600),
                                   ),
@@ -1318,9 +1319,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                     Text(
                                       "Primary Contact Information",
                                       style: GoogleFonts.inter(
-                                        textStyle: const TextStyle(
+                                        textStyle: TextStyle(
                                             fontSize: 18,
-                                            color: Colors.black,
+                                            color: Tone.fg(Colors.black),
                                             letterSpacing: 0,
                                             fontWeight: FontWeight.normal),
                                       ),
@@ -1329,7 +1330,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                 ),
                                 Divider(
                                   thickness: 0.5,
-                                  color: Colors.black54,
+                                  color: Tone.bg(Colors.black54),
                                 ),
                                 SizedBox(height: 16),
                                 Column(
@@ -1344,7 +1345,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
-                                            color: Colors.black),
+                                            color: Tone.fg(Colors.black)),
                                       ),
                                     ),
                                     Row(
@@ -1377,7 +1378,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
-                                            color: Colors.black),
+                                            color: Tone.fg(Colors.black)),
                                       ),
                                     ),
                                     Row(
@@ -1410,7 +1411,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
-                                            color: Colors.black),
+                                            color: Tone.fg(Colors.black)),
                                       ),
                                     ),
                                     Row(
@@ -1420,14 +1421,14 @@ class _SignUpPageState extends State<SignUpPage> {
                                               width: 120,
                                               height: 45,
                                               decoration: BoxDecoration(
-                                                  color: Colors.grey
+                                                  color: Tone.bg(Colors.grey)
                                                       .withOpacity(0.1),
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           360)),
                                               child: Center(
                                                 child: DropdownButton<String>(
-                                                  dropdownColor: Colors.white,
+                                                  dropdownColor: Tone.bg(Colors.white),
                                                   padding: EdgeInsets.only(
                                                       left: 12, right: 12),
                                                   borderRadius:
@@ -1442,7 +1443,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                                     child: Text(
                                                       "Select Gender",
                                                       style: TextStyle(
-                                                          color: Colors.grey,
+                                                          color: Tone.fg(Colors.grey),
                                                           fontSize: 14),
                                                     ),
                                                   ),
@@ -1506,7 +1507,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
-                                            color: Colors.black),
+                                            color: Tone.fg(Colors.black)),
                                       ),
                                     ),
                                     Row(
@@ -1539,7 +1540,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
-                                            color: Colors.black),
+                                            color: Tone.fg(Colors.black)),
                                       ),
                                     ),
                                     Row(
@@ -1574,7 +1575,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
-                                            color: Colors.black),
+                                            color: Tone.fg(Colors.black)),
                                       ),
                                     ),
                                     Row(
@@ -1610,7 +1611,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
-                                            color: Colors.black),
+                                            color: Tone.fg(Colors.black)),
                                       ),
                                     ),
                                     Row(
@@ -1644,7 +1645,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
-                                            color: Colors.black),
+                                            color: Tone.fg(Colors.black)),
                                       ),
                                     ),
                                     Row(
@@ -1678,7 +1679,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                         style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.normal,
-                                            color: Colors.black),
+                                            color: Tone.fg(Colors.black)),
                                       ),
                                     ),
                                     Row(
@@ -1724,7 +1725,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                       child: Text(
                                         'Back',
                                         style: TextStyle(
-                                            color: Colors.white,
+                                            color: Tone.fg(Colors.white),
                                             fontWeight: FontWeight.w600),
                                       ),
                                     ),
@@ -1922,7 +1923,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                       child: Text(
                                         'Next',
                                         style: TextStyle(
-                                            color: Colors.black,
+                                            color: Tone.fg(Colors.black),
                                             fontWeight: FontWeight.w600),
                                       ),
                                     ),
@@ -1949,9 +1950,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                     Text(
                                       "Create Business",
                                       style: GoogleFonts.inter(
-                                        textStyle: const TextStyle(
+                                        textStyle: TextStyle(
                                             fontSize: 14,
-                                            color: Colors.black,
+                                            color: Tone.fg(Colors.black),
                                             letterSpacing: 0,
                                             fontWeight: FontWeight.w600),
                                       ),
@@ -1966,9 +1967,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                         Text(
                                           "Secondary Contact Person Information",
                                           style: GoogleFonts.inter(
-                                            textStyle: const TextStyle(
+                                            textStyle: TextStyle(
                                                 fontSize: 18,
-                                                color: Colors.black,
+                                                color: Tone.fg(Colors.black),
                                                 letterSpacing: 0,
                                                 fontWeight: FontWeight.normal),
                                           ),
@@ -1977,7 +1978,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                     ),
                                     Divider(
                                       thickness: 0.5,
-                                      color: Colors.black54,
+                                      color: Tone.bg(Colors.black54),
                                     ),
                                     SizedBox(height: 16),
                                     Column(
@@ -1994,7 +1995,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                             style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.normal,
-                                                color: Colors.black),
+                                                color: Tone.fg(Colors.black)),
                                           ),
                                         ),
                                         Row(
@@ -2032,7 +2033,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                             style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.normal,
-                                                color: Colors.black),
+                                                color: Tone.fg(Colors.black)),
                                           ),
                                         ),
                                         Row(
@@ -2070,7 +2071,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                             style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.normal,
-                                                color: Colors.black),
+                                                color: Tone.fg(Colors.black)),
                                           ),
                                         ),
                                         Row(
@@ -2108,7 +2109,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                             style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.normal,
-                                                color: Colors.black),
+                                                color: Tone.fg(Colors.black)),
                                           ),
                                         ),
                                         Row(
@@ -2232,7 +2233,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                           child: Text(
                                             'Create Account',
                                             style: TextStyle(
-                                                color: Colors.black,
+                                                color: Tone.fg(Colors.black),
                                                 fontWeight: FontWeight.w600),
                                           ),
                                         ),
@@ -2260,7 +2261,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                           child: Text(
                                             'Back',
                                             style: TextStyle(
-                                                color: Colors.white,
+                                                color: Tone.fg(Colors.white),
                                                 fontWeight: FontWeight.w600),
                                           ),
                                         ),

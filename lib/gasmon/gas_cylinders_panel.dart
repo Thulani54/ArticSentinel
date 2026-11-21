@@ -164,7 +164,7 @@ class _CylinderCardState extends State<_CylinderCard> {
       color: GasPalette.panel,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: GasPalette.border),
+        side: BorderSide(color: GasPalette.border),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),

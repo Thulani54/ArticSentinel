@@ -2,6 +2,25 @@
 
 A navario project.
 
+## Luthando cloud development environment
+
+The repository includes a reproducible Flutter development container for
+GitHub Codespaces and editors that support the Dev Container specification.
+It installs Flutter 3.27.1, the Dart and Flutter editor extensions, and the
+dependencies required for web and Linux development. Project packages are
+restored automatically when the container is created.
+
+To use it in GitHub Codespaces, select **Code → Codespaces → Create codespace**.
+In VS Code, install the **Dev Containers** extension, open this repository, and
+run **Dev Containers: Reopen in Container** from the command palette.
+
+Once setup completes, start the web application on the preconfigured forwarded
+port with:
+
+```sh
+flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080
+```
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

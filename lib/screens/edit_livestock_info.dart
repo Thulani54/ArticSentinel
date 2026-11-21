@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_forms.dart';
 import 'dart:math';
 
@@ -103,29 +104,29 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
   //TextEditingController _colorVariant3Controller = TextEditingController();
   //FocusNode colorVariant3FocusNode = FocusNode();
 
-  Color colorVariant1 = Colors.white;
-  Color colorVariant2 = Colors.white;
-  Color colorVariant3 = Colors.white;
+  Color colorVariant1 = Tone.auto(Colors.white);
+  Color colorVariant2 = Tone.auto(Colors.white);
+  Color colorVariant3 = Tone.auto(Colors.white);
 
   Color getColorFromString(String colorString) {
     switch (colorString.toLowerCase()) {
       case 'black':
-        return Colors.black;
+        return Tone.auto(Colors.black);
       case 'white':
-        return Colors.white;
+        return Tone.auto(Colors.white);
       case 'red':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       case 'green':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'grey':
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
       case 'blue':
-        return Colors.blue;
+        return Tone.auto(Colors.blue);
       case 'brown':
-        return Colors.brown;
+        return Tone.auto(Colors.brown);
       // Add more colors as needed
       default:
-        return Colors.white; // Default color if not found
+        return Tone.auto(Colors.white); // Default color if not found
     }
   }
 
@@ -147,12 +148,12 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                     maxWidth: 900,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     shape: BoxShape.rectangle,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Colors.black26,
+                        color: Tone.bg(Colors.black26),
                         blurRadius: 10.0,
                         offset: Offset(0.0, 10.0),
                       ),
@@ -187,9 +188,9 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                               Text(
                                 "Add Livestock",
                                 style: GoogleFonts.inter(
-                                  textStyle: const TextStyle(
+                                  textStyle: TextStyle(
                                       fontSize: 18,
-                                      color: Colors.white,
+                                      color: Tone.fg(Colors.white),
                                       letterSpacing: 0,
                                       fontWeight: FontWeight.normal),
                                 ),
@@ -206,8 +207,8 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                         padding: const EdgeInsets.only(left: 24, right: 24),
                         child: CustomCard(
                           elevation: 5,
-                          color: Colors.white,
-                          surfaceTintColor: Colors.white,
+                          color: Tone.auto(Colors.white),
+                          surfaceTintColor: Tone.bg(Colors.white),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                           child: Container(
@@ -237,7 +238,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.normal,
-                                                color: Colors.black),
+                                                color: Tone.fg(Colors.black)),
                                           ),
                                           SizedBox(
                                             height: 4,
@@ -266,7 +267,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                                     width: 120,
                                                     height: 45,
                                                     decoration: BoxDecoration(
-                                                        color: Colors.grey
+                                                        color: Tone.bg(Colors.grey)
                                                             .withOpacity(0.1),
                                                         borderRadius:
                                                             BorderRadius
@@ -275,7 +276,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                                       child: DropdownButton<
                                                           String>(
                                                         dropdownColor:
-                                                            Colors.white,
+                                                            Tone.bg(Colors.white),
                                                         padding:
                                                             EdgeInsets.only(
                                                                 left: 12,
@@ -295,7 +296,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                                             "Select Livestock Type ",
                                                             style: TextStyle(
                                                                 color:
-                                                                    Colors.grey,
+                                                                    Tone.fg(Colors.grey),
                                                                 fontSize: 14),
                                                           ),
                                                         ),
@@ -387,7 +388,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                 ),
                                 Divider(
                                   thickness: 0.5,
-                                  color: Colors.black54,
+                                  color: Tone.bg(Colors.black54),
                                 ),
                                 SizedBox(
                                   height: 12,
@@ -409,7 +410,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.normal,
-                                                color: Colors.black),
+                                                color: Tone.fg(Colors.black)),
                                           ),
                                           SizedBox(
                                             height: 4,
@@ -536,7 +537,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                                     width: 120,
                                                     height: 45,
                                                     decoration: BoxDecoration(
-                                                        color: Colors.grey
+                                                        color: Tone.bg(Colors.grey)
                                                             .withOpacity(0.1),
                                                         borderRadius:
                                                             BorderRadius
@@ -545,7 +546,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                                       child: DropdownButton<
                                                           String>(
                                                         dropdownColor:
-                                                            Colors.white,
+                                                            Tone.bg(Colors.white),
                                                         padding:
                                                             EdgeInsets.only(
                                                                 left: 12,
@@ -565,7 +566,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                                             "Select Device iccid ",
                                                             style: TextStyle(
                                                                 color:
-                                                                    Colors.grey,
+                                                                    Tone.fg(Colors.grey),
                                                                 fontSize: 14),
                                                           ),
                                                         ),
@@ -628,7 +629,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                 ),
                                 Divider(
                                   thickness: 0.5,
-                                  color: Colors.black54,
+                                  color: Tone.bg(Colors.black54),
                                 ),
                                 SizedBox(
                                   height: 12,
@@ -642,7 +643,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                       style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.normal,
-                                          color: Colors.black),
+                                          color: Tone.fg(Colors.black)),
                                     ),
                                     Expanded(child: Container()),
                                     Transform.scale(
@@ -653,8 +654,8 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                           side: BorderSide(
                                               width: 1.2,
                                               color: Constants.ctaColorGreen),
-                                          activeColor: Colors.blue,
-                                          checkColor: Colors.white,
+                                          activeColor: Tone.auto(Colors.blue),
+                                          checkColor: Tone.fg(Colors.white),
                                           shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(360)),
@@ -672,7 +673,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                       style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,
-                                          color: Colors.black),
+                                          color: Tone.fg(Colors.black)),
                                     ),
                                     SizedBox(
                                       width: 40,
@@ -685,8 +686,8 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                           side: BorderSide(
                                               width: 1.2,
                                               color: Constants.ctaColorGreen),
-                                          activeColor: Colors.blue,
-                                          checkColor: Colors.white,
+                                          activeColor: Tone.auto(Colors.blue),
+                                          checkColor: Tone.fg(Colors.white),
                                           shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(360)),
@@ -704,7 +705,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                       style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,
-                                          color: Colors.black),
+                                          color: Tone.fg(Colors.black)),
                                     ),
                                   ],
                                 ),
@@ -713,7 +714,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                 ),
                                 Divider(
                                   thickness: 0.5,
-                                  color: Colors.black54,
+                                  color: Tone.bg(Colors.black54),
                                 ),
                                 SizedBox(
                                   height: 12,
@@ -735,7 +736,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.normal,
-                                                color: Colors.black),
+                                                color: Tone.fg(Colors.black)),
                                           ),
                                           SizedBox(
                                             height: 4,
@@ -916,9 +917,9 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             child: Text(
                                               "Name",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -964,9 +965,9 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             child: Text(
                                               "Species",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1013,9 +1014,9 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             child: Text(
                                               "Breed",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1066,9 +1067,9 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             child: Text(
                                               "Age",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1114,9 +1115,9 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             child: Text(
                                               "Weight",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1163,9 +1164,9 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             child: Text(
                                               "Health Status",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1213,9 +1214,9 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             child: Text(
                                               "Vaccination Status",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1268,9 +1269,9 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                             child: Text(
                                               "Medication History",
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.normal),
@@ -1315,8 +1316,8 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                           side: BorderSide(
                                               width: 1.2,
                                               color: Constants.ctaColorGreen),
-                                          activeColor: Colors.blue,
-                                          checkColor: Colors.white,
+                                          activeColor: Tone.auto(Colors.blue),
+                                          checkColor: Tone.fg(Colors.white),
                                           shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(360)),
@@ -1334,7 +1335,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                       style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,
-                                          color: Colors.black),
+                                          color: Tone.fg(Colors.black)),
                                     ),
                                     SizedBox(
                                       width: 22,
@@ -1347,8 +1348,8 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                           side: BorderSide(
                                               width: 1.2,
                                               color: Constants.ctaColorGreen),
-                                          activeColor: Colors.blue,
-                                          checkColor: Colors.white,
+                                          activeColor: Tone.auto(Colors.blue),
+                                          checkColor: Tone.fg(Colors.white),
                                           shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(360)),
@@ -1366,7 +1367,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                       style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,
-                                          color: Colors.black),
+                                          color: Tone.fg(Colors.black)),
                                     ),
                                   ],
                                 ),
@@ -1397,7 +1398,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                 style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.normal,
-                                    color: Colors.black),
+                                    color: Tone.fg(Colors.black)),
                               ),
                             ),
                             TextButton(
@@ -1415,7 +1416,7 @@ class _EditInfoDialogState extends State<EditInfoDialog> {
                                 style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.black),
+                                    color: Tone.fg(Colors.black)),
                               ),
                             )
                           ],

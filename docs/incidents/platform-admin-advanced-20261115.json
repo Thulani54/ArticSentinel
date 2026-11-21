@@ -1,0 +1,28 @@
+{
+  "deployed_at": "2026-11-15T08:27:36.617199+00:00",
+  "site": "https://uat.articsentinel.com/admin",
+  "backend_files": [
+    "platform_admin/views.py",
+    "platform_admin/urls.py",
+    "platform_admin/insights.py"
+  ],
+  "features": [
+    "7/30/90-day operational activity",
+    "company reporting coverage comparison",
+    "attention queue and upcoming work",
+    "URL filters and browser-local saved views",
+    "optional 60-second refresh",
+    "device type, sort, severity and stale-service filters"
+  ],
+  "verification": {
+    "frontend_tests": 40,
+    "backend_tests": 16,
+    "browser_sections": 10,
+    "browser_data": "isolated fixtures on published assets; desktop and mobile",
+    "live_backend": "readonly API smoke inside rolled-back transaction; scoped insights, all periods, filters and permissions passed",
+    "public_unauthenticated_insights_status": 401,
+    "index_sha256": "b10f08b30ae98ec22fcc7d84a644c05b393558b7c85bc3c217a15c818586fb49"
+  },
+  "backup": "/home/vmrvsnyo/.codex-backups/platform-admin-advanced-20261115",
+  "credentials_changed": false
+}

@@ -3,6 +3,9 @@
 /// doesn't have. Taps through to the full [GasCylinderDetailsDialog].
 library;
 
+import '../services/offline_read_client.dart';
+import '../widgets/offline_snapshot_banner.dart';
+
 import '../widgets/mobile_forms.dart';
 import '../widgets/app_empty_state.dart';
 import 'dart:async';
@@ -29,6 +32,7 @@ class GasDashboardCard extends StatefulWidget {
 }
 
 class _GasDashboardCardState extends State<GasDashboardCard> {
+  final _offline = OfflineReadClient();
   GasDeviceData? _data;
   String? _error;
   Timer? _refresh;
@@ -45,6 +49,7 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
   void didUpdateWidget(GasDashboardCard old) {
     super.didUpdateWidget(old);
     if (old.device.id != widget.device.id) {
+      _offline.resetStatus();
       setState(() {
         _data = null;
         _error = null;
@@ -55,6 +60,7 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
 
   @override
   void dispose() {
+    _offline.close();
     _refresh?.cancel();
     super.dispose();
   }
@@ -66,7 +72,7 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
     try {
       final r = widget.loadData != null
           ? await widget.loadData!()
-          : await GasApi.load(deviceId: id!, demoKey: widget.device.deviceId);
+          : await GasApi.load(deviceId: id!, demoKey: widget.device.deviceId, reader: _offline);
       if (mounted && request == _loadGeneration && id == widget.device.id) {
         setState(() {
           _data = r.data;
@@ -91,6 +97,7 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
   @override
   Widget build(BuildContext context) {
     final data = _data;
+    final savedSnapshot = _offline.status.value != null;
     if (data == null || !data.hasReadings) {
       final unsaved = widget.device.id == null && widget.loadData == null;
       if (data == null && _error == null && !unsaved) {
@@ -101,7 +108,9 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
         ));
       }
       return GPanel(
-          child: AppEmptyState(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        OfflineSnapshotBanner(client: _offline, onRetry: _load),
+        AppEmptyState(
         compact: true,
         kind: _error != null
             ? AppEmptyStateKind.offline
@@ -123,7 +132,8 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
             : _error != null
                 ? _load
                 : _openDetails,
-      ));
+      ),
+      ]));
     }
 
     final level = data.currentLevelPct;
@@ -175,8 +185,9 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          OfflineSnapshotBanner(client: _offline, onRetry: _load),
           Row(children: [
-            const Icon(Icons.propane_tank, color: GasPalette.flame, size: 20),
+            Icon(Icons.propane_tank, color: GasPalette.flame, size: 20),
             const SizedBox(width: 8),
             Expanded(
               child: Text(widget.device.name,
@@ -188,10 +199,10 @@ class _GasDashboardCardState extends State<GasDashboardCard> {
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
             GChip(
-                data.isOffline || _error != null
+                data.isOffline || _error != null || savedSnapshot
                     ? 'LAST REPORTED'
                     : 'LIVE SCALE',
-                tone: data.isOffline || _error != null
+                tone: data.isOffline || _error != null || savedSnapshot
                     ? GChipTone.neutral
                     : GChipTone.good),
             GBandChip(band: band, levelPct: level),

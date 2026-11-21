@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import 'settings/mobile_account_widgets.dart';
 import '../gasmon/gas_theme.dart';
 import '../gasmon/gas_widgets.dart';
@@ -92,7 +93,7 @@ class _HelpSupportState extends State<HelpSupport> {
               const SizedBox(height: 12),
               _buildContactMethod('Email support', Constants.myBusinessSupportEmail,
                   'Send us an email anytime', Icons.email_outlined, GasPalette.ink2),
-              const Padding(padding: EdgeInsets.symmetric(vertical: 12),
+              Padding(padding: EdgeInsets.symmetric(vertical: 12),
                   child: Divider(height: 1, color: GasPalette.border)),
               _buildContactMethod('Phone support', Constants.myBusinessSupportContactNumber,
                   'Call us during business hours', Icons.phone_outlined, GasPalette.ink2),
@@ -130,7 +131,7 @@ class _HelpSupportState extends State<HelpSupport> {
             Icons.chat_bubble_outline_rounded, GasPalette.ink, () {
           // Handle live chat
         }),
-        const Divider(height: 1, color: GasPalette.border),
+        Divider(height: 1, color: GasPalette.border),
         _buildActionCard('Submit Ticket', 'Report an issue',
             Icons.support_agent_rounded, GasPalette.ink, () {
           // Handle ticket submission
@@ -161,7 +162,7 @@ class _HelpSupportState extends State<HelpSupport> {
                 context,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: Tone.auto(const Color(0xFF1E293B)),
               ),
             ),
           ],
@@ -174,7 +175,7 @@ class _HelpSupportState extends State<HelpSupport> {
                 "Live Chat",
                 "Get instant help",
                 Icons.chat_bubble_outline_rounded,
-                const Color(0xFF10B981),
+                Tone.auto(const Color(0xFF10B981)),
                 () {
                   // Handle live chat
                 },
@@ -213,7 +214,7 @@ class _HelpSupportState extends State<HelpSupport> {
               const SizedBox(height: 3),
               Text(subtitle, style: gasSmall(context)),
             ])),
-            const Icon(Icons.chevron_right, size: 18, color: GasPalette.muted),
+            Icon(Icons.chevron_right, size: 18, color: GasPalette.muted),
           ])),
         ),
       );
@@ -225,12 +226,12 @@ class _HelpSupportState extends State<HelpSupport> {
         decoration: accountSurface(
             context,
             BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: color.withOpacity(0.2)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Tone.bg(Colors.black).withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -258,7 +259,7 @@ class _HelpSupportState extends State<HelpSupport> {
                 context,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E293B),
+                color: Tone.auto(const Color(0xFF1E293B)),
               ),
             ),
             const SizedBox(height: 4),
@@ -267,7 +268,7 @@ class _HelpSupportState extends State<HelpSupport> {
               style: accountInter(
                 context,
                 fontSize: 13,
-                color: const Color(0xFF64748B),
+                color: Tone.auto(const Color(0xFF64748B)),
               ),
             ),
           ],
@@ -281,11 +282,11 @@ class _HelpSupportState extends State<HelpSupport> {
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 15,
                 offset: const Offset(0, 4),
               ),
@@ -328,9 +329,9 @@ class _HelpSupportState extends State<HelpSupport> {
                       ),
                     ],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.contact_support_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 24,
                   ),
                 ),
@@ -345,7 +346,7 @@ class _HelpSupportState extends State<HelpSupport> {
                           context,
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E293B),
+                          color: Tone.auto(const Color(0xFF1E293B)),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -354,7 +355,7 @@ class _HelpSupportState extends State<HelpSupport> {
                         style: accountInter(
                           context,
                           fontSize: 14,
-                          color: const Color(0xFF64748B),
+                          color: Tone.auto(const Color(0xFF64748B)),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -387,7 +388,7 @@ class _HelpSupportState extends State<HelpSupport> {
                   Constants.myBusinessSupportContactNumber,
                   "Call us during business hours",
                   Icons.phone_outlined,
-                  const Color(0xFF10B981),
+                  Tone.auto(const Color(0xFF10B981)),
                 ),
 
                 const SizedBox(height: 20),
@@ -396,15 +397,15 @@ class _HelpSupportState extends State<HelpSupport> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0F9FF),
+                    color: Tone.bg(const Color(0xFFF0F9FF)),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFBAE6FD)),
+                    border: Border.all(color: Tone.bg(const Color(0xFFBAE6FD))),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.schedule_rounded,
-                        color: Color(0xFF0284C7),
+                        color: Tone.fg(Color(0xFF0284C7)),
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -415,7 +416,7 @@ class _HelpSupportState extends State<HelpSupport> {
                             context,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF0284C7),
+                            color: Tone.auto(const Color(0xFF0284C7)),
                           ),
                         ),
                       ),
@@ -476,7 +477,7 @@ class _HelpSupportState extends State<HelpSupport> {
                     context,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.auto(const Color(0xFF1E293B)),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -495,7 +496,7 @@ class _HelpSupportState extends State<HelpSupport> {
                   style: accountInter(
                     context,
                     fontSize: 13,
-                    color: const Color(0xFF64748B),
+                    color: Tone.auto(const Color(0xFF64748B)),
                   ),
                 ),
               ],
@@ -511,11 +512,11 @@ class _HelpSupportState extends State<HelpSupport> {
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 15,
                 offset: const Offset(0, 4),
               ),
@@ -528,7 +529,7 @@ class _HelpSupportState extends State<HelpSupport> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: Tone.bg(const Color(0xFFF8FAFC)),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -539,12 +540,12 @@ class _HelpSupportState extends State<HelpSupport> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withOpacity(0.1),
+                    color: Tone.bg(const Color(0xFFF59E0B)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.access_time_rounded,
-                    color: Color(0xFFF59E0B),
+                    color: Tone.fg(Color(0xFFF59E0B)),
                     size: 24,
                   ),
                 ),
@@ -555,7 +556,7 @@ class _HelpSupportState extends State<HelpSupport> {
                     context,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.auto(const Color(0xFF1E293B)),
                   ),
                 ),
               ],
@@ -608,7 +609,7 @@ class _HelpSupportState extends State<HelpSupport> {
                                 isToday ? FontWeight.w600 : FontWeight.w500,
                             color: isToday
                                 ? Constants.ctaColorGreen
-                                : const Color(0xFF1E293B),
+                                : Tone.auto(const Color(0xFF1E293B)),
                           ),
                         ),
                       ),
@@ -622,8 +623,8 @@ class _HelpSupportState extends State<HelpSupport> {
                                   horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
                                 color: isWeekend
-                                    ? const Color(0xFFF59E0B).withOpacity(0.1)
-                                    : const Color(0xFF10B981).withOpacity(0.1),
+                                    ? Tone.bg(const Color(0xFFF59E0B)).withOpacity(0.1)
+                                    : Tone.bg(const Color(0xFF10B981)).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -633,8 +634,8 @@ class _HelpSupportState extends State<HelpSupport> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: isWeekend
-                                      ? const Color(0xFFF59E0B)
-                                      : const Color(0xFF10B981),
+                                      ? Tone.auto(const Color(0xFFF59E0B))
+                                      : Tone.auto(const Color(0xFF10B981)),
                                 ),
                               ),
                             ),
@@ -678,7 +679,7 @@ class _HelpSupportState extends State<HelpSupport> {
           Padding(padding: const EdgeInsets.all(14),
               child: Text('Common questions', style: gasTitle(context).copyWith(fontSize: 14))),
           for (final faq in faqs) ...[
-            const Divider(height: 1, color: GasPalette.border),
+            Divider(height: 1, color: GasPalette.border),
             _buildFAQItem(faq),
           ],
         ],
@@ -688,11 +689,11 @@ class _HelpSupportState extends State<HelpSupport> {
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 15,
                 offset: const Offset(0, 4),
               ),
@@ -705,7 +706,7 @@ class _HelpSupportState extends State<HelpSupport> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: Tone.bg(const Color(0xFFF8FAFC)),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -716,12 +717,12 @@ class _HelpSupportState extends State<HelpSupport> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                    color: Tone.bg(const Color(0xFF8B5CF6)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.quiz_rounded,
-                    color: Color(0xFF8B5CF6),
+                    color: Tone.fg(Color(0xFF8B5CF6)),
                     size: 24,
                   ),
                 ),
@@ -733,7 +734,7 @@ class _HelpSupportState extends State<HelpSupport> {
                     context,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.auto(const Color(0xFF1E293B)),
                   ),
                 )),
               ],
@@ -766,7 +767,7 @@ class _HelpSupportState extends State<HelpSupport> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Material(
@@ -778,7 +779,7 @@ class _HelpSupportState extends State<HelpSupport> {
                 context,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E293B),
+                color: Tone.auto(const Color(0xFF1E293B)),
               ),
             ),
             children: [
@@ -789,7 +790,7 @@ class _HelpSupportState extends State<HelpSupport> {
                   style: accountInter(
                     context,
                     fontSize: 14,
-                    color: const Color(0xFF64748B),
+                    color: Tone.auto(const Color(0xFF64748B)),
                     height: 1.5,
                   ),
                 ),

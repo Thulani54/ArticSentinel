@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -30,6 +32,15 @@ class AIChatResponse {
             .map((e) => (e as Map).cast<String, dynamic>())
             .toList(),
       );
+}
+
+/// Error whose [message] is safe to show to the user as-is.
+class AIAssistantException implements Exception {
+  final String message;
+  const AIAssistantException(this.message);
+
+  @override
+  String toString() => message;
 }
 
 class AIAlertSettings {
@@ -82,22 +93,46 @@ class AIAssistantService {
     required List<Map<String, String>> history,
     String? sessionId,
   }) async {
-    final response = await http.post(
-      _uri('api/ai/chat/'),
-      headers: _headers(),
-      body: jsonEncode({
-        'business_id': businessId,
-        'device_id': deviceId,
-        'message': message,
-        'history': history,
-        if (sessionId != null) 'session_id': sessionId,
-      }),
-    );
-    if (response.statusCode != 200) {
-      throw Exception(_extractError(response));
+    final http.Response response;
+    try {
+      response = await http
+          .post(
+            _uri('api/ai/chat/'),
+            headers: _headers(),
+            body: jsonEncode({
+              'business_id': businessId,
+              'device_id': deviceId,
+              'message': message,
+              'history': history,
+              if (sessionId != null) 'session_id': sessionId,
+            }),
+          )
+          // The server may run several tool rounds against the model.
+          .timeout(const Duration(seconds: 120));
+    } on TimeoutException {
+      throw const AIAssistantException(
+          'The assistant is taking too long to respond. Please try again.');
+    } on SocketException {
+      throw const AIAssistantException(
+          'No connection. Check your internet and try again.');
+    } on http.ClientException {
+      throw const AIAssistantException(
+          'No connection. Check your internet and try again.');
     }
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    return AIChatResponse.fromJson(body);
+    if (response.statusCode >= 500) {
+      throw AIAssistantException(_extractError(response,
+          fallback: 'The assistant is unavailable right now. Please try again in a moment.'));
+    }
+    if (response.statusCode != 200) {
+      throw AIAssistantException(_extractError(response));
+    }
+    try {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return AIChatResponse.fromJson(body);
+    } on FormatException {
+      throw const AIAssistantException(
+          'The assistant sent an unexpected reply. Please try again.');
+    }
   }
 
   static Future<AIAlertSettings> getSettings(int businessId) async {
@@ -128,11 +163,13 @@ class AIAssistantService {
     return AIAlertSettings.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
-  static String _extractError(http.Response response) {
+  static String _extractError(http.Response response, {String? fallback}) {
     try {
       final body = jsonDecode(response.body);
-      if (body is Map && body['error'] != null) return body['error'].toString();
+      final error = body is Map ? body['error']?.toString() : null;
+      // Older servers sent raw tracebacks; only pass through short messages.
+      if (error != null && error.isNotEmpty && error.length <= 160) return error;
     } catch (_) {}
-    return 'Request failed (${response.statusCode})';
+    return fallback ?? 'Request failed (${response.statusCode})';
   }
 }

@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/app_empty_state.dart';
 import '../gasmon/gas_widgets.dart';
 import '../widgets/mobile_screen.dart';
@@ -974,12 +975,12 @@ class _ControlScreenState extends State<ControlScreen>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
+            Icon(Icons.check_circle_rounded, color: Tone.fg(Colors.white)),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: Tone.bg(const Color(0xFF10B981)),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -991,12 +992,12 @@ class _ControlScreenState extends State<ControlScreen>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
+            Icon(Icons.error_outline, color: Tone.fg(Colors.white)),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: const Color(0xFFEF4444),
+        backgroundColor: Tone.bg(const Color(0xFFEF4444)),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -1006,10 +1007,10 @@ class _ControlScreenState extends State<ControlScreen>
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: isPhoneLayout(context) ? GasPalette.page : Colors.white,
+      color: isPhoneLayout(context) ? GasPalette.page : Tone.bg(Colors.white),
       child: _isLoading
           ? Center(
-              child: CircularProgressIndicator(color: const Color(0xFF3B82F6)))
+              child: CircularProgressIndicator(color: Tone.fg(const Color(0xFF3B82F6))))
           : _error.isNotEmpty
               ? SingleChildScrollView(child: AppEmptyState(
                   kind: AppEmptyStateKind.offline,
@@ -1078,7 +1079,7 @@ class _ControlScreenState extends State<ControlScreen>
       decoration: isPhoneLayout(context)
           ? null
           : BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(
                 isPhoneLayout(context) ? 14 : 16,
               ),
@@ -1087,7 +1088,7 @@ class _ControlScreenState extends State<ControlScreen>
                   : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Tone.bg(Colors.black).withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -1102,13 +1103,13 @@ class _ControlScreenState extends State<ControlScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    color: Tone.bg(const Color(0xFF3B82F6)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.devices_rounded,
                     size: 20,
-                    color: Color(0xFF3B82F6),
+                    color: Tone.fg(Color(0xFF3B82F6)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1118,7 +1119,7 @@ class _ControlScreenState extends State<ControlScreen>
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1E293B),
+                      color: Tone.fg(const Color(0xFF1E293B)),
                     ),
                   ),
                 ),
@@ -1135,21 +1136,21 @@ class _ControlScreenState extends State<ControlScreen>
                 labelText: isPhoneLayout(context) ? 'Equipment' : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF3B82F6),
+                  borderSide: BorderSide(
+                    color: Tone.bg(Color(0xFF3B82F6)),
                     width: 2,
                   ),
                 ),
                 filled: true,
-                fillColor: const Color(0xFFF9FAFB),
+                fillColor: Tone.bg(const Color(0xFFF9FAFB)),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
@@ -1164,7 +1165,7 @@ class _ControlScreenState extends State<ControlScreen>
                         device.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Inter',
                           color: GasPalette.ink,
                         ),
@@ -1177,8 +1178,8 @@ class _ControlScreenState extends State<ControlScreen>
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: device.isOnline
-                                  ? const Color(0xFF10B981)
-                                  : const Color(0xFF9CA3AF),
+                                  ? Tone.bg(const Color(0xFF10B981))
+                                  : Tone.bg(const Color(0xFF9CA3AF)),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -1188,7 +1189,7 @@ class _ControlScreenState extends State<ControlScreen>
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w500,
-                                color: const Color(0xFF1E293B),
+                                color: Tone.fg(const Color(0xFF1E293B)),
                               ),
                             ),
                           ),
@@ -1200,10 +1201,10 @@ class _ControlScreenState extends State<ControlScreen>
                             ),
                             decoration: BoxDecoration(
                               color: device.deviceType == 'device1'
-                                  ? const Color(0xFF3B82F6).withOpacity(0.1)
+                                  ? Tone.bg(const Color(0xFF3B82F6)).withOpacity(0.1)
                                   : device.deviceType == 'device5'
-                                  ? const Color(0xFF8B5CF6).withOpacity(0.1)
-                                  : const Color(0xFF06B6D4).withOpacity(0.1),
+                                  ? Tone.bg(const Color(0xFF8B5CF6)).withOpacity(0.1)
+                                  : Tone.bg(const Color(0xFF06B6D4)).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -1216,10 +1217,10 @@ class _ControlScreenState extends State<ControlScreen>
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: device.deviceType == 'device1'
-                                    ? const Color(0xFF3B82F6)
+                                    ? Tone.fg(const Color(0xFF3B82F6))
                                     : device.deviceType == 'device5'
-                                    ? const Color(0xFF8B5CF6)
-                                    : const Color(0xFF06B6D4),
+                                    ? Tone.fg(const Color(0xFF8B5CF6))
+                                    : Tone.fg(const Color(0xFF06B6D4)),
                               ),
                             ),
                           ),
@@ -1243,7 +1244,7 @@ class _ControlScreenState extends State<ControlScreen>
     if (_selectedDevice == null) return const SizedBox.shrink();
 
     final statusColor =
-        _relayStatus ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+        _relayStatus ? Tone.auto(const Color(0xFF10B981)) : Tone.auto(const Color(0xFFEF4444));
 
     return Container(
       padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 20),
@@ -1252,20 +1253,20 @@ class _ControlScreenState extends State<ControlScreen>
               color: GasPalette.panel,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: GasPalette.border),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                    color: Color(0x05000000),
+                    color: Tone.bg(Color(0x05000000)),
                     blurRadius: 8,
                     offset: Offset(0, 2))
               ],
             )
           : BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: statusColor.withOpacity(0.2)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Tone.bg(Colors.black).withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -1297,7 +1298,7 @@ class _ControlScreenState extends State<ControlScreen>
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1331,16 +1332,16 @@ class _ControlScreenState extends State<ControlScreen>
                 child: Switch(
                   value: _relayStatus,
                   onChanged: _isLoading ? null : (value) => _toggleRelay(value),
-                  activeColor: const Color(0xFF10B981),
-                  activeTrackColor: const Color(0xFF10B981).withOpacity(0.3),
-                  inactiveThumbColor: const Color(0xFF9CA3AF),
-                  inactiveTrackColor: const Color(0xFFE5E7EB),
+                  activeColor: Tone.auto(const Color(0xFF10B981)),
+                  activeTrackColor: Tone.auto(const Color(0xFF10B981)).withOpacity(0.3),
+                  inactiveThumbColor: Tone.bg(const Color(0xFF9CA3AF)),
+                  inactiveTrackColor: Tone.bg(const Color(0xFFE5E7EB)),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Divider(color: const Color(0xFFE5E7EB)),
+          Divider(color: Tone.bg(const Color(0xFFE5E7EB))),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -1376,7 +1377,7 @@ class _ControlScreenState extends State<ControlScreen>
           style: GoogleFonts.inter(
             fontSize: 11,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF9CA3AF),
+            color: Tone.fg(const Color(0xFF9CA3AF)),
           ),
         ),
         const SizedBox(height: 4),
@@ -1385,7 +1386,7 @@ class _ControlScreenState extends State<ControlScreen>
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF1E293B),
+            color: Tone.fg(const Color(0xFF1E293B)),
           ),
         ),
       ],
@@ -1405,11 +1406,11 @@ class _ControlScreenState extends State<ControlScreen>
   Widget _buildTabSection() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Tone.bg(Colors.black).withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1419,9 +1420,9 @@ class _ControlScreenState extends State<ControlScreen>
         children: [
           TabBar(
             controller: _tabController,
-            labelColor: const Color(0xFF3B82F6),
-            unselectedLabelColor: const Color(0xFF9CA3AF),
-            indicatorColor: const Color(0xFF3B82F6),
+            labelColor: Tone.fg(const Color(0xFF3B82F6)),
+            unselectedLabelColor: Tone.fg(const Color(0xFF9CA3AF)),
+            indicatorColor: Tone.auto(const Color(0xFF3B82F6)),
             labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
             unselectedLabelStyle:
                 GoogleFonts.inter(fontWeight: FontWeight.w500),
@@ -1458,11 +1459,11 @@ class _ControlScreenState extends State<ControlScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B).withOpacity(0.1),
+                  color: Tone.bg(const Color(0xFFF59E0B)).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.flash_on_rounded,
-                    size: 20, color: Color(0xFFF59E0B)),
+                child: Icon(Icons.flash_on_rounded,
+                    size: 20, color: Tone.fg(Color(0xFFF59E0B))),
               ),
               const SizedBox(width: 12),
               Text(
@@ -1470,7 +1471,7 @@ class _ControlScreenState extends State<ControlScreen>
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E293B),
+                  color: Tone.fg(const Color(0xFF1E293B)),
                 ),
               ),
             ],
@@ -1481,7 +1482,7 @@ class _ControlScreenState extends State<ControlScreen>
             title: 'Turn OFF Indefinitely',
             subtitle: 'Machine stays off until manually turned on',
             onTap: () => _toggleRelay(false),
-            color: const Color(0xFFEF4444),
+            color: Tone.auto(const Color(0xFFEF4444)),
           ),
           const SizedBox(height: 12),
           _buildActionCard(
@@ -1489,7 +1490,7 @@ class _ControlScreenState extends State<ControlScreen>
             title: 'Turn OFF for Duration',
             subtitle: 'Auto-turns on after specified time',
             onTap: () => _showDurationDialog(),
-            color: const Color(0xFFF59E0B),
+            color: Tone.auto(const Color(0xFFF59E0B)),
           ),
           const SizedBox(height: 12),
           _buildActionCard(
@@ -1497,7 +1498,7 @@ class _ControlScreenState extends State<ControlScreen>
             title: 'Schedule ON/OFF',
             subtitle: 'Set specific date and time',
             onTap: () => _showScheduleDialog(),
-            color: const Color(0xFF3B82F6),
+            color: Tone.auto(const Color(0xFF3B82F6)),
           ),
           const SizedBox(height: 12),
           _buildActionCard(
@@ -1505,7 +1506,7 @@ class _ControlScreenState extends State<ControlScreen>
             title: 'Create Recurring Schedule',
             subtitle: 'Daily or weekly automation',
             onTap: () => _showRecurringDialog(),
-            color: const Color(0xFF8B5CF6),
+            color: Tone.auto(const Color(0xFF8B5CF6)),
           ),
           const SizedBox(height: 12),
           _buildHarvestTurnoffCard(),
@@ -1527,14 +1528,14 @@ class _ControlScreenState extends State<ControlScreen>
       decoration: BoxDecoration(
         border: Border.all(
           color: isEnabled
-              ? const Color(0xFF06B6D4).withOpacity(0.3)
-              : const Color(0xFFE5E7EB),
+              ? Tone.bg(const Color(0xFF06B6D4)).withOpacity(0.3)
+              : Tone.bg(const Color(0xFFE5E7EB)),
           width: isEnabled ? 2 : 1,
         ),
         borderRadius: BorderRadius.circular(12),
         color: isEnabled
-            ? const Color(0xFF06B6D4).withOpacity(0.05)
-            : const Color(0xFFF9FAFB),
+            ? Tone.bg(const Color(0xFF06B6D4)).withOpacity(0.05)
+            : Tone.bg(const Color(0xFFF9FAFB)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1544,11 +1545,11 @@ class _ControlScreenState extends State<ControlScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF06B6D4).withOpacity(0.1),
+                  color: Tone.bg(const Color(0xFF06B6D4)).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(CupertinoIcons.snow,
-                    color: Color(0xFF06B6D4), size: 24),
+                child: Icon(CupertinoIcons.snow,
+                    color: Tone.fg(Color(0xFF06B6D4)), size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -1560,7 +1561,7 @@ class _ControlScreenState extends State<ControlScreen>
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                       ),
                     ),
                     Text(
@@ -1569,7 +1570,7 @@ class _ControlScreenState extends State<ControlScreen>
                           : 'Auto-turn off after set number of harvests',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: const Color(0xFF64748B),
+                        color: Tone.fg(const Color(0xFF64748B)),
                       ),
                     ),
                   ],
@@ -1578,7 +1579,7 @@ class _ControlScreenState extends State<ControlScreen>
               if (isEnabled)
                 IconButton(
                   icon:
-                      const Icon(Icons.close_rounded, color: Color(0xFFEF4444)),
+                      Icon(Icons.close_rounded, color: Tone.fg(Color(0xFFEF4444))),
                   onPressed:
                       _isLoading ? null : () => _setHarvestTurnoff(false),
                   tooltip: 'Disable',
@@ -1586,7 +1587,7 @@ class _ControlScreenState extends State<ControlScreen>
               else
                 IconButton(
                   icon:
-                      const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
+                      Icon(Icons.chevron_right, color: Tone.fg(Color(0xFF9CA3AF))),
                   onPressed:
                       _isLoading ? null : () => _showHarvestTurnoffDialog(),
                 ),
@@ -1598,11 +1599,11 @@ class _ControlScreenState extends State<ControlScreen>
               borderRadius: BorderRadius.circular(6),
               child: LinearProgressIndicator(
                 value: progressPercent / 100,
-                backgroundColor: const Color(0xFFE5E7EB),
+                backgroundColor: Tone.bg(const Color(0xFFE5E7EB)),
                 valueColor: AlwaysStoppedAnimation<Color>(
                   progressPercent > 80
-                      ? const Color(0xFFF59E0B)
-                      : const Color(0xFF06B6D4),
+                      ? Tone.fg(const Color(0xFFF59E0B))
+                      : Tone.fg(const Color(0xFF06B6D4)),
                 ),
                 minHeight: 8,
               ),
@@ -1615,7 +1616,7 @@ class _ControlScreenState extends State<ControlScreen>
                   '$harvestsSinceEnable / $threshold harvests',
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: const Color(0xFF64748B),
+                    color: Tone.fg(const Color(0xFF64748B)),
                   ),
                 ),
                 Text(
@@ -1624,8 +1625,8 @@ class _ControlScreenState extends State<ControlScreen>
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: progressPercent > 80
-                        ? const Color(0xFFF59E0B)
-                        : const Color(0xFF06B6D4),
+                        ? Tone.fg(const Color(0xFFF59E0B))
+                        : Tone.fg(const Color(0xFF06B6D4)),
                   ),
                 ),
               ],
@@ -1652,7 +1653,7 @@ class _ControlScreenState extends State<ControlScreen>
                   'The machine will automatically turn off after the specified number of harvest cycles.',
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: Tone.fg(Colors.grey[600]),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -1676,7 +1677,7 @@ class _ControlScreenState extends State<ControlScreen>
                       padding: const EdgeInsets.symmetric(
                           vertical: 12, horizontal: 16),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: Tone.bg(Colors.grey.shade300)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -1722,7 +1723,7 @@ class _ControlScreenState extends State<ControlScreen>
                   _setHarvestTurnoff(true, harvestCount: harvestCount);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
+                  backgroundColor: Tone.bg(Colors.teal),
                 ),
                 child: const Text('Enable'),
               ),
@@ -1751,19 +1752,19 @@ class _ControlScreenState extends State<ControlScreen>
               color: GasPalette.panel,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: GasPalette.border),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                    color: Color(0x05000000),
+                    color: Tone.bg(Color(0x05000000)),
                     blurRadius: 8,
                     offset: Offset(0, 2))
               ],
             )
           : BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Tone.bg(Colors.black).withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -1778,11 +1779,11 @@ class _ControlScreenState extends State<ControlScreen>
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    color: Tone.bg(const Color(0xFF3B82F6)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(CupertinoIcons.slider_horizontal_3,
-                      color: Color(0xFF3B82F6), size: 24),
+                  child: Icon(CupertinoIcons.slider_horizontal_3,
+                      color: Tone.fg(Color(0xFF3B82F6)), size: 24),
                 ),
                 const SizedBox(width: 16),
               ],
@@ -1797,7 +1798,7 @@ class _ControlScreenState extends State<ControlScreen>
                       style: GoogleFonts.inter(
                         fontSize: isPhoneLayout(context) ? 16 : 18,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                       ),
                     ),
                     if (!isPhoneLayout(context))
@@ -1805,7 +1806,7 @@ class _ControlScreenState extends State<ControlScreen>
                         'Control Switches',
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                   ],
@@ -1813,7 +1814,7 @@ class _ControlScreenState extends State<ControlScreen>
               ),
               IconButton(
                 icon:
-                    const Icon(Icons.refresh_rounded, color: Color(0xFF3B82F6)),
+                    Icon(Icons.refresh_rounded, color: Tone.fg(Color(0xFF3B82F6))),
                 onPressed: _isLoading ? null : () => _loadData(),
               ),
             ],
@@ -1828,7 +1829,7 @@ class _ControlScreenState extends State<ControlScreen>
                 : 'Inactive - Tap to activate',
             isOn: defrostSwitch,
             icon: CupertinoIcons.snow,
-            activeColor: const Color(0xFF06B6D4),
+            activeColor: Tone.auto(const Color(0xFF06B6D4)),
             onToggle: (value) => _toggleDevice1Defrost(value),
           ),
 
@@ -1840,25 +1841,25 @@ class _ControlScreenState extends State<ControlScreen>
             subtitle: compSwitch ? 'Running' : 'Stopped - Tap to start',
             isOn: compSwitch,
             icon: CupertinoIcons.gear_alt,
-            activeColor: const Color(0xFF10B981),
+            activeColor: Tone.auto(const Color(0xFF10B981)),
             onToggle: (value) => _toggleDevice1Compressor(value),
           ),
 
           if (lastUpdated != null) ...[
             const SizedBox(height: 16),
-            const Divider(color: Color(0xFFE5E7EB)),
+            Divider(color: Tone.bg(Color(0xFFE5E7EB))),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.access_time,
-                    size: 14, color: Color(0xFF9CA3AF)),
+                Icon(Icons.access_time,
+                    size: 14, color: Tone.fg(Color(0xFF9CA3AF))),
                 const SizedBox(width: 4),
                 Text(
                   'Last updated: ${_formatDateTime(lastUpdated)}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: const Color(0xFF9CA3AF),
+                    color: Tone.fg(const Color(0xFF9CA3AF)),
                   ),
                 ),
               ],
@@ -1880,10 +1881,10 @@ class _ControlScreenState extends State<ControlScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isOn ? activeColor.withOpacity(0.05) : const Color(0xFFF9FAFB),
+        color: isOn ? activeColor.withOpacity(0.05) : Tone.bg(const Color(0xFFF9FAFB)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isOn ? activeColor.withOpacity(0.3) : const Color(0xFFE5E7EB),
+          color: isOn ? activeColor.withOpacity(0.3) : Tone.bg(const Color(0xFFE5E7EB)),
           width: isOn ? 2 : 1,
         ),
       ),
@@ -1893,12 +1894,12 @@ class _ControlScreenState extends State<ControlScreen>
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color:
-                  isOn ? activeColor.withOpacity(0.1) : const Color(0xFFF1F5F9),
+                  isOn ? activeColor.withOpacity(0.1) : Tone.bg(const Color(0xFFF1F5F9)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               icon,
-              color: isOn ? activeColor : const Color(0xFF9CA3AF),
+              color: isOn ? activeColor : Tone.fg(const Color(0xFF9CA3AF)),
               size: 24,
             ),
           ),
@@ -1912,7 +1913,7 @@ class _ControlScreenState extends State<ControlScreen>
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: isOn ? activeColor : const Color(0xFF1E293B),
+                    color: isOn ? activeColor : Tone.fg(const Color(0xFF1E293B)),
                   ),
                 ),
                 Text(
@@ -1921,7 +1922,7 @@ class _ControlScreenState extends State<ControlScreen>
                     fontSize: 12,
                     color: isOn
                         ? activeColor.withOpacity(0.8)
-                        : const Color(0xFF64748B),
+                        : Tone.fg(const Color(0xFF64748B)),
                   ),
                 ),
               ],
@@ -1934,8 +1935,8 @@ class _ControlScreenState extends State<ControlScreen>
               onChanged: _isLoading ? null : onToggle,
               activeColor: activeColor,
               activeTrackColor: activeColor.withOpacity(0.3),
-              inactiveThumbColor: const Color(0xFF9CA3AF),
-              inactiveTrackColor: const Color(0xFFE5E7EB),
+              inactiveThumbColor: Tone.bg(const Color(0xFF9CA3AF)),
+              inactiveTrackColor: Tone.bg(const Color(0xFFE5E7EB)),
             ),
           ),
         ],
@@ -1950,19 +1951,19 @@ class _ControlScreenState extends State<ControlScreen>
               color: GasPalette.panel,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: GasPalette.border),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                    color: Color(0x05000000),
+                    color: Tone.bg(Color(0x05000000)),
                     blurRadius: 8,
                     offset: Offset(0, 2))
               ],
             )
           : BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Tone.bg(Colors.black).withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -1979,11 +1980,11 @@ class _ControlScreenState extends State<ControlScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF06B6D4).withOpacity(0.1),
+                      color: Tone.bg(const Color(0xFF06B6D4)).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(CupertinoIcons.snow,
-                        color: Color(0xFF06B6D4), size: 20),
+                    child: Icon(CupertinoIcons.snow,
+                        color: Tone.fg(Color(0xFF06B6D4)), size: 20),
                   ),
                   const SizedBox(width: 12),
                 ],
@@ -1993,18 +1994,18 @@ class _ControlScreenState extends State<ControlScreen>
                   style: GoogleFonts.inter(
                     fontSize: isPhoneLayout(context) ? 16 : 18,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.fg(const Color(0xFF1E293B)),
                   ),
                 )),
                 IconButton(
-                  icon: const Icon(Icons.add_circle_rounded,
-                      color: Color(0xFF06B6D4)),
+                  icon: Icon(Icons.add_circle_rounded,
+                      color: Tone.fg(Color(0xFF06B6D4))),
                   onPressed: () => _showAddDefrostScheduleDialog(),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          Divider(height: 1, color: Tone.bg(Color(0xFFE5E7EB))),
           if (_defrostSchedules.isEmpty)
             Padding(
               padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 24),
@@ -2015,11 +2016,11 @@ class _ControlScreenState extends State<ControlScreen>
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF06B6D4).withOpacity(0.1),
+                          color: Tone.bg(const Color(0xFF06B6D4)).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(CupertinoIcons.snow,
-                            size: 32, color: Color(0xFF06B6D4)),
+                        child: Icon(CupertinoIcons.snow,
+                            size: 32, color: Tone.fg(Color(0xFF06B6D4))),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -2027,14 +2028,14 @@ class _ControlScreenState extends State<ControlScreen>
                       'No defrost schedules',
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Tap + to add a schedule',
                       style: GoogleFonts.inter(
-                          fontSize: 12, color: const Color(0xFF64748B)),
+                          fontSize: 12, color: Tone.fg(const Color(0xFF64748B))),
                     ),
                   ],
                 ),
@@ -2055,20 +2056,20 @@ class _ControlScreenState extends State<ControlScreen>
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.cyan.withOpacity(0.1),
+                      color: Tone.bg(Colors.cyan).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(CupertinoIcons.snow,
-                            color: Colors.cyan, size: 16),
+                        Icon(CupertinoIcons.snow,
+                            color: Tone.fg(Colors.cyan), size: 16),
                         Text(
                           '${schedule.timesPerDay}x',
                           style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: Colors.cyan),
+                              color: Tone.fg(Colors.cyan)),
                         ),
                       ],
                     ),
@@ -2083,7 +2084,7 @@ class _ControlScreenState extends State<ControlScreen>
                     style: GoogleFonts.inter(fontSize: 12),
                   ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    icon: Icon(Icons.delete_outline, color: Tone.fg(Colors.red)),
                     onPressed: () => _deleteDefrostSchedule(schedule.id),
                   ),
                 );
@@ -2101,19 +2102,19 @@ class _ControlScreenState extends State<ControlScreen>
               color: GasPalette.panel,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: GasPalette.border),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                    color: Color(0x05000000),
+                    color: Tone.bg(Color(0x05000000)),
                     blurRadius: 8,
                     offset: Offset(0, 2))
               ],
             )
           : BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Tone.bg(Colors.black).withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -2130,11 +2131,11 @@ class _ControlScreenState extends State<ControlScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B).withOpacity(0.1),
+                      color: Tone.bg(const Color(0xFFF59E0B)).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(CupertinoIcons.bolt,
-                        color: Color(0xFFF59E0B), size: 20),
+                    child: Icon(CupertinoIcons.bolt,
+                        color: Tone.fg(Color(0xFFF59E0B)), size: 20),
                   ),
                   const SizedBox(width: 12),
                 ],
@@ -2144,18 +2145,18 @@ class _ControlScreenState extends State<ControlScreen>
                   style: GoogleFonts.inter(
                     fontSize: isPhoneLayout(context) ? 16 : 18,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.fg(const Color(0xFF1E293B)),
                   ),
                 )),
                 IconButton(
-                  icon: const Icon(Icons.add_circle_rounded,
-                      color: Color(0xFFF59E0B)),
+                  icon: Icon(Icons.add_circle_rounded,
+                      color: Tone.fg(Color(0xFFF59E0B))),
                   onPressed: () => _showAddAutomationRuleDialog(),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          Divider(height: 1, color: Tone.bg(Color(0xFFE5E7EB))),
           if (_automationRules.isEmpty)
             Padding(
               padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 24),
@@ -2166,11 +2167,11 @@ class _ControlScreenState extends State<ControlScreen>
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF59E0B).withOpacity(0.1),
+                          color: Tone.bg(const Color(0xFFF59E0B)).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(CupertinoIcons.bolt,
-                            size: 32, color: Color(0xFFF59E0B)),
+                        child: Icon(CupertinoIcons.bolt,
+                            size: 32, color: Tone.fg(Color(0xFFF59E0B))),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -2178,14 +2179,14 @@ class _ControlScreenState extends State<ControlScreen>
                       'No automation rules',
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Add rules to auto-control compressor',
                       style: GoogleFonts.inter(
-                          fontSize: 12, color: const Color(0xFF64748B)),
+                          fontSize: 12, color: Tone.fg(const Color(0xFF64748B))),
                     ),
                   ],
                 ),
@@ -2204,15 +2205,15 @@ class _ControlScreenState extends State<ControlScreen>
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: rule.turnCompressorOn
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                          ? Tone.bg(Colors.green).withOpacity(0.1)
+                          : Tone.bg(Colors.red).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       rule.turnCompressorOn
                           ? CupertinoIcons.play_fill
                           : CupertinoIcons.stop_fill,
-                      color: rule.turnCompressorOn ? Colors.green : Colors.red,
+                      color: rule.turnCompressorOn ? Tone.fg(Colors.green) : Tone.fg(Colors.red),
                       size: 20,
                     ),
                   ),
@@ -2230,11 +2231,11 @@ class _ControlScreenState extends State<ControlScreen>
                       Switch(
                         value: rule.isActive,
                         onChanged: (v) => _toggleAutomationRule(rule.id, v),
-                        activeColor: Colors.green,
+                        activeColor: Tone.auto(Colors.green),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline,
-                            color: Colors.red, size: 20),
+                        icon: Icon(Icons.delete_outline,
+                            color: Tone.fg(Colors.red), size: 20),
                         onPressed: () => _deleteAutomationRule(rule.id),
                       ),
                     ],
@@ -2266,8 +2267,8 @@ class _ControlScreenState extends State<ControlScreen>
       builder: (context) => MobileDialog(child: StatefulBuilder(
         builder: (context, setDialogState) => Container(
           height: MediaQuery.of(context).size.height * 0.85,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
@@ -2281,7 +2282,7 @@ class _ControlScreenState extends State<ControlScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: Tone.bg(Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2295,13 +2296,13 @@ class _ControlScreenState extends State<ControlScreen>
                       decoration: mobileFlatDecoration(
                           context,
                           BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF00BCD4), Color(0xFF00ACC1)],
+                            gradient: LinearGradient(
+                              colors: [Tone.auto(Color(0xFF00BCD4)), Tone.auto(Color(0xFF00ACC1))],
                             ),
                             borderRadius: BorderRadius.circular(12),
                           )),
-                      child: const Icon(CupertinoIcons.snow,
-                          color: Colors.white, size: 24),
+                      child: Icon(CupertinoIcons.snow,
+                          color: Tone.fg(Colors.white), size: 24),
                     ),
                     const SizedBox(width: 16),
                     Column(
@@ -2312,7 +2313,7 @@ class _ControlScreenState extends State<ControlScreen>
                                 fontSize: 20, fontWeight: FontWeight.w700)),
                         Text('Set automatic defrost cycles',
                             style: GoogleFonts.inter(
-                                fontSize: 13, color: Colors.grey.shade600)),
+                                fontSize: 13, color: Tone.fg(Colors.grey.shade600))),
                       ],
                     ),
                   ],
@@ -2328,7 +2329,7 @@ class _ControlScreenState extends State<ControlScreen>
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: Tone.bg(Colors.grey.shade100),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -2344,13 +2345,13 @@ class _ControlScreenState extends State<ControlScreen>
                                       const EdgeInsets.symmetric(vertical: 12),
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? Colors.white
+                                        ? Tone.bg(Colors.white)
                                         : Colors.transparent,
                                     borderRadius: BorderRadius.circular(10),
                                     boxShadow: isSelected
                                         ? [
                                             BoxShadow(
-                                                color: Colors.black
+                                                color: Tone.bg(Colors.black)
                                                     .withOpacity(0.05),
                                                 blurRadius: 4,
                                                 offset: const Offset(0, 2)),
@@ -2365,8 +2366,8 @@ class _ControlScreenState extends State<ControlScreen>
                                           ? FontWeight.w600
                                           : FontWeight.w500,
                                       color: isSelected
-                                          ? Colors.cyan.shade700
-                                          : Colors.grey.shade600,
+                                          ? Tone.fg(Colors.cyan.shade700)
+                                          : Tone.fg(Colors.grey.shade600),
                                     ),
                                   ),
                                 ),
@@ -2390,9 +2391,9 @@ class _ControlScreenState extends State<ControlScreen>
                             decoration: mobileFlatDecoration(
                                 context,
                                 BoxDecoration(
-                                  gradient: const LinearGradient(colors: [
-                                    Color(0xFF00BCD4),
-                                    Color(0xFF00ACC1)
+                                  gradient: LinearGradient(colors: [
+                                    Tone.auto(Color(0xFF00BCD4)),
+                                    Tone.auto(Color(0xFF00ACC1))
                                   ]),
                                   borderRadius: BorderRadius.circular(20),
                                 )),
@@ -2401,7 +2402,7 @@ class _ControlScreenState extends State<ControlScreen>
                               style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white),
+                                  color: Tone.fg(Colors.white)),
                             ),
                           ),
                         ],
@@ -2415,9 +2416,9 @@ class _ControlScreenState extends State<ControlScreen>
                         return Container(
                           margin: const EdgeInsets.only(bottom: 10),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
+                            color: Tone.bg(Colors.grey.shade50),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey.shade200),
+                            border: Border.all(color: Tone.bg(Colors.grey.shade200)),
                           ),
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(
@@ -2426,7 +2427,7 @@ class _ControlScreenState extends State<ControlScreen>
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: Colors.cyan.withOpacity(0.1),
+                                color: Tone.bg(Colors.cyan).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Center(
@@ -2436,7 +2437,7 @@ class _ControlScreenState extends State<ControlScreen>
                                       fontSize:
                                           isPhoneLayout(context) ? 16 : 18,
                                       fontWeight: FontWeight.w700,
-                                      color: Colors.cyan.shade700),
+                                      color: Tone.fg(Colors.cyan.shade700)),
                                 ),
                               ),
                             ),
@@ -2447,11 +2448,11 @@ class _ControlScreenState extends State<ControlScreen>
                             ),
                             subtitle: Text('Tap to change',
                                 style: GoogleFonts.inter(
-                                    fontSize: 12, color: Colors.grey)),
+                                    fontSize: 12, color: Tone.fg(Colors.grey))),
                             trailing: selectedTimes.length > 1
                                 ? IconButton(
                                     icon: Icon(Icons.remove_circle_rounded,
-                                        color: Colors.red.shade400, size: 28),
+                                        color: Tone.fg(Colors.red.shade400), size: 28),
                                     onPressed: () => setDialogState(
                                         () => selectedTimes.removeAt(index)),
                                   )
@@ -2462,8 +2463,8 @@ class _ControlScreenState extends State<ControlScreen>
                                 initialTime: time,
                                 builder: (context, child) => Theme(
                                   data: Theme.of(context).copyWith(
-                                    colorScheme: const ColorScheme.light(
-                                        primary: Colors.cyan),
+                                    colorScheme: ColorScheme.light(
+                                        primary: Tone.auto(Colors.cyan)),
                                   ),
                                   child: child!,
                                 ),
@@ -2486,7 +2487,7 @@ class _ControlScreenState extends State<ControlScreen>
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             decoration: BoxDecoration(
                               border: Border.all(
-                                  color: Colors.cyan,
+                                  color: Tone.bg(Colors.cyan),
                                   style: BorderStyle.solid,
                                   width: 2),
                               borderRadius: BorderRadius.circular(16),
@@ -2495,12 +2496,12 @@ class _ControlScreenState extends State<ControlScreen>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.add_circle_rounded,
-                                    color: Colors.cyan.shade600, size: 24),
+                                    color: Tone.fg(Colors.cyan.shade600), size: 24),
                                 const SizedBox(width: 8),
                                 Text('Add Another Time',
                                     style: GoogleFonts.inter(
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.cyan.shade700)),
+                                        color: Tone.fg(Colors.cyan.shade700))),
                               ],
                             ),
                           ),
@@ -2530,14 +2531,14 @@ class _ControlScreenState extends State<ControlScreen>
                                     context,
                                     BoxDecoration(
                                       gradient: isSelected
-                                          ? const LinearGradient(colors: [
-                                              Color(0xFF00BCD4),
-                                              Color(0xFF00ACC1)
+                                          ? LinearGradient(colors: [
+                                              Tone.auto(Color(0xFF00BCD4)),
+                                              Tone.auto(Color(0xFF00ACC1))
                                             ])
                                           : null,
                                       color: isSelected
                                           ? null
-                                          : Colors.grey.shade100,
+                                          : Tone.bg(Colors.grey.shade100),
                                       borderRadius: BorderRadius.circular(12),
                                     )),
                                 child: Text(
@@ -2545,8 +2546,8 @@ class _ControlScreenState extends State<ControlScreen>
                                   style: GoogleFonts.inter(
                                     fontWeight: FontWeight.w600,
                                     color: isSelected
-                                        ? Colors.white
-                                        : Colors.grey.shade700,
+                                        ? Tone.fg(Colors.white)
+                                        : Tone.fg(Colors.grey.shade700),
                                   ),
                                 ),
                               ),
@@ -2594,14 +2595,14 @@ class _ControlScreenState extends State<ControlScreen>
                                     context,
                                     BoxDecoration(
                                       gradient: isSelected
-                                          ? const LinearGradient(colors: [
-                                              Color(0xFF00BCD4),
-                                              Color(0xFF00ACC1)
+                                          ? LinearGradient(colors: [
+                                              Tone.auto(Color(0xFF00BCD4)),
+                                              Tone.auto(Color(0xFF00ACC1))
                                             ])
                                           : null,
                                       color: isSelected
                                           ? null
-                                          : Colors.grey.shade100,
+                                          : Tone.bg(Colors.grey.shade100),
                                       shape: BoxShape.circle,
                                     )),
                                 child: Center(
@@ -2610,8 +2611,8 @@ class _ControlScreenState extends State<ControlScreen>
                                     style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w600,
                                       color: isSelected
-                                          ? Colors.white
-                                          : Colors.grey.shade600,
+                                          ? Tone.fg(Colors.white)
+                                          : Tone.fg(Colors.grey.shade600),
                                     ),
                                   ),
                                 ),
@@ -2630,10 +2631,10 @@ class _ControlScreenState extends State<ControlScreen>
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Tone.bg(Colors.black).withOpacity(0.05),
                         blurRadius: 10,
                         offset: const Offset(0, -5))
                   ],
@@ -2646,7 +2647,7 @@ class _ControlScreenState extends State<ControlScreen>
                           onPressed: () => Navigator.pop(context),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: BorderSide(color: Colors.grey.shade300),
+                            side: BorderSide(color: Tone.bg(Colors.grey.shade300)),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
                                     isPhoneLayout(context) ? 32 : 12)),
@@ -2654,7 +2655,7 @@ class _ControlScreenState extends State<ControlScreen>
                           child: Text('Cancel',
                               style: GoogleFonts.inter(
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade700)),
+                                  color: Tone.fg(Colors.grey.shade700))),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -2663,13 +2664,13 @@ class _ControlScreenState extends State<ControlScreen>
                         child: Container(
                           decoration: isPhoneLayout(context)
                               ? BoxDecoration(
-                                  color: const Color(0xFF222B45),
+                                  color: Tone.bg(const Color(0xFF222B45)),
                                   borderRadius: BorderRadius.circular(32),
                                 )
                               : BoxDecoration(
-                                  gradient: const LinearGradient(colors: [
-                                    Color(0xFF00BCD4),
-                                    Color(0xFF00ACC1)
+                                  gradient: LinearGradient(colors: [
+                                    Tone.auto(Color(0xFF00BCD4)),
+                                    Tone.auto(Color(0xFF00ACC1))
                                   ]),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -2693,7 +2694,7 @@ class _ControlScreenState extends State<ControlScreen>
                             child: Text('Create Schedule',
                                 style: GoogleFonts.inter(
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.white)),
+                                    color: Tone.fg(Colors.white))),
                           ),
                         ),
                       ),
@@ -2750,8 +2751,8 @@ class _ControlScreenState extends State<ControlScreen>
       builder: (context) => MobileDialog(child: StatefulBuilder(
         builder: (context, setDialogState) => Container(
           height: MediaQuery.of(context).size.height * 0.9,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
@@ -2765,7 +2766,7 @@ class _ControlScreenState extends State<ControlScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: Tone.bg(Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2779,12 +2780,12 @@ class _ControlScreenState extends State<ControlScreen>
                       decoration: mobileFlatDecoration(
                           context,
                           BoxDecoration(
-                            gradient: const LinearGradient(
-                                colors: [Color(0xFFFF9800), Color(0xFFF57C00)]),
+                            gradient: LinearGradient(
+                                colors: [Tone.auto(Color(0xFFFF9800)), Tone.auto(Color(0xFFF57C00))]),
                             borderRadius: BorderRadius.circular(12),
                           )),
-                      child: const Icon(CupertinoIcons.bolt_fill,
-                          color: Colors.white, size: 24),
+                      child: Icon(CupertinoIcons.bolt_fill,
+                          color: Tone.fg(Colors.white), size: 24),
                     ),
                     const SizedBox(width: 16),
                     Column(
@@ -2795,7 +2796,7 @@ class _ControlScreenState extends State<ControlScreen>
                                 fontSize: 20, fontWeight: FontWeight.w700)),
                         Text('Auto-control compressor',
                             style: GoogleFonts.inter(
-                                fontSize: 13, color: Colors.grey.shade600)),
+                                fontSize: 13, color: Tone.fg(Colors.grey.shade600))),
                       ],
                     ),
                   ],
@@ -2820,21 +2821,21 @@ class _ControlScreenState extends State<ControlScreen>
                             InputDecoration(
                               hintText: 'e.g., High Pressure Protection',
                               filled: true,
-                              fillColor: Colors.grey.shade50,
+                              fillColor: Tone.bg(Colors.grey.shade50),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide:
-                                    BorderSide(color: Colors.grey.shade200),
+                                    BorderSide(color: Tone.bg(Colors.grey.shade200)),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide:
-                                    BorderSide(color: Colors.grey.shade200),
+                                    BorderSide(color: Tone.bg(Colors.grey.shade200)),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                    color: Colors.orange, width: 2),
+                                borderSide: BorderSide(
+                                    color: Tone.bg(Colors.orange), width: 2),
                               ),
                             )),
                       ),
@@ -2867,25 +2868,25 @@ class _ControlScreenState extends State<ControlScreen>
                                   context,
                                   BoxDecoration(
                                     gradient: isSelected
-                                        ? const LinearGradient(colors: [
-                                            Color(0xFFFF9800),
-                                            Color(0xFFF57C00)
+                                        ? LinearGradient(colors: [
+                                            Tone.auto(Color(0xFFFF9800)),
+                                            Tone.auto(Color(0xFFF57C00))
                                           ])
                                         : null,
                                     color:
-                                        isSelected ? null : Colors.grey.shade50,
+                                        isSelected ? null : Tone.bg(Colors.grey.shade50),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                         color: isSelected
                                             ? Colors.transparent
-                                            : Colors.grey.shade200),
+                                            : Tone.bg(Colors.grey.shade200)),
                                   )),
                               child: Row(
                                 children: [
                                   Icon(opt['icon'] as IconData,
                                       color: isSelected
-                                          ? Colors.white
-                                          : Colors.grey.shade600,
+                                          ? Tone.fg(Colors.white)
+                                          : Tone.fg(Colors.grey.shade600),
                                       size: 20),
                                   const SizedBox(width: 8),
                                   Expanded(
@@ -2895,8 +2896,8 @@ class _ControlScreenState extends State<ControlScreen>
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
                                         color: isSelected
-                                            ? Colors.white
-                                            : Colors.grey.shade700,
+                                            ? Tone.fg(Colors.white)
+                                            : Tone.fg(Colors.grey.shade700),
                                       ),
                                     ),
                                   ),
@@ -2932,12 +2933,12 @@ class _ControlScreenState extends State<ControlScreen>
                                             ? 'PSI'
                                             : '°C',
                                         filled: true,
-                                        fillColor: Colors.grey.shade50,
+                                        fillColor: Tone.bg(Colors.grey.shade50),
                                         border: OutlineInputBorder(
                                           borderRadius:
                                               BorderRadius.circular(12),
                                           borderSide: BorderSide(
-                                              color: Colors.grey.shade200),
+                                              color: Tone.bg(Colors.grey.shade200)),
                                         ),
                                       )),
                                 ),
@@ -2957,7 +2958,7 @@ class _ControlScreenState extends State<ControlScreen>
                                 Container(
                                   padding: const EdgeInsets.all(4),
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
+                                    color: Tone.bg(Colors.grey.shade100),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
@@ -2975,7 +2976,7 @@ class _ControlScreenState extends State<ControlScreen>
                                             decoration: BoxDecoration(
                                               color:
                                                   triggerType.contains('high')
-                                                      ? Colors.white
+                                                      ? Tone.bg(Colors.white)
                                                       : Colors.transparent,
                                               borderRadius:
                                                   BorderRadius.circular(10),
@@ -2983,7 +2984,7 @@ class _ControlScreenState extends State<ControlScreen>
                                                       .contains('high')
                                                   ? [
                                                       BoxShadow(
-                                                          color: Colors.black
+                                                          color: Tone.bg(Colors.black)
                                                               .withOpacity(
                                                                   0.05),
                                                           blurRadius: 4)
@@ -2993,8 +2994,8 @@ class _ControlScreenState extends State<ControlScreen>
                                             child: Icon(Icons.arrow_upward,
                                                 color:
                                                     triggerType.contains('high')
-                                                        ? Colors.red
-                                                        : Colors.grey,
+                                                        ? Tone.fg(Colors.red)
+                                                        : Tone.fg(Colors.grey),
                                                 size: 20),
                                           ),
                                         ),
@@ -3011,7 +3012,7 @@ class _ControlScreenState extends State<ControlScreen>
                                                 vertical: 12),
                                             decoration: BoxDecoration(
                                               color: triggerType.contains('low')
-                                                  ? Colors.white
+                                                  ? Tone.bg(Colors.white)
                                                   : Colors.transparent,
                                               borderRadius:
                                                   BorderRadius.circular(10),
@@ -3019,7 +3020,7 @@ class _ControlScreenState extends State<ControlScreen>
                                                       .contains('low')
                                                   ? [
                                                       BoxShadow(
-                                                          color: Colors.black
+                                                          color: Tone.bg(Colors.black)
                                                               .withOpacity(
                                                                   0.05),
                                                           blurRadius: 4)
@@ -3029,8 +3030,8 @@ class _ControlScreenState extends State<ControlScreen>
                                             child: Icon(Icons.arrow_downward,
                                                 color:
                                                     triggerType.contains('low')
-                                                        ? Colors.blue
-                                                        : Colors.grey,
+                                                        ? Tone.fg(Colors.blue)
+                                                        : Tone.fg(Colors.grey),
                                                 size: 20),
                                           ),
                                         ),
@@ -3063,38 +3064,38 @@ class _ControlScreenState extends State<ControlScreen>
                                     context,
                                     BoxDecoration(
                                       gradient: turnOn
-                                          ? const LinearGradient(colors: [
-                                              Color(0xFF4CAF50),
-                                              Color(0xFF43A047)
+                                          ? LinearGradient(colors: [
+                                              Tone.auto(Color(0xFF4CAF50)),
+                                              Tone.auto(Color(0xFF43A047))
                                             ])
                                           : null,
                                       color:
-                                          turnOn ? null : Colors.grey.shade50,
+                                          turnOn ? null : Tone.bg(Colors.grey.shade50),
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                           color: turnOn
                                               ? Colors.transparent
-                                              : Colors.grey.shade200),
+                                              : Tone.bg(Colors.grey.shade200)),
                                     )),
                                 child: Column(
                                   children: [
                                     Icon(CupertinoIcons.power,
                                         color:
-                                            turnOn ? Colors.white : Colors.grey,
+                                            turnOn ? Tone.fg(Colors.white) : Tone.fg(Colors.grey),
                                         size: 28),
                                     const SizedBox(height: 8),
                                     Text('Turn ON',
                                         style: GoogleFonts.inter(
                                             fontWeight: FontWeight.w600,
                                             color: turnOn
-                                                ? Colors.white
-                                                : Colors.grey.shade700)),
+                                                ? Tone.fg(Colors.white)
+                                                : Tone.fg(Colors.grey.shade700))),
                                     Text('Start compressor',
                                         style: GoogleFonts.inter(
                                             fontSize: 11,
                                             color: turnOn
-                                                ? Colors.white70
-                                                : Colors.grey)),
+                                                ? Tone.fg(Colors.white70)
+                                                : Tone.fg(Colors.grey))),
                                   ],
                                 ),
                               ),
@@ -3112,39 +3113,39 @@ class _ControlScreenState extends State<ControlScreen>
                                     context,
                                     BoxDecoration(
                                       gradient: !turnOn
-                                          ? const LinearGradient(colors: [
-                                              Color(0xFFF44336),
-                                              Color(0xFFE53935)
+                                          ? LinearGradient(colors: [
+                                              Tone.auto(Color(0xFFF44336)),
+                                              Tone.auto(Color(0xFFE53935))
                                             ])
                                           : null,
                                       color:
-                                          !turnOn ? null : Colors.grey.shade50,
+                                          !turnOn ? null : Tone.bg(Colors.grey.shade50),
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                           color: !turnOn
                                               ? Colors.transparent
-                                              : Colors.grey.shade200),
+                                              : Tone.bg(Colors.grey.shade200)),
                                     )),
                                 child: Column(
                                   children: [
                                     Icon(CupertinoIcons.stop_fill,
                                         color: !turnOn
-                                            ? Colors.white
-                                            : Colors.grey,
+                                            ? Tone.fg(Colors.white)
+                                            : Tone.fg(Colors.grey),
                                         size: 28),
                                     const SizedBox(height: 8),
                                     Text('Turn OFF',
                                         style: GoogleFonts.inter(
                                             fontWeight: FontWeight.w600,
                                             color: !turnOn
-                                                ? Colors.white
-                                                : Colors.grey.shade700)),
+                                                ? Tone.fg(Colors.white)
+                                                : Tone.fg(Colors.grey.shade700))),
                                     Text('Stop compressor',
                                         style: GoogleFonts.inter(
                                             fontSize: 11,
                                             color: !turnOn
-                                                ? Colors.white70
-                                                : Colors.grey)),
+                                                ? Tone.fg(Colors.white70)
+                                                : Tone.fg(Colors.grey))),
                                   ],
                                 ),
                               ),
@@ -3162,10 +3163,10 @@ class _ControlScreenState extends State<ControlScreen>
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Tone.bg(Colors.black).withOpacity(0.05),
                         blurRadius: 10,
                         offset: const Offset(0, -5))
                   ],
@@ -3178,7 +3179,7 @@ class _ControlScreenState extends State<ControlScreen>
                           onPressed: () => Navigator.pop(context),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: BorderSide(color: Colors.grey.shade300),
+                            side: BorderSide(color: Tone.bg(Colors.grey.shade300)),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
                                     isPhoneLayout(context) ? 32 : 12)),
@@ -3186,7 +3187,7 @@ class _ControlScreenState extends State<ControlScreen>
                           child: Text('Cancel',
                               style: GoogleFonts.inter(
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade700)),
+                                  color: Tone.fg(Colors.grey.shade700))),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -3195,13 +3196,13 @@ class _ControlScreenState extends State<ControlScreen>
                         child: Container(
                           decoration: isPhoneLayout(context)
                               ? BoxDecoration(
-                                  color: const Color(0xFF222B45),
+                                  color: Tone.bg(const Color(0xFF222B45)),
                                   borderRadius: BorderRadius.circular(32),
                                 )
                               : BoxDecoration(
-                                  gradient: const LinearGradient(colors: [
-                                    Color(0xFFFF9800),
-                                    Color(0xFFF57C00)
+                                  gradient: LinearGradient(colors: [
+                                    Tone.auto(Color(0xFFFF9800)),
+                                    Tone.auto(Color(0xFFF57C00))
                                   ]),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -3231,7 +3232,7 @@ class _ControlScreenState extends State<ControlScreen>
                             child: Text('Create Rule',
                                 style: GoogleFonts.inter(
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.white)),
+                                    color: Tone.fg(Colors.white))),
                           ),
                         ),
                       ),
@@ -3253,19 +3254,19 @@ class _ControlScreenState extends State<ControlScreen>
               color: GasPalette.panel,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: GasPalette.border),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                    color: Color(0x05000000),
+                    color: Tone.bg(Color(0x05000000)),
                     blurRadius: 8,
                     offset: Offset(0, 2))
               ],
             )
           : BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Tone.bg(Colors.black).withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -3281,11 +3282,11 @@ class _ControlScreenState extends State<ControlScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF64748B).withOpacity(0.1),
+                    color: Tone.bg(const Color(0xFF64748B)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(CupertinoIcons.clock,
-                      color: Color(0xFF64748B), size: 20),
+                  child: Icon(CupertinoIcons.clock,
+                      color: Tone.fg(Color(0xFF64748B)), size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -3294,13 +3295,13 @@ class _ControlScreenState extends State<ControlScreen>
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.fg(const Color(0xFF1E293B)),
                   ),
                 )),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          Divider(height: 1, color: Tone.bg(Color(0xFFE5E7EB))),
           if (_device1ControlHistory.isEmpty)
             Padding(
               padding: const EdgeInsets.all(32),
@@ -3310,11 +3311,11 @@ class _ControlScreenState extends State<ControlScreen>
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF64748B).withOpacity(0.1),
+                        color: Tone.bg(const Color(0xFF64748B)).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(CupertinoIcons.clock,
-                          size: 32, color: Color(0xFF64748B)),
+                      child: Icon(CupertinoIcons.clock,
+                          size: 32, color: Tone.fg(Color(0xFF64748B))),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -3322,7 +3323,7 @@ class _ControlScreenState extends State<ControlScreen>
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                       ),
                     ),
                   ],
@@ -3349,8 +3350,8 @@ class _ControlScreenState extends State<ControlScreen>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: item.defrostSwitch
-                              ? Colors.cyan
-                              : Colors.grey.shade300,
+                              ? Tone.bg(Colors.cyan)
+                              : Tone.bg(Colors.grey.shade300),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -3360,8 +3361,8 @@ class _ControlScreenState extends State<ControlScreen>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: item.compSwitch
-                              ? Colors.green
-                              : Colors.grey.shade300,
+                              ? Tone.bg(Colors.green)
+                              : Tone.bg(Colors.grey.shade300),
                         ),
                       ),
                     ],
@@ -3369,15 +3370,15 @@ class _ControlScreenState extends State<ControlScreen>
                   title: Row(
                     children: [
                       _buildMiniStatusChip(
-                          'Defrost', item.defrostSwitch, Colors.cyan),
+                          'Defrost', item.defrostSwitch, Tone.auto(Colors.cyan)),
                       const SizedBox(width: 8),
                       _buildMiniStatusChip(
-                          'Comp', item.compSwitch, Colors.green),
+                          'Comp', item.compSwitch, Tone.auto(Colors.green)),
                     ],
                   ),
                   trailing: Text(
                     _formatDateTime(item.receivedAt),
-                    style: GoogleFonts.inter(fontSize: 11, color: Colors.grey),
+                    style: GoogleFonts.inter(fontSize: 11, color: Tone.fg(Colors.grey)),
                   ),
                 );
               },
@@ -3391,10 +3392,10 @@ class _ControlScreenState extends State<ControlScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isOn ? activeColor.withOpacity(0.1) : const Color(0xFFF1F5F9),
+        color: isOn ? activeColor.withOpacity(0.1) : Tone.bg(const Color(0xFFF1F5F9)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isOn ? activeColor.withOpacity(0.3) : const Color(0xFFE5E7EB),
+          color: isOn ? activeColor.withOpacity(0.3) : Tone.bg(const Color(0xFFE5E7EB)),
         ),
       ),
       child: Row(
@@ -3405,7 +3406,7 @@ class _ControlScreenState extends State<ControlScreen>
             height: 6,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isOn ? activeColor : const Color(0xFF9CA3AF),
+              color: isOn ? activeColor : Tone.bg(const Color(0xFF9CA3AF)),
             ),
           ),
           const SizedBox(width: 4),
@@ -3414,7 +3415,7 @@ class _ControlScreenState extends State<ControlScreen>
             style: GoogleFonts.inter(
               fontSize: 10,
               fontWeight: FontWeight.w500,
-              color: isOn ? activeColor : const Color(0xFF64748B),
+              color: isOn ? activeColor : Tone.fg(const Color(0xFF64748B)),
             ),
           ),
         ],
@@ -3444,7 +3445,7 @@ class _ControlScreenState extends State<ControlScreen>
                 IconButton(
                   tooltip: 'Refresh relays',
                   onPressed: _isLoading ? null : () => _loadData(),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.refresh_rounded,
                     size: 20,
                     color: GasPalette.ink2,
@@ -3461,7 +3462,7 @@ class _ControlScreenState extends State<ControlScreen>
                         : () => _toggleDevice5AllRelays(true),
                     style: FilledButton.styleFrom(
                       backgroundColor: GasPalette.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Tone.fg(Colors.white),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(32),
                       ),
@@ -3477,7 +3478,7 @@ class _ControlScreenState extends State<ControlScreen>
                         : () => _toggleDevice5AllRelays(false),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: GasPalette.ink,
-                      side: const BorderSide(color: GasPalette.border),
+                      side: BorderSide(color: GasPalette.border),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(32),
                       ),
@@ -3489,7 +3490,7 @@ class _ControlScreenState extends State<ControlScreen>
             ),
             const SizedBox(height: 8),
             for (var relay = 1; relay <= 16; relay++) ...[
-              const Divider(height: 1, color: GasPalette.border),
+              Divider(height: 1, color: GasPalette.border),
               _buildDevice5RelayTile(
                 relay,
                 _device5RelayStates[relay] ?? false,
@@ -3507,20 +3508,20 @@ class _ControlScreenState extends State<ControlScreen>
               color: GasPalette.panel,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: GasPalette.border),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x05000000),
+                  color: Tone.bg(Color(0x05000000)),
                   blurRadius: 8,
                   offset: Offset(0, 2),
                 ),
               ],
             )
           : BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Tone.bg(Colors.black).withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -3535,12 +3536,12 @@ class _ControlScreenState extends State<ControlScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                  color: Tone.bg(const Color(0xFF8B5CF6)).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   CupertinoIcons.slider_horizontal_3,
-                  color: Color(0xFF8B5CF6),
+                  color: Tone.fg(Color(0xFF8B5CF6)),
                   size: 24,
                 ),
               ),
@@ -3554,7 +3555,7 @@ class _ControlScreenState extends State<ControlScreen>
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                       ),
                     ),
                     Row(
@@ -3563,7 +3564,7 @@ class _ControlScreenState extends State<ControlScreen>
                           'Relay Controller',
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -3573,7 +3574,7 @@ class _ControlScreenState extends State<ControlScreen>
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                            color: Tone.bg(const Color(0xFF8B5CF6)).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -3581,7 +3582,7 @@ class _ControlScreenState extends State<ControlScreen>
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF8B5CF6),
+                              color: Tone.fg(const Color(0xFF8B5CF6)),
                             ),
                           ),
                         ),
@@ -3591,9 +3592,9 @@ class _ControlScreenState extends State<ControlScreen>
                 ),
               ),
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.refresh_rounded,
-                  color: Color(0xFF8B5CF6),
+                  color: Tone.fg(Color(0xFF8B5CF6)),
                 ),
                 onPressed: _isLoading ? null : () => _loadData(),
               ),
@@ -3616,9 +3617,9 @@ class _ControlScreenState extends State<ControlScreen>
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isPhoneLayout(context)
-                        ? const Color(0xFF222B45)
-                        : const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
+                        ? Tone.bg(const Color(0xFF222B45))
+                        : Tone.bg(const Color(0xFF10B981)),
+                    foregroundColor: Tone.fg(Colors.white),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(
@@ -3641,8 +3642,8 @@ class _ControlScreenState extends State<ControlScreen>
                     style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEF4444),
-                    foregroundColor: Colors.white,
+                    backgroundColor: Tone.bg(const Color(0xFFEF4444)),
+                    foregroundColor: Tone.fg(Colors.white),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(
@@ -3710,7 +3711,7 @@ class _ControlScreenState extends State<ControlScreen>
             onChanged: _isLoading
                 ? null
                 : (value) => _toggleDevice5Relay(relayNumber, value),
-            activeThumbColor: Colors.white,
+            activeThumbColor: Tone.auto(Colors.white),
             activeTrackColor: GasPalette.primary,
           ),
         ],
@@ -3720,13 +3721,13 @@ class _ControlScreenState extends State<ControlScreen>
     return Container(
       decoration: BoxDecoration(
         color: isOn
-            ? const Color(0xFF8B5CF6).withOpacity(0.05)
-            : const Color(0xFFF9FAFB),
+            ? Tone.bg(const Color(0xFF8B5CF6)).withOpacity(0.05)
+            : Tone.bg(const Color(0xFFF9FAFB)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isOn
-              ? const Color(0xFF8B5CF6).withOpacity(0.3)
-              : const Color(0xFFE5E7EB),
+              ? Tone.bg(const Color(0xFF8B5CF6)).withOpacity(0.3)
+              : Tone.bg(const Color(0xFFE5E7EB)),
           width: isOn ? 2 : 1,
         ),
       ),
@@ -3738,7 +3739,7 @@ class _ControlScreenState extends State<ControlScreen>
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: isOn ? const Color(0xFF8B5CF6) : const Color(0xFF64748B),
+              color: isOn ? Tone.fg(const Color(0xFF8B5CF6)) : Tone.fg(const Color(0xFF64748B)),
             ),
           ),
           const SizedBox(height: 2),
@@ -3747,7 +3748,7 @@ class _ControlScreenState extends State<ControlScreen>
             style: GoogleFonts.inter(
               fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: isOn ? const Color(0xFF10B981) : const Color(0xFF9CA3AF),
+              color: isOn ? Tone.fg(const Color(0xFF10B981)) : Tone.fg(const Color(0xFF9CA3AF)),
             ),
           ),
           const SizedBox(height: 4),
@@ -3758,10 +3759,10 @@ class _ControlScreenState extends State<ControlScreen>
               onChanged: _isLoading
                   ? null
                   : (val) => _toggleDevice5Relay(relayNumber, val),
-              activeColor: const Color(0xFF8B5CF6),
-              activeTrackColor: const Color(0xFF8B5CF6).withOpacity(0.3),
-              inactiveThumbColor: const Color(0xFF9CA3AF),
-              inactiveTrackColor: const Color(0xFFE5E7EB),
+              activeColor: Tone.auto(const Color(0xFF8B5CF6)),
+              activeTrackColor: Tone.auto(const Color(0xFF8B5CF6)).withOpacity(0.3),
+              inactiveThumbColor: Tone.bg(const Color(0xFF9CA3AF)),
+              inactiveTrackColor: Tone.bg(const Color(0xFFE5E7EB)),
             ),
           ),
         ],
@@ -3776,20 +3777,20 @@ class _ControlScreenState extends State<ControlScreen>
               color: GasPalette.panel,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: GasPalette.border),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x05000000),
+                  color: Tone.bg(Color(0x05000000)),
                   blurRadius: 8,
                   offset: Offset(0, 2),
                 ),
               ],
             )
           : BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Tone.bg(Colors.black).withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -3805,12 +3806,12 @@ class _ControlScreenState extends State<ControlScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF64748B).withOpacity(0.1),
+                    color: Tone.bg(const Color(0xFF64748B)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     CupertinoIcons.clock,
-                    color: Color(0xFF64748B),
+                    color: Tone.fg(Color(0xFF64748B)),
                     size: 20,
                   ),
                 ),
@@ -3821,14 +3822,14 @@ class _ControlScreenState extends State<ControlScreen>
                     style: GoogleFonts.inter(
                       fontSize: isPhoneLayout(context) ? 16 : 18,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1E293B),
+                      color: Tone.fg(const Color(0xFF1E293B)),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          Divider(height: 1, color: Tone.bg(Color(0xFFE5E7EB))),
           if (_device5History.isEmpty)
             Padding(
               padding: EdgeInsets.all(isPhoneLayout(context) ? 16 : 32),
@@ -3838,13 +3839,13 @@ class _ControlScreenState extends State<ControlScreen>
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF64748B).withOpacity(0.1),
+                        color: Tone.bg(const Color(0xFF64748B)).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         CupertinoIcons.clock,
                         size: 32,
-                        color: Color(0xFF64748B),
+                        color: Tone.fg(Color(0xFF64748B)),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -3853,7 +3854,7 @@ class _ControlScreenState extends State<ControlScreen>
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                       ),
                     ),
                   ],
@@ -3868,7 +3869,7 @@ class _ControlScreenState extends State<ControlScreen>
                   ? 20
                   : _device5History.length,
               separatorBuilder: (context, index) =>
-                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  Divider(height: 1, color: Tone.bg(Color(0xFFF1F5F9))),
               itemBuilder: (context, index) {
                 final item = _device5History[index];
                 final isOn = item['action'] == 'relay_on';
@@ -3878,15 +3879,15 @@ class _ControlScreenState extends State<ControlScreen>
                     height: 36,
                     decoration: BoxDecoration(
                       color: isOn
-                          ? const Color(0xFF10B981).withOpacity(0.1)
-                          : const Color(0xFFEF4444).withOpacity(0.1),
+                          ? Tone.bg(const Color(0xFF10B981)).withOpacity(0.1)
+                          : Tone.bg(const Color(0xFFEF4444)).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       isOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
                       color: isOn
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
+                          ? Tone.fg(const Color(0xFF10B981))
+                          : Tone.fg(const Color(0xFFEF4444)),
                       size: 20,
                     ),
                   ),
@@ -3895,7 +3896,7 @@ class _ControlScreenState extends State<ControlScreen>
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF1E293B),
+                      color: Tone.fg(const Color(0xFF1E293B)),
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -3904,14 +3905,14 @@ class _ControlScreenState extends State<ControlScreen>
                     item['performed_by'] ?? 'System',
                     style: GoogleFonts.inter(
                       fontSize: 11,
-                      color: const Color(0xFF9CA3AF),
+                      color: Tone.fg(const Color(0xFF9CA3AF)),
                     ),
                   ),
                   trailing: Text(
                     _formatDateTime(item['timestamp']),
                     style: GoogleFonts.inter(
                       fontSize: 11,
-                      color: const Color(0xFF9CA3AF),
+                      color: Tone.fg(const Color(0xFF9CA3AF)),
                     ),
                   ),
                 );
@@ -3935,8 +3936,8 @@ class _ControlScreenState extends State<ControlScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9FAFB),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          color: Tone.bg(const Color(0xFFF9FAFB)),
+          border: Border.all(color: Tone.bg(const Color(0xFFE5E7EB))),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -3959,20 +3960,20 @@ class _ControlScreenState extends State<ControlScreen>
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1E293B),
+                      color: Tone.fg(const Color(0xFF1E293B)),
                     ),
                   ),
                   Text(
                     subtitle,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: const Color(0xFF64748B),
+                      color: Tone.fg(const Color(0xFF64748B)),
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
+            Icon(Icons.chevron_right, color: Tone.fg(Color(0xFF9CA3AF))),
           ],
         ),
       ),
@@ -4040,7 +4041,7 @@ class _ControlScreenState extends State<ControlScreen>
               _toggleRelay(false, durationMinutes: minutes);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
+              backgroundColor: Tone.bg(Colors.orange),
             ),
             child: const Text('Turn OFF'),
           ),
@@ -4133,7 +4134,7 @@ class _ControlScreenState extends State<ControlScreen>
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
+                        border: Border.all(color: Tone.bg(Colors.grey)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -4239,7 +4240,7 @@ class _ControlScreenState extends State<ControlScreen>
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
+                        border: Border.all(color: Tone.bg(Colors.grey)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -4311,13 +4312,13 @@ class _ControlScreenState extends State<ControlScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                color: Tone.bg(const Color(0xFF3B82F6)).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 CupertinoIcons.calendar_badge_plus,
                 size: 32,
-                color: Color(0xFF3B82F6),
+                color: Tone.fg(Color(0xFF3B82F6)),
               ),
             ),
             const SizedBox(height: 12),
@@ -4326,7 +4327,7 @@ class _ControlScreenState extends State<ControlScreen>
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E293B),
+                color: Tone.fg(const Color(0xFF1E293B)),
               ),
             ),
           ],
@@ -4342,17 +4343,17 @@ class _ControlScreenState extends State<ControlScreen>
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
+            color: Tone.bg(const Color(0xFFF9FAFB)),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: Tone.bg(const Color(0xFFE5E7EB))),
           ),
           child: ListTile(
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: schedule.relayStatus
-                    ? const Color(0xFF10B981).withOpacity(0.1)
-                    : const Color(0xFFEF4444).withOpacity(0.1),
+                    ? Tone.bg(const Color(0xFF10B981)).withOpacity(0.1)
+                    : Tone.bg(const Color(0xFFEF4444)).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -4360,23 +4361,23 @@ class _ControlScreenState extends State<ControlScreen>
                     ? Icons.power_rounded
                     : Icons.power_off_rounded,
                 color: schedule.relayStatus
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFFEF4444),
+                    ? Tone.fg(const Color(0xFF10B981))
+                    : Tone.fg(const Color(0xFFEF4444)),
               ),
             ),
             title: Text(
               schedule.scheduleTypeDisplay,
               style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+                  fontWeight: FontWeight.w600, color: Tone.fg(const Color(0xFF1E293B))),
             ),
             subtitle: Text(
               _formatScheduleDetails(schedule),
               style: GoogleFonts.inter(
-                  fontSize: 12, color: const Color(0xFF64748B)),
+                  fontSize: 12, color: Tone.fg(const Color(0xFF64748B))),
             ),
             trailing: IconButton(
-              icon: const Icon(Icons.delete_outline_rounded,
-                  color: Color(0xFFEF4444)),
+              icon: Icon(Icons.delete_outline_rounded,
+                  color: Tone.fg(Color(0xFFEF4444))),
               onPressed: () => _deleteSchedule(schedule.id),
             ),
           ),
@@ -4408,13 +4409,13 @@ class _ControlScreenState extends State<ControlScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF64748B).withOpacity(0.1),
+                color: Tone.bg(const Color(0xFF64748B)).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 CupertinoIcons.clock,
                 size: 32,
-                color: Color(0xFF64748B),
+                color: Tone.fg(Color(0xFF64748B)),
               ),
             ),
             const SizedBox(height: 12),
@@ -4423,7 +4424,7 @@ class _ControlScreenState extends State<ControlScreen>
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E293B),
+                color: Tone.fg(const Color(0xFF1E293B)),
               ),
             ),
           ],
@@ -4440,38 +4441,38 @@ class _ControlScreenState extends State<ControlScreen>
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
+            color: Tone.bg(const Color(0xFFF9FAFB)),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: Tone.bg(const Color(0xFFE5E7EB))),
           ),
           child: ListTile(
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isOn
-                    ? const Color(0xFF10B981).withOpacity(0.1)
-                    : const Color(0xFFEF4444).withOpacity(0.1),
+                    ? Tone.bg(const Color(0xFF10B981)).withOpacity(0.1)
+                    : Tone.bg(const Color(0xFFEF4444)).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 isOn ? Icons.power_rounded : Icons.power_off_rounded,
-                color: isOn ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                color: isOn ? Tone.fg(const Color(0xFF10B981)) : Tone.fg(const Color(0xFFEF4444)),
               ),
             ),
             title: Text(
               'Turned ${item.actionDisplay}',
               style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+                  fontWeight: FontWeight.w600, color: Tone.fg(const Color(0xFF1E293B))),
             ),
             subtitle: Text(
               '${item.performedBy} - ${item.reason ?? ''}',
               style: GoogleFonts.inter(
-                  fontSize: 12, color: const Color(0xFF64748B)),
+                  fontSize: 12, color: Tone.fg(const Color(0xFF64748B))),
             ),
             trailing: Text(
               _formatDateTime(item.timestamp),
               style: GoogleFonts.inter(
-                  fontSize: 12, color: const Color(0xFF9CA3AF)),
+                  fontSize: 12, color: Tone.fg(const Color(0xFF9CA3AF))),
             ),
           ),
         );

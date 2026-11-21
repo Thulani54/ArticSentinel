@@ -1,11 +1,11 @@
 {
-    "name": "artic_sentinel",
-    "short_name": "artic_sentinel",
+    "name": "Artic Sentinel",
+    "short_name": "Artic Sentinel",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A navario project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#FFFFFF",
+    "description": "Monitor your refrigeration, ice machines and gas cylinders.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

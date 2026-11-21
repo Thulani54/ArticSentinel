@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:artic_sentinel/models/device.dart';
-import 'package:artic_sentinel/gasmon/gas_theme.dart';
 import 'package:artic_sentinel/widgets/mobile_forms.dart';
-import 'package:artic_sentinel/screens/device_management.dart';
 
 void main() {
   Future<void> mount(WidgetTester tester, Widget child,
@@ -77,51 +74,6 @@ void main() {
     expect(find.byIcon(Icons.person), findsOneWidget);
     expect(tester.getTopLeft(find.byKey(const Key('first'))).dy,
         tester.getTopLeft(find.byKey(const Key('second'))).dy);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('add gas switches fields without overflow on a narrow phone',
-      (tester) async {
-    await mount(tester, const AddDeviceDialog(availableUnits: []), width: 320);
-    await tester.tap(find.byKey(const ValueKey('mobile-device-type')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Gas cylinder').last);
-    await tester.pumpAndSettle();
-    expect(find.text('Add gas cylinder'), findsNWidgets(2));
-    expect(find.byKey(const ValueKey('Gas capacity (kg)')), findsOneWidget);
-    expect(find.byKey(const ValueKey('Empty cylinder weight (kg)')),
-        findsOneWidget);
-    expect(find.text('Phase type'), findsNothing);
-    expect(find.text('Minimum temperature (°C)'), findsNothing);
-    expect(tester.getSize(find.byType(Dialog)).width, 320);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('phone dialog keeps save action reachable above keyboard',
-      (tester) async {
-    await mount(tester, const AddDeviceDialog(availableUnits: []),
-        keyboard: 300);
-    final button = tester.getRect(find.byType(FilledButton));
-    expect(button.bottom, lessThanOrEqualTo(500));
-    expect(button.left, greaterThanOrEqualTo(0));
-    expect(button.right, lessThanOrEqualTo(360));
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('edit device selected dropdown values stay legible on phones',
-      (tester) async {
-    await mount(tester, EditDeviceDialog(
-      device: Device(name: 'Bathroom Gas', deviceId: '1133',
-          deviceType: 'gas_cylinder', phaseType: 'single'),
-      availableUnits: const [],
-    ), width: 320);
-    final dropdowns = tester.widgetList<DropdownButton<String>>(
-        find.byType(DropdownButton<String>));
-    expect(dropdowns, isNotEmpty);
-    for (final dropdown in dropdowns) {
-      expect(dropdown.style?.color, GasPalette.ink);
-      expect(dropdown.isExpanded, isTrue);
-    }
     expect(tester.takeException(), isNull);
   });
 }

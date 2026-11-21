@@ -1,3 +1,4 @@
+import '../../widgets/app_tone.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../custom_widgets/customCard.dart';
 import '../../gasmon/gas_widgets.dart';
@@ -13,8 +14,8 @@ BoxDecoration accountSurface(BuildContext context, BoxDecoration original,
     color: GasPalette.panel,
     borderRadius: BorderRadius.circular(radius),
     border: Border.all(color: GasPalette.border),
-    boxShadow: const [
-      BoxShadow(color: Color(0x05133648), blurRadius: 3, offset: Offset(0, 2))
+    boxShadow: [
+      BoxShadow(color: Tone.bg(Color(0x05133648)), blurRadius: 3, offset: Offset(0, 2))
     ],
   );
 }
@@ -33,7 +34,7 @@ ButtonStyle accountButtonStyle(BuildContext context, ButtonStyle original,
                 : GasPalette.primary)
         : original.backgroundColor,
     foregroundColor: primary
-        ? const WidgetStatePropertyAll(Colors.white)
+        ? WidgetStatePropertyAll(Tone.fg(Colors.white))
         : original.foregroundColor,
     elevation: const WidgetStatePropertyAll(0),
   );
@@ -121,7 +122,7 @@ class AccountDetailSection extends StatelessWidget {
     padding: const EdgeInsets.all(14),
     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Text(title, style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
-      const Padding(padding: EdgeInsets.symmetric(vertical: 12),
+      Padding(padding: EdgeInsets.symmetric(vertical: 12),
           child: Divider(height: 1, color: GasPalette.border)),
       for (var index = 0; index < values.length; index++) ...[
         if (index > 0) const SizedBox(height: 14),

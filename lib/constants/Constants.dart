@@ -1,6 +1,7 @@
 import 'package:artic_sentinel/models/business.dart';
 import 'package:artic_sentinel/models/dashboard.dart';
 import 'package:flutter/material.dart';
+import '../widgets/app_tone.dart';
 import 'package:intl/intl.dart';
 
 import 'models/device.dart';
@@ -26,10 +27,12 @@ class Constants {
   static String myPostalCode = "------";
   static String myProvince = "------";
   // Main color constants
-  static var ctaColorLight = Color(0xFF222b45);
+  static Color get ctaColorLight =>
+      Tone.dark ? const Color(0xFF4A7FE0) : const Color(0xFF222b45);
   static var ctaColorGreen = Color(0xFF10B981); // Proper green color
   static var ctaColorGrey = Color(0xFF9CA3AF); // Proper grey color
-  static var ctaTextColor = Color(0xFF737791);
+  static Color get ctaTextColor =>
+      Tone.dark ? const Color(0xFF9AA0B8) : const Color(0xFF737791);
 
   // State colors
   static var criticalColor = Color(0xFFEF4444); // Red for critical conditions

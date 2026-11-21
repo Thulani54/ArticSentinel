@@ -1,4 +1,6 @@
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_screen.dart';
+import '../device_journal/alert_team_panel.dart';
 import '../gasmon/gas_theme.dart';
 import '../gasmon/gas_widgets.dart';
 import '../widgets/app_empty_state.dart';
@@ -11,7 +13,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 import 'package:http/http.dart' as http;
 import '../constants/Constants.dart';
-import '../custom_widgets/customCard.dart';
 import '../models/alert.dart';
 import '../services/shared_preferences.dart';
 import '../widgets/compact_header.dart';
@@ -53,11 +54,13 @@ class AlertApiService {
       requestData['device_id'] = deviceId;
     }
 
-    final response = await http.post(
-      Uri.parse('${_baseUrl}api/alerts/list/'),
-      headers: await _getHeaders(),
-      body: jsonEncode(requestData),
-    ).timeout(const Duration(seconds: 20));
+    final response = await http
+        .post(
+          Uri.parse('${_baseUrl}api/alerts/list/'),
+          headers: await _getHeaders(),
+          body: jsonEncode(requestData),
+        )
+        .timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -70,14 +73,16 @@ class AlertApiService {
   // Get alerts by status
   static Future<List<Alert>> getAlertsByStatus(
       int businessId, String status) async {
-    final response = await http.post(
-      Uri.parse('${_baseUrl}api/alerts/by-status/'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        "business_id": businessId,
-        "status": status,
-      }),
-    ).timeout(const Duration(seconds: 20));
+    final response = await http
+        .post(
+          Uri.parse('${_baseUrl}api/alerts/by-status/'),
+          headers: await _getHeaders(),
+          body: jsonEncode({
+            "business_id": businessId,
+            "status": status,
+          }),
+        )
+        .timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -91,14 +96,16 @@ class AlertApiService {
   // Get alerts by severity
   static Future<List<Alert>> getAlertsBySeverity(
       int businessId, String severity) async {
-    final response = await http.post(
-      Uri.parse('${_baseUrl}api/alerts/by-severity/'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        "business_id": businessId,
-        "severity": severity,
-      }),
-    ).timeout(const Duration(seconds: 20));
+    final response = await http
+        .post(
+          Uri.parse('${_baseUrl}api/alerts/by-severity/'),
+          headers: await _getHeaders(),
+          body: jsonEncode({
+            "business_id": businessId,
+            "severity": severity,
+          }),
+        )
+        .timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -194,13 +201,15 @@ class AlertApiService {
 
   // Get alert statistics
   static Future<Map<String, dynamic>> getAlertStatistics(int businessId) async {
-    final response = await http.post(
-      Uri.parse('${_baseUrl}api/alerts/statistics/'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        "business_id": businessId,
-      }),
-    ).timeout(const Duration(seconds: 20));
+    final response = await http
+        .post(
+          Uri.parse('${_baseUrl}api/alerts/statistics/'),
+          headers: await _getHeaders(),
+          body: jsonEncode({
+            "business_id": businessId,
+          }),
+        )
+        .timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -211,14 +220,16 @@ class AlertApiService {
 
   // Get alert details
   static Future<Alert> getAlertDetails(String businessId, int alertId) async {
-    final response = await http.post(
-      Uri.parse('${_baseUrl}api/alerts/detail/'),
-      headers: await _getHeaders(),
-      body: jsonEncode({
-        "business_id": businessId,
-        "alert_id": alertId,
-      }),
-    ).timeout(const Duration(seconds: 20));
+    final response = await http
+        .post(
+          Uri.parse('${_baseUrl}api/alerts/detail/'),
+          headers: await _getHeaders(),
+          body: jsonEncode({
+            "business_id": businessId,
+            "alert_id": alertId,
+          }),
+        )
+        .timeout(const Duration(seconds: 20));
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -362,9 +373,9 @@ class _NotificationPageState extends State<NotificationPage> {
       if (!mounted) return;
       _loadError = 'Check your connection and try again.';
       if (!isPhoneLayout(context)) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Unable to load alerts. Try again.'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
         ));
       }
       currentAlerts = [];
@@ -397,7 +408,7 @@ class _NotificationPageState extends State<NotificationPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to mark all as read'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
         ),
       );
     }
@@ -425,35 +436,7 @@ class _NotificationPageState extends State<NotificationPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to acknowledge alert'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _resolveAlert(Alert alert) async {
-    try {
-      int? businessId = Constants.myBusiness.businessUid;
-      if (businessId > 0 && alert.id != null) {
-        bool success =
-            await AlertApiService.resolveAlert(businessId, alert.id!);
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Alert resolved'),
-              backgroundColor: Constants.ctaColorLight,
-            ),
-          );
-          _loadAlertStatistics();
-          _loadAlerts();
-        }
-      }
-    } catch (e) {
-      print('Error resolving alert: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to resolve alert'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
         ),
       );
     }
@@ -465,7 +448,10 @@ class _NotificationPageState extends State<NotificationPage> {
       builder: (context) => AlertDetailsDialog(
         alert: alert,
         onAcknowledge: () => _acknowledgeAlert(alert),
-        onResolve: () => _resolveAlert(alert),
+        onTeamChanged: () {
+          _loadAlertStatistics();
+          _loadAlerts();
+        },
       ),
     );
   }
@@ -493,11 +479,11 @@ class _NotificationPageState extends State<NotificationPage> {
             // Main Content Card
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Tone.bg(Colors.black).withOpacity(0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -511,7 +497,7 @@ class _NotificationPageState extends State<NotificationPage> {
                     margin: const EdgeInsets.all(20),
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: _isLoadingStatistics
@@ -549,13 +535,13 @@ class _NotificationPageState extends State<NotificationPage> {
                                           horizontal: 16, vertical: 12),
                                       decoration: BoxDecoration(
                                         color: isSelected
-                                            ? Colors.white
+                                            ? Tone.bg(Colors.white)
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(8),
                                         boxShadow: isSelected
                                             ? [
                                                 BoxShadow(
-                                                  color: Colors.black
+                                                  color: Tone.bg(Colors.black)
                                                       .withOpacity(0.05),
                                                   blurRadius: 4,
                                                   offset: const Offset(0, 2),
@@ -574,8 +560,8 @@ class _NotificationPageState extends State<NotificationPage> {
                                                   ? FontWeight.w600
                                                   : FontWeight.w500,
                                               color: isSelected
-                                                  ? const Color(0xFF1E293B)
-                                                  : const Color(0xFF64748B),
+                                                  ? Tone.fg(const Color(0xFF1E293B))
+                                                  : Tone.fg(const Color(0xFF64748B)),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
@@ -586,7 +572,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                               color: isSelected
                                                   ? _getSeverityColor(
                                                       nav.item_id)
-                                                  : const Color(0xFF94A3B8),
+                                                  : Tone.bg(const Color(0xFF94A3B8)),
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                             ),
@@ -595,7 +581,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                               style: GoogleFonts.inter(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w600,
-                                                color: Colors.white,
+                                                color: Tone.fg(Colors.white),
                                               ),
                                             ),
                                           ),
@@ -617,7 +603,7 @@ class _NotificationPageState extends State<NotificationPage> {
                       style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.fg(const Color(0xFF1E293B)),
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -632,7 +618,7 @@ class _NotificationPageState extends State<NotificationPage> {
                     ),
                     margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: _isLoading
@@ -650,7 +636,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                       Icon(
                                         Icons.notifications_none_rounded,
                                         size: 48,
-                                        color: Colors.grey.shade400,
+                                        color: Tone.fg(Colors.grey.shade400),
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
@@ -658,14 +644,14 @@ class _NotificationPageState extends State<NotificationPage> {
                                         style: GoogleFonts.inter(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w500,
-                                          color: Colors.grey.shade600,
+                                          color: Tone.fg(Colors.grey.shade600),
                                         ),
                                       ),
                                       Text(
                                         'All clear for now!',
                                         style: GoogleFonts.inter(
                                           fontSize: 14,
-                                          color: Colors.grey.shade500,
+                                          color: Tone.fg(Colors.grey.shade500),
                                         ),
                                       ),
                                     ],
@@ -686,7 +672,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                     child: Container(
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFAFAFA),
+                                        color: Tone.bg(const Color(0xFFFAFAFA)),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                           color: alert.severityColor
@@ -696,7 +682,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                         boxShadow: [
                                           BoxShadow(
                                             color:
-                                                Colors.black.withOpacity(0.02),
+                                                Tone.bg(Colors.black).withOpacity(0.02),
                                             blurRadius: 4,
                                             offset: const Offset(0, 1),
                                           ),
@@ -723,7 +709,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                             child: Icon(
                                               alert.severityIcon,
                                               size: 20,
-                                              color: Colors.white,
+                                              color: Tone.fg(Colors.white),
                                             ),
                                           ),
 
@@ -773,7 +759,7 @@ class _NotificationPageState extends State<NotificationPage> {
                                                           fontSize: 10,
                                                           fontWeight:
                                                               FontWeight.w600,
-                                                          color: Colors.white,
+                                                          color: Tone.fg(Colors.white),
                                                         ),
                                                       ),
                                                     ),
@@ -912,12 +898,12 @@ class _NotificationPageState extends State<NotificationPage> {
                       label: Text(_statisticsFailed
                           ? entry.value.itemName
                           : '${entry.value.itemName}  ${entry.value.itemTotal}'),
-                      selectedColor: const Color(0xFFE9EDF4),
+                      selectedColor: Tone.bg(const Color(0xFFE9EDF4)),
                       backgroundColor: GasPalette.panel,
                       showCheckmark: false,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(32)),
-                      side: const BorderSide(color: GasPalette.border),
+                      side: BorderSide(color: GasPalette.border),
                       labelStyle: gasSmall(context).copyWith(
                         color: navIndex == entry.key
                             ? GasPalette.primary
@@ -943,7 +929,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Column(children: [
-                const CircularProgressIndicator(color: GasPalette.primary),
+                CircularProgressIndicator(color: GasPalette.primary),
                 const SizedBox(height: 16),
                 Text('Loading alerts…', style: gasBody(context)),
               ]),
@@ -970,7 +956,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   child: Column(children: [
                     for (final entry in currentAlerts.asMap().entries) ...[
                       if (entry.key > 0)
-                        const Divider(height: 1, color: GasPalette.border),
+                        Divider(height: 1, color: GasPalette.border),
                       _phoneAlertRow(context, entry.value),
                     ],
                   ]),
@@ -1021,7 +1007,7 @@ class _NotificationPageState extends State<NotificationPage> {
                       style: gasTitle(context).copyWith(
                           fontSize: 14, fontWeight: FontWeight.w600))),
               const SizedBox(width: 10),
-              const Icon(Icons.chevron_right_rounded,
+              Icon(Icons.chevron_right_rounded,
                   size: 20, color: GasPalette.ink2),
             ]),
             const SizedBox(height: 5),
@@ -1067,7 +1053,7 @@ class _NotificationPageState extends State<NotificationPage> {
   Color _getSeverityColor(String category) {
     switch (category.toLowerCase()) {
       case 'critical':
-        return const Color(0xFFEF4444);
+        return Tone.auto(const Color(0xFFEF4444));
       case 'high':
         return Constants.ctaColorLight;
       case 'medium':
@@ -1086,13 +1072,13 @@ class _NotificationPageState extends State<NotificationPage> {
 class AlertDetailsDialog extends StatelessWidget {
   final Alert alert;
   final VoidCallback? onAcknowledge;
-  final VoidCallback? onResolve;
+  final VoidCallback? onTeamChanged;
 
   const AlertDetailsDialog({
     Key? key,
     required this.alert,
     this.onAcknowledge,
-    this.onResolve,
+    this.onTeamChanged,
   }) : super(key: key);
 
   @override
@@ -1109,11 +1095,11 @@ class AlertDetailsDialog extends StatelessWidget {
               (isPhoneLayout(context) ? 1 : 0.85),
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Tone.bg(Colors.black).withOpacity(0.15),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -1161,7 +1147,7 @@ class AlertDetailsDialog extends StatelessWidget {
                         ),
                         child: Icon(
                           alert.severityIcon,
-                          color: Colors.white,
+                          color: Tone.fg(Colors.white),
                           size: 24,
                         ),
                       ),
@@ -1175,7 +1161,7 @@ class AlertDetailsDialog extends StatelessWidget {
                               style: GoogleFonts.inter(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF1E293B),
+                                color: Tone.fg(const Color(0xFF1E293B)),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -1193,7 +1179,7 @@ class AlertDetailsDialog extends StatelessWidget {
                                     style: GoogleFonts.inter(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.white,
+                                      color: Tone.fg(Colors.white),
                                     ),
                                   ),
                                 ),
@@ -1212,7 +1198,7 @@ class AlertDetailsDialog extends StatelessWidget {
                                   style: GoogleFonts.inter(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
-                                    color: const Color(0xFF64748B),
+                                    color: Tone.fg(const Color(0xFF64748B)),
                                   ),
                                 ),
                               ],
@@ -1224,8 +1210,8 @@ class AlertDetailsDialog extends StatelessWidget {
                         onPressed: () => Navigator.of(context).pop(),
                         icon: const Icon(Icons.close_rounded),
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.8),
-                          foregroundColor: const Color(0xFF64748B),
+                          backgroundColor: Tone.bg(Colors.white).withOpacity(0.8),
+                          foregroundColor: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                     ],
@@ -1236,7 +1222,7 @@ class AlertDetailsDialog extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1E293B),
+                      color: Tone.fg(const Color(0xFF1E293B)),
                     ),
                   ),
                 ],
@@ -1335,6 +1321,14 @@ class AlertDetailsDialog extends StatelessWidget {
                       ],
                     ),
 
+                    if (alert.id != null) ...[
+                      const SizedBox(height: 20),
+                      AlertTeamPanel(
+                          alertId: alert.id!,
+                          onChanged: onTeamChanged,
+                          onResolved: () => Navigator.of(context).pop()),
+                    ],
+
                     // Trigger Data Card (if available)
                     if (alert.triggerData != null &&
                         alert.triggerData!.isNotEmpty) ...[
@@ -1347,16 +1341,16 @@ class AlertDetailsDialog extends StatelessWidget {
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
+                              color: Tone.bg(const Color(0xFFF8FAFC)),
                               borderRadius: BorderRadius.circular(12),
                               border:
-                                  Border.all(color: const Color(0xFFE2E8F0)),
+                                  Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
                             ),
                             child: Text(
                               alert.triggerData.toString(),
                               style: GoogleFonts.jetBrainsMono(
                                 fontSize: 12,
-                                color: const Color(0xFF475569),
+                                color: Tone.fg(const Color(0xFF475569)),
                                 height: 1.5,
                               ),
                             ),
@@ -1373,7 +1367,7 @@ class AlertDetailsDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: Tone.bg(const Color(0xFFF8FAFC)),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -1398,7 +1392,7 @@ class AlertDetailsDialog extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: const Color(0xFF64748B),
+                        color: Tone.fg(const Color(0xFF64748B)),
                       ),
                     ),
                   ),
@@ -1423,40 +1417,7 @@ class AlertDetailsDialog extends StatelessWidget {
                         backgroundColor: isPhoneLayout(context)
                             ? GasPalette.primary
                             : Constants.ctaColorLight,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                              isPhoneLayout(context) ? 32 : 12),
-                        ),
-                        elevation: 0,
-                        shadowColor: Colors.transparent,
-                      ),
-                    ),
-                  ],
-
-                  // Resolve Button
-                  if (!alert.isResolved && onResolve != null) ...[
-                    const SizedBox(width: 12),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        onResolve!();
-                      },
-                      icon: const Icon(Icons.task_alt_rounded, size: 18),
-                      label: Text(
-                        'Resolve',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isPhoneLayout(context)
-                            ? GasPalette.primary
-                            : Constants.ctaColorLight,
-                        foregroundColor: Colors.white,
+                        foregroundColor: Tone.fg(Colors.white),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -1551,6 +1512,13 @@ class AlertDetailsDialog extends StatelessWidget {
               _buildModernInfoRow('SMS sent at',
                   _formatDateTime(alert.smsSentAt!), Icons.sms_outlined),
           ]),
+          if (alert.id != null) ...[
+            const SizedBox(height: 12),
+            AlertTeamPanel(
+                alertId: alert.id!,
+                onChanged: onTeamChanged,
+                onResolved: () => Navigator.of(context).pop()),
+          ],
           if (alert.triggerData != null && alert.triggerData!.isNotEmpty) ...[
             const SizedBox(height: 12),
             section('Trigger data',
@@ -1566,15 +1534,6 @@ class AlertDetailsDialog extends StatelessWidget {
                 child: const Text('Acknowledge')),
             const SizedBox(height: 8),
           ],
-          if (!alert.isResolved && onResolve != null) ...[
-            FilledButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  onResolve!();
-                },
-                child: const Text('Resolve')),
-            const SizedBox(height: 8),
-          ],
           OutlinedButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Close')),
@@ -1587,12 +1546,12 @@ class AlertDetailsDialog extends StatelessWidget {
       String title, IconData icon, List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1623,7 +1582,7 @@ class AlertDetailsDialog extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.fg(const Color(0xFF1E293B)),
                   ),
                 ),
               ],
@@ -1632,7 +1591,7 @@ class AlertDetailsDialog extends StatelessWidget {
           Container(
             width: double.infinity,
             height: 1,
-            color: const Color(0xFFE2E8F0),
+            color: Tone.bg(const Color(0xFFE2E8F0)),
           ),
           Padding(
             padding: const EdgeInsets.all(20),
@@ -1669,7 +1628,7 @@ class AlertDetailsDialog extends StatelessWidget {
             Icon(
               icon,
               size: 16,
-              color: const Color(0xFF94A3B8),
+              color: Tone.fg(const Color(0xFF94A3B8)),
             ),
             const SizedBox(width: 12),
             SizedBox(
@@ -1679,7 +1638,7 @@ class AlertDetailsDialog extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF64748B),
+                  color: Tone.fg(const Color(0xFF64748B)),
                 ),
               ),
             ),
@@ -1689,7 +1648,7 @@ class AlertDetailsDialog extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: valueColor ?? const Color(0xFF1E293B),
+                  color: valueColor ?? Tone.fg(const Color(0xFF1E293B)),
                 ),
               ),
             ),
@@ -1722,7 +1681,7 @@ class AlertDetailsDialog extends StatelessWidget {
             Icon(
               icon,
               size: 16,
-              color: const Color(0xFF94A3B8),
+              color: Tone.fg(const Color(0xFF94A3B8)),
             ),
             const SizedBox(width: 12),
             SizedBox(
@@ -1732,7 +1691,7 @@ class AlertDetailsDialog extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF64748B),
+                  color: Tone.fg(const Color(0xFF64748B)),
                 ),
               ),
             ),
@@ -1741,12 +1700,12 @@ class AlertDetailsDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 color: status
                     ? Constants.ctaColorLight.withOpacity(0.1)
-                    : const Color(0xFFEF4444).withOpacity(0.1),
+                    : Tone.bg(const Color(0xFFEF4444)).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: status
                       ? Constants.ctaColorLight.withOpacity(0.2)
-                      : const Color(0xFFEF4444).withOpacity(0.2),
+                      : Tone.bg(const Color(0xFFEF4444)).withOpacity(0.2),
                 ),
               ),
               child: Row(
@@ -1757,7 +1716,7 @@ class AlertDetailsDialog extends StatelessWidget {
                     size: 14,
                     color: status
                         ? Constants.ctaColorLight
-                        : const Color(0xFFEF4444),
+                        : Tone.fg(const Color(0xFFEF4444)),
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -1767,7 +1726,7 @@ class AlertDetailsDialog extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: status
                           ? Constants.ctaColorLight
-                          : const Color(0xFFEF4444),
+                          : Tone.fg(const Color(0xFFEF4444)),
                     ),
                   ),
                 ],
@@ -1781,7 +1740,7 @@ class AlertDetailsDialog extends StatelessWidget {
 
   String _formatDateTime(String dateTimeString) {
     try {
-      final dateTime = DateTime.parse(dateTimeString);
+      final dateTime = DateTime.parse(dateTimeString).toLocal();
       const months = [
         'Jan',
         'Feb',

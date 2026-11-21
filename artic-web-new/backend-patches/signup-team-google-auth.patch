@@ -1,0 +1,594 @@
+--- a/user/views.py
++++ b/user/views.py
+@@ -92,6 +92,158 @@
+         )
+ 
+ 
++def build_login_success_response(user):
++    """Token + full user/business payload, shared by password and Google login."""
++    email = user.email
++    try:
++        # Get or create authentication token
++        token, _ = Token.objects.get_or_create(user=user)
++
++        # Get user profile with related business and secondary businesses
++        profile = UserProfile.objects.select_related('business').prefetch_related(
++            'secondary_businesses'
++        ).get(user=user)
++
++        # Comprehensive user data
++        user_data = {
++            "user_uid": profile.id,
++            "email": user.email,
++            "firstname": user.first_name,
++            "lastname": user.last_name,
++            "username": user.username,
++            "is_active": user.is_active,
++            "date_joined": user.date_joined.isoformat() if user.date_joined else None,
++            "last_login": user.last_login.isoformat() if user.last_login else None,
++
++            # Profile information
++            "cellphone_number": profile.cellphone_number,
++            "work_phone": profile.work_phone,
++            "address": profile.address,
++            "city": profile.city,
++            "province": profile.province,
++            "postal_code": profile.postal_code,
++            "country": profile.country,
++            "gender": profile.gender,
++            "date_of_birth": profile.date_of_birth.isoformat() if profile.date_of_birth else None,
++            "id_number": profile.id_number,
++
++            # Professional information
++            "user_type": profile.user_type,
++            "job_title": profile.job_title,
++            "department": profile.department,
++            "employee_id": profile.employee_id,
++            "employment_status": profile.employment_status,
++            "start_date": profile.start_date.isoformat() if profile.start_date else None,
++            "end_date": profile.end_date.isoformat() if profile.end_date else None,
++
++            # Contact preferences
++            "is_primary_contact": profile.is_primary_contact,
++            "is_secondary_contact": profile.is_secondary_contact,
++            "is_emergency_contact": profile.is_emergency_contact,
++
++            # Communication preferences
++            "email_notifications": profile.email_notifications,
++            "sms_notifications": profile.sms_notifications,
++            "emergency_notifications": profile.emergency_notifications,
++            "marketing_emails": profile.marketing_emails,
++
++            # System preferences
++            "timezone": profile.timezone,
++            "language": profile.language,
++            "date_format": profile.date_format,
++
++            # Security
++            "two_factor_enabled": profile.two_factor_enabled,
++            "backup_email": profile.backup_email,
++            "is_verified": profile.is_verified,
++
++            # Profile picture URL (if exists)
++            "profile_picture": profile.profile_picture.url if profile.profile_picture else None,
++
++            # System tracking
++            "profile_created": profile.date_created.isoformat() if profile.date_created else None,
++            "profile_modified": profile.last_modified.isoformat() if profile.last_modified else None,
++        }
++
++        # Primary business data
++        primary_business_data = None
++        if profile.business:
++            primary_business_data = {
++                "business_uid": profile.business.id,
++                "business_name": profile.business.name,
++                "registration_number": profile.business.registration_number,
++                "contact_person": profile.business.contact_person,
++                "email": profile.business.email,
++                "phone": profile.business.phone,
++                "address": profile.business.address,
++                "city": profile.business.city,
++                "province": profile.business.province,
++                "postal_code": profile.business.postal_code,
++                "country": profile.business.country,
++                "billing_email": profile.business.billing_email,
++                "support_email": profile.business.support_email,
++                "emergency_contact": profile.business.emergency_contact,
++                "is_active": profile.business.is_active,
++                "created_at": profile.business.created_at.isoformat() if profile.business.created_at else None,
++                "updated_at": profile.business.updated_at.isoformat() if profile.business.updated_at else None,
++                "active_devices_count": profile.business.get_active_devices_count(),
++                "is_primary": True
++            }
++
++        # Secondary businesses data
++        secondary_businesses_data = []
++        for secondary_business in profile.secondary_businesses.all():
++            secondary_businesses_data.append({
++                "business_uid": secondary_business.id,
++                "business_name": secondary_business.name,
++                "registration_number": secondary_business.registration_number,
++                "contact_person": secondary_business.contact_person,
++                "email": secondary_business.email,
++                "phone": secondary_business.phone,
++                "address": secondary_business.address,
++                "city": secondary_business.city,
++                "province": secondary_business.province,
++                "postal_code": secondary_business.postal_code,
++                "country": secondary_business.country,
++                "billing_email": secondary_business.billing_email,
++                "support_email": secondary_business.support_email,
++                "emergency_contact": secondary_business.emergency_contact,
++                "is_active": secondary_business.is_active,
++                "created_at": secondary_business.created_at.isoformat() if secondary_business.created_at else None,
++                "updated_at": secondary_business.updated_at.isoformat() if secondary_business.updated_at else None,
++                "active_devices_count": secondary_business.get_active_devices_count(),
++                "is_primary": False
++            })
++
++        # Prepare response data
++        response_data = {
++            "message": "Login successful",
++            "token": token.key,
++            "user": user_data,
++            "business": primary_business_data,  # Primary business (for backward compatibility)
++            "primary_business": primary_business_data,
++            "secondary_businesses": secondary_businesses_data,
++            "total_businesses": len(secondary_businesses_data) + (1 if primary_business_data else 0)
++        }
++
++        logger.info(f"Successful login for user: {email}")
++        return Response(response_data, status=status.HTTP_200_OK)
++
++    except UserProfile.DoesNotExist:
++        logger.error(f"User profile not found for email: {email}")
++        return Response(
++            {"message": "User profile not found."},
++            status=status.HTTP_404_NOT_FOUND
++        )
++    except Exception as e:
++        logger.error(f"Unexpected error during login for {email}: {str(e)}")
++        return Response(
++            {"message": "An unexpected error occurred during login."},
++            status=status.HTTP_500_INTERNAL_SERVER_ERROR
++        )
++
++
++
+ @csrf_exempt
+ @api_view(["POST"])
+ @permission_classes([AllowAny])
+@@ -115,152 +267,7 @@
+     user = authenticate(request, username=email, password=password)
+ 
+     if user is not None:
+-        try:
+-            # Get or create authentication token
+-            token, _ = Token.objects.get_or_create(user=user)
+-
+-            # Get user profile with related business and secondary businesses
+-            profile = UserProfile.objects.select_related('business').prefetch_related(
+-                'secondary_businesses'
+-            ).get(user=user)
+-
+-            # Comprehensive user data
+-            user_data = {
+-                "user_uid": profile.id,
+-                "email": user.email,
+-                "firstname": user.first_name,
+-                "lastname": user.last_name,
+-                "username": user.username,
+-                "is_active": user.is_active,
+-                "date_joined": user.date_joined.isoformat() if user.date_joined else None,
+-                "last_login": user.last_login.isoformat() if user.last_login else None,
+-
+-                # Profile information
+-                "cellphone_number": profile.cellphone_number,
+-                "work_phone": profile.work_phone,
+-                "address": profile.address,
+-                "city": profile.city,
+-                "province": profile.province,
+-                "postal_code": profile.postal_code,
+-                "country": profile.country,
+-                "gender": profile.gender,
+-                "date_of_birth": profile.date_of_birth.isoformat() if profile.date_of_birth else None,
+-                "id_number": profile.id_number,
+-
+-                # Professional information
+-                "user_type": profile.user_type,
+-                "job_title": profile.job_title,
+-                "department": profile.department,
+-                "employee_id": profile.employee_id,
+-                "employment_status": profile.employment_status,
+-                "start_date": profile.start_date.isoformat() if profile.start_date else None,
+-                "end_date": profile.end_date.isoformat() if profile.end_date else None,
+-
+-                # Contact preferences
+-                "is_primary_contact": profile.is_primary_contact,
+-                "is_secondary_contact": profile.is_secondary_contact,
+-                "is_emergency_contact": profile.is_emergency_contact,
+-
+-                # Communication preferences
+-                "email_notifications": profile.email_notifications,
+-                "sms_notifications": profile.sms_notifications,
+-                "emergency_notifications": profile.emergency_notifications,
+-                "marketing_emails": profile.marketing_emails,
+-
+-                # System preferences
+-                "timezone": profile.timezone,
+-                "language": profile.language,
+-                "date_format": profile.date_format,
+-
+-                # Security
+-                "two_factor_enabled": profile.two_factor_enabled,
+-                "backup_email": profile.backup_email,
+-                "is_verified": profile.is_verified,
+-
+-                # Profile picture URL (if exists)
+-                "profile_picture": profile.profile_picture.url if profile.profile_picture else None,
+-
+-                # System tracking
+-                "profile_created": profile.date_created.isoformat() if profile.date_created else None,
+-                "profile_modified": profile.last_modified.isoformat() if profile.last_modified else None,
+-            }
+-
+-            # Primary business data
+-            primary_business_data = None
+-            if profile.business:
+-                primary_business_data = {
+-                    "business_uid": profile.business.id,
+-                    "business_name": profile.business.name,
+-                    "registration_number": profile.business.registration_number,
+-                    "contact_person": profile.business.contact_person,
+-                    "email": profile.business.email,
+-                    "phone": profile.business.phone,
+-                    "address": profile.business.address,
+-                    "city": profile.business.city,
+-                    "province": profile.business.province,
+-                    "postal_code": profile.business.postal_code,
+-                    "country": profile.business.country,
+-                    "billing_email": profile.business.billing_email,
+-                    "support_email": profile.business.support_email,
+-                    "emergency_contact": profile.business.emergency_contact,
+-                    "is_active": profile.business.is_active,
+-                    "created_at": profile.business.created_at.isoformat() if profile.business.created_at else None,
+-                    "updated_at": profile.business.updated_at.isoformat() if profile.business.updated_at else None,
+-                    "active_devices_count": profile.business.get_active_devices_count(),
+-                    "is_primary": True
+-                }
+-
+-            # Secondary businesses data
+-            secondary_businesses_data = []
+-            for secondary_business in profile.secondary_businesses.all():
+-                secondary_businesses_data.append({
+-                    "business_uid": secondary_business.id,
+-                    "business_name": secondary_business.name,
+-                    "registration_number": secondary_business.registration_number,
+-                    "contact_person": secondary_business.contact_person,
+-                    "email": secondary_business.email,
+-                    "phone": secondary_business.phone,
+-                    "address": secondary_business.address,
+-                    "city": secondary_business.city,
+-                    "province": secondary_business.province,
+-                    "postal_code": secondary_business.postal_code,
+-                    "country": secondary_business.country,
+-                    "billing_email": secondary_business.billing_email,
+-                    "support_email": secondary_business.support_email,
+-                    "emergency_contact": secondary_business.emergency_contact,
+-                    "is_active": secondary_business.is_active,
+-                    "created_at": secondary_business.created_at.isoformat() if secondary_business.created_at else None,
+-                    "updated_at": secondary_business.updated_at.isoformat() if secondary_business.updated_at else None,
+-                    "active_devices_count": secondary_business.get_active_devices_count(),
+-                    "is_primary": False
+-                })
+-
+-            # Prepare response data
+-            response_data = {
+-                "message": "Login successful",
+-                "token": token.key,
+-                "user": user_data,
+-                "business": primary_business_data,  # Primary business (for backward compatibility)
+-                "primary_business": primary_business_data,
+-                "secondary_businesses": secondary_businesses_data,
+-                "total_businesses": len(secondary_businesses_data) + (1 if primary_business_data else 0)
+-            }
+-
+-            logger.info(f"Successful login for user: {email}")
+-            return Response(response_data, status=status.HTTP_200_OK)
+-
+-        except UserProfile.DoesNotExist:
+-            logger.error(f"User profile not found for email: {email}")
+-            return Response(
+-                {"message": "User profile not found."},
+-                status=status.HTTP_404_NOT_FOUND
+-            )
+-        except Exception as e:
+-            logger.error(f"Unexpected error during login for {email}: {str(e)}")
+-            return Response(
+-                {"message": "An unexpected error occurred during login."},
+-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+-            )
++        return build_login_success_response(user)
+ 
+     else:
+         logger.warning(f"Invalid login attempt for email: {email}")
+--- a/exvr/urls.py
++++ b/exvr/urls.py
+@@ -49,6 +49,7 @@
+ from triggers.views import create_sample_trigger_rules
+ from units.views import list_units_management, create_unit, update_unit, delete_unit, get_unit_detail, get_unit_choices
+ from user.views import signup_view, login_view
++from user.team_views import signup_v2, team_members, team_member_add, google_auth
+ from ai_assistant.views import ai_chat, get_ai_settings, update_ai_settings, device_snapshot
+ 
+ urlpatterns = [
+@@ -57,6 +58,10 @@
+     path('create_sample_trigger_rulesdfgfg/', create_sample_trigger_rules),
+     path('api/signup/', signup_view, name='api-signup'),
+     path('api/login/', login_view, name='api-login'),
++    path('api/signup/v2/', signup_v2, name='api-signup-v2'),
++    path('api/team/members/', team_members, name='team-members'),
++    path('api/team/members/add/', team_member_add, name='team-member-add'),
++    path('api/auth/google/', google_auth, name='google-auth'),
+     path('api/gas/config/', gas_views.gas_config, name='gas_config'),
+     path('api/gas/config/update/', gas_views.gas_config_update, name='gas_config_update'),
+     path('api/gas/readings/', gas_views.gas_readings, name='gas_readings'),
+--- /dev/null
++++ b/user/team_views.py
++"""Team management and sign-up endpoints for the mobile app.
++
++- signup_v2: registration with an account type (company / personal). Always
++  creates a NEW company, never joins an existing one by name.
++- team_members / team_member_add: list and create users in the caller's
++  business (primary contact, administrators and managers only).
++- google_auth: sign in with a Google ID token; links by verified email.
++"""
++
++import logging
++import os
++import secrets
++
++import requests as http_requests
++from django.contrib.auth import get_user_model
++from django.db import transaction
++from rest_framework import status
++from rest_framework.authtoken.models import Token
++from rest_framework.decorators import api_view, permission_classes
++from rest_framework.permissions import AllowAny, IsAuthenticated
++from rest_framework.response import Response
++
++from company.models import Company
++from .models import User as UserProfile
++
++logger = logging.getLogger(__name__)
++User = get_user_model()
++
++VALID_USER_TYPES = {t for t, _ in UserProfile.USER_TYPES}
++
++
++def _profile(user):
++    return UserProfile.objects.select_related('business').filter(user=user).first()
++
++
++def _can_manage_team(profile):
++    return profile is not None and (
++        profile.is_primary_contact
++        or profile.user_type in ('administrator', 'manager')
++        or profile.user.is_superuser
++    )
++
++
++def _member_payload(profile):
++    u = profile.user
++    return {
++        'user_uid': profile.id,
++        'email': u.email,
++        'firstname': u.first_name,
++        'lastname': u.last_name,
++        'user_type': profile.user_type,
++        'job_title': profile.job_title,
++        'cellphone_number': profile.cellphone_number,
++        'is_primary_contact': profile.is_primary_contact,
++        'is_active': u.is_active,
++        'last_login': u.last_login.isoformat() if u.last_login else None,
++        'date_joined': u.date_joined.isoformat() if u.date_joined else None,
++    }
++
++
++@api_view(['POST'])
++@permission_classes([AllowAny])
++def signup_v2(request):
++    """Create an account. Body: first_name, last_name, email, password,
++    account_type ('company'|'personal'); for company also business_name and
++    optional business details. Returns 201; the app then logs in normally."""
++    data = request.data
++    for f in ('first_name', 'last_name', 'email', 'password'):
++        if not str(data.get(f, '')).strip():
++            return Response({'error': f'{f} is required.'}, status=status.HTTP_400_BAD_REQUEST)
++
++    email = str(data['email']).lower().strip()
++    password = str(data['password'])
++    account_type = str(data.get('account_type', 'company')).lower()
++    if account_type not in ('company', 'personal'):
++        return Response({'error': "account_type must be 'company' or 'personal'."},
++                        status=status.HTTP_400_BAD_REQUEST)
++    if len(password) < 8:
++        return Response({'error': 'The password must be at least 8 characters.'},
++                        status=status.HTTP_400_BAD_REQUEST)
++    if User.objects.filter(username=email).exists() or User.objects.filter(email=email).exists():
++        return Response({'error': 'A user with this email already exists.'},
++                        status=status.HTTP_400_BAD_REQUEST)
++
++    first = str(data['first_name']).strip()
++    last = str(data['last_name']).strip()
++    business_name = str(data.get('business_name', '')).strip()
++    if account_type == 'company' and not business_name:
++        return Response({'error': 'business_name is required for a company account.'},
++                        status=status.HTTP_400_BAD_REQUEST)
++    if not business_name:
++        business_name = f'{first} {last}'.strip()
++
++    phone = str(data.get('cellphone_number', '')).strip()
++    with transaction.atomic():
++        # Each registration gets its own company; matching an existing
++        # company's name must never grant access to its devices.
++        company = Company.objects.create(
++            name=business_name,
++            contact_person=f'{first} {last}'.strip(),
++            email=str(data.get('business_email', '') or email).strip(),
++            phone=str(data.get('business_phone', '') or phone),
++            address=str(data.get('address', '')).strip(),
++            city=str(data.get('city', '')).strip(),
++            province=str(data.get('province', '')).strip(),
++            postal_code=str(data.get('postal_code', '')).strip(),
++            registration_number=str(data.get('registration_number', '')).strip() or None,
++        )
++        new_user = User.objects.create_user(
++            username=email, email=email, password=password,
++            first_name=first, last_name=last)
++        profile = UserProfile.objects.create(
++            user=new_user,
++            business=company,
++            cellphone_number=phone,
++            job_title=str(data.get('job_title', '')).strip(),
++            user_type='customer',
++            is_primary_contact=True,
++        )
++
++    logger.warning('Signup v2: %s (%s account, company id %s)', email, account_type, company.id)
++    return Response({
++        'message': 'Account created successfully',
++        'user': {'user_uid': profile.id, 'email': email, 'firstname': first, 'lastname': last},
++        'business': {'business_uid': company.id, 'business_name': company.name},
++    }, status=status.HTTP_201_CREATED)
++
++
++@api_view(['GET'])
++@permission_classes([IsAuthenticated])
++def team_members(request):
++    """Everyone in the caller's business."""
++    profile = _profile(request.user)
++    if profile is None or profile.business is None:
++        return Response({'error': 'Your account has no business.'}, status=status.HTTP_400_BAD_REQUEST)
++    members = (UserProfile.objects.select_related('user')
++               .filter(business=profile.business)
++               .order_by('-is_primary_contact', 'user__first_name'))
++    return Response({
++        'business': {'business_uid': profile.business.id, 'business_name': profile.business.name},
++        'can_manage': _can_manage_team(profile),
++        'members': [_member_payload(m) for m in members],
++    })
++
++
++@api_view(['POST'])
++@permission_classes([IsAuthenticated])
++def team_member_add(request):
++    """Add a user to the caller's business. Body: first_name, last_name,
++    email, user_type, optional job_title, cellphone_number, password.
++    Without a password one is generated and returned once."""
++    profile = _profile(request.user)
++    if profile is None or profile.business is None:
++        return Response({'error': 'Your account has no business.'}, status=status.HTTP_400_BAD_REQUEST)
++    if not _can_manage_team(profile):
++        return Response({'error': 'Only the primary contact, administrators or managers can add users.'},
++                        status=status.HTTP_403_FORBIDDEN)
++
++    data = request.data
++    for f in ('first_name', 'last_name', 'email'):
++        if not str(data.get(f, '')).strip():
++            return Response({'error': f'{f} is required.'}, status=status.HTTP_400_BAD_REQUEST)
++    email = str(data['email']).lower().strip()
++    if User.objects.filter(username=email).exists() or User.objects.filter(email=email).exists():
++        return Response({'error': 'A user with this email already exists.'},
++                        status=status.HTTP_400_BAD_REQUEST)
++    user_type = str(data.get('user_type', 'customer')).lower().strip() or 'customer'
++    if user_type not in VALID_USER_TYPES:
++        return Response({'error': f'user_type must be one of: {", ".join(sorted(VALID_USER_TYPES))}.'},
++                        status=status.HTTP_400_BAD_REQUEST)
++
++    password = str(data.get('password', '')).strip()
++    generated = False
++    if not password:
++        password = secrets.token_urlsafe(9)
++        generated = True
++    elif len(password) < 8:
++        return Response({'error': 'The password must be at least 8 characters.'},
++                        status=status.HTTP_400_BAD_REQUEST)
++
++    with transaction.atomic():
++        new_user = User.objects.create_user(
++            username=email, email=email, password=password,
++            first_name=str(data['first_name']).strip(),
++            last_name=str(data['last_name']).strip())
++        member = UserProfile.objects.create(
++            user=new_user,
++            business=profile.business,
++            user_type=user_type,
++            job_title=str(data.get('job_title', '')).strip(),
++            cellphone_number=str(data.get('cellphone_number', '')).strip(),
++            is_primary_contact=False,
++        )
++
++    logger.warning('Team member added: %s to business %s by %s',
++                   email, profile.business_id, request.user.email)
++    body = {'message': 'User added', 'member': _member_payload(member)}
++    if generated:
++        body['temporary_password'] = password  # shown once; the user should change it
++    return Response(body, status=status.HTTP_201_CREATED)
++
++
++@api_view(['POST'])
++@permission_classes([AllowAny])
++def google_auth(request):
++    """Sign in with Google. Body: id_token. Verifies the token with Google,
++    then signs in (or registers) the verified email and returns the same
++    payload as api/login/."""
++    id_token = str(request.data.get('id_token', '')).strip()
++    if not id_token:
++        return Response({'message': 'id_token is required.'}, status=status.HTTP_400_BAD_REQUEST)
++
++    allowed = {c.strip() for c in os.environ.get('GOOGLE_OAUTH_CLIENT_IDS', '').split(',') if c.strip()}
++    if not allowed:
++        return Response({'message': 'Google sign-in is not configured on the server.'},
++                        status=status.HTTP_503_SERVICE_UNAVAILABLE)
++    try:
++        r = http_requests.get('https://oauth2.googleapis.com/tokeninfo',
++                              params={'id_token': id_token}, timeout=10)
++    except Exception:
++        return Response({'message': "Couldn't reach Google to verify the sign-in."},
++                        status=status.HTTP_502_BAD_GATEWAY)
++    if r.status_code != 200:
++        return Response({'message': 'Google rejected this sign-in. Try again.'},
++                        status=status.HTTP_401_UNAUTHORIZED)
++    info = r.json()
++    if info.get('aud') not in allowed or info.get('email_verified') not in (True, 'true'):
++        logger.warning('Google auth refused: aud=%s verified=%s', info.get('aud'), info.get('email_verified'))
++        return Response({'message': 'This Google sign-in is not for this app.'},
++                        status=status.HTTP_401_UNAUTHORIZED)
++
++    email = str(info.get('email', '')).lower().strip()
++    if not email:
++        return Response({'message': 'Google returned no email address.'}, status=status.HTTP_401_UNAUTHORIZED)
++
++    user = User.objects.filter(username=email).first() or User.objects.filter(email=email).first()
++    if user is None:
++        first = str(info.get('given_name', '')).strip() or email.split('@')[0]
++        last = str(info.get('family_name', '')).strip()
++        with transaction.atomic():
++            company = Company.objects.create(
++                name=f'{first} {last}'.strip() or email,
++                contact_person=f'{first} {last}'.strip() or email,
++                email=email, phone='', address='', city='', province='', postal_code='')
++            user = User.objects.create_user(
++                username=email, email=email,
++                password=secrets.token_urlsafe(24),  # unusable; they sign in with Google
++                first_name=first, last_name=last)
++            UserProfile.objects.create(user=user, business=company,
++                                       user_type='customer', is_primary_contact=True)
++        logger.warning('Google auth: new account %s (company id %s)', email, company.id)
++    if not user.is_active:
++        return Response({'message': 'This account is disabled.'}, status=status.HTTP_403_FORBIDDEN)
++
++    from .views import build_login_success_response
++    return build_login_success_response(user)

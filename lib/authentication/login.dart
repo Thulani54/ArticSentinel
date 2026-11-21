@@ -3,7 +3,9 @@
 /// with Google, and the door into the sign-up flow.
 library;
 
+import '../widgets/app_tone.dart';
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -16,6 +18,7 @@ import '../constants/Constants.dart';
 import '../gasmon/gas_theme.dart';
 import '../services/auth_session.dart';
 import '../services/google_auth.dart';
+import '../services/push_notifications.dart';
 import '../widgets/mobile_forms.dart';
 
 class LoginPage extends StatefulWidget {
@@ -45,7 +48,7 @@ class _LoginPageState extends State<LoginPage> {
     if (phone) {
       // Full width and height: the form IS the page.
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Tone.bg(Colors.white),
         body: SafeArea(
           child: SizedBox.expand(
             child: SingleChildScrollView(
@@ -65,12 +68,12 @@ class _LoginPageState extends State<LoginPage> {
             width: 460,
             padding: const EdgeInsets.fromLTRB(36, 32, 36, 28),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: GasPalette.border),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                    color: Color(0x14133648),
+                    color: Tone.bg(Color(0x14133648)),
                     blurRadius: 24,
                     offset: Offset(0, 8)),
               ],
@@ -136,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
           onPressed: _busy ? null : _signIn,
           style: FilledButton.styleFrom(
             backgroundColor: GasPalette.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: Tone.fg(Colors.white),
             minimumSize: const Size.fromHeight(52),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
@@ -147,29 +150,29 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 14),
         Row(children: [
-          const Expanded(child: Divider(color: GasPalette.border)),
+          Expanded(child: Divider(color: GasPalette.border)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text('or',
                 style:
                     GoogleFonts.inter(fontSize: 12, color: GasPalette.muted)),
           ),
-          const Expanded(child: Divider(color: GasPalette.border)),
+          Expanded(child: Divider(color: GasPalette.border)),
         ]),
         const SizedBox(height: 14),
         OutlinedButton.icon(
           onPressed: _busy ? null : _signInWithGoogle,
           style: OutlinedButton.styleFrom(
             foregroundColor: GasPalette.ink,
-            side: const BorderSide(color: GasPalette.border),
+            side: BorderSide(color: GasPalette.border),
             minimumSize: const Size.fromHeight(52),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
             textStyle:
                 GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w600),
           ),
-          icon: const FaIcon(FontAwesomeIcons.google,
-              size: 18, color: Color(0xFF4285F4)),
+          icon: FaIcon(FontAwesomeIcons.google,
+              size: 18, color: Tone.fg(Color(0xFF4285F4))),
           label: const Text('Continue with Google'),
         ),
         const SizedBox(height: 10),
@@ -190,7 +193,7 @@ class _LoginPageState extends State<LoginPage> {
                   ).toString()),
           style: OutlinedButton.styleFrom(
             foregroundColor: GasPalette.ink,
-            side: const BorderSide(color: GasPalette.border),
+            side: BorderSide(color: GasPalette.border),
             minimumSize: const Size.fromHeight(52),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
@@ -245,17 +248,17 @@ class _LoginPageState extends State<LoginPage> {
           labelText: label,
           suffixIcon: suffix,
           filled: true,
-          fillColor: const Color(0xFFF7F8FA),
+          fillColor: Tone.bg(const Color(0xFFF7F8FA)),
           labelStyle: GoogleFonts.inter(fontSize: 14, color: GasPalette.ink2),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: GasPalette.border),
+            borderSide: BorderSide(color: GasPalette.border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: GasPalette.primary),
+            borderSide: BorderSide(color: GasPalette.primary),
           ),
         ),
       ),
@@ -266,7 +269,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void _toastError(String message) {
     MotionToast.error(
-      description: Text(message, style: const TextStyle(color: Colors.white)),
+      description: Text(message, style: TextStyle(color: Tone.fg(Colors.white))),
       animationDuration: const Duration(milliseconds: 2500),
     ).show(context);
   }
@@ -287,6 +290,7 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       context.goNamed('dashboard');
     }
+    scheduleMicrotask(PushNotifications.instance.resumePendingOpen);
   }
 
   Future<void> _signIn() async {

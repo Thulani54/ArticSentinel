@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'app_tone.dart';
 
 import '../gasmon/gas_theme.dart';
 
@@ -7,9 +10,10 @@ import '../gasmon/gas_theme.dart';
 ThemeData articMobileTheme() {
   final colors = ColorScheme.fromSeed(
     seedColor: GasPalette.primary,
+    brightness: Tone.dark ? Brightness.dark : Brightness.light,
     primary: GasPalette.primary,
     onPrimary: Colors.white,
-    surface: Colors.white,
+    surface: GasPalette.panel,
     onSurface: GasPalette.ink,
     outline: GasPalette.border,
   );
@@ -27,7 +31,17 @@ ThemeData articMobileTheme() {
   final base = ThemeData(
       useMaterial3: true,
       colorScheme: colors,
+      brightness: colors.brightness,
       fontFamily: 'Inter',
+      canvasColor: GasPalette.panel,
+      dialogTheme: DialogThemeData(backgroundColor: GasPalette.panel),
+      bottomSheetTheme: BottomSheetThemeData(
+          backgroundColor: GasPalette.panel,
+          surfaceTintColor: Colors.transparent),
+      popupMenuTheme: PopupMenuThemeData(color: GasPalette.panel),
+      snackBarTheme: SnackBarThemeData(
+          backgroundColor: Tone.dark ? GasPalette.panelAlt : null,
+          contentTextStyle: Tone.dark ? TextStyle(color: GasPalette.ink) : null),
       scaffoldBackgroundColor: GasPalette.page);
   return base.copyWith(
     textTheme: base.textTheme
@@ -38,7 +52,7 @@ ThemeData articMobileTheme() {
         style: OutlinedButton.styleFrom(
       foregroundColor: GasPalette.primary,
       minimumSize: const Size(44, 48),
-      side: const BorderSide(color: GasPalette.border),
+      side: BorderSide(color: GasPalette.border),
       shape: pill,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
     )),
@@ -54,20 +68,23 @@ ThemeData articMobileTheme() {
       shape: pill,
     )),
     cardTheme: CardThemeData(
-      color: Colors.white,
+      color: GasPalette.panel,
       surfaceTintColor: Colors.transparent,
       shadowColor: GasPalette.navy.withValues(alpha: 0.06),
       elevation: 1,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: GasPalette.border)),
+          side: BorderSide(color: GasPalette.border)),
     ),
     dividerTheme:
-        const DividerThemeData(color: GasPalette.border, thickness: 1),
-    appBarTheme: const AppBarThemeData(
-      backgroundColor: Colors.white,
+        DividerThemeData(color: GasPalette.border, thickness: 1),
+    appBarTheme: AppBarThemeData(
+      backgroundColor: GasPalette.panel,
       foregroundColor: GasPalette.ink,
+      systemOverlayStyle: Tone.dark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       titleTextStyle: TextStyle(
@@ -78,18 +95,18 @@ ThemeData articMobileTheme() {
     ),
     inputDecorationTheme: InputDecorationThemeData(
       filled: true,
-      fillColor: const Color(0xFFF7F8FA),
+      fillColor: Tone.bg(const Color(0xFFF7F8FA)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(32),
-          borderSide: const BorderSide(color: GasPalette.border)),
+          borderSide: BorderSide(color: GasPalette.border)),
       enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(32),
-          borderSide: const BorderSide(color: GasPalette.border)),
+          borderSide: BorderSide(color: GasPalette.border)),
       focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(32),
-          borderSide: const BorderSide(color: GasPalette.primary, width: 1.5)),
-      labelStyle: const TextStyle(color: GasPalette.ink2),
+          borderSide: BorderSide(color: GasPalette.primary, width: 1.5)),
+      labelStyle: TextStyle(color: GasPalette.ink2),
     ),
   );
 }

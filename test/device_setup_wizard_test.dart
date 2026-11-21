@@ -373,9 +373,11 @@ void main() {
         t, DeviceSetupWizard(initialDeviceType: 'device7', service: service),
         width: 320, scale: 1.3);
     await identity(t);
-    expect(find.text('Give it power and a connection'), findsOneWidget);
+    expect(find.text('Prepare the station'), findsOneWidget);
     expect(find.text('Gas capacity (kg)'), findsNothing);
     await tap(t, 'Continue');
+    expect(find.text('Give it power and a connection'), findsOneWidget);
+    expect(find.text('3. Try a bottle scan'), findsOneWidget);
     await tap(t, 'Link device');
     expect(service.draft!.deviceType, 'device7');
     expect(service.setup, isNull);
@@ -397,6 +399,66 @@ void main() {
     expect(find.text('What are you connecting?'), findsOneWidget);
     await tap(t, 'Bottle vetting');
     expect(find.text('Step 1 of 3'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('refrigeration guide sets a safe range that is sent on create',
+      (t) async {
+    final service = FakeSetup();
+    await mount(
+        t, DeviceSetupWizard(initialDeviceType: 'device1', service: service),
+        width: 390);
+    await identity(t);
+    expect(find.text('Place the probes'), findsOneWidget);
+    expect(find.text('1. Air probe'), findsOneWidget);
+    // Optional: Continue works with the range left empty.
+    await tap(t, 'Freezer -22 to -18 °C');
+    await t.enterText(find.widgetWithText(TextFormField, 'Highest (°C)'), '-25');
+    await tap(t, 'Continue');
+    expect(find.text('Must be above the lowest.'), findsOneWidget);
+    await t.enterText(find.widgetWithText(TextFormField, 'Highest (°C)'), '-18');
+    await tap(t, 'Continue');
+    expect(find.text('Safe range -22 to -18 °C'), findsOneWidget);
+    await tap(t, 'Link device');
+    expect(service.draft!.targetTempMin, -22);
+    expect(service.draft!.targetTempMax, -18);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('compressor guide shows the electrical safety note and phase',
+      (t) async {
+    final service = FakeSetup();
+    await mount(
+        t, DeviceSetupWizard(initialDeviceType: 'device4', service: service),
+        width: 360, scale: 1.3);
+    await identity(t);
+    expect(find.text('Fit the current clamps'), findsOneWidget);
+    expect(find.text('Safety first'), findsOneWidget);
+    await tap(t, 'Three phase');
+    await tap(t, 'Continue');
+    await tap(t, 'Link device');
+    expect(service.draft!.phaseType, 'three');
+    expect(service.draft!.targetTempMin, isNull);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('Equipment entry skips the welcome and lays out wide on web',
+      (t) async {
+    var closed = 0;
+    await mount(
+        t,
+        DeviceSetupWizard(
+            fromEquipment: true, service: FakeSetup(), onDone: () => closed++),
+        width: 1200);
+    expect(find.text('What are you connecting?'), findsOneWidget);
+    expect(find.text('Do you have a device to connect?'), findsNothing);
+    await tap(t, 'Ice machine monitor');
+    expect(find.text('Step 1 of 3'), findsOneWidget);
+    // Side panel names every step.
+    expect(find.text('Fit and set up'), findsOneWidget);
+    expect(find.text('Connect and link'), findsOneWidget);
+    await tap(t, 'Cancel');
+    expect(closed, 1);
     expect(t.takeException(), isNull);
   });
 }

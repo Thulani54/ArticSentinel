@@ -1,0 +1,48 @@
+{
+  "deployed_at": "2026-11-15T09:02:11.627048+00:00",
+  "website": "https://uat.articsentinel.com",
+  "backend_change": "Gas setup credentials and status include the stable client ID; credential responses are not cacheable.",
+  "mobile_change": "Automatic ID and per-device login forwarding, validation, in-memory retry reuse, no silent Wi-Fi-only fallback, fresh-reading confirmation, simpler setup options.",
+  "web_change": "Three-step phone setup guide, automatic identity check, and new-reading verification. Bluetooth pairing remains in the installed phone app.",
+  "validation": {
+    "flutter_tests": 23,
+    "flutter_analysis": "No issues",
+    "web_tests": 42,
+    "published_browser_checks": "Desktop and full-screen mobile, error recovery, identity mismatch, fresh zero reading, no credential rotations",
+    "backend_checks": "Credential issuance mocked; business ownership, unauthorized access, ID agreement, TLS metadata and no-store verified on deployed source",
+    "physical_pairing": "Not performed; firmware source and a test scale unavailable"
+  },
+  "apk": {
+    "path": "/Users/thulanimoyo/Downloads/ArticSentinel-1.0.0-automatic-scale-setup-build13.apk",
+    "version_name": "1.0.0",
+    "version_code": 13,
+    "sha256": "0de135ca6efee92e58374e01149b0397fee53a1f28adaabe6db6e20271e19185",
+    "signed": true,
+    "new_code_markers_verified": true
+  },
+  "website_index_sha256": "d536eb7b5afdd35886f0bd85245663fde69bc019d5880c7afd013e741c69a804",
+  "backup": "/home/vmrvsnyo/.codex-backups/scale-self-setup-20261115",
+  "whatsapp": {
+    "recipient": "Surprise",
+    "message_count": 4,
+    "message_statuses": [
+      6,
+      6,
+      6,
+      6
+    ],
+    "sent_sast": [
+      "2026-11-15 10:59:55",
+      "2026-11-15 11:00:00",
+      "2026-11-15 11:00:59",
+      "2026-11-15 11:01:04"
+    ],
+    "gaps_seconds": [
+      5.3,
+      58.5,
+      4.8
+    ],
+    "timing_note": "Three-second pauses were requested in UI automation; an accessibility reflow interrupted the interval between messages 2 and 3."
+  },
+  "firmware_limit": "Firmware must accept and persist the setup fields; older firmware may need one update. Broker username-based identification remains active on TLS 8883."
+}

@@ -121,7 +121,19 @@ class Device {
       isInRepairMode: json['is_in_repair_mode'] ?? false,
       repairModeStartedAt: json['repair_mode_started_at'],
       repairModeReason: json['repair_mode_reason'],
+      connectedUnit: _parseUnit(json['connected_unit']),
     );
+  }
+
+  /// The server sends either a short {id, name} or the full unit details.
+  static ConnectedUnit? _parseUnit(dynamic raw) {
+    if (raw is! Map || raw['id'] == null) return null;
+    try {
+      return ConnectedUnit.fromJson(
+          {...Map<String, dynamic>.from(raw), 'id': '${raw['id']}'});
+    } catch (_) {
+      return null;
+    }
   }
   Map<String, dynamic> toJson() {
     return {

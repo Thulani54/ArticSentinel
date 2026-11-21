@@ -1,6 +1,7 @@
 /// Three-step account creation, followed by authenticated guided device setup.
 library;
 
+import '../widgets/app_tone.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -90,7 +91,7 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
               liveRegion: true,
               child: Text(_error!,
                   style:
-                      const TextStyle(color: GasPalette.critInk, height: 1.5))),
+                      TextStyle(color: GasPalette.critInk, height: 1.5))),
         ],
         const SizedBox(height: 24),
         _actions(),
@@ -101,7 +102,7 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
       return PopScope(
           canPop: !_busy,
           child: Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: Tone.bg(Colors.white),
             body: SafeArea(
               child: SingleChildScrollView(
                 padding:
@@ -122,12 +123,12 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
                 width: 520,
                 padding: const EdgeInsets.fromLTRB(36, 28, 36, 28),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: GasPalette.border),
-                  boxShadow: const [
+                  boxShadow: [
                     BoxShadow(
-                        color: Color(0x14133648),
+                        color: Tone.bg(Color(0x14133648)),
                         blurRadius: 24,
                         offset: Offset(0, 8)),
                   ],
@@ -160,7 +161,7 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
                         });
                       }
                     },
-              icon: const Icon(Icons.arrow_back, color: GasPalette.ink),
+              icon: Icon(Icons.arrow_back, color: GasPalette.ink),
             ),
             const Spacer(),
             Text('Step ${_step + 1} of 3',
@@ -207,7 +208,7 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFEFF6FF) : Colors.white,
+            color: selected ? Tone.bg(const Color(0xFFEFF6FF)) : Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
                 color: selected ? GasPalette.primary : GasPalette.border,
@@ -223,7 +224,7 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon,
-                    color: selected ? Colors.white : GasPalette.ink2),
+                    color: selected ? Tone.fg(Colors.white) : GasPalette.ink2),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -319,7 +320,7 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
           onPressed: _busy ? null : _next,
           style: FilledButton.styleFrom(
             backgroundColor: GasPalette.primary,
-            foregroundColor: Colors.white,
+            foregroundColor: Tone.fg(Colors.white),
             minimumSize: const Size.fromHeight(52),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
@@ -361,17 +362,17 @@ class _SignUpFlowPageState extends State<SignUpFlowPage> {
         labelText: label,
         suffixIcon: suffix,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Tone.bg(Colors.white),
         labelStyle: GoogleFonts.inter(fontSize: 14, color: GasPalette.ink2),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: GasPalette.border),
+          borderSide: BorderSide(color: GasPalette.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: GasPalette.primary),
+          borderSide: BorderSide(color: GasPalette.primary),
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_forms.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -688,7 +689,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                     'Loading dashboard data...',
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: Colors.black54,
+                      color: Tone.fg(Colors.black54),
                     ),
                   ),
                 ],
@@ -709,11 +710,11 @@ class _ArticDashboardState extends State<ArticDashboard> {
                 child: Container(
                   padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: Tone.bg(Colors.black).withValues(alpha: 0.1),
                         blurRadius: 4,
                         offset: Offset(0, 2),
                       ),
@@ -736,21 +737,21 @@ class _ArticDashboardState extends State<ArticDashboard> {
                           'Updating...',
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: Colors.black54,
+                            color: Tone.fg(Colors.black54),
                           ),
                         ),
                       ] else if (lastRefreshTime != null) ...[
                         Icon(
                           Icons.refresh,
                           size: 16,
-                          color: Colors.green,
+                          color: Tone.fg(Colors.green),
                         ),
                         SizedBox(width: 8),
                         Text(
                           'Last updated: ${DateFormat('HH:mm:ss').format(lastRefreshTime!)}',
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: Colors.black54,
+                            color: Tone.fg(Colors.black54),
                           ),
                         ),
                       ],
@@ -774,9 +775,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
             text: TextSpan(
               text: 'Welcome ',
               style: GoogleFonts.inter(
-                textStyle: const TextStyle(
+                textStyle: TextStyle(
                     fontSize: 14,
-                    color: Colors.black,
+                    color: Tone.fg(Colors.black),
                     letterSpacing: 0,
                     fontWeight: FontWeight.w500),
               ),
@@ -784,9 +785,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                 TextSpan(
                   text: Constants.myDisplayname,
                   style: GoogleFonts.inter(
-                    textStyle: const TextStyle(
+                    textStyle: TextStyle(
                         fontSize: 14,
-                        color: Colors.black,
+                        color: Tone.fg(Colors.black),
                         letterSpacing: 0,
                         fontWeight: FontWeight.bold),
                   ),
@@ -794,9 +795,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                 TextSpan(
                   text: ' to ${Constants.business_name} Dashboard',
                   style: GoogleFonts.inter(
-                    textStyle: const TextStyle(
+                    textStyle: TextStyle(
                         fontSize: 14,
-                        color: Colors.black,
+                        color: Tone.fg(Colors.black),
                         letterSpacing: 0,
                         fontWeight: FontWeight.w500),
                   ),
@@ -808,7 +809,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
         SizedBox(height: 4),
         Padding(
           padding: const EdgeInsets.only(left: 24, right: 24),
-          child: Divider(thickness: 0.5, color: Colors.grey),
+          child: Divider(thickness: 0.5, color: Tone.bg(Colors.grey)),
         ),
         SizedBox(height: 24),
         Padding(
@@ -816,9 +817,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
           child: Text(
             "Dashboard Analytics",
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(
+              textStyle: TextStyle(
                   fontSize: 18,
-                  color: Colors.black,
+                  color: Tone.fg(Colors.black),
                   letterSpacing: 0,
                   fontWeight: FontWeight.normal),
             ),
@@ -846,12 +847,12 @@ class _ArticDashboardState extends State<ArticDashboard> {
                 width: 200,
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: Tone.bg(Colors.grey.shade300)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Tone.bg(Colors.grey).withOpacity(0.1),
                       spreadRadius: 1,
                       blurRadius: 3,
                       offset: Offset(0, 1),
@@ -869,7 +870,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                         style: GoogleFonts.inter(
                           textStyle: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: Tone.fg(Colors.grey.shade600),
                               fontWeight: FontWeight.normal),
                         ),
                       ),
@@ -878,7 +879,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                       style: GoogleFonts.inter(
                         textStyle: TextStyle(
                             fontSize: 12,
-                            color: Colors.black,
+                            color: Tone.fg(Colors.black),
                             fontWeight: FontWeight.normal),
                       ),
                       items: [
@@ -889,7 +890,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                             style: GoogleFonts.inter(
                               textStyle: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.black,
+                                  color: Tone.fg(Colors.black),
                                   fontWeight: FontWeight.normal),
                             ),
                           ),
@@ -915,7 +916,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                     style: GoogleFonts.inter(
                                       textStyle: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.black,
+                                          color: Tone.fg(Colors.black),
                                           fontWeight: FontWeight.normal),
                                     ),
                                     overflow: TextOverflow.ellipsis,
@@ -953,8 +954,8 @@ class _ArticDashboardState extends State<ArticDashboard> {
             padding: const EdgeInsets.only(left: 24, right: 24),
             child: CustomCard(
               elevation: 3,
-              color: Colors.white,
-              surfaceTintColor: Colors.white,
+              color: Tone.auto(Colors.white),
+              surfaceTintColor: Tone.bg(Colors.white),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
               child: Container(
@@ -994,7 +995,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                       child: Icon(
                                         dailySummaryList[index].itemIcon,
                                         size: 24,
-                                        color: Colors.white,
+                                        color: Tone.fg(Colors.white),
                                       ),
                                     ),
                                   ),
@@ -1009,9 +1010,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                             ? "°c"
                                             : " psi"),
                                     style: GoogleFonts.inter(
-                                      textStyle: const TextStyle(
+                                      textStyle: TextStyle(
                                           fontSize: 16,
-                                          color: Colors.black,
+                                          color: Tone.fg(Colors.black),
                                           letterSpacing: 0,
                                           fontWeight: FontWeight.normal),
                                     ),
@@ -1035,7 +1036,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                 style: GoogleFonts.inter(
                                   textStyle: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.black,
+                                      color: Tone.fg(Colors.black),
                                       letterSpacing: 0,
                                       fontWeight: FontWeight.normal),
                                 ),
@@ -1052,8 +1053,8 @@ class _ArticDashboardState extends State<ArticDashboard> {
             padding: const EdgeInsets.only(left: 24, right: 24, top: 24),
             child: CustomCard(
               elevation: 3,
-              color: Colors.white,
-              surfaceTintColor: Colors.white,
+              color: Tone.auto(Colors.white),
+              surfaceTintColor: Tone.bg(Colors.white),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
               child: Container(
@@ -1093,7 +1094,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                       child: Icon(
                                         dailySummaryList2[index].itemIcon,
                                         size: 24,
-                                        color: Colors.white,
+                                        color: Tone.fg(Colors.white),
                                       ),
                                     ),
                                   ),
@@ -1116,9 +1117,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                               .condtion
                                               .toString(),
                                           style: GoogleFonts.inter(
-                                            textStyle: const TextStyle(
+                                            textStyle: TextStyle(
                                                 fontSize: 16,
-                                                color: Colors.black,
+                                                color: Tone.fg(Colors.black),
                                                 letterSpacing: 0,
                                                 fontWeight: FontWeight.normal),
                                           ),
@@ -1144,8 +1145,8 @@ class _ArticDashboardState extends State<ArticDashboard> {
           padding: const EdgeInsets.only(left: 24, right: 24),
           child: CustomCard(
             elevation: 3,
-            color: Colors.white,
-            surfaceTintColor: Colors.white,
+            color: Tone.auto(Colors.white),
+            surfaceTintColor: Tone.bg(Colors.white),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Container(
@@ -1166,9 +1167,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
           child: Text(
             "Average Temperature (Air Vs Coil)",
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(
+              textStyle: TextStyle(
                   fontSize: 18,
-                  color: Colors.black,
+                  color: Tone.fg(Colors.black),
                   letterSpacing: 0,
                   fontWeight: FontWeight.normal),
             ),
@@ -1180,8 +1181,8 @@ class _ArticDashboardState extends State<ArticDashboard> {
             padding: const EdgeInsets.only(left: 24, right: 24),
             child: CustomCard(
               elevation: 3,
-              color: Colors.white,
-              surfaceTintColor: Colors.white,
+              color: Tone.auto(Colors.white),
+              surfaceTintColor: Tone.bg(Colors.white),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
               child: Container(
@@ -1225,7 +1226,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                 style: GoogleFonts.inter(
                                   textStyle: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.black,
+                                      color: Tone.fg(Colors.black),
                                       letterSpacing: 0,
                                       fontWeight: FontWeight.bold),
                                 ),
@@ -1254,9 +1255,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
           child: Text(
             "Recent Alerts",
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(
+              textStyle: TextStyle(
                   fontSize: 18,
-                  color: Colors.black,
+                  color: Tone.fg(Colors.black),
                   letterSpacing: 0,
                   fontWeight: FontWeight.normal),
             ),
@@ -1267,8 +1268,8 @@ class _ArticDashboardState extends State<ArticDashboard> {
           padding: const EdgeInsets.only(left: 24, right: 24),
           child: CustomCard(
             elevation: 3,
-            color: Colors.white,
-            surfaceTintColor: Colors.white,
+            color: Tone.auto(Colors.white),
+            surfaceTintColor: Tone.bg(Colors.white),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Container(
@@ -1285,7 +1286,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                           style: GoogleFonts.inter(
                             textStyle: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey,
+                                color: Tone.fg(Colors.grey),
                                 letterSpacing: 0,
                                 fontWeight: FontWeight.normal),
                           ),
@@ -1304,9 +1305,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                   ? 16
                                   : 0),
                           child: InkWell(
-                            hoverColor: Colors.white,
-                            splashColor: Colors.white,
-                            focusColor: Colors.white,
+                            hoverColor: Tone.bg(Colors.white),
+                            splashColor: Tone.bg(Colors.white),
+                            focusColor: Tone.bg(Colors.white),
                             child: Container(
                               height: 60,
                               padding: EdgeInsets.all(8),
@@ -1320,9 +1321,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                 children: [
                                   Card(
                                     elevation: 10,
-                                    color: Colors.white,
-                                    shadowColor: Colors.black,
-                                    surfaceTintColor: Colors.white,
+                                    color: Tone.bg(Colors.white),
+                                    shadowColor: Tone.bg(Colors.black),
+                                    surfaceTintColor: Tone.bg(Colors.white),
                                     shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(3)),
                                     child: Container(
@@ -1331,7 +1332,7 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                         child: Icon(
                                           CupertinoIcons.chat_bubble_text,
                                           size: 28,
-                                          color: Colors.black,
+                                          color: Tone.fg(Colors.black),
                                         ),
                                       ),
                                     ),
@@ -1354,9 +1355,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                               child: Text(
                                                 notification.message,
                                                 style: GoogleFonts.inter(
-                                                  textStyle: const TextStyle(
+                                                  textStyle: TextStyle(
                                                       fontSize: 14,
-                                                      color: Colors.black,
+                                                      color: Tone.fg(Colors.black),
                                                       letterSpacing: 0,
                                                       fontWeight:
                                                           FontWeight.w500),
@@ -1387,9 +1388,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                             Text(
                                               notification.alertType,
                                               style: GoogleFonts.inter(
-                                                textStyle: const TextStyle(
+                                                textStyle: TextStyle(
                                                     fontSize: 13,
-                                                    color: Colors.black,
+                                                    color: Tone.fg(Colors.black),
                                                     letterSpacing: 0,
                                                     fontWeight:
                                                         FontWeight.w400),
@@ -1402,9 +1403,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                                 timeAgo.format(DateTime.parse(
                                                     notification.timestamp)),
                                                 style: GoogleFonts.inter(
-                                                  textStyle: const TextStyle(
+                                                  textStyle: TextStyle(
                                                       fontSize: 13,
-                                                      color: Colors.black,
+                                                      color: Tone.fg(Colors.black),
                                                       letterSpacing: 0,
                                                       fontWeight:
                                                           FontWeight.w400),
@@ -1436,9 +1437,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
           child: Text(
             "Device Locations",
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(
+              textStyle: TextStyle(
                   fontSize: 18,
-                  color: Colors.black,
+                  color: Tone.fg(Colors.black),
                   letterSpacing: 0,
                   fontWeight: FontWeight.normal),
             ),
@@ -1449,15 +1450,15 @@ class _ArticDashboardState extends State<ArticDashboard> {
           padding: const EdgeInsets.only(left: 24, right: 24),
           child: CustomCard(
             elevation: 3,
-            color: Colors.white,
-            surfaceTintColor: Colors.white,
+            color: Tone.auto(Colors.white),
+            surfaceTintColor: Tone.bg(Colors.white),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Container(
               width: MediaQuery.of(context).size.width,
               height: 500,
               decoration: BoxDecoration(
-                  color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                  color: Tone.bg(Colors.white), borderRadius: BorderRadius.circular(12)),
               child: Center(
                   child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
@@ -1508,12 +1509,12 @@ class _ArticDashboardState extends State<ArticDashboard> {
                         right: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Tone.bg(Colors.white),
                         shape: BoxShape.rectangle,
                         borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(
-                            color: Colors.black26,
+                            color: Tone.bg(Colors.black26),
                             blurRadius: 10.0,
                             offset: Offset(0.0, 10.0),
                           ),
@@ -1541,9 +1542,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                       child: Text(
                                         notification.message,
                                         style: GoogleFonts.inter(
-                                          textStyle: const TextStyle(
+                                          textStyle: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.black,
+                                              color: Tone.fg(Colors.black),
                                               letterSpacing: 0,
                                               fontWeight: FontWeight.normal),
                                         ),
@@ -1567,9 +1568,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                           timeAgo.format(DateTime.parse(
                                               notification.timestamp)),
                                           style: GoogleFonts.inter(
-                                            textStyle: const TextStyle(
+                                            textStyle: TextStyle(
                                                 fontSize: 13,
-                                                color: Colors.black,
+                                                color: Tone.fg(Colors.black),
                                                 letterSpacing: 0,
                                                 fontWeight: FontWeight.w400),
                                           ),
@@ -1582,9 +1583,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                 Text(
                                   notification.alertType,
                                   style: GoogleFonts.inter(
-                                    textStyle: const TextStyle(
+                                    textStyle: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.black54,
+                                        color: Tone.fg(Colors.black54),
                                         letterSpacing: 0,
                                         fontWeight: FontWeight.normal),
                                   ),
@@ -1593,9 +1594,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                 Text(
                                   "Device: ${notification.deviceId}",
                                   style: GoogleFonts.inter(
-                                    textStyle: const TextStyle(
+                                    textStyle: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                         letterSpacing: 0,
                                         fontWeight: FontWeight.normal),
                                   ),
@@ -1618,9 +1619,9 @@ class _ArticDashboardState extends State<ArticDashboard> {
                                 child: Text(
                                   "Close",
                                   style: GoogleFonts.inter(
-                                    textStyle: const TextStyle(
+                                    textStyle: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.white,
+                                        color: Tone.fg(Colors.white),
                                         letterSpacing: 0,
                                         fontWeight: FontWeight.normal),
                                   ),
@@ -1676,19 +1677,19 @@ class _ArticDashboardState extends State<ArticDashboard> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'active':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'inactive':
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
       case 'faulty':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       case 'maintenance':
-        return Colors.orange;
+        return Tone.auto(Colors.orange);
       case 'detached':
-        return Colors.red.shade300;
+        return Tone.auto(Colors.red.shade300);
       case 'new':
-        return Colors.blue;
+        return Tone.auto(Colors.blue);
       default:
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
     }
   }
 }
@@ -1755,9 +1756,9 @@ class BarChartSample2State extends State<BarChartSample2> {
           Text(
             "Hourly Average Temperature",
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(
+              textStyle: TextStyle(
                   fontSize: 16,
-                  color: Colors.black,
+                  color: Tone.fg(Colors.black),
                   letterSpacing: 0,
                   fontWeight: FontWeight.w500),
             ),
@@ -1771,7 +1772,7 @@ class BarChartSample2State extends State<BarChartSample2> {
                       style: GoogleFonts.inter(
                         textStyle: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey,
+                            color: Tone.fg(Colors.grey),
                             letterSpacing: 0,
                             fontWeight: FontWeight.normal),
                       ),
@@ -1783,7 +1784,7 @@ class BarChartSample2State extends State<BarChartSample2> {
                       barTouchData: BarTouchData(
                         touchTooltipData: BarTouchTooltipData(
                           getTooltipColor: ((group) {
-                            return Colors.grey;
+                            return Tone.auto(Colors.grey);
                           }),
                           getTooltipItem: (a, b, c, d) => null,
                         ),
@@ -1862,8 +1863,8 @@ class BarChartSample2State extends State<BarChartSample2> {
   }
 
   Widget leftTitles(double value, TitleMeta meta) {
-    const style = TextStyle(
-      color: Color(0xffAAAAAA),
+    final style = TextStyle(
+      color: Tone.fg(Color(0xffAAAAAA)),
       fontWeight: FontWeight.w500,
       fontSize: 14,
     );
@@ -1894,8 +1895,8 @@ class BarChartSample2State extends State<BarChartSample2> {
   }
 
   Widget bottomTitles(double value, TitleMeta meta) {
-    const style = TextStyle(
-      color: Color(0xffAAAAAA),
+    final style = TextStyle(
+      color: Tone.fg(Color(0xffAAAAAA)),
       fontWeight: FontWeight.w500,
       fontSize: 14,
     );
@@ -1944,31 +1945,31 @@ class BarChartSample2State extends State<BarChartSample2> {
         Container(
           width: width,
           height: 10,
-          color: Colors.white.withOpacity(0.4),
+          color: Tone.bg(Colors.white).withOpacity(0.4),
         ),
         const SizedBox(width: space),
         Container(
           width: width,
           height: 28,
-          color: Colors.white.withOpacity(0.8),
+          color: Tone.bg(Colors.white).withOpacity(0.8),
         ),
         const SizedBox(width: space),
         Container(
           width: width,
           height: 42,
-          color: Colors.white.withOpacity(1),
+          color: Tone.bg(Colors.white).withOpacity(1),
         ),
         const SizedBox(width: space),
         Container(
           width: width,
           height: 28,
-          color: Colors.white.withOpacity(0.8),
+          color: Tone.bg(Colors.white).withOpacity(0.8),
         ),
         const SizedBox(width: space),
         Container(
           width: width,
           height: 10,
-          color: Colors.white.withOpacity(0.4),
+          color: Tone.bg(Colors.white).withOpacity(0.4),
         ),
       ],
     );

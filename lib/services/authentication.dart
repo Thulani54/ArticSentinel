@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -49,9 +50,9 @@ class AuthenticationApiService {
 
           MotionToast.success(
             title: const Text("Success"),
-            description: const Text(
+            description: Text(
               "Business Account Created Successfully",
-              style: TextStyle(fontSize: 13, color: Colors.white),
+              style: TextStyle(fontSize: 13, color: Tone.fg(Colors.white)),
             ),
             layoutOrientation: TextDirection.ltr,
             animationType: AnimationType.fromTop,
@@ -113,9 +114,9 @@ class AuthenticationApiService {
 
           MotionToast.success(
             title: const Text("Success"),
-            description: const Text(
+            description: Text(
               "Business Account Created Successfully",
-              style: TextStyle(fontSize: 13, color: Colors.white),
+              style: TextStyle(fontSize: 13, color: Tone.fg(Colors.white)),
             ),
             layoutOrientation: TextDirection.ltr,
             animationType: AnimationType.fromTop,

@@ -1,3 +1,4 @@
+import 'app_tone.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
@@ -79,11 +80,11 @@ class _AIAlertsSettingsTileState extends State<AIAlertsSettingsTile> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Tone.bg(Colors.black).withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 2))
         ],

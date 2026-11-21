@@ -1,0 +1,40 @@
+{
+  "deployed_on": "2026-11-15",
+  "url": "https://uat.articsentinel.com/admin/login",
+  "admin_usernames": [
+    "thulani.admin",
+    "surprise.admin"
+  ],
+  "role": "platform_admin.PlatformAdministrator; no Django superuser/staff elevation",
+  "first_login_password_change": true,
+  "source": "backend/platform_admin and artic-web-new",
+  "frontend_index_sha256": "fef9ebd677f45d25679162b6df2a6ee5ba0b5943aea1ba19ecd969344fd6fbb4",
+  "server_backup": "/home/vmrvsnyo/.codex-backups/platform-admin-20261115",
+  "features": [
+    "Company and device oversight",
+    "Alerts and maintenance oversight",
+    "Reports with detail, JSON and filtered CSV exports",
+    "People and product enquiries",
+    "Service health and admin access log",
+    "Automatic stable MQTT IDs in setup responses and connection details"
+  ],
+  "verification": {
+    "backend_tests": 11,
+    "frontend_tests": 38,
+    "live_admin_logins": 2,
+    "browser_sections": 10,
+    "mobile_and_desktop": true,
+    "company_scope_verified": true,
+    "tenant_access_denied": true,
+    "fleet_counts_verified": true
+  },
+  "mqtt_workaround": {
+    "listener": 8883,
+    "setting": "use_username_as_clientid true",
+    "backup": "/home/vmrvsnyo/.codex-backups/mqtt-client-id-20261115",
+    "verified_collision_events_after_change": 0,
+    "verified_disconnect_events_after_change": 0,
+    "observation_seconds": 108
+  },
+  "firmware_followup": "Store mqtt_client_id from setup credentials and use it for the MQTT connection identity; retain separate per-device usernames and passwords. The broker override remains active until firmware migration is verified."
+}

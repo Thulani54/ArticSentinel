@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import 'settings/mobile_account_widgets.dart';
 import '../gasmon/gas_theme.dart';
 import '../widgets/app_empty_state.dart';
@@ -375,7 +376,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: Tone.bg(Colors.red),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -386,12 +387,12 @@ class _RoleManagementPageState extends State<RoleManagementPage>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle, color: Colors.white),
+            Icon(Icons.check_circle, color: Tone.fg(Colors.white)),
             const SizedBox(width: 8),
             Text(message),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: Tone.bg(Colors.green),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -418,9 +419,9 @@ class _RoleManagementPageState extends State<RoleManagementPage>
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: Tone.bg(const Color(0xFFF1F5F9)),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0)), width: 1),
               ),
               child: TabBar(
                 controller: _tabController,
@@ -429,11 +430,11 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 indicator: accountSurface(
                     context,
                     BoxDecoration(
-                      color: Colors.white,
+                      color: Tone.bg(Colors.white),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Tone.bg(Colors.black).withOpacity(0.08),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -446,7 +447,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                     )),
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelColor: Constants.ctaColorLight,
-                unselectedLabelColor: const Color(0xFF64748B),
+                unselectedLabelColor: Tone.fg(const Color(0xFF64748B)),
                 labelStyle: accountInter(
                   context,
                   fontSize: 14,
@@ -576,7 +577,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 dividerColor: Colors.transparent,
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicator: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     border: Border.all(color: GasPalette.border),
                     borderRadius: BorderRadius.circular(32)),
                 labelColor: GasPalette.ink,
@@ -634,7 +635,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
             "Total Users",
             "${dashboardStats['total_users'] ?? 0}",
             Icons.people_rounded,
-            const Color(0xFF10B981),
+            Tone.auto(const Color(0xFF10B981)),
           ),
         ),
         const SizedBox(width: 12),
@@ -652,7 +653,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
             "Permissions",
             "${dashboardStats['total_permissions'] ?? 0}",
             Icons.key_rounded,
-            const Color(0xFFF59E0B),
+            Tone.auto(const Color(0xFFF59E0B)),
           ),
         ),
         const SizedBox(width: 12),
@@ -661,7 +662,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
             "Pending",
             "${dashboardStats['pending_requests'] ?? 0}",
             Icons.pending_actions_rounded,
-            const Color(0xFFEF4444),
+            Tone.auto(const Color(0xFFEF4444)),
           ),
         ),
       ],
@@ -675,7 +676,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: color.withOpacity(0.2)),
           )),
@@ -697,7 +698,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
             style: accountInter(
               context,
               fontSize: 12,
-              color: const Color(0xFF64748B),
+              color: Tone.auto(const Color(0xFF64748B)),
             ),
           ),
         ],
@@ -773,11 +774,11 @@ class _RoleManagementPageState extends State<RoleManagementPage>
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -796,21 +797,21 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                         hintText: 'Search roles, permissions, or users...',
                         hintStyle: accountInter(
                           context,
-                          color: const Color(0xFF9CA3AF),
+                          color: Tone.auto(const Color(0xFF9CA3AF)),
                         ),
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.search_rounded,
-                          color: Color(0xFF6B7280),
+                          color: Tone.fg(Color(0xFF6B7280)),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
-                              const BorderSide(color: Color(0xFFE5E7EB)),
+                              BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
-                              const BorderSide(color: Color(0xFFE5E7EB)),
+                              BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -818,7 +819,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                               color: Constants.ctaColorLight, width: 2),
                         ),
                         filled: true,
-                        fillColor: const Color(0xFFF9FAFB),
+                        fillColor: Tone.bg(const Color(0xFFF9FAFB)),
                       )),
                 ),
               ),
@@ -841,7 +842,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                     context,
                     ElevatedButton.styleFrom(
                       backgroundColor: Constants.ctaColorLight,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Tone.fg(Colors.white),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -864,11 +865,11 @@ class _RoleManagementPageState extends State<RoleManagementPage>
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -962,8 +963,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                   const PopupMenuItem(
                       value: 'delete', child: Text('Delete Role')),
                 ],
-                child: const Icon(Icons.more_vert_rounded,
-                    color: Color(0xFF64748B)),
+                child: Icon(Icons.more_vert_rounded,
+                    color: Tone.fg(Color(0xFF64748B))),
               ),
             ],
           ),
@@ -973,7 +974,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
             style: accountInter(
               context,
               fontSize: isPhoneLayout(context) ? 13 : 14,
-              color: const Color(0xFF64748B),
+              color: Tone.auto(const Color(0xFF64748B)),
               height: 1.5,
             ),
           ),
@@ -989,8 +990,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: role.isActive
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.red.withOpacity(0.1),
+                      ? Tone.bg(Colors.green).withOpacity(0.1)
+                      : Tone.bg(Colors.red).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -999,7 +1000,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                     context,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: role.isActive ? Colors.green : Colors.red,
+                    color: role.isActive ? Tone.auto(Colors.green) : Tone.auto(Colors.red),
                   ),
                 ),
               ),
@@ -1015,7 +1016,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
       mainAxisSize: MainAxisSize.min,
       children: [
         if (!isPhoneLayout(context)) ...[
-          Icon(icon, size: 16, color: const Color(0xFF64748B)),
+          Icon(icon, size: 16, color: Tone.fg(const Color(0xFF64748B))),
           const SizedBox(width: 6),
         ],
         Text(
@@ -1024,7 +1025,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
             context,
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF64748B),
+            color: Tone.auto(const Color(0xFF64748B)),
           ),
         ),
       ],
@@ -1065,11 +1066,11 @@ class _RoleManagementPageState extends State<RoleManagementPage>
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -1136,7 +1137,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                           style: accountInter(
                             context,
                             fontSize: 12,
-                            color: const Color(0xFF64748B),
+                            color: Tone.auto(const Color(0xFF64748B)),
                           ),
                         ),
                       ],
@@ -1148,13 +1149,13 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Tone.bg(Colors.orange).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.approval_rounded,
                     size: 16,
-                    color: Colors.orange,
+                    color: Tone.fg(Colors.orange),
                   ),
                 ),
               if (permission.emergencyOverride)
@@ -1162,13 +1163,13 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                   margin: const EdgeInsets.only(left: 4),
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Tone.bg(Colors.red).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.emergency_rounded,
                     size: 16,
-                    color: Colors.red,
+                    color: Tone.fg(Colors.red),
                   ),
                 ),
             ],
@@ -1180,7 +1181,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
               style: accountInter(
                 context,
                 fontSize: 13,
-                color: const Color(0xFF64748B),
+                color: Tone.auto(const Color(0xFF64748B)),
                 height: 1.4,
               ),
             ),
@@ -1223,17 +1224,17 @@ class _RoleManagementPageState extends State<RoleManagementPage>
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: request.emergencyRequest
-                  ? Colors.red.withOpacity(0.3)
+                  ? Tone.bg(Colors.red).withOpacity(0.3)
                   : Colors.transparent,
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -1248,12 +1249,12 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Tone.bg(Colors.red).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.emergency_rounded,
-                    color: Colors.red,
+                    color: Tone.fg(Colors.red),
                     size: 20,
                   ),
                 )
@@ -1290,7 +1291,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                       style: accountInter(
                         context,
                         fontSize: 13,
-                        color: const Color(0xFF64748B),
+                        color: Tone.auto(const Color(0xFF64748B)),
                       ),
                     ),
                   ],
@@ -1320,7 +1321,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: Tone.bg(const Color(0xFFF8FAFC)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -1330,7 +1331,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                         ? Icons.security_rounded
                         : Icons.key_rounded,
                     size: 16,
-                    color: const Color(0xFF64748B),
+                    color: Tone.fg(const Color(0xFF64748B)),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -1351,7 +1352,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
             style: accountInter(
               context,
               fontSize: 13,
-              color: const Color(0xFF64748B),
+              color: Tone.auto(const Color(0xFF64748B)),
               height: 1.4,
             ),
           ),
@@ -1363,7 +1364,7 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                 style: accountInter(
                   context,
                   fontSize: 12,
-                  color: const Color(0xFF94A3B8),
+                  color: Tone.auto(const Color(0xFF94A3B8)),
                 ),
               ),
               const Spacer(),
@@ -1373,8 +1374,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                   style: accountButtonStyle(
                       context,
                       OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
+                        foregroundColor: Tone.fg(Colors.red),
+                        side: BorderSide(color: Tone.bg(Colors.red)),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         shape: RoundedRectangleBorder(
@@ -1390,8 +1391,8 @@ class _RoleManagementPageState extends State<RoleManagementPage>
                   style: accountButtonStyle(
                       context,
                       ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Tone.bg(Colors.green),
+                        foregroundColor: Tone.fg(Colors.white),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         shape: RoundedRectangleBorder(
@@ -1431,19 +1432,19 @@ class _RoleManagementPageState extends State<RoleManagementPage>
   Color _getCategoryColor(String category) {
     switch (category) {
       case 'executive':
-        return const Color(0xFF8B5CF6);
+        return Tone.auto(const Color(0xFF8B5CF6));
       case 'operations_management':
         return Constants.ctaColorLight;
       case 'technical_management':
-        return const Color(0xFF06B6D4);
+        return Tone.auto(const Color(0xFF06B6D4));
       case 'field_technician':
-        return const Color(0xFF10B981);
+        return Tone.auto(const Color(0xFF10B981));
       case 'customer_user':
-        return const Color(0xFFF59E0B);
+        return Tone.auto(const Color(0xFFF59E0B));
       case 'system_admin':
-        return const Color(0xFFEF4444);
+        return Tone.auto(const Color(0xFFEF4444));
       default:
-        return const Color(0xFF64748B);
+        return Tone.auto(const Color(0xFF64748B));
     }
   }
 
@@ -1469,23 +1470,23 @@ class _RoleManagementPageState extends State<RoleManagementPage>
   Color _getPermissionTypeColor(String type) {
     switch (type) {
       case 'view_only':
-        return const Color(0xFF64748B);
+        return Tone.auto(const Color(0xFF64748B));
       case 'create':
-        return const Color(0xFF10B981);
+        return Tone.auto(const Color(0xFF10B981));
       case 'edit':
         return Constants.ctaColorLight;
       case 'delete':
-        return const Color(0xFFEF4444);
+        return Tone.auto(const Color(0xFFEF4444));
       case 'manage':
-        return const Color(0xFF8B5CF6);
+        return Tone.auto(const Color(0xFF8B5CF6));
       case 'admin':
-        return const Color(0xFFDC2626);
+        return Tone.auto(const Color(0xFFDC2626));
       case 'approve':
-        return const Color(0xFFF59E0B);
+        return Tone.auto(const Color(0xFFF59E0B));
       case 'override':
-        return const Color(0xFFEC4899);
+        return Tone.auto(const Color(0xFFEC4899));
       default:
-        return const Color(0xFF64748B);
+        return Tone.auto(const Color(0xFF64748B));
     }
   }
 
@@ -1515,15 +1516,15 @@ class _RoleManagementPageState extends State<RoleManagementPage>
   Color _getStatusColor(String status) {
     switch (status) {
       case 'pending':
-        return const Color(0xFFF59E0B);
+        return Tone.auto(const Color(0xFFF59E0B));
       case 'approved':
-        return const Color(0xFF10B981);
+        return Tone.auto(const Color(0xFF10B981));
       case 'rejected':
-        return const Color(0xFFEF4444);
+        return Tone.auto(const Color(0xFFEF4444));
       case 'expired':
-        return const Color(0xFF64748B);
+        return Tone.auto(const Color(0xFF64748B));
       default:
-        return const Color(0xFF64748B);
+        return Tone.auto(const Color(0xFF64748B));
     }
   }
 
@@ -1606,7 +1607,7 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
         decoration: accountSurface(
             context,
             BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
             )),
         child: Column(
@@ -1617,7 +1618,7 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Tone.bg(Colors.red).withOpacity(0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -1628,12 +1629,12 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: Tone.bg(Colors.red),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.close_rounded,
-                      color: Colors.white,
+                      color: Tone.fg(Colors.white),
                       size: 16,
                     ),
                   ),
@@ -1662,7 +1663,7 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                     style: accountInter(
                       context,
                       fontSize: 14,
-                      color: const Color(0xFF64748B),
+                      color: Tone.auto(const Color(0xFF64748B)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -1675,25 +1676,25 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                           hintText: 'Enter rejection reason...',
                           hintStyle: accountInter(
                             context,
-                            color: const Color(0xFF9CA3AF),
+                            color: Tone.auto(const Color(0xFF9CA3AF)),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide:
-                                const BorderSide(color: Color(0xFFE5E7EB)),
+                                BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide:
-                                const BorderSide(color: Color(0xFFE5E7EB)),
+                                BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color: Color(0xFFEF4444), width: 2),
+                            borderSide: BorderSide(
+                                color: Tone.bg(Color(0xFFEF4444)), width: 2),
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF9FAFB),
+                          fillColor: Tone.bg(const Color(0xFFF9FAFB)),
                         )),
                   ),
                 ],
@@ -1703,8 +1704,8 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
             // Actions
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF8FAFC),
+              decoration: BoxDecoration(
+                color: Tone.bg(Color(0xFFF8FAFC)),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(16),
@@ -1718,8 +1719,8 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                       style: accountButtonStyle(
                           context,
                           OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF64748B),
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            foregroundColor: Tone.fg(const Color(0xFF64748B)),
+                            side: BorderSide(color: Tone.bg(Color(0xFFE2E8F0))),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -1741,8 +1742,8 @@ class _RejectRequestDialogState extends State<_RejectRequestDialog> {
                       style: accountButtonStyle(
                           context,
                           ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
+                            backgroundColor: Tone.bg(Colors.red),
+                            foregroundColor: Tone.fg(Colors.white),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -1784,11 +1785,11 @@ class RoleDetailsDialog extends StatelessWidget {
         decoration: accountSurface(
             context,
             BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Tone.bg(Colors.black).withOpacity(0.15),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -1834,7 +1835,7 @@ class RoleDetailsDialog extends StatelessWidget {
                     ),
                     child: Icon(
                       _getCategoryIcon(role.category),
-                      color: Colors.white,
+                      color: Tone.fg(Colors.white),
                       size: 24,
                     ),
                   ),
@@ -1858,7 +1859,7 @@ class RoleDetailsDialog extends StatelessWidget {
                           style: accountInter(
                             context,
                             fontSize: 14,
-                            color: const Color(0xFF64748B),
+                            color: Tone.auto(const Color(0xFF64748B)),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1869,8 +1870,8 @@ class RoleDetailsDialog extends StatelessWidget {
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close_rounded),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.8),
-                      foregroundColor: const Color(0xFF64748B),
+                      backgroundColor: Tone.bg(Colors.white).withOpacity(0.8),
+                      foregroundColor: Tone.fg(const Color(0xFF64748B)),
                     ),
                   ),
                 ],
@@ -1943,7 +1944,7 @@ class RoleDetailsDialog extends StatelessWidget {
                                 ElevatedButton.styleFrom(
                                   backgroundColor:
                                       _getCategoryColor(role.category),
-                                  foregroundColor: Colors.white,
+                                  foregroundColor: Tone.fg(Colors.white),
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(
@@ -1986,7 +1987,7 @@ class RoleDetailsDialog extends StatelessWidget {
             style: accountInter(
               context,
               fontSize: 14,
-              color: const Color(0xFF64748B),
+              color: Tone.auto(const Color(0xFF64748B)),
               height: 1.5,
             ),
           ),
@@ -2000,9 +2001,9 @@ class RoleDetailsDialog extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Tone.bg(const Color(0xFFF8FAFC)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
       ),
       child: Column(
         children: [
@@ -2022,7 +2023,7 @@ class RoleDetailsDialog extends StatelessWidget {
             style: accountInter(
               context,
               fontSize: 12,
-              color: const Color(0xFF64748B),
+              color: Tone.auto(const Color(0xFF64748B)),
             ),
           ),
         ],
@@ -2033,19 +2034,19 @@ class RoleDetailsDialog extends StatelessWidget {
   Color _getCategoryColor(String category) {
     switch (category) {
       case 'executive':
-        return const Color(0xFF8B5CF6);
+        return Tone.auto(const Color(0xFF8B5CF6));
       case 'operations_management':
         return Constants.ctaColorLight;
       case 'technical_management':
-        return const Color(0xFF06B6D4);
+        return Tone.auto(const Color(0xFF06B6D4));
       case 'field_technician':
-        return const Color(0xFF10B981);
+        return Tone.auto(const Color(0xFF10B981));
       case 'customer_user':
-        return const Color(0xFFF59E0B);
+        return Tone.auto(const Color(0xFFF59E0B));
       case 'system_admin':
-        return const Color(0xFFEF4444);
+        return Tone.auto(const Color(0xFFEF4444));
       default:
-        return const Color(0xFF64748B);
+        return Tone.auto(const Color(0xFF64748B));
     }
   }
 
@@ -2137,11 +2138,11 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
         decoration: accountSurface(
             context,
             BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Tone.bg(Colors.black).withOpacity(0.15),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -2184,9 +2185,9 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.add_circle_rounded,
-                      color: Colors.white,
+                      color: Tone.fg(Colors.white),
                       size: 24,
                     ),
                   ),
@@ -2211,7 +2212,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                             context,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF64748B),
+                            color: Tone.auto(const Color(0xFF64748B)),
                           ),
                         ),
                       ],
@@ -2221,8 +2222,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close_rounded),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.8),
-                      foregroundColor: const Color(0xFF64748B),
+                      backgroundColor: Tone.bg(Colors.white).withOpacity(0.8),
+                      foregroundColor: Tone.fg(const Color(0xFF64748B)),
                     ),
                   ),
                 ],
@@ -2330,7 +2331,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                         style: accountInter(
                           context,
                           fontSize: 14,
-                          color: const Color(0xFF64748B),
+                          color: Tone.auto(const Color(0xFF64748B)),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -2361,7 +2362,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: Tone.bg(const Color(0xFFF8FAFC)),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -2385,8 +2386,8 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       style: accountButtonStyle(
                           context,
                           OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF64748B),
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            foregroundColor: Tone.fg(const Color(0xFF64748B)),
+                            side: BorderSide(color: Tone.bg(Color(0xFFE2E8F0))),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -2400,13 +2401,13 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                     child: ElevatedButton.icon(
                       onPressed: _isSaving ? null : _saveRole,
                       icon: _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                    AlwaysStoppedAnimation<Color>(Tone.fg(Colors.white)),
                               ),
                             )
                           : const Icon(Icons.save_rounded, size: 18),
@@ -2422,7 +2423,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                           context,
                           ElevatedButton.styleFrom(
                             backgroundColor: Constants.ctaColorLight,
-                            foregroundColor: Colors.white,
+                            foregroundColor: Tone.fg(Colors.white),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -2488,7 +2489,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF374151),
+            color: Tone.auto(const Color(0xFF374151)),
           ),
         ),
         const SizedBox(height: 8),
@@ -2500,7 +2501,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             context,
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF1F2937),
+            color: Tone.auto(const Color(0xFF1F2937)),
           ),
           decoration: mobileInputDecoration(
               context,
@@ -2509,36 +2510,36 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                 hintStyle: accountInter(
                   context,
                   fontSize: 14,
-                  color: const Color(0xFF9CA3AF),
+                  color: Tone.auto(const Color(0xFF9CA3AF)),
                 ),
                 prefixIcon: Icon(
                   icon,
                   size: 20,
-                  color: const Color(0xFF6B7280),
+                  color: Tone.fg(const Color(0xFF6B7280)),
                 ),
                 filled: true,
-                fillColor: const Color(0xFFF9FAFB),
+                fillColor: Tone.bg(const Color(0xFFF9FAFB)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      const BorderSide(color: Color(0xFF3B82F6), width: 2),
+                      BorderSide(color: Tone.bg(Color(0xFF3B82F6)), width: 2),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFEF4444)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFEF4444))),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      const BorderSide(color: Color(0xFFEF4444), width: 2),
+                      BorderSide(color: Tone.bg(Color(0xFFEF4444)), width: 2),
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -2566,15 +2567,15 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
             context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF374151),
+            color: Tone.auto(const Color(0xFF374151)),
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
+            color: Tone.bg(const Color(0xFFF9FAFB)),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: Tone.bg(const Color(0xFFE5E7EB))),
           ),
           child: DropdownButtonFormField<String>(
             value: value,
@@ -2586,12 +2587,12 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                   hintStyle: accountInter(
                     context,
                     fontSize: 14,
-                    color: const Color(0xFF9CA3AF),
+                    color: Tone.auto(const Color(0xFF9CA3AF)),
                   ),
                   prefixIcon: Icon(
                     icon,
                     size: 20,
-                    color: const Color(0xFF6B7280),
+                    color: Tone.fg(const Color(0xFF6B7280)),
                   ),
                   border: InputBorder.none,
                   contentPadding:
@@ -2601,12 +2602,12 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
               context,
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF1F2937),
+              color: Tone.auto(const Color(0xFF1F2937)),
             ),
-            dropdownColor: Colors.white,
-            icon: const Icon(
+            dropdownColor: Tone.bg(Colors.white),
+            icon: Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: Color(0xFF6B7280),
+              color: Tone.fg(Color(0xFF6B7280)),
             ),
             isExpanded: true,
             onChanged: onChanged,
@@ -2618,7 +2619,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                   style: accountInter(
                     context,
                     fontSize: 14,
-                    color: const Color(0xFF1F2937),
+                    color: Tone.auto(const Color(0xFF1F2937)),
                   ),
                 ),
               );
@@ -2633,9 +2634,9 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Tone.bg(const Color(0xFFF8FAFC)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
       ),
       child: Wrap(
         spacing: 12,
@@ -2657,13 +2658,13 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? Constants.ctaColorLight.withOpacity(0.1)
-                    : Colors.white,
+                    : Tone.bg(Colors.white),
                 borderRadius:
                     BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
                 border: Border.all(
                   color: isSelected
                       ? Constants.ctaColorLight
-                      : const Color(0xFFE2E8F0),
+                      : Tone.bg(const Color(0xFFE2E8F0)),
                   width: isSelected ? 2 : 1,
                 ),
               ),
@@ -2677,7 +2678,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                     size: 16,
                     color: isSelected
                         ? Constants.ctaColorLight
-                        : const Color(0xFF64748B),
+                        : Tone.fg(const Color(0xFF64748B)),
                   ),
                   const SizedBox(width: 8),
                   Flexible(
@@ -2690,7 +2691,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                           isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected
                           ? Constants.ctaColorLight
-                          : const Color(0xFF64748B),
+                          : Tone.auto(const Color(0xFF64748B)),
                     ),
                   )),
                 ],
@@ -2706,9 +2707,9 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Tone.bg(const Color(0xFFF8FAFC)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
       ),
       child: Column(
         children: [
@@ -2753,14 +2754,14 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: value
-                ? const Color(0xFF10B981).withOpacity(0.1)
-                : const Color(0xFF64748B).withOpacity(0.1),
+                ? Tone.bg(const Color(0xFF10B981)).withOpacity(0.1)
+                : Tone.bg(const Color(0xFF64748B)).withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
             size: 20,
-            color: value ? const Color(0xFF10B981) : const Color(0xFF64748B),
+            color: value ? Tone.fg(const Color(0xFF10B981)) : Tone.fg(const Color(0xFF64748B)),
           ),
         ),
         const SizedBox(width: 16),
@@ -2782,7 +2783,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                 style: accountInter(
                   context,
                   fontSize: 12,
-                  color: const Color(0xFF64748B),
+                  color: Tone.auto(const Color(0xFF64748B)),
                 ),
               ),
             ],
@@ -2791,7 +2792,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
         Switch.adaptive(
           value: value,
           onChanged: onChanged,
-          activeColor: const Color(0xFF10B981),
+          activeColor: Tone.auto(const Color(0xFF10B981)),
         ),
       ],
     );
@@ -2801,17 +2802,17 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F9FF),
+        color: Tone.bg(const Color(0xFFF0F9FF)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFBAE6FD)),
+        border: Border.all(color: Tone.bg(const Color(0xFFBAE6FD))),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.info_outline_rounded,
-                color: Color(0xFF0284C7),
+                color: Tone.fg(Color(0xFF0284C7)),
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -2822,7 +2823,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                     context,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF0284C7),
+                    color: Tone.auto(const Color(0xFF0284C7)),
                   ),
                 ),
               ),
@@ -2839,17 +2840,17 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
               decoration: accountSurface(
                   context,
                   BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF0284C7)),
+                    border: Border.all(color: Tone.bg(const Color(0xFF0284C7))),
                   ),
                   radius: 32),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.add_rounded,
-                    color: Color(0xFF0284C7),
+                    color: Tone.fg(Color(0xFF0284C7)),
                     size: 18,
                   ),
                   const SizedBox(width: 8),
@@ -2860,7 +2861,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
                       context,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0284C7),
+                      color: Tone.auto(const Color(0xFF0284C7)),
                     ),
                   )),
                 ],
@@ -2893,7 +2894,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please select at least one role type'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -2926,12 +2927,12 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white),
+                Icon(Icons.check_circle_rounded, color: Tone.fg(Colors.white)),
                 const SizedBox(width: 8),
                 Text('Role "${_nameController.text}" created successfully!'),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Tone.bg(Colors.green),
             behavior: SnackBarBehavior.floating,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -2946,7 +2947,7 @@ class _AddRoleDialogState extends State<AddRoleDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error creating role: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Tone.bg(Colors.red),
             behavior: SnackBarBehavior.floating,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

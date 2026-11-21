@@ -1,7 +1,13 @@
+import 'widgets/app_tone.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'services/secure_session_store.dart';
+import 'services/offline_read_client.dart';
+import 'widgets/biometric_session_gate.dart';
+import 'screens/notification_settings.dart';
+import 'screens/notification_device.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'services/push_notifications.dart';
-import 'package:artic_sentinel/screens/dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'widgets/mobile_theme.dart';
@@ -48,16 +54,21 @@ bool isloggedin = false;
 bool isAdmin = false;
 var uuid = const Uuid();
 
-Future<void> main() async {
-  setPathUrlStrategy();
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Check if user is logged in
-  final bool isLoggedIn =
-      await Sharedprefs.getUserLoggedInSharedPreference() ?? false;
-
-  // Setup initial data if logged in
-  if (isLoggedIn) {
+/// Restore a complete session before choosing the first route. A key-store
+/// failure must lead to sign-in, never prevent the app from drawing a screen.
+Future<bool> restoreSignedInSession({SecureSessionStore? store}) async {
+  final storage = store ?? SecureSessionStore.instance;
+  try {
+    await storage.initialize();
+    if (await Sharedprefs.getUserLoggedInSharedPreference() != true) {
+      throw StateError('No saved sign-in.');
+    }
+    final token = await storage.readToken();
+    if (token == null || token.isEmpty) throw StateError('No saved token.');
+    Constants.authToken = token;
+    Constants.user_uid = await Sharedprefs.getUserUidSharedPreference() ?? 0;
+    Constants.business_uid =
+        await Sharedprefs.getBusinessUidSharedPreference() ?? 0;
     //Constants.business_name
     Constants.myDisplayname =
         (await Sharedprefs.getUserNameSharedPreference()) ?? '';
@@ -68,7 +79,33 @@ Future<void> main() async {
         (await Sharedprefs.getBusinessNameSharedPreference()) ?? '';
     Constants.myBusiness =
         await Sharedprefs.getBusinessDataPreference() ?? Business.empty();
+    return true;
+  } catch (_) {
+    Constants.authToken = '';
+    Constants.user_uid = 0;
+    Constants.business_uid = 0;
+    Constants.myDisplayname = '';
+    Constants.myUsername = '';
+    Constants.myEmail = '';
+    Constants.business_name = '';
+    Constants.myBusiness = Business.empty();
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setBool(
+          Sharedprefs.sharedPreferenceUserLoggedInKey, false);
+      await OfflineReadClient.clearAllSnapshots();
+    } catch (_) {
+      // If platform storage itself is unavailable, still show the public app.
+    }
+    return false;
   }
+}
+
+Future<void> main() async {
+  setPathUrlStrategy();
+  WidgetsFlutterBinding.ensureInitialized();
+  final isLoggedIn = await restoreSignedInSession();
+  await AppAppearance.load();
 
   // Determine initial route
   // Phones open on the splash screen, which routes to the welcome tour on
@@ -77,9 +114,16 @@ Future<void> main() async {
 
   final app = MyApp(initialRoute: initialRoute);
   runApp(app);
-  PushNotifications.instance.attachOpenHandler(() {
-    Sharedprefs.getUserLoggedInSharedPreference().then((loggedIn) =>
-        app._router.go(loggedIn == true ? '/device-management' : '/login'));
+  PushNotifications.instance.attachOpenHandler((target) async {
+    final loggedIn =
+        await Sharedprefs.getUserLoggedInSharedPreference() == true &&
+            (await Sharedprefs.getAuthTokenPreference())?.isNotEmpty == true;
+    if (!loggedIn) {
+      app._router.go('/login');
+      return;
+    }
+    PushNotifications.instance.pendingTarget = null;
+    app._router.push(target.route);
   });
   unawaited(PushNotifications.instance.initialize());
 }
@@ -170,6 +214,16 @@ class MyApp extends StatelessWidget {
         builder: (BuildContext context, GoRouterState state) =>
             const WelcomeScreens(),
       ),
+
+      GoRoute(
+          path: '/notification-device/:id',
+          builder: (context, state) => NotificationDevicePage(
+              deviceId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0)),
+      GoRoute(
+          path: '/notification-settings',
+          builder: (context, state) => Scaffold(
+              appBar: AppBar(title: const Text('Notifications')),
+              body: const NotificationSettingsPage())),
 
       // Main shell route with persistent layout
       ShellRoute(
@@ -326,17 +380,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'Artic Sentinel',
-      theme: kIsWeb
-          ? ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-              useMaterial3: true,
-            )
-          : articMobileTheme(),
-      routerConfig: _router,
-    );
+    return AppearanceScope(
+        builder: (context) => MaterialApp.router(
+              debugShowCheckedModeBanner: false,
+              title: 'Artic Sentinel',
+              // Palette colours switch instantly, so the theme must too.
+              themeAnimationDuration: Duration.zero,
+              theme: kIsWeb
+                  ? ThemeData(
+                      colorScheme:
+                          ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+                      useMaterial3: true,
+                    )
+                  : articMobileTheme(),
+              routerConfig: _router,
+              builder: (context, child) => BiometricSessionGate(
+                  onSignIn: () => _router.go('/login'),
+                  child: child ?? const SizedBox.shrink()),
+            ));
   }
 }
 
@@ -361,7 +422,8 @@ class _UnitManagementWrapper extends StatelessWidget {
 class _DashboardWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const ArticDashboard();
+    // The readings dashboard owns loading, saved snapshots and refresh.
+    return const ArticDashboardTab();
   }
 }
 

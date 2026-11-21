@@ -18,10 +18,13 @@ void main() {
       final spec = GasSpec.forCapacity(14);
       expect(
           levelPercent(
-              currentKg: spec.fullKg + 5, tareKg: spec.tareKg, fullKg: spec.fullKg),
+              currentKg: spec.fullKg + 5,
+              tareKg: spec.tareKg,
+              fullKg: spec.fullKg),
           100);
       expect(
-          levelPercent(currentKg: 0, tareKg: spec.tareKg, fullKg: spec.fullKg), 0);
+          levelPercent(currentKg: 0, tareKg: spec.tareKg, fullKg: spec.fullKg),
+          0);
       expect(
           levelPercent(
               currentKg: spec.tareKg + spec.capacityKg / 2,
@@ -31,9 +34,9 @@ void main() {
     });
 
     test('refill contributes zero consumption, never negative', () {
+      expect(consumptionKg(previousKg: 20, currentKg: 32), 0); // refill +12 kg
       expect(
-          consumptionKg(previousKg: 20, currentKg: 32), 0); // refill +12 kg
-      expect(consumptionKg(previousKg: 30, currentKg: 28.5), closeTo(1.5, 1e-9));
+          consumptionKg(previousKg: 30, currentKg: 28.5), closeTo(1.5, 1e-9));
     });
 
     test('band thresholds: <20 low, <50 warning, else healthy', () {
@@ -78,13 +81,121 @@ void main() {
       expect(u.cost, closeTo(36.0, 1e-9));
     });
 
-    test('todayUsage with a refill overnight reads 0', () {
+    test('todayUsage counts consumption after an overnight refill', () {
       final u = todayUsage([
         r(17, 19, 28.0),
         r(18, 6, 30.0),
         r(18, 12, 28.8),
       ], pricePerKg: 30, now: DateTime(2026, 9, 18, 15));
-      expect(u.kg, 0);
+      expect(u.kg, closeTo(1.2, 1e-9));
+      expect(u.cost, closeTo(36, 1e-9));
+    });
+
+    test('report and today cancel small rises instead of counting every dip',
+        () {
+      final readings = [
+        r(17, 23, 79.307),
+        r(18, 6, 78.8),
+        r(18, 9, 79.4279),
+        r(18, 12, 79),
+      ];
+      final report = dailySeries(readings, pricePerKg: 39).single;
+      final today = todayUsage(readings.reversed.toList(),
+          pricePerKg: 39, now: DateTime(2026, 9, 18, 15));
+      expect(today.kg, closeTo(report.kg, 1e-9));
+      expect(today.cost, closeTo(report.cost, 1e-9));
+      // Summing drops used to report 0.9349 kg / R36.46 for these readings.
+      expect(today.kg, closeTo(0.307, 1e-9));
+      expect(today.kg.toStringAsFixed(2), '0.31');
+      expect(money(today.cost), 'R11.97');
+    });
+
+    test('repeated fluctuations with no net loss create no consumption', () {
+      final series = dailySeries([
+        r(17, 23, 30),
+        r(18, 1, 29.8),
+        r(18, 2, 30.1),
+        r(18, 3, 29.9),
+        r(18, 4, 30),
+      ], pricePerKg: 39);
+      expect(series.single.kg, 0);
+      expect(series.single.cost, 0);
+    });
+
+    test('consumption before and after a detected refill is preserved', () {
+      final series = dailySeries([
+        r(17, 23, 10),
+        r(18, 6, 9),
+        r(18, 9, 20),
+        r(18, 12, 19.5),
+      ], pricePerKg: 39);
+      expect(series.single.kg, closeTo(1.5, 1e-9));
+      expect(series.single.cost, closeTo(58.5, 1e-9));
+    });
+
+    test('November 8 hourly readings do not inflate 0.335 kg to 0.984 kg', () {
+      final weights = [
+        36.354,
+        36.384,
+        36.386,
+        36.370,
+        36.390,
+        36.358,
+        36.391,
+        36.376,
+        36.375,
+        36.371,
+        36.378,
+        36.369,
+        36.386,
+        36.127,
+        36.579,
+        36.303,
+        36.388,
+        36.296,
+        36.277,
+        36.280,
+        36.087,
+        36.022
+      ];
+      final readings = [
+        GasReading(at: DateTime(2026, 11, 7, 23), weightKg: 36.357),
+        for (var hour = 0; hour < weights.length; hour++)
+          GasReading(at: DateTime(2026, 11, 8, hour), weightKg: weights[hour]),
+      ];
+      final report = dailySeries(readings, pricePerKg: 39).single;
+      final today =
+          todayUsage(readings, pricePerKg: 39, now: DateTime(2026, 11, 8, 22));
+      expect(report.kg, closeTo(0.335, 1e-9));
+      expect(today.kg, closeTo(report.kg, 1e-9));
+      expect(today.cost, closeTo(report.cost, 1e-9));
+    });
+
+    test('today usage ignores future data and old offline gaps', () {
+      final readings = [
+        r(14, 23, 40),
+        r(18, 6, 30), // Missing days are not attributed to today.
+        r(18, 12, 29.5),
+        r(18, 18, 27), // After now: must not count.
+        r(19, 6, 25),
+      ];
+      final today =
+          todayUsage(readings, pricePerKg: 39, now: DateTime(2026, 9, 18, 15));
+      expect(today.kg, closeTo(0.5, 1e-9));
+      expect(today.cost, closeTo(19.5, 1e-9));
+    });
+
+    test('empty, single and stale readings have no usage today', () {
+      for (final readings in <List<GasReading>>[
+        [],
+        [r(18, 6, 30)],
+        [r(16, 6, 30), r(17, 6, 29)],
+      ]) {
+        final today = todayUsage(readings,
+            pricePerKg: 39, now: DateTime(2026, 9, 18, 15));
+        expect(today.kg, 0);
+        expect(today.cost, 0);
+      }
     });
   });
 
@@ -133,7 +244,8 @@ void main() {
       ], spec: spec);
       final titles = alerts.map((a) => a.title).toSet();
       expect(titles, contains('Cylinder refilled'));
-      expect(titles, contains(anyOf('Gas level below 20%', 'Monitor back online')));
+      expect(titles,
+          contains(anyOf('Gas level below 20%', 'Monitor back online')));
     });
   });
 }

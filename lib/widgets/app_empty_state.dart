@@ -1,3 +1,4 @@
+import 'app_tone.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:iconsax/iconsax.dart';
@@ -63,7 +64,7 @@ class AppEmptyState extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Tone.bg(Colors.white),
                       shape: BoxShape.circle,
                       border: Border.all(color: GasPalette.border)),
                   child: Icon(_icon, size: 18, color: GasPalette.primary),
@@ -83,7 +84,7 @@ class AppEmptyState extends StatelessWidget {
               const SizedBox(height: 8),
               Text(message,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 13,
                       height: 1.55,
@@ -97,7 +98,7 @@ class AppEmptyState extends StatelessWidget {
                     minimumSize: const Size(120, 48),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),
-                    side: const BorderSide(color: GasPalette.border),
+                    side: BorderSide(color: GasPalette.border),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(32)),
                   ),

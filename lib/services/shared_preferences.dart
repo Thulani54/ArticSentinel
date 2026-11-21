@@ -1,7 +1,7 @@
 import 'push_notifications.dart';
+import 'secure_session_store.dart';
 import 'dart:convert';
 
-import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/business.dart';
@@ -108,7 +108,8 @@ class Sharedprefs {
 
   static Future<bool> saveUserPasswordPreference(String password) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
-    return await preferences.setString(sharedPasswordPrefKey, password);
+    // Compatibility for old callers: never retain an account password.
+    return await preferences.remove(sharedPasswordPrefKey);
   }
 
   static Future<bool> saveUserCecClientIdSharedPreference(
@@ -159,8 +160,8 @@ class Sharedprefs {
 
   // New save methods for additional user profile data
   static Future<bool> saveAuthTokenPreference(String token) async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    return await preferences.setString(sharedPreferenceAuthTokenKey, token);
+    await SecureSessionStore.instance.writeToken(token);
+    return true;
   }
 
   static Future<bool> saveUserTypePreference(String userType) async {
@@ -520,13 +521,13 @@ class Sharedprefs {
 
   static Future<String?> getUserPasswordPreference() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
-    return await preferences.getString(sharedPasswordPrefKey);
+    await preferences.remove(sharedPasswordPrefKey);
+    return null;
   }
 
   // New getter methods for additional user profile data
   static Future<String?> getAuthTokenPreference() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    return await preferences.getString(sharedPreferenceAuthTokenKey);
+    return SecureSessionStore.instance.readToken();
   }
 
   static Future<String?> getUserTypePreference() async {

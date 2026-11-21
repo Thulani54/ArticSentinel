@@ -1,3 +1,7 @@
+import '../widgets/app_tone.dart';
+import '../device_journal/bottle_scan_history.dart';
+import '../services/offline_read_client.dart';
+import '../widgets/offline_snapshot_banner.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_widgets.dart';
@@ -96,10 +100,10 @@ Widget _buildPressureMetricRow(String title, double? current, double? min,
   return Container(
     padding: EdgeInsets.all(Constants.spacingMd),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       borderRadius: BorderRadius.circular(Constants.spacingSm),
-      border: Border.all(color: const Color(0xFFF1F5F9)),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+      border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+      boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,10 +136,10 @@ Widget _buildCompressorMetricCard(String title, String value, IconData icon) {
   return Container(
     padding: EdgeInsets.all(Constants.spacingMd),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       borderRadius: BorderRadius.circular(Constants.spacingSm),
-      border: Border.all(color: const Color(0xFFF1F5F9)),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+      border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+      boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
     ),
     child: Column(
       children: [
@@ -159,10 +163,10 @@ Widget _buildEfficiencyCard(
   return Container(
     padding: EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: const Color(0xFFF1F5F9)),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+      border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+      boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
     ),
     child: Column(
       children: [
@@ -175,7 +179,7 @@ Widget _buildEfficiencyCard(
             style:
                 GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500)),
         Text(subtitle,
-            style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600),
+            style: GoogleFonts.inter(fontSize: 11, color: Tone.fg(Colors.grey.shade600)),
             textAlign: TextAlign.center),
       ],
     ),
@@ -203,7 +207,7 @@ Color _getTemperatureStatusColor(String? status) {
     case 'critical':
       return Constants.criticalColor;
     default:
-      return Colors.grey;
+      return Tone.auto(Colors.grey);
   }
 }
 
@@ -214,9 +218,9 @@ Color _getPressureStatusColor(String? status) {
     case 'warning':
       return Constants.ctaColorLight;
     case 'critical':
-      return Colors.red;
+      return Tone.auto(Colors.red);
     default:
-      return Colors.grey;
+      return Tone.auto(Colors.grey);
   }
 }
 
@@ -242,11 +246,11 @@ Widget _buildChartsTabView() {
       SizedBox(height: 16),
       Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Tone.bg(Colors.grey).withOpacity(0.1),
                 spreadRadius: 1,
                 blurRadius: 5)
           ],
@@ -261,7 +265,7 @@ Widget _buildChartsTabView() {
                 Tab(text: "Performance"),
               ],
               labelColor: Constants.ctaColorLight,
-              unselectedLabelColor: Colors.grey,
+              unselectedLabelColor: Tone.fg(Colors.grey),
               indicatorColor: Constants.ctaColorLight,
             ),
             Container(
@@ -285,9 +289,9 @@ Widget _buildChartsTabView() {
 Widget _buildHourlyTrendsChart() {
   if (hourlyAggregatesList.isEmpty) {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.show_chart, size: 48, color: Colors.grey.shade300),
+      Icon(Icons.show_chart, size: 48, color: Tone.fg(Colors.grey.shade300)),
       SizedBox(height: 8),
-      Text("No hourly data available", style: GoogleFonts.inter(color: Colors.grey[500])),
+      Text("No hourly data available", style: GoogleFonts.inter(color: Tone.fg(Colors.grey[500]))),
     ]));
   }
 
@@ -305,9 +309,9 @@ Widget _buildHourlyTrendsChart() {
             style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500)),
         SizedBox(height: 8),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          _buildLegendItem("Temperature (°C)", Colors.blue.shade500),
+          _buildLegendItem("Temperature (°C)", Tone.auto(Colors.blue.shade500)),
           SizedBox(width: 20),
-          _buildLegendItem("Pressure/10 (psi)", Colors.orange.shade500),
+          _buildLegendItem("Pressure/10 (psi)", Tone.auto(Colors.orange.shade500)),
         ]),
         SizedBox(height: 8),
         Expanded(
@@ -317,12 +321,12 @@ Widget _buildHourlyTrendsChart() {
               gridData: FlGridData(
                 show: true, drawVerticalLine: false,
                 horizontalInterval: yMax / 4,
-                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+                getDrawingHorizontalLine: (v) => FlLine(color: Tone.bg(Colors.grey.shade100), strokeWidth: 1),
               ),
               titlesData: FlTitlesData(
                 leftTitles: AxisTitles(sideTitles: SideTitles(
                   showTitles: true, reservedSize: 40,
-                  getTitlesWidget: (v, m) => Text('${v.toInt()}', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                  getTitlesWidget: (v, m) => Text('${v.toInt()}', style: GoogleFonts.inter(fontSize: 9, color: Tone.fg(Colors.grey[500]))),
                 )),
                 bottomTitles: AxisTitles(sideTitles: SideTitles(
                   showTitles: true, reservedSize: 24,
@@ -330,10 +334,10 @@ Widget _buildHourlyTrendsChart() {
                   getTitlesWidget: (value, meta) {
                     final index = value.toInt();
                     if (index >= 0 && index < hourlyAggregatesList.length && hourlyAggregatesList[index].hourBucket != null) {
-                      final hour = DateTime.parse(hourlyAggregatesList[index].hourBucket!);
+                      final hour = DateTime.parse(hourlyAggregatesList[index].hourBucket!).toLocal();
                       return Padding(padding: EdgeInsets.only(top: 4),
                           child: Text(DateFormat('HH:mm').format(hour),
-                              style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                              style: GoogleFonts.inter(fontSize: 9, color: Tone.fg(Colors.grey[500]))));
                     }
                     return const SizedBox();
                   },
@@ -344,22 +348,22 @@ Widget _buildHourlyTrendsChart() {
               borderData: FlBorderData(show: false),
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (_) => Colors.blueGrey.shade800,
+                  getTooltipColor: (_) => Tone.auto(Colors.blueGrey.shade800),
                   getTooltipItems: (spots) => spots.map((spot) {
                     final entry = hourlyAggregatesList[spot.x.toInt()];
                     final hour = entry.hourBucket != null
-                        ? DateFormat('HH:mm').format(DateTime.parse(entry.hourBucket!))
+                        ? DateFormat('HH:mm').format(DateTime.parse(entry.hourBucket!).toLocal())
                         : '--';
                     final isTemp = spot.barIndex == 0;
                     return LineTooltipItem(
                       isTemp ? '$hour\n' : '',
-                      GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                      GoogleFonts.inter(color: Tone.fg(Colors.white60), fontSize: 10),
                       children: [TextSpan(
                         text: isTemp
                             ? '${spot.y.toStringAsFixed(1)}°C temp'
                             : '${(spot.y * 10).toStringAsFixed(1)} psi pressure',
                         style: TextStyle(
-                            color: isTemp ? Colors.blue.shade200 : Colors.orange.shade200,
+                            color: isTemp ? Tone.fg(Colors.blue.shade200) : Tone.fg(Colors.orange.shade200),
                             fontWeight: FontWeight.w600, fontSize: 11),
                       )],
                     );
@@ -370,22 +374,22 @@ Widget _buildHourlyTrendsChart() {
                 LineChartBarData(
                   spots: hourlyAggregatesList.asMap().entries.map((e) =>
                       FlSpot(e.key.toDouble(), e.value.avgTempAir ?? 0)).toList(),
-                  isCurved: true, color: Colors.blue.shade500, barWidth: 2.5,
+                  isCurved: true, color: Tone.auto(Colors.blue.shade500), barWidth: 2.5,
                   dotData: FlDotData(show: false),
-                  shadow: Shadow(color: Colors.blue.withValues(alpha: 0.2), blurRadius: 6),
+                  shadow: Shadow(color: Tone.auto(Colors.blue).withValues(alpha: 0.2), blurRadius: 6),
                   belowBarData: BarAreaData(show: true, gradient: LinearGradient(
-                    colors: [Colors.blue.withValues(alpha: 0.15), Colors.blue.withValues(alpha: 0.01)],
+                    colors: [Tone.auto(Colors.blue).withValues(alpha: 0.15), Tone.auto(Colors.blue).withValues(alpha: 0.01)],
                     begin: Alignment.topCenter, end: Alignment.bottomCenter,
                   )),
                 ),
                 LineChartBarData(
                   spots: hourlyAggregatesList.asMap().entries.map((e) =>
                       FlSpot(e.key.toDouble(), (e.value.avgLowSidePressure ?? 0) / 10)).toList(),
-                  isCurved: true, color: Colors.orange.shade500, barWidth: 2.5,
+                  isCurved: true, color: Tone.auto(Colors.orange.shade500), barWidth: 2.5,
                   dotData: FlDotData(show: false),
-                  shadow: Shadow(color: Colors.orange.withValues(alpha: 0.2), blurRadius: 6),
+                  shadow: Shadow(color: Tone.auto(Colors.orange).withValues(alpha: 0.2), blurRadius: 6),
                   belowBarData: BarAreaData(show: true, gradient: LinearGradient(
-                    colors: [Colors.orange.withValues(alpha: 0.10), Colors.orange.withValues(alpha: 0.01)],
+                    colors: [Tone.auto(Colors.orange).withValues(alpha: 0.10), Tone.auto(Colors.orange).withValues(alpha: 0.01)],
                     begin: Alignment.topCenter, end: Alignment.bottomCenter,
                   )),
                 ),
@@ -401,9 +405,9 @@ Widget _buildHourlyTrendsChart() {
 Widget _buildDailySummaryChart() {
   if (dailyAggregatesList.isEmpty) {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.bar_chart_outlined, size: 48, color: Colors.grey.shade300),
+      Icon(Icons.bar_chart_outlined, size: 48, color: Tone.fg(Colors.grey.shade300)),
       SizedBox(height: 8),
-      Text("No daily data available", style: GoogleFonts.inter(color: Colors.grey[500])),
+      Text("No daily data available", style: GoogleFonts.inter(color: Tone.fg(Colors.grey[500]))),
     ]));
   }
 
@@ -429,7 +433,7 @@ Widget _buildDailySummaryChart() {
               maxY: maxY, minY: minY,
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
-                  getTooltipColor: (_) => Colors.blueGrey.shade800,
+                  getTooltipColor: (_) => Tone.auto(Colors.blueGrey.shade800),
                   getTooltipItem: (group, gi, rod, ri) {
                     final d = dailyAggregatesList[gi];
                     final date = d.dayBucket != null
@@ -437,12 +441,12 @@ Widget _buildDailySummaryChart() {
                         : '--';
                     return BarTooltipItem(
                       '$date\n',
-                      GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                      GoogleFonts.inter(color: Tone.fg(Colors.white60), fontSize: 10),
                       children: [
                         TextSpan(text: 'Max: ${(d.maxTempAir ?? 0).toStringAsFixed(1)}°C\n',
-                            style: TextStyle(color: Colors.red.shade300, fontWeight: FontWeight.w600, fontSize: 11)),
+                            style: TextStyle(color: Tone.fg(Colors.red.shade300), fontWeight: FontWeight.w600, fontSize: 11)),
                         TextSpan(text: 'Min: ${(d.minTempAir ?? 0).toStringAsFixed(1)}°C',
-                            style: TextStyle(color: Colors.blue.shade300, fontSize: 10)),
+                            style: TextStyle(color: Tone.fg(Colors.blue.shade300), fontSize: 10)),
                       ],
                     );
                   },
@@ -451,12 +455,12 @@ Widget _buildDailySummaryChart() {
               gridData: FlGridData(
                 show: true, drawVerticalLine: false,
                 horizontalInterval: (maxY - minY) / 4,
-                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+                getDrawingHorizontalLine: (v) => FlLine(color: Tone.bg(Colors.grey.shade100), strokeWidth: 1),
               ),
               titlesData: FlTitlesData(
                 leftTitles: AxisTitles(sideTitles: SideTitles(
                   showTitles: true, reservedSize: 40,
-                  getTitlesWidget: (v, m) => Text('${v.toInt()}°', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                  getTitlesWidget: (v, m) => Text('${v.toInt()}°', style: GoogleFonts.inter(fontSize: 9, color: Tone.fg(Colors.grey[500]))),
                 )),
                 bottomTitles: AxisTitles(sideTitles: SideTitles(
                   showTitles: true, reservedSize: 24,
@@ -466,7 +470,7 @@ Widget _buildDailySummaryChart() {
                       final date = DateTime.parse(dailyAggregatesList[index].dayBucket!);
                       return Padding(padding: EdgeInsets.only(top: 4),
                           child: Text(DateFormat('MM/dd').format(date),
-                              style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])));
+                              style: GoogleFonts.inter(fontSize: 9, color: Tone.fg(Colors.grey[500]))));
                     }
                     return const SizedBox();
                   },
@@ -484,7 +488,7 @@ Widget _buildDailySummaryChart() {
                       toY: data.maxTempAir ?? 0,
                       fromY: data.minTempAir ?? 0,
                       gradient: LinearGradient(
-                        colors: [Colors.red.shade300, Constants.ctaColorLight, Colors.blue.shade300],
+                        colors: [Tone.auto(Colors.red.shade300), Constants.ctaColorLight, Tone.auto(Colors.blue.shade300)],
                         begin: Alignment.topCenter, end: Alignment.bottomCenter,
                       ),
                       width: 20,
@@ -509,7 +513,7 @@ Widget _buildPerformanceChart() {
   if (dailyData == null) {
     return Center(
         child: Text("No performance data available",
-            style: GoogleFonts.inter(color: Colors.grey)));
+            style: GoogleFonts.inter(color: Tone.fg(Colors.grey))));
   }
 
   return Padding(
@@ -537,18 +541,18 @@ Widget _buildPerformanceChart() {
                         titleStyle: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white),
+                            color: Tone.fg(Colors.white)),
                       ),
                       PieChartSectionData(
                         value: 100 -
                             (dailyData.compressorRuntimePercentage ?? 0),
-                        color: Colors.grey.shade300,
+                        color: Tone.auto(Colors.grey.shade300),
                         title: 'Idle',
                         radius: 50,
                         titleStyle: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade600),
+                            color: Tone.fg(Colors.grey.shade600)),
                       ),
                     ],
                     centerSpaceRadius: 40,
@@ -590,7 +594,7 @@ Widget _buildPerformanceMetricRow(String label, String value) {
       children: [
         Text(label,
             style:
-                GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
+                GoogleFonts.inter(fontSize: 12, color: Tone.fg(Colors.grey.shade600))),
         Text(value,
             style:
                 GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold)),
@@ -611,12 +615,12 @@ Widget _buildLegendItem(String label, Color color) {
 
 /// Website-style panel surface (white card, hairline border, soft shadow).
 BoxDecoration _webPanelBox() => BoxDecoration(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       borderRadius: BorderRadius.circular(14),
       border: Border.all(color: GasPalette.border),
-      boxShadow: const [
+      boxShadow: [
         BoxShadow(
-            color: Color(0x05133648), blurRadius: 3, offset: Offset(0, 2)),
+            color: Tone.bg(Color(0x05133648)), blurRadius: 3, offset: Offset(0, 2)),
       ],
     );
 
@@ -626,13 +630,13 @@ Widget _buildAlertsSection(BuildContext context) {
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Expanded(child: Text('Recent warnings', style: TextStyle(
+          Expanded(child: Text('Recent warnings', style: TextStyle(
               fontSize: 15, fontWeight: FontWeight.w600, color: GasPalette.ink))),
-          Text('${alertsList.length}', style: const TextStyle(
+          Text('${alertsList.length}', style: TextStyle(
               fontSize: 13, color: GasPalette.ink2)),
         ]),
         if (alertsList.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 16, bottom: 4),
             child: Row(children: [
               Icon(Icons.check_circle_outline, size: 20, color: GasPalette.good),
@@ -649,22 +653,22 @@ Widget _buildAlertsSection(BuildContext context) {
                   fontSize: 12, color: _getAlertSeverityColor(alert.severity),
                   fontWeight: FontWeight.w600)),
               Text(timeAgo.format(DateTime.parse(alert.timestamp!)),
-                  style: const TextStyle(fontSize: 12, color: GasPalette.ink2)),
+                  style: TextStyle(fontSize: 12, color: GasPalette.ink2)),
             ]),
             const SizedBox(height: 6),
-            Text(alert.alertType ?? 'System alert', style: const TextStyle(
+            Text(alert.alertType ?? 'System alert', style: TextStyle(
                 fontSize: 14, fontWeight: FontWeight.w600, color: GasPalette.ink)),
             const SizedBox(height: 4),
-            Text(alert.message ?? 'No message available', style: const TextStyle(
+            Text(alert.message ?? 'No message available', style: TextStyle(
                 fontSize: 13, height: 1.4, color: GasPalette.ink2)),
             if (alert.details != null) ...[
               const SizedBox(height: 4),
-              Text(alert.details!, style: const TextStyle(
+              Text(alert.details!, style: TextStyle(
                   fontSize: 12, height: 1.4, color: GasPalette.ink2)),
             ],
             if (alert.recommendedAction != null) ...[
               const SizedBox(height: 8),
-              Text(alert.recommendedAction!, style: const TextStyle(
+              Text(alert.recommendedAction!, style: TextStyle(
                   fontSize: 12, height: 1.4, color: GasPalette.ink)),
             ],
           ],
@@ -719,7 +723,7 @@ Widget _buildAlertsSection(BuildContext context) {
                               fontWeight: FontWeight.w600)),
                       Text("All systems operating normally",
                           style: GoogleFonts.inter(
-                              fontSize: 12, color: Colors.grey.shade600)),
+                              fontSize: 12, color: Tone.fg(Colors.grey.shade600))),
                     ],
                   ),
                 ),
@@ -736,11 +740,11 @@ Widget _buildAlertsSection(BuildContext context) {
                       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Tone.bg(Colors.white),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.grey.withOpacity(0.15),
+                              color: Tone.bg(Colors.grey).withOpacity(0.15),
                               spreadRadius: 1,
                               blurRadius: 5)
                         ],
@@ -761,7 +765,7 @@ Widget _buildAlertsSection(BuildContext context) {
                                   alert.severity?.toUpperCase() ?? 'UNKNOWN',
                                   style: GoogleFonts.inter(
                                       fontSize: 10,
-                                      color: Colors.white,
+                                      color: Tone.fg(Colors.white),
                                       fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -778,7 +782,7 @@ Widget _buildAlertsSection(BuildContext context) {
                                 timeAgo
                                     .format(DateTime.parse(alert.timestamp!)),
                                 style: GoogleFonts.inter(
-                                    fontSize: 12, color: Colors.grey.shade600),
+                                    fontSize: 12, color: Tone.fg(Colors.grey.shade600)),
                               ),
                             ],
                           ),
@@ -786,14 +790,14 @@ Widget _buildAlertsSection(BuildContext context) {
                           Text(
                             alert.message ?? 'No message available',
                             style: GoogleFonts.inter(
-                                fontSize: 13, color: Colors.grey.shade800),
+                                fontSize: 13, color: Tone.fg(Colors.grey.shade800)),
                           ),
                           if (alert.details != null) ...[
                             SizedBox(height: 4),
                             Text(
                               alert.details!,
                               style: GoogleFonts.inter(
-                                  fontSize: 11, color: Colors.grey.shade600),
+                                  fontSize: 11, color: Tone.fg(Colors.grey.shade600)),
                             ),
                           ],
                           if (alert.recommendedAction != null) ...[
@@ -801,13 +805,13 @@ Widget _buildAlertsSection(BuildContext context) {
                             Container(
                               padding: EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Tone.bg(Colors.blue).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 children: [
                                   Icon(Icons.lightbulb,
-                                      size: 16, color: Colors.blue),
+                                      size: 16, color: Tone.fg(Colors.blue)),
                                   SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -835,15 +839,15 @@ Widget _buildAlertsSection(BuildContext context) {
 Color _getAlertSeverityColor(String? severity) {
   switch (severity?.toLowerCase()) {
     case 'critical':
-      return Colors.red;
+      return Tone.auto(Colors.red);
     case 'high':
-      return Colors.grey;
+      return Tone.auto(Colors.grey);
     case 'medium':
-      return Colors.grey;
+      return Tone.auto(Colors.grey);
     case 'low':
-      return Colors.grey;
+      return Tone.auto(Colors.grey);
     default:
-      return Colors.grey;
+      return Tone.auto(Colors.grey);
   }
 }
 
@@ -895,9 +899,9 @@ Widget _buildSidebarMenu() {
 Color _getStatusColor2(bool is_online) {
   switch (is_online) {
     case true:
-      return Colors.green;
+      return Tone.auto(Colors.green);
     case false:
-      return Colors.grey;
+      return Tone.auto(Colors.grey);
   }
 }
 
@@ -907,17 +911,17 @@ Color _getStatusColor(String status) {
     case 'active':
       return Constants.ctaColorLight;
     case 'inactive':
-      return Colors.grey;
+      return Tone.auto(Colors.grey);
     case 'faulty':
-      return Colors.red;
+      return Tone.auto(Colors.red);
     case 'maintenance':
       return Constants.ctaColorLight;
     case 'detached':
-      return Colors.red.shade300;
+      return Tone.auto(Colors.red.shade300);
     case 'new':
-      return Colors.blue;
+      return Tone.auto(Colors.blue);
     default:
-      return Colors.grey;
+      return Tone.auto(Colors.grey);
   }
 }
 
@@ -931,6 +935,7 @@ class ArticDashboardTab extends StatefulWidget {
 class _ArticDashboardTabState extends State<ArticDashboardTab>
     with TickerProviderStateMixin {
   late int _businessId;
+  final _offline = OfflineReadClient();
   int _loadGeneration = 0;
   bool _hasInventory = false;
   String? _loadError;
@@ -1140,6 +1145,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     super.didUpdateWidget(oldWidget);
     if (_businessId != Constants.myBusiness.businessUid) {
       _businessId = Constants.myBusiness.businessUid;
+      _offline.resetStatus();
       _loadGeneration++;
       _hasInventory = false;
       _loadError = null;
@@ -1192,6 +1198,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _offline.close();
     _metricsTabController.dispose();
     _chartTabController.dispose();
     super.dispose();
@@ -1710,8 +1717,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           subtitle: 'No Data Available',
           trend: 'Unknown',
           trendDirection: 'stable',
-          cardColor: Colors.grey[200]!,
-          accentColor: Colors.grey,
+          cardColor: Tone.bg(Colors.grey[200]),
+          accentColor: Tone.auto(Colors.grey),
           icon: FontAwesomeIcons.chartLine,
           alerts: null,
         ),
@@ -1722,8 +1729,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           subtitle: 'No data available',
           trend: 'Unknown',
           trendDirection: 'stable',
-          cardColor: Colors.grey[200]!,
-          accentColor: Colors.grey,
+          cardColor: Tone.bg(Colors.grey[200]),
+          accentColor: Tone.auto(Colors.grey),
           icon: FontAwesomeIcons.snowflake,
         ),
         // Add more empty cards as needed...
@@ -1745,8 +1752,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           subtitle: 'Selected device not available',
           trend: 'Unknown',
           trendDirection: 'stable',
-          cardColor: Colors.red[100]!,
-          accentColor: Colors.red,
+          cardColor: Tone.bg(Colors.red[100]),
+          accentColor: Tone.auto(Colors.red),
           icon: FontAwesomeIcons.exclamationTriangle,
           alerts: null,
         ),
@@ -1889,7 +1896,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: 'Coldest zone',
         trendDirection: 'down',
         cardColor: const Color(0XFFF4F4F4),
-        accentColor: Colors.blue,
+        accentColor: Tone.auto(Colors.blue),
         icon: FontAwesomeIcons.snowflake,
       ),
       EnhancedSummaryCard(
@@ -1900,7 +1907,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: maxTemp != null && maxTemp > 5 ? 'Above threshold' : 'Normal',
         trendDirection: maxTemp != null && maxTemp > 5 ? 'up' : 'stable',
         cardColor: const Color(0XFFF4F4F4),
-        accentColor: maxTemp != null && maxTemp > 5 ? Colors.red : Constants.ctaColorLight,
+        accentColor: maxTemp != null && maxTemp > 5 ? Tone.auto(Colors.red) : Constants.ctaColorLight,
         icon: FontAwesomeIcons.temperatureHigh,
       ),
       EnhancedSummaryCard(
@@ -1911,7 +1918,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: activeZones == 8 ? 'All zones active' : '${8 - activeZones} zones offline',
         trendDirection: activeZones == 8 ? 'stable' : 'down',
         cardColor: const Color(0XccF4F4F4),
-        accentColor: activeZones == 8 ? Constants.ctaColorLight : Colors.orange,
+        accentColor: activeZones == 8 ? Constants.ctaColorLight : Tone.auto(Colors.orange),
         icon: FontAwesomeIcons.chartArea,
       ),
       EnhancedSummaryCard(
@@ -1951,7 +1958,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: selectedDevice.hsTemp != null && selectedDevice.hsTemp! < 60 ? 'Normal' : 'High',
         trendDirection: selectedDevice.hsTemp != null && selectedDevice.hsTemp! < 60 ? 'stable' : 'up',
         cardColor: const Color(0XFFF4F4F4),
-        accentColor: selectedDevice.hsTemp != null && selectedDevice.hsTemp! > 60 ? Colors.red : Constants.ctaColorLight,
+        accentColor: selectedDevice.hsTemp != null && selectedDevice.hsTemp! > 60 ? Tone.auto(Colors.red) : Constants.ctaColorLight,
         icon: FontAwesomeIcons.temperatureHigh,
       ),
       EnhancedSummaryCard(
@@ -1962,7 +1969,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: selectedDevice.lsTemp != null && selectedDevice.lsTemp! < 0 ? 'Normal' : 'Check',
         trendDirection: 'stable',
         cardColor: const Color(0XFFF4F4F4),
-        accentColor: Colors.blue,
+        accentColor: Tone.auto(Colors.blue),
         icon: FontAwesomeIcons.temperatureLow,
       ),
       EnhancedSummaryCard(
@@ -1973,7 +1980,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: selectedDevice.harvsw == true ? 'Harvesting' : 'Building',
         trendDirection: 'stable',
         cardColor: const Color(0XccF4F4F4),
-        accentColor: selectedDevice.harvsw == true ? Colors.orange : Constants.ctaColorLight,
+        accentColor: selectedDevice.harvsw == true ? Tone.auto(Colors.orange) : Constants.ctaColorLight,
         icon: FontAwesomeIcons.cogs,
       ),
       EnhancedSummaryCard(
@@ -1984,7 +1991,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: selectedDevice.wtrlvl != null && selectedDevice.wtrlvl! > 20 ? 'Adequate' : 'Low - refill soon',
         trendDirection: selectedDevice.wtrlvl != null && selectedDevice.wtrlvl! > 20 ? 'stable' : 'down',
         cardColor: const Color(0XccF4F4F4),
-        accentColor: selectedDevice.wtrlvl != null && selectedDevice.wtrlvl! > 20 ? Constants.ctaColorLight : Colors.orange,
+        accentColor: selectedDevice.wtrlvl != null && selectedDevice.wtrlvl! > 20 ? Constants.ctaColorLight : Tone.auto(Colors.orange),
         icon: FontAwesomeIcons.water,
       ),
       EnhancedSummaryCard(
@@ -1995,7 +2002,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: selectedDevice.amps != null && selectedDevice.amps! < 10 ? 'Normal' : 'High',
         trendDirection: selectedDevice.amps != null && selectedDevice.amps! < 10 ? 'stable' : 'up',
         cardColor: const Color(0XccF4F4F4),
-        accentColor: selectedDevice.amps != null && selectedDevice.amps! < 10 ? Constants.ctaColorLight : Colors.orange,
+        accentColor: selectedDevice.amps != null && selectedDevice.amps! < 10 ? Constants.ctaColorLight : Tone.auto(Colors.orange),
         icon: FontAwesomeIcons.bolt,
       ),
       EnhancedSummaryCard(
@@ -2008,7 +2015,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: selectedDevice.powerKw != null && selectedDevice.powerKw! < 2.0 ? 'Normal' : 'High',
         trendDirection: selectedDevice.powerKw != null && selectedDevice.powerKw! < 2.0 ? 'stable' : 'up',
         cardColor: const Color(0XccF4F4F4),
-        accentColor: selectedDevice.powerKw != null && selectedDevice.powerKw! < 2.0 ? Constants.ctaColorLight : Colors.orange,
+        accentColor: selectedDevice.powerKw != null && selectedDevice.powerKw! < 2.0 ? Constants.ctaColorLight : Tone.auto(Colors.orange),
         icon: FontAwesomeIcons.plug,
       ),
     ];
@@ -2056,7 +2063,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: maxAmp != null && maxAmp > 20 ? 'High Load' : 'Normal',
         trendDirection: maxAmp != null && maxAmp > 20 ? 'up' : 'stable',
         cardColor: const Color(0XFFF4F4F4),
-        accentColor: maxAmp != null && maxAmp > 20 ? Colors.orange : Constants.ctaColorLight,
+        accentColor: maxAmp != null && maxAmp > 20 ? Tone.auto(Colors.orange) : Constants.ctaColorLight,
         icon: FontAwesomeIcons.chartBar,
       ),
       EnhancedSummaryCard(
@@ -2067,7 +2074,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: activeCount == 8 ? 'Full capacity' : '${8 - activeCount} idle',
         trendDirection: 'stable',
         cardColor: const Color(0XccF4F4F4),
-        accentColor: activeCount == 8 ? Constants.ctaColorLight : Colors.orange,
+        accentColor: activeCount == 8 ? Constants.ctaColorLight : Tone.auto(Colors.orange),
         icon: FontAwesomeIcons.cogs,
       ),
       EnhancedSummaryCard(
@@ -2101,7 +2108,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           trend: worst != null && worst > 10 ? 'Warning' : 'Balanced',
           trendDirection: worst != null && worst > 10 ? 'up' : 'stable',
           cardColor: const Color(0XccF4F4F4),
-          accentColor: worst != null && worst > 10 ? Colors.orange : Constants.ctaColorLight,
+          accentColor: worst != null && worst > 10 ? Tone.auto(Colors.orange) : Constants.ctaColorLight,
           icon: FontAwesomeIcons.balanceScale,
         );
       }(),
@@ -2159,7 +2166,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: onCount > 0 ? 'Active' : 'All OFF',
         trendDirection: 'stable',
         cardColor: const Color(0XFFF4F4F4),
-        accentColor: onCount > 0 ? Constants.ctaColorLight : Colors.grey,
+        accentColor: onCount > 0 ? Constants.ctaColorLight : Tone.auto(Colors.grey),
         icon: FontAwesomeIcons.toggleOn,
         alerts: [],
       ),
@@ -2171,7 +2178,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: offCount == 16 ? 'All Idle' : '$offCount Idle',
         trendDirection: 'stable',
         cardColor: const Color(0XFFF4F4F4),
-        accentColor: Colors.grey,
+        accentColor: Tone.auto(Colors.grey),
         icon: FontAwesomeIcons.toggleOff,
       ),
       EnhancedSummaryCard(
@@ -2182,7 +2189,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: onCount > 8 ? 'High Load' : 'Normal',
         trendDirection: onCount > 12 ? 'up' : 'stable',
         cardColor: const Color(0XccF4F4F4),
-        accentColor: onCount > 12 ? Colors.orange : Constants.ctaColorLight,
+        accentColor: onCount > 12 ? Tone.auto(Colors.orange) : Constants.ctaColorLight,
         icon: FontAwesomeIcons.chartPie,
       ),
       () {
@@ -2209,7 +2216,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           trend: maxDuty > 80 ? 'Heavy use' : 'Normal',
           trendDirection: maxDuty > 80 ? 'up' : 'stable',
           cardColor: const Color(0XFFF4F4F4),
-          accentColor: maxDuty > 80 ? Colors.orange : Constants.ctaColorLight,
+          accentColor: maxDuty > 80 ? Tone.auto(Colors.orange) : Constants.ctaColorLight,
           icon: FontAwesomeIcons.star,
         );
       }(),
@@ -2230,7 +2237,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           trend: avgDuty != null && avgDuty > 50 ? 'High' : 'Normal',
           trendDirection: avgDuty != null && avgDuty > 50 ? 'up' : 'stable',
           cardColor: const Color(0XccF4F4F4),
-          accentColor: avgDuty != null && avgDuty > 50 ? Colors.orange : Constants.ctaColorLight,
+          accentColor: avgDuty != null && avgDuty > 50 ? Tone.auto(Colors.orange) : Constants.ctaColorLight,
           icon: FontAwesomeIcons.percentage,
         );
       }(),
@@ -2268,7 +2275,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: maxPrs != null && maxPrs > 5 ? 'High' : 'Normal',
         trendDirection: maxPrs != null && maxPrs > 5 ? 'up' : 'stable',
         cardColor: const Color(0XFFF4F4F4),
-        accentColor: maxPrs != null && maxPrs > 5 ? Colors.orange : Constants.ctaColorLight,
+        accentColor: maxPrs != null && maxPrs > 5 ? Tone.auto(Colors.orange) : Constants.ctaColorLight,
         icon: FontAwesomeIcons.arrowUp,
       ),
       EnhancedSummaryCard(
@@ -2279,7 +2286,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: minPrs != null && minPrs < 1 ? 'Low' : 'Normal',
         trendDirection: minPrs != null && minPrs < 1 ? 'down' : 'stable',
         cardColor: const Color(0XccF4F4F4),
-        accentColor: minPrs != null && minPrs < 1 ? Colors.red : Constants.ctaColorLight,
+        accentColor: minPrs != null && minPrs < 1 ? Tone.auto(Colors.red) : Constants.ctaColorLight,
         icon: FontAwesomeIcons.arrowDown,
       ),
       () {
@@ -2293,7 +2300,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           trend: spread != null && spread > 2 ? 'Wide range' : 'Stable',
           trendDirection: spread != null && spread > 2 ? 'up' : 'stable',
           cardColor: const Color(0XFFF4F4F4),
-          accentColor: spread != null && spread > 2 ? Colors.orange : Constants.ctaColorLight,
+          accentColor: spread != null && spread > 2 ? Tone.auto(Colors.orange) : Constants.ctaColorLight,
           icon: FontAwesomeIcons.rulerHorizontal,
         );
       }(),
@@ -2330,7 +2337,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: rate >= 90 ? 'Good' : rate >= 70 ? 'Warning' : 'Critical',
         trendDirection: rate >= 90 ? 'stable' : 'down',
         cardColor: const Color(0XFFF4F4F4),
-        accentColor: rate >= 90 ? Colors.green : rate >= 70 ? Colors.orange : Colors.red,
+        accentColor: rate >= 90 ? Tone.auto(Colors.green) : rate >= 70 ? Tone.auto(Colors.orange) : Tone.auto(Colors.red),
         icon: FontAwesomeIcons.shieldAlt,
         alerts: rate < 70 ? ['High counterfeit risk detected'] : [],
       ),
@@ -2356,9 +2363,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         trend: d.bottleTemp != null && d.bottleTemp! <= 4 ? 'Normal' : 'Check',
         trendDirection: d.bottleTemp != null && d.bottleTemp! > 8 ? 'up' : 'stable',
         cardColor: const Color(0XFFF4F4F4),
-        accentColor: d.bottleTemp != null && d.bottleTemp! <= 4 ? Colors.blue
-            : d.bottleTemp != null && d.bottleTemp! <= 8 ? Colors.orange
-            : Colors.red,
+        accentColor: d.bottleTemp != null && d.bottleTemp! <= 4 ? Tone.auto(Colors.blue)
+            : d.bottleTemp != null && d.bottleTemp! <= 8 ? Tone.auto(Colors.orange)
+            : Tone.auto(Colors.red),
         icon: FontAwesomeIcons.thermometerHalf,
         alerts: d.bottleTemp != null && d.bottleTemp! > 8 ? ['Temperature above safe limit'] : [],
       ),
@@ -2406,7 +2413,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: isMobile ? 16 : 20,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade800,
+              color: Tone.fg(Colors.grey.shade800),
             ),
           ),
           SizedBox(height: isMobile ? 12 : 16),
@@ -2416,11 +2423,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   margin: EdgeInsets.all(0),
                   padding: EdgeInsets.all(isMobile ? 12 : 16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.shade300,
+                        color: Tone.bg(Colors.grey.shade300),
                         blurRadius: 8,
                         offset: Offset(0, 2),
                       ),
@@ -2434,7 +2441,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                           style: GoogleFonts.inter(
                             fontSize: isMobile ? 14 : 18,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade800,
+                            color: Tone.fg(Colors.grey.shade800),
                           ),
                         ),
                         SizedBox(height: isMobile ? 12 : 16),
@@ -2515,7 +2522,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: isMobile ? 16 : 20,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade800,
+              color: Tone.fg(Colors.grey.shade800),
             ),
           ),
           SizedBox(height: isMobile ? 12 : 16),
@@ -2524,11 +2531,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               : Container(
                   padding: EdgeInsets.all(isMobile ? 12 : 16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.shade200,
+                        color: Tone.bg(Colors.grey.shade200),
                         blurRadius: 8,
                         offset: Offset(0, 2),
                       ),
@@ -2542,7 +2549,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         style: GoogleFonts.inter(
                           fontSize: isMobile ? 14 : 18,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade800,
+                          color: Tone.fg(Colors.grey.shade800),
                         ),
                       ),
                       SizedBox(height: isMobile ? 12 : 16),
@@ -2616,7 +2623,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         pressureMetrics!.highSideMax,
                         pressureMetrics!.highSideMinTimestamp,
                         pressureMetrics!.highSideMaxTimestamp,
-                        Colors.red,
+                        Tone.auto(Colors.red),
                         Icons.unfold_more,
                       ),
                     ),
@@ -2685,7 +2692,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: isMobile ? 16 : 20,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade800,
+              color: Tone.fg(Colors.grey.shade800),
             ),
           ),
           SizedBox(height: isMobile ? 12 : 16),
@@ -2694,11 +2701,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               : Container(
                   padding: EdgeInsets.all(isMobile ? 12 : 16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.shade200,
+                        color: Tone.bg(Colors.grey.shade200),
                         blurRadius: 8,
                         offset: Offset(0, 2),
                       ),
@@ -2785,11 +2792,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade300,
+            color: Tone.bg(Colors.grey.shade300),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -2813,7 +2820,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade800,
+                    color: Tone.fg(Colors.grey.shade800),
                   ),
                 ),
               ),
@@ -2827,7 +2834,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   range.status?.toUpperCase() ?? 'UNKNOWN',
                   style: GoogleFonts.inter(
                     fontSize: 10,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -2844,7 +2851,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   'Current',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: Tone.fg(Colors.grey.shade600),
                   ),
                 ),
                 Text(
@@ -2893,21 +2900,21 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             width: double.infinity,
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: Tone.bg(Colors.grey.shade50),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.analytics_outlined,
-                    size: 16, color: Colors.grey.shade600),
+                    size: 16, color: Tone.fg(Colors.grey.shade600)),
                 SizedBox(width: 8),
                 Text(
                   'Average: ${range.avg?.toStringAsFixed(1) ?? '--'}$unitSuffix',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade700,
+                    color: Tone.fg(Colors.grey.shade700),
                   ),
                 ),
               ],
@@ -2924,10 +2931,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -2960,7 +2967,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             timestamp != null ? _formatDateTime(timestamp) : 'No data',
             style: GoogleFonts.inter(
               fontSize: 10,
-              color: Colors.grey.shade600,
+              color: Tone.fg(Colors.grey.shade600),
             ),
             textAlign: TextAlign.center,
           ),
@@ -2989,11 +2996,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: Tone.bg(Colors.grey.shade200),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -3012,7 +3019,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
+                  color: Tone.fg(Colors.grey.shade800),
                 ),
               )),
             ],
@@ -3027,7 +3034,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   'Current',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: Tone.fg(Colors.grey.shade600),
                   ),
                 ),
                 Text(
@@ -3061,7 +3068,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   'Highest',
                   max,
                   maxTimestamp,
-                  Colors.red,
+                  Tone.auto(Colors.red),
                   Icons.trending_up,
                 ),
               ),
@@ -3077,10 +3084,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -3113,7 +3120,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             timestamp != null ? _formatDateTime(timestamp) : 'No data',
             style: GoogleFonts.inter(
               fontSize: 10,
-              color: Colors.grey.shade600,
+              color: Tone.fg(Colors.grey.shade600),
             ),
             textAlign: TextAlign.center,
           ),
@@ -3155,7 +3162,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 ),
                 child: Icon(
                   isCompressorOn ? Icons.power : Icons.power_off,
-                  color: Colors.white,
+                  color: Tone.fg(Colors.white),
                   size: 20,
                 ),
               ),
@@ -3204,11 +3211,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: Tone.bg(Colors.grey.shade200),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -3222,7 +3229,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade800,
+              color: Tone.fg(Colors.grey.shade800),
             ),
           ),
           SizedBox(height: 16),
@@ -3232,7 +3239,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 child: _buildPhaseCard(
                   'Phase 1',
                   device?.compAmpPh1,
-                  Colors.red,
+                  Tone.auto(Colors.red),
                   Icons.electrical_services,
                 ),
               ),
@@ -3263,12 +3270,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               decoration: BoxDecoration(
                 color: device.ampImbalance! > 5
                     ? Constants.ctaColorLight.withOpacity(0.09)
-                    : Colors.green.shade50,
+                    : Tone.bg(Colors.green.shade50),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: device.ampImbalance! > 5
                       ? Constants.ctaColorLight.withOpacity(0.15)
-                      : Colors.green.shade300,
+                      : Tone.bg(Colors.green.shade300),
                 ),
               ),
               child: Row(
@@ -3279,7 +3286,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         : Icons.check_circle,
                     color: device.ampImbalance! > 5
                         ? Constants.ctaColorLight
-                        : Colors.green,
+                        : Tone.fg(Colors.green),
                     size: 20,
                   ),
                   SizedBox(width: 8),
@@ -3290,7 +3297,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       fontWeight: FontWeight.w500,
                       color: device.ampImbalance! > 5
                           ? Constants.ctaColorLight
-                          : Colors.green.shade700,
+                          : Tone.fg(Colors.green.shade700),
                     ),
                   ),
                   Spacer(),
@@ -3301,7 +3308,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                       fontWeight: FontWeight.bold,
                       color: device.ampImbalance! > 5
                           ? Constants.ctaColorLight
-                          : Colors.green.shade700,
+                          : Tone.fg(Colors.green.shade700),
                     ),
                   ),
                 ],
@@ -3318,10 +3325,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -3377,14 +3384,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white,
-            Colors.grey.shade50,
+            Tone.auto(Colors.white),
+            Tone.auto(Colors.grey.shade50),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: Tone.bg(Colors.grey.shade200),
             blurRadius: 12,
             offset: Offset(0, 4),
           ),
@@ -3461,7 +3468,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
+                  color: Tone.fg(Colors.grey.shade800),
                 ),
               ),
               SizedBox(height: 4),
@@ -3502,7 +3509,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: Tone.fg(Colors.white),
             ),
           ),
         ),
@@ -3539,7 +3546,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             '${dailyData?.doorClosedCount ?? 0}',
             'times today',
             FontAwesomeIcons.doorClosed,
-            Colors.blueGrey,
+            Tone.auto(Colors.blueGrey),
           ),
         ),
 
@@ -3552,7 +3559,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             _formatDoorOpenTime(dailyData?.totalDoorOpenMinutes),
             _getDoorTimeUnit(dailyData?.totalDoorOpenMinutes),
             FontAwesomeIcons.clock,
-            Colors.orange,
+            Tone.auto(Colors.orange),
           ),
         ),
 
@@ -3566,7 +3573,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 dailyData?.totalDoorOpenMinutes, dailyData?.doorOpenCount),
             'minutes',
             FontAwesomeIcons.chartLine,
-            Colors.purple,
+            Tone.auto(Colors.purple),
           ),
         ),
 
@@ -3609,7 +3616,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 '${dailyData?.doorClosedCount ?? 0}',
                 'times today',
                 FontAwesomeIcons.doorClosed,
-                Colors.blueGrey,
+                Tone.auto(Colors.blueGrey),
               ),
             ),
           ],
@@ -3626,7 +3633,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 _formatDoorOpenTime(dailyData?.totalDoorOpenMinutes),
                 _getDoorTimeUnit(dailyData?.totalDoorOpenMinutes),
                 FontAwesomeIcons.clock,
-                Colors.orange,
+                Tone.auto(Colors.orange),
               ),
             ),
             SizedBox(width: 12),
@@ -3637,7 +3644,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     dailyData?.totalDoorOpenMinutes, dailyData?.doorOpenCount),
                 'minutes',
                 FontAwesomeIcons.chartLine,
-                Colors.purple,
+                Tone.auto(Colors.purple),
               ),
             ),
           ],
@@ -3733,13 +3740,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       width: double.infinity,
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFF1F5F9),
+          color: Tone.bg(const Color(0xFFF1F5F9)),
           width: 1,
         ),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -3763,7 +3770,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             description,
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: Tone.fg(Colors.grey.shade600),
             ),
             textAlign: TextAlign.center,
           ),
@@ -3777,16 +3784,16 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Tone.bg(Colors.grey.shade50),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Tone.bg(Colors.grey.shade300)),
       ),
       child: Column(
         children: [
           Icon(
             FontAwesomeIcons.doorClosed,
             size: 48,
-            color: Colors.grey.shade400,
+            color: Tone.fg(Colors.grey.shade400),
           ),
           SizedBox(height: 16),
           Text(
@@ -3794,7 +3801,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+              color: Tone.fg(Colors.grey.shade600),
             ),
           ),
           SizedBox(height: 8),
@@ -3802,7 +3809,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             'No device data available for door analysis',
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: Colors.grey.shade500,
+              color: Tone.fg(Colors.grey.shade500),
             ),
             textAlign: TextAlign.center,
           ),
@@ -3813,18 +3820,18 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
 // Helper methods
   Color _getDoorStatusColor(bool? isOpen, String? stabilityStatus) {
-    if (stabilityStatus?.contains('Alert') == true) return Colors.red;
+    if (stabilityStatus?.contains('Alert') == true) return Tone.auto(Colors.red);
     if (stabilityStatus?.contains('High Traffic') == true)
       return Constants.ctaColorLight;
-    return isOpen == true ? Constants.ctaColorLight : Colors.green;
+    return isOpen == true ? Constants.ctaColorLight : Tone.auto(Colors.green);
   }
 
   Color _getStabilityStatusColor(String? status) {
-    if (status == null) return Colors.grey;
-    if (status.contains('Alert')) return Colors.red;
+    if (status == null) return Tone.auto(Colors.grey);
+    if (status.contains('Alert')) return Tone.auto(Colors.red);
     if (status.contains('High Traffic')) return Constants.ctaColorLight;
-    if (status.contains('Stable')) return Colors.green;
-    return Colors.grey;
+    if (status.contains('Stable')) return Tone.auto(Colors.green);
+    return Tone.auto(Colors.grey);
   }
 
   IconData _getStabilityIcon(String? status) {
@@ -3898,11 +3905,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: Tone.bg(Colors.grey.shade200),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -3916,7 +3923,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade800,
+              color: Tone.fg(Colors.grey.shade800),
             ),
           ),
           SizedBox(height: 16),
@@ -3936,7 +3943,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   'Total Cycles',
                   '${compressorMetrics!.onCount ?? '--'}',
                   Icons.refresh,
-                  Colors.purple,
+                  Tone.auto(Colors.purple),
                 ),
               ),
             ],
@@ -3951,16 +3958,16 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Tone.bg(Colors.grey.shade50),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Tone.bg(Colors.grey.shade300)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.history, color: Colors.grey.shade600, size: 20),
+              Icon(Icons.history, color: Tone.fg(Colors.grey.shade600), size: 20),
               SizedBox(width: 8),
               Flexible(child: Text(
                 device?.lastOffTimestamp != null
@@ -3970,7 +3977,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade800,
+                  color: Tone.fg(Colors.grey.shade800),
                 ),
               )),
             ],
@@ -3984,7 +3991,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   'Duration since last stop: ${_getTimeSinceLastOff(device!.lastOffTimestamp!)}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: Colors.grey.shade500,
+                    color: Tone.fg(Colors.grey.shade500),
                   ),
                 )),
               ],
@@ -4000,10 +4007,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -4055,7 +4062,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       'No Compressor Data',
       'Compressor status and amperage data\nis not currently available',
       Icons.settings_outlined,
-      Colors.purple,
+      Tone.auto(Colors.purple),
     );
   }
 
@@ -4080,7 +4087,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade700,
+              color: Tone.fg(Colors.grey.shade700),
             ),
           ),
           SizedBox(height: 8),
@@ -4088,7 +4095,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             subtitle,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: Colors.grey.shade500,
+              color: Tone.fg(Colors.grey.shade500),
             ),
             textAlign: TextAlign.center,
           ),
@@ -4133,7 +4140,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           Icon(
             Icons.info_outline,
             size: 48,
-            color: Colors.grey[400],
+            color: Tone.fg(Colors.grey[400]),
           ),
           SizedBox(height: 16),
           Text(
@@ -4141,7 +4148,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+              color: Tone.fg(Colors.grey[600]),
             ),
           ),
           SizedBox(height: 8),
@@ -4149,7 +4156,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             'Please check your device connection and try again',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: Tone.fg(Colors.grey[500]),
             ),
             textAlign: TextAlign.center,
           ),
@@ -4190,7 +4197,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             'The selected device (ID: $selectedDeviceId) is not available',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: Tone.fg(Colors.grey[500]),
             ),
             textAlign: TextAlign.center,
           ),
@@ -4245,19 +4252,19 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   Color _getPerformanceCardColor(int score) {
     if (score >= 80) return Constants.ctaColorLight.withOpacity(0.05);
     if (score >= 60) return Constants.ctaColorLight.withOpacity(0.09);
-    return Colors.red.shade50;
+    return Tone.auto(Colors.red.shade50);
   }
 
   Color _getTemperatureColor(double? temp) {
-    if (temp == null) return Colors.grey;
-    if (temp < -25 || temp > 5) return Colors.red;
+    if (temp == null) return Tone.auto(Colors.grey);
+    if (temp < -25 || temp > 5) return Tone.auto(Colors.red);
     if (temp < -20 || temp > 0) return Constants.ctaColorLight;
     return Constants.ctaColorLight;
   }
 
   Color _getPressureColor(double? pressure) {
-    if (pressure == null) return Colors.grey;
-    if (pressure > 400) return Colors.red;
+    if (pressure == null) return Tone.auto(Colors.grey);
+    if (pressure > 400) return Tone.auto(Colors.red);
     if (pressure > 350) return Constants.ctaColorLight;
     return Constants.ctaColorLight;
   }
@@ -4294,7 +4301,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     if (isPhoneLayout(context)) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text(title, style: const TextStyle(fontFamily: 'Inter',
+        child: Text(title, style: TextStyle(fontFamily: 'Inter',
             fontSize: 15, fontWeight: FontWeight.w600, color: GasPalette.ink)),
       );
     }
@@ -4302,10 +4309,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Text(
         title,
@@ -4364,6 +4371,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildWelcomeHeader(),
+                      OfflineSnapshotBanner(client: _offline, onRetry: () => _loadAllData(showLoading: false)),
                       SizedBox(height: isMobile ? 16 : 24),
                       if (_loadError != null && !_hasInventory)
                         AppEmptyState(kind: AppEmptyStateKind.offline,
@@ -4408,7 +4416,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     child: FloatingActionButton.extended(
                       heroTag: 'dashAssistant',
                       backgroundColor: GasPalette.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Tone.fg(Colors.white),
                       elevation: 3,
                       onPressed: _openAssistant,
                       icon: Icon(Icons.forum_outlined, size: 18),
@@ -4424,11 +4432,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     child: Container(
                       padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Tone.bg(Colors.white),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Tone.bg(Colors.black).withOpacity(0.1),
                             blurRadius: 4,
                             offset: Offset(0, 2),
                           ),
@@ -4477,7 +4485,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: Tone.bg(Colors.red),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -4493,7 +4501,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             value: 'all',
             child: Row(
               children: [
-                Icon(Icons.devices, size: 18, color: deviceTypeFilter == null && onlineStatusFilter == null ? Constants.ctaColorLight : Colors.grey),
+                Icon(Icons.devices, size: 18, color: deviceTypeFilter == null && onlineStatusFilter == null ? Constants.ctaColorLight : Tone.fg(Colors.grey)),
                 SizedBox(width: 8),
                 Text('All Devices', style: GoogleFonts.inter(fontSize: 13, fontWeight: deviceTypeFilter == null && onlineStatusFilter == null ? FontWeight.w600 : FontWeight.w400)),
               ],
@@ -4504,7 +4512,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             value: 'online',
             child: Row(
               children: [
-                Icon(Icons.wifi, size: 18, color: onlineStatusFilter == 'online' ? Colors.green : Colors.grey),
+                Icon(Icons.wifi, size: 18, color: onlineStatusFilter == 'online' ? Tone.fg(Colors.green) : Tone.fg(Colors.grey)),
                 SizedBox(width: 8),
                 Text('Online', style: GoogleFonts.inter(fontSize: 13, fontWeight: onlineStatusFilter == 'online' ? FontWeight.w600 : FontWeight.w400)),
               ],
@@ -4514,7 +4522,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             value: 'offline',
             child: Row(
               children: [
-                Icon(Icons.wifi_off, size: 18, color: onlineStatusFilter == 'offline' ? Colors.red : Colors.grey),
+                Icon(Icons.wifi_off, size: 18, color: onlineStatusFilter == 'offline' ? Tone.fg(Colors.red) : Tone.fg(Colors.grey)),
                 SizedBox(width: 8),
                 Text('Offline', style: GoogleFonts.inter(fontSize: 13, fontWeight: onlineStatusFilter == 'offline' ? FontWeight.w600 : FontWeight.w400)),
               ],
@@ -4528,7 +4536,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 value: 'type_$type',
                 child: Row(
                   children: [
-                    Icon(Icons.memory, size: 18, color: deviceTypeFilter == type ? Constants.ctaColorLight : Colors.grey),
+                    Icon(Icons.memory, size: 18, color: deviceTypeFilter == type ? Constants.ctaColorLight : Tone.fg(Colors.grey)),
                     SizedBox(width: 8),
                     Text(typeLabel, style: GoogleFonts.inter(fontSize: 13, fontWeight: deviceTypeFilter == type ? FontWeight.w600 : FontWeight.w400)),
                   ],
@@ -4591,12 +4599,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
             decoration: BoxDecoration(
-              color: isPhoneLayout(context) ? const Color(0xFFF7F8FA) : Colors.white,
+              color: isPhoneLayout(context) ? Tone.bg(const Color(0xFFF7F8FA)) : Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 36),
-              border: Border.all(color: isPhoneLayout(context) ? GasPalette.border : Colors.grey.shade300),
+              border: Border.all(color: isPhoneLayout(context) ? GasPalette.border : Tone.bg(Colors.grey.shade300)),
               boxShadow: isPhoneLayout(context) ? [] : [
                 BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Tone.bg(Colors.grey).withOpacity(0.1),
                     spreadRadius: 1,
                     blurRadius: 3)
               ],
@@ -4606,7 +4614,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 value: dropdownValue,
                 hint: Text("Select Device",
                     style:
-                        GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600)),
+                        GoogleFonts.inter(fontSize: 12, color: Tone.fg(Colors.grey.shade600))),
                 icon: Icon(Icons.keyboard_arrow_down, color: Constants.ctaColorLight),
                 isExpanded: true,
                 selectedItemBuilder: isPhoneLayout(context)
@@ -4617,7 +4625,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                 alignment: Alignment.centerLeft,
                                 child: Text(device.name,
                                     maxLines: 1, overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 13,
+                                    style: TextStyle(fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                         color: GasPalette.ink)),
                               )),
@@ -4668,12 +4676,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         SizedBox(width: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 36),
-            border: Border.all(color: isPhoneLayout(context) ? GasPalette.border : Colors.grey.shade300),
+            border: Border.all(color: isPhoneLayout(context) ? GasPalette.border : Tone.bg(Colors.grey.shade300)),
             boxShadow: isPhoneLayout(context) ? [] : [
               BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Tone.bg(Colors.grey).withOpacity(0.1),
                   spreadRadius: 1,
                   blurRadius: 3)
             ],
@@ -4745,9 +4753,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           tooltip: 'Ask the assistant',
           onPressed: _openAssistant,
           style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
+              backgroundColor: Tone.bg(Colors.white),
               foregroundColor: GasPalette.primary,
-              side: const BorderSide(color: GasPalette.border),
+              side: BorderSide(color: GasPalette.border),
               minimumSize: const Size(44, 44),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(32))),
@@ -4806,7 +4814,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 foregroundColor: GasPalette.ink,
-                backgroundColor: Colors.white,
+                backgroundColor: Tone.bg(Colors.white),
                 side: BorderSide(color: GasPalette.border),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(32)),
@@ -4882,14 +4890,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   fontWeight: FontWeight.w600, letterSpacing: -0.8,
                   color: color ?? GasPalette.ink)),
               const SizedBox(height: 4),
-              Text(label, style: const TextStyle(
+              Text(label, style: TextStyle(
                   fontFamily: 'Inter', fontSize: 12, color: GasPalette.ink2)),
             ],
           );
       return GPanel(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Equipment overview', style: TextStyle(
+          Text('Equipment overview', style: TextStyle(
               fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600,
               color: GasPalette.ink)),
           const SizedBox(height: 14),
@@ -4908,11 +4916,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           ),
           const SizedBox(height: 10),
           Wrap(spacing: 12, runSpacing: 4, children: [
-            Text('$pct% connected', style: const TextStyle(
+            Text('$pct% connected', style: TextStyle(
                 fontSize: 11, color: GasPalette.ink2)),
-            Text('$gas gas cylinders', style: const TextStyle(
+            Text('$gas gas cylinders', style: TextStyle(
                 fontSize: 11, color: GasPalette.ink2)),
-            Text('${alertsList.length} recent warnings', style: const TextStyle(
+            Text('${alertsList.length} recent warnings', style: TextStyle(
                 fontSize: 11, color: GasPalette.ink2)),
           ]),
         ]),
@@ -4949,7 +4957,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 13),
           decoration: BoxDecoration(
-            color: Color(0xFFE9F0F5),
+            color: Tone.bg(Color(0xFFE9F0F5)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -4987,7 +4995,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         child: LinearProgressIndicator(
                           value: online / total,
                           minHeight: 6,
-                          backgroundColor: Colors.white,
+                          backgroundColor: Tone.bg(Colors.white),
                           color: GasPalette.series,
                         ),
                       ),
@@ -5086,7 +5094,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   'Gas cylinders report weight, not compressor performance. '
                   'The cylinder\'s level and usage are shown below.',
                   style: GoogleFonts.inter(
-                      fontSize: 12, color: Colors.grey.shade600)),
+                      fontSize: 12, color: Tone.fg(Colors.grey.shade600))),
             ] else if (currentPerformanceMetrics != null) ...[
               SizedBox(height: 16),
               isMobile
@@ -5132,7 +5140,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                           "Active Alerts",
                           "${currentPerformanceMetrics!.totalAlerts}",
                           currentPerformanceMetrics!.criticalAlerts! > 0
-                              ? Colors.red
+                              ? Tone.auto(Colors.red)
                               : Constants.ctaColorLight,
                           Icons.warning,
                         ),
@@ -5181,7 +5189,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                             "Active Alerts",
                             "${currentPerformanceMetrics!.totalAlerts}",
                             currentPerformanceMetrics!.criticalAlerts! > 0
-                                ? Colors.red
+                                ? Tone.auto(Colors.red)
                                 : Constants.ctaColorLight,
                             Icons.warning,
                           ),
@@ -5202,12 +5210,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 9),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: GasPalette.border))),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(
               child: Text(title,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12,
                       height: 1.4,
@@ -5230,12 +5238,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       padding: EdgeInsets.all(12),
       margin: isMobile ? EdgeInsets.zero : EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Tone.bg(Colors.black).withOpacity(0.02),
               blurRadius: 8,
               offset: const Offset(0, 2))
         ],
@@ -5251,7 +5259,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   color: Constants.ctaColorLight)),
           Text(title,
               style:
-                  GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600),
+                  GoogleFonts.inter(fontSize: 11, color: Tone.fg(Colors.grey.shade600)),
               textAlign: TextAlign.center),
         ],
       ),
@@ -5261,7 +5269,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   Color _getPerformanceScoreColor(int score) {
     if (score >= 80) return Constants.ctaColorLight;
     if (score >= 60) return Constants.ctaColorLight;
-    return Colors.red;
+    return Tone.auto(Colors.red);
   }
 
   Color _getSystemStatusColor(String? status) {
@@ -5279,9 +5287,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       case 'compressor_alert':
       case 'door_alert':
       case 'maintenance_required':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       default:
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
     }
   }
 
@@ -5293,7 +5301,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return GPanel(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Key readings', style: TextStyle(fontFamily: 'Inter',
+          Text('Key readings', style: TextStyle(fontFamily: 'Inter',
               fontSize: 15, fontWeight: FontWeight.w600, color: GasPalette.ink)),
           const SizedBox(height: 4),
           for (var i = 0; i < enhancedSummaryCards.length; i++) ...[
@@ -5303,25 +5311,25 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(child: Text(enhancedSummaryCards[i].title,
-                      style: const TextStyle(fontSize: 13, height: 1.4,
+                      style: TextStyle(fontSize: 13, height: 1.4,
                           color: GasPalette.ink))),
                   const SizedBox(width: 12),
                   Flexible(child: Text(
                       '${enhancedSummaryCards[i].value}${enhancedSummaryCards[i].unit}',
                       textAlign: TextAlign.end,
-                      style: const TextStyle(fontSize: 16, height: 1.3,
+                      style: TextStyle(fontSize: 16, height: 1.3,
                           fontWeight: FontWeight.w600, color: GasPalette.ink))),
                   if (enhancedSummaryCards[i].trendDirection != 'stable') ...[
                     const SizedBox(width: 4),
                     Icon(enhancedSummaryCards[i].trendDirection == 'up'
                         ? Icons.trending_up : Icons.trending_down,
                         size: 16, color: enhancedSummaryCards[i].trendDirection == 'up'
-                            ? GasPalette.primary : Colors.red),
+                            ? GasPalette.primary : Tone.fg(Colors.red)),
                   ],
                 ]),
                 if (enhancedSummaryCards[i].subtitle != null) ...[
                   const SizedBox(height: 4),
-                  Text(enhancedSummaryCards[i].subtitle!, style: const TextStyle(
+                  Text(enhancedSummaryCards[i].subtitle!, style: TextStyle(
                       fontSize: 12, color: GasPalette.ink2)),
                 ],
                 if (enhancedSummaryCards[i].trend != null)
@@ -5330,7 +5338,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 if (enhancedSummaryCards[i].alerts?.isNotEmpty ?? false) ...[
                   const SizedBox(height: 4),
                   Text('${enhancedSummaryCards[i].alerts!.length} alerts',
-                      style: const TextStyle(fontSize: 12, color: GasPalette.warn,
+                      style: TextStyle(fontSize: 12, color: GasPalette.warn,
                           fontWeight: FontWeight.w500)),
                 ],
               ]),
@@ -5346,7 +5354,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
                 fontSize: isMobile ? 16 : 18,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E293B))),
+                color: Tone.fg(const Color(0xFF1E293B)))),
         SizedBox(height: 16),
         isMobile
             ? Column(
@@ -5356,11 +5364,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Tone.bg(Colors.white),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.shade300,
+                            color: Tone.bg(Colors.grey.shade300),
                             blurRadius: 8,
                             offset: Offset(0, 2),
                           ),
@@ -5380,7 +5388,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(card.icon,
-                                      color: Colors.white, size: 20),
+                                      color: Tone.fg(Colors.white), size: 20),
                                 ),
                                 SizedBox(width: 12),
                                 Expanded(
@@ -5391,14 +5399,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                       Text(card.title,
                                           style: GoogleFonts.inter(
                                               fontSize: 12,
-                                              color: Colors.grey.shade600)),
+                                              color: Tone.fg(Colors.grey.shade600))),
                                       Row(
                                         children: [
                                           Text("${card.value}${card.unit}",
                                               style: GoogleFonts.inter(
                                                   fontSize: 18,
                                                   fontWeight: FontWeight.bold,
-                                                  color: const Color(0xFF1E293B))),
+                                                  color: Tone.fg(const Color(0xFF1E293B)))),
                                           if (card.trendDirection != 'stable')
                                             Icon(
                                               card.trendDirection == 'up'
@@ -5407,7 +5415,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                               size: 16,
                                               color: card.trendDirection == 'up'
                                                   ? Constants.ctaColorLight
-                                                  : Colors.red,
+                                                  : Tone.fg(Colors.red),
                                             ),
                                         ],
                                       ),
@@ -5421,7 +5429,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                               Text(card.subtitle!,
                                   style: GoogleFonts.inter(
                                       fontSize: 11,
-                                      color: Colors.grey.shade600)),
+                                      color: Tone.fg(Colors.grey.shade600))),
                             if (card.trend != null)
                               Text(card.trend!,
                                   style: GoogleFonts.inter(
@@ -5468,11 +5476,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         margin: EdgeInsets.only(right: 16),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Tone.bg(Colors.white),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.shade300,
+                                color: Tone.bg(Colors.grey.shade300),
                                 blurRadius: 8,
                                 offset: Offset(0, 2),
                               ),
@@ -5492,7 +5500,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Icon(card.icon,
-                                          color: Colors.white, size: 20),
+                                          color: Tone.fg(Colors.white), size: 20),
                                     ),
                                     SizedBox(width: 12),
                                     Expanded(
@@ -5503,7 +5511,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                           Text(card.title,
                                               style: GoogleFonts.inter(
                                                   fontSize: 12,
-                                                  color: Colors.grey.shade600)),
+                                                  color: Tone.fg(Colors.grey.shade600))),
                                           Row(
                                             children: [
                                               Text("${card.value}${card.unit}",
@@ -5521,7 +5529,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                                   color: card.trendDirection ==
                                                           'up'
                                                       ? Constants.ctaColorLight
-                                                      : Colors.red,
+                                                      : Tone.fg(Colors.red),
                                                 ),
                                             ],
                                           ),
@@ -5535,7 +5543,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                                   Text(card.subtitle!,
                                       style: GoogleFonts.inter(
                                           fontSize: 11,
-                                          color: Colors.grey.shade600)),
+                                          color: Tone.fg(Colors.grey.shade600))),
                                 if (card.trend != null)
                                   Text(card.trend!,
                                       style: GoogleFonts.inter(
@@ -5610,7 +5618,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
                 fontSize: isMobile ? 16 : 18,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E293B))),
+                color: Tone.fg(const Color(0xFF1E293B)))),
         SizedBox(height: 16),
         isMobile
             ? Column(
@@ -5641,11 +5649,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               )
             : Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Tone.bg(Colors.grey).withOpacity(0.1),
                         spreadRadius: 1,
                         blurRadius: 5)
                   ],
@@ -5665,7 +5673,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         Tab(text: "Door Analytics"),
                       ],
                       labelColor: Constants.ctaColorLight,
-                      unselectedLabelColor: Colors.grey,
+                      unselectedLabelColor: Tone.fg(Colors.grey),
                       indicatorColor: Constants.ctaColorLight,
                     ),
 
@@ -5734,11 +5742,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         SizedBox(height: 16),
         Container(
           decoration: isPhoneLayout(context) ? _webPanelBox() : BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Tone.bg(Colors.grey).withOpacity(0.1),
                   spreadRadius: 1,
                   blurRadius: 5)
             ],
@@ -5751,10 +5759,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               if (!isPhoneLayout(context)) Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFF1F5F9)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4))],
+                  border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+                  boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4))],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -5765,7 +5773,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         Text("Average Temperature",
                             style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: const Color(0xFF64748B),
+                                color: Tone.fg(const Color(0xFF64748B)),
                                 fontWeight: FontWeight.w500)),
                         SizedBox(height: 4),
                         Text(
@@ -5773,7 +5781,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                             style: GoogleFonts.inter(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF0F172A))),
+                                color: Tone.fg(const Color(0xFF0F172A)))),
                       ],
                     ),
                     Container(
@@ -5782,7 +5790,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         color: Constants.ctaColorLight,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(Iconsax.chart, size: 28, color: Colors.white),
+                      child: Icon(Iconsax.chart, size: 28, color: Tone.fg(Colors.white)),
                     ),
                   ],
                 ),
@@ -5861,7 +5869,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               return BarTooltipItem(
                 '${_getLabel(device, "zone_${groupIndex + 1}", "Zone ${groupIndex + 1}")}\n${rod.toY.toStringAsFixed(1)}°C',
-                GoogleFonts.inter(color: Colors.white, fontSize: 12),
+                GoogleFonts.inter(color: Tone.fg(Colors.white), fontSize: 12),
               );
             },
           ),
@@ -5889,7 +5897,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               showTitles: true,
               reservedSize: 40,
               getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
-                  style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                  style: GoogleFonts.inter(fontSize: 10, color: Tone.fg(Colors.grey[600]))),
             ),
           ),
           topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -5899,7 +5907,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           show: true,
           drawVerticalLine: false,
           horizontalInterval: 5,
-          getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          getDrawingHorizontalLine: (value) => FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         barGroups: List.generate(zones.length, (index) {
@@ -5931,7 +5939,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     ].where((t) => t != null).toList();
 
     if (temps.isEmpty) {
-      return Center(child: Text('No temperature data', style: GoogleFonts.inter(color: Colors.grey)));
+      return Center(child: Text('No temperature data', style: GoogleFonts.inter(color: Tone.fg(Colors.grey))));
     }
 
     int normal = 0, low = 0, high = 0;
@@ -5959,23 +5967,23 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     color: Constants.ctaColorLight,
                     title: '$normal',
                     radius: 50,
-                    titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                    titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Tone.fg(Colors.white)),
                   ),
                 if (low > 0)
                   PieChartSectionData(
                     value: low.toDouble(),
-                    color: Colors.blue,
+                    color: Tone.auto(Colors.blue),
                     title: '$low',
                     radius: 50,
-                    titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                    titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Tone.fg(Colors.white)),
                   ),
                 if (high > 0)
                   PieChartSectionData(
                     value: high.toDouble(),
-                    color: Colors.red,
+                    color: Tone.auto(Colors.red),
                     title: '$high',
                     radius: 50,
-                    titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                    titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Tone.fg(Colors.white)),
                   ),
               ],
             ),
@@ -5988,9 +5996,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           children: [
             _buildLegendItem("Normal (-25 to 5°C)", Constants.ctaColorLight),
             SizedBox(height: 8),
-            _buildLegendItem("Too Low (< -25°C)", Colors.blue),
+            _buildLegendItem("Too Low (< -25°C)", Tone.auto(Colors.blue)),
             SizedBox(height: 8),
-            _buildLegendItem("Too High (> 5°C)", Colors.red),
+            _buildLegendItem("Too High (> 5°C)", Tone.auto(Colors.red)),
           ],
         ),
       ],
@@ -6009,15 +6017,15 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   }
 
   Widget _buildZoneTemperatureCard(String zoneName, double? temperature, double? minTemp, double? maxTemp, String? minTime, String? maxTime, double minThreshold, double maxThreshold, {String? labelKey, String? deviceId}) {
-    Color statusColor = Colors.grey;
+    Color statusColor = Tone.auto(Colors.grey);
     String status = "No Data";
 
     if (temperature != null) {
       if (temperature < minThreshold) {
-        statusColor = Colors.blue;
+        statusColor = Tone.auto(Colors.blue);
         status = "Low";
       } else if (temperature > maxThreshold) {
-        statusColor = Colors.red;
+        statusColor = Tone.auto(Colors.red);
         status = "High";
       } else {
         statusColor = Constants.ctaColorLight;
@@ -6040,13 +6048,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(isPhoneLayout(context) ? 12 : 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
         border: Border.all(
-          color: isPhoneLayout(context) ? GasPalette.border : (status == "Normal" ? const Color(0xFFF1F5F9) : statusColor),
+          color: isPhoneLayout(context) ? GasPalette.border : (status == "Normal" ? Tone.auto(const Color(0xFFF1F5F9)) : statusColor),
           width: isPhoneLayout(context) ? 1 : (status == "Normal" ? 1 : 2),
         ),
-        boxShadow: isPhoneLayout(context) ? [] : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: isPhoneLayout(context) ? [] : [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -6057,7 +6065,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 : null,
             child: Text(zoneName, textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
-                    fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+                    fontSize: 12, fontWeight: FontWeight.w500, color: Tone.fg(Colors.grey.shade700))),
           ),
           SizedBox(height: 2),
           Text("${temperature?.toStringAsFixed(1) ?? '--'}°C",
@@ -6070,26 +6078,26 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             children: [
               Column(
                 children: [
-                  Text("Min", style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                  Text("Min", style: GoogleFonts.inter(fontSize: 9, color: Tone.fg(Colors.grey[500]))),
                   Text("${minTemp?.toStringAsFixed(1) ?? '--'}°",
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.blue)),
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Tone.fg(Colors.blue))),
                   Text(_formatTimestamp(minTime),
-                      style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[400])),
+                      style: GoogleFonts.inter(fontSize: 8, color: Tone.fg(Colors.grey[400]))),
                 ],
               ),
               Container(
                 height: 30,
                 width: 1,
                 margin: EdgeInsets.symmetric(horizontal: 8),
-                color: Colors.grey.shade300,
+                color: Tone.bg(Colors.grey.shade300),
               ),
               Column(
                 children: [
-                  Text("Max", style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[500])),
+                  Text("Max", style: GoogleFonts.inter(fontSize: 9, color: Tone.fg(Colors.grey[500]))),
                   Text("${maxTemp?.toStringAsFixed(1) ?? '--'}°",
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.red)),
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Tone.fg(Colors.red))),
                   Text(_formatTimestamp(maxTime),
-                      style: GoogleFonts.inter(fontSize: 8, color: Colors.grey[400])),
+                      style: GoogleFonts.inter(fontSize: 8, color: Tone.fg(Colors.grey[400]))),
                 ],
               ),
             ],
@@ -6210,11 +6218,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Tone.bg(Colors.grey).withOpacity(0.1),
                   spreadRadius: 1,
                   blurRadius: 5)
             ],
@@ -6241,7 +6249,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     selectedDevice.hsTemp,
                     "°C",
                     Iconsax.arrow_up_2,
-                    Colors.orange,
+                    Tone.auto(Colors.orange),
                     minValue: selectedDevice.hsTempMin,
                     maxValue: selectedDevice.hsTempMax,
                     minTime: selectedDevice.hsTempMinTime,
@@ -6252,7 +6260,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     selectedDevice.lsTemp,
                     "°C",
                     Iconsax.arrow_down,
-                    Colors.blue,
+                    Tone.auto(Colors.blue),
                     minValue: selectedDevice.lsTempMin,
                     maxValue: selectedDevice.lsTempMax,
                     minTime: selectedDevice.lsTempMinTime,
@@ -6263,7 +6271,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     selectedDevice.iceTemp,
                     "°C",
                     FontAwesomeIcons.snowflake,
-                    Colors.cyan,
+                    Tone.auto(Colors.cyan),
                     minValue: selectedDevice.iceTempMin,
                     maxValue: selectedDevice.iceTempMax,
                     minTime: selectedDevice.iceTempMinTime,
@@ -6303,21 +6311,21 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     selectedDevice.amps,
                     "A",
                     FontAwesomeIcons.bolt,
-                    Colors.amber,
+                    Tone.auto(Colors.amber),
                   ),
                   _buildDevice3MetricCard(
                     "Power",
                     selectedDevice.powerKw,
                     " kW",
                     FontAwesomeIcons.plug,
-                    Colors.deepOrange,
+                    Tone.auto(Colors.deepOrange),
                   ),
                   _buildDevice3MetricCard(
                     "Energy (24h)",
                     selectedDevice.energyConsumed24h,
                     " kWh",
                     FontAwesomeIcons.chartBar,
-                    Colors.teal,
+                    Tone.auto(Colors.teal),
                   ),
                 ],
               ),
@@ -6402,9 +6410,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
   // Bar chart for Device 3 temperatures
   Widget _buildDevice3TempBarChart(LatestDeviceData device) {
     final temps = [
-      {'name': 'High Side', 'temp': device.hsTemp ?? 0.0, 'color': Colors.orange},
-      {'name': 'Low Side', 'temp': device.lsTemp ?? 0.0, 'color': Colors.blue},
-      {'name': 'Ice', 'temp': device.iceTemp ?? 0.0, 'color': Colors.cyan},
+      {'name': 'High Side', 'temp': device.hsTemp ?? 0.0, 'color': Tone.auto(Colors.orange)},
+      {'name': 'Low Side', 'temp': device.lsTemp ?? 0.0, 'color': Tone.auto(Colors.blue)},
+      {'name': 'Ice', 'temp': device.iceTemp ?? 0.0, 'color': Tone.auto(Colors.cyan)},
       {'name': 'Air', 'temp': device.airTemp ?? 0.0, 'color': Constants.ctaColorLight},
     ];
 
@@ -6422,7 +6430,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               return BarTooltipItem(
                 '${temps[groupIndex]['name']}\n${rod.toY.toStringAsFixed(1)}°C',
-                GoogleFonts.inter(color: Colors.white, fontSize: 12),
+                GoogleFonts.inter(color: Tone.fg(Colors.white), fontSize: 12),
               );
             },
           ),
@@ -6450,7 +6458,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               showTitles: true,
               reservedSize: 40,
               getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
-                  style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[600])),
+                  style: GoogleFonts.inter(fontSize: 10, color: Tone.fg(Colors.grey[600]))),
             ),
           ),
           topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -6460,7 +6468,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           show: true,
           drawVerticalLine: false,
           horizontalInterval: 10,
-          getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          getDrawingHorizontalLine: (value) => FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         barGroups: List.generate(temps.length, (index) {
@@ -6567,7 +6575,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 ),
                 PieChartSectionData(
                   value: 100 - waterLevel,
-                  color: Colors.grey.shade200,
+                  color: Tone.auto(Colors.grey.shade200),
                   title: '',
                   radius: 30,
                 ),
@@ -6582,7 +6590,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Water Level',
-                  style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600])),
+                  style: GoogleFonts.inter(fontSize: 14, color: Tone.fg(Colors.grey[600]))),
               SizedBox(height: 4),
               Text('${waterLevel.toStringAsFixed(1)}%',
                   style: GoogleFonts.inter(fontSize: 36, fontWeight: FontWeight.bold, color: color)),
@@ -6603,23 +6611,23 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               // Water level timestamps
               Row(
                 children: [
-                  Icon(Icons.arrow_downward, size: 12, color: Colors.red[400]),
+                  Icon(Icons.arrow_downward, size: 12, color: Tone.fg(Colors.red[400])),
                   SizedBox(width: 4),
                   Text('Empty: ',
-                      style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
+                      style: GoogleFonts.inter(fontSize: 11, color: Tone.fg(Colors.grey[600]))),
                   Text(formatTimestamp(device.wtrlvlLastEmpty),
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.red[400])),
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: Tone.fg(Colors.red[400]))),
                 ],
               ),
               SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(Icons.arrow_upward, size: 12, color: Colors.green[400]),
+                  Icon(Icons.arrow_upward, size: 12, color: Tone.fg(Colors.green[400])),
                   SizedBox(width: 4),
                   Text('Full: ',
-                      style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
+                      style: GoogleFonts.inter(fontSize: 11, color: Tone.fg(Colors.grey[600]))),
                   Text(formatTimestamp(device.wtrlvlLastFull),
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.green[400])),
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: Tone.fg(Colors.green[400]))),
                 ],
               ),
             ],
@@ -6671,11 +6679,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             value: healthPercent / 100, minHeight: 8,
             backgroundColor: GasPalette.border, color: Constants.ctaColorLight)),
           const SizedBox(height: 14),
-          _buildStatusIndicator('Harvest', harvestActive ? 'Active' : 'Idle', harvestActive ? Colors.orange : Colors.grey),
+          _buildStatusIndicator('Harvest', harvestActive ? 'Active' : 'Idle', harvestActive ? Tone.auto(Colors.orange) : Tone.auto(Colors.grey)),
           const SizedBox(height: 10),
-          _buildStatusIndicator('Water', waterOk ? 'Normal' : 'Alert', waterOk ? Constants.ctaColorLight : Colors.red),
+          _buildStatusIndicator('Water', waterOk ? 'Normal' : 'Alert', waterOk ? Constants.ctaColorLight : Tone.auto(Colors.red)),
           const SizedBox(height: 10),
-          _buildStatusIndicator('System', healthPercent >= 75 ? 'Healthy' : 'Check', healthPercent >= 75 ? Constants.ctaColorLight : Colors.orange),
+          _buildStatusIndicator('System', healthPercent >= 75 ? 'Healthy' : 'Check', healthPercent >= 75 ? Constants.ctaColorLight : Tone.auto(Colors.orange)),
         ]),
       );
     }
@@ -6693,11 +6701,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   color: Constants.ctaColorLight,
                   title: '${healthPercent.toStringAsFixed(0)}%',
                   radius: 45,
-                  titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                  titleStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Tone.fg(Colors.white)),
                 ),
                 PieChartSectionData(
                   value: 100 - healthPercent,
-                  color: Colors.grey.shade300,
+                  color: Tone.auto(Colors.grey.shade300),
                   title: '',
                   radius: 45,
                 ),
@@ -6711,11 +6719,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildStatusIndicator('Harvest', harvestActive ? 'Active' : 'Idle', harvestActive ? Colors.orange : Colors.grey),
+              _buildStatusIndicator('Harvest', harvestActive ? 'Active' : 'Idle', harvestActive ? Tone.auto(Colors.orange) : Tone.auto(Colors.grey)),
               SizedBox(height: 8),
-              _buildStatusIndicator('Water', waterOk ? 'Normal' : 'Alert', waterOk ? Constants.ctaColorLight : Colors.red),
+              _buildStatusIndicator('Water', waterOk ? 'Normal' : 'Alert', waterOk ? Constants.ctaColorLight : Tone.auto(Colors.red)),
               SizedBox(height: 8),
-              _buildStatusIndicator('System', healthPercent >= 75 ? 'Healthy' : 'Check', healthPercent >= 75 ? Constants.ctaColorLight : Colors.orange),
+              _buildStatusIndicator('System', healthPercent >= 75 ? 'Healthy' : 'Check', healthPercent >= 75 ? Constants.ctaColorLight : Tone.auto(Colors.orange)),
             ],
           ),
         ),
@@ -6738,7 +6746,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         SizedBox(width: 8),
-        Text('$label: ', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
+        Text('$label: ', style: GoogleFonts.inter(fontSize: 12, color: Tone.fg(Colors.grey[600]))),
         Text(status, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
       ],
     );
@@ -6782,10 +6790,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(isMobile ? 8 : 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -6795,7 +6803,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           SizedBox(height: 4),
           Text(title,
               style: GoogleFonts.inter(
-                  fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w500, color: Colors.grey.shade700),
+                  fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w500, color: Tone.fg(Colors.grey.shade700)),
               textAlign: TextAlign.center),
           SizedBox(height: 2),
           Text("${value?.toStringAsFixed(1) ?? '--'}$unit",
@@ -6807,7 +6815,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             Container(
               padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: Tone.bg(Colors.grey.shade100),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Column(
@@ -6817,14 +6825,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.arrow_downward, size: isMobile ? 10 : 12, color: Colors.blue),
+                      Icon(Icons.arrow_downward, size: isMobile ? 10 : 12, color: Tone.fg(Colors.blue)),
                       SizedBox(width: 2),
                       Text(
                         "${minValue?.toStringAsFixed(1) ?? '--'}$unit",
                         style: GoogleFonts.inter(
                           fontSize: isMobile ? 9 : 10,
                           fontWeight: FontWeight.w600,
-                          color: Colors.blue,
+                          color: Tone.fg(Colors.blue),
                         ),
                       ),
                       SizedBox(width: 4),
@@ -6832,7 +6840,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         formatDateTime(minTime),
                         style: GoogleFonts.inter(
                           fontSize: isMobile ? 8 : 9,
-                          color: Colors.grey.shade600,
+                          color: Tone.fg(Colors.grey.shade600),
                         ),
                       ),
                     ],
@@ -6843,14 +6851,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.arrow_upward, size: isMobile ? 10 : 12, color: Colors.red),
+                      Icon(Icons.arrow_upward, size: isMobile ? 10 : 12, color: Tone.fg(Colors.red)),
                       SizedBox(width: 2),
                       Text(
                         "${maxValue?.toStringAsFixed(1) ?? '--'}$unit",
                         style: GoogleFonts.inter(
                           fontSize: isMobile ? 9 : 10,
                           fontWeight: FontWeight.w600,
-                          color: Colors.red,
+                          color: Tone.fg(Colors.red),
                         ),
                       ),
                       SizedBox(width: 4),
@@ -6858,7 +6866,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                         formatDateTime(maxTime),
                         style: GoogleFonts.inter(
                           fontSize: isMobile ? 8 : 9,
-                          color: Colors.grey.shade600,
+                          color: Tone.fg(Colors.grey.shade600),
                         ),
                       ),
                     ],
@@ -6876,7 +6884,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       {double? minValue, double? maxValue, String? minTime, String? maxTime,
        double? ph1, double? ph2, double? ph3, String? label, String? labelKey, String? deviceId}) {
     final isMobile = _isMobile(context);
-    final color = isOn ? Colors.green : Colors.grey.shade400;
+    final color = isOn ? Tone.auto(Colors.green) : Tone.auto(Colors.grey.shade400);
 
     String formatDateTime(String? isoTime) {
       if (isoTime == null) return '--';
@@ -6890,13 +6898,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
     Widget phaseChip(String label, double? value) {
       final phaseOn = value != null && value > 0.5;
-      final phColor = phaseOn ? Colors.green : Colors.grey.shade400;
+      final phColor = phaseOn ? Tone.auto(Colors.green) : Tone.auto(Colors.grey.shade400);
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         decoration: BoxDecoration(
-          color: phaseOn ? Colors.green.withOpacity(0.1) : Colors.grey.shade100,
+          color: phaseOn ? Tone.bg(Colors.green).withOpacity(0.1) : Tone.bg(Colors.grey.shade100),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: phaseOn ? Colors.green.withOpacity(0.3) : Colors.grey.shade300, width: 0.5),
+          border: Border.all(color: phaseOn ? Tone.bg(Colors.green).withOpacity(0.3) : Tone.bg(Colors.grey.shade300), width: 0.5),
         ),
         child: Text(
           "$label: ${value?.toStringAsFixed(1) ?? '--'}A",
@@ -6925,13 +6933,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(isMobile ? 6 : 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isOn ? const Color(0xFFF1F5F9) : Colors.grey.shade300,
+          color: isOn ? Tone.bg(const Color(0xFFF1F5F9)) : Tone.bg(Colors.grey.shade300),
           width: 1,
         ),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -6947,7 +6955,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 ? () => _showRenameLabelDialog(labelKey, label ?? "Comp $compNum", deviceId)
                 : null,
             child: Text(label ?? "Comp $compNum",
-                style: GoogleFonts.inter(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+                style: GoogleFonts.inter(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w600, color: Tone.fg(Colors.grey.shade800))),
           ),
           SizedBox(height: 2),
           Text("${avgAmp?.toStringAsFixed(1) ?? '--'} A",
@@ -6970,7 +6978,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             Container(
               padding: EdgeInsets.symmetric(horizontal: 4, vertical: 3),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: Tone.bg(Colors.grey.shade100),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Column(
@@ -6979,13 +6987,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.arrow_downward, size: isMobile ? 10 : 12, color: Colors.blue),
+                      Icon(Icons.arrow_downward, size: isMobile ? 10 : 12, color: Tone.fg(Colors.blue)),
                       SizedBox(width: 2),
                       Text("${minValue?.toStringAsFixed(1) ?? '--'}A",
-                          style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.w600, color: Colors.blue)),
+                          style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.w600, color: Tone.fg(Colors.blue))),
                       SizedBox(width: 4),
                       Text(formatDateTime(minTime),
-                          style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Colors.grey.shade600)),
+                          style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Tone.fg(Colors.grey.shade600))),
                     ],
                   ),
                   SizedBox(height: 2),
@@ -6993,13 +7001,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.arrow_upward, size: isMobile ? 10 : 12, color: Colors.red),
+                      Icon(Icons.arrow_upward, size: isMobile ? 10 : 12, color: Tone.fg(Colors.red)),
                       SizedBox(width: 2),
                       Text("${maxValue?.toStringAsFixed(1) ?? '--'}A",
-                          style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.w600, color: Colors.red)),
+                          style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.w600, color: Tone.fg(Colors.red))),
                       SizedBox(width: 4),
                       Text(formatDateTime(maxTime),
-                          style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Colors.grey.shade600)),
+                          style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Tone.fg(Colors.grey.shade600))),
                     ],
                   ),
                 ],
@@ -7045,10 +7053,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)
+              BoxShadow(color: Tone.bg(Colors.grey).withOpacity(0.1), spreadRadius: 1, blurRadius: 5)
             ],
           ),
           padding: EdgeInsets.all(16),
@@ -7127,10 +7135,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)
+              BoxShadow(color: Tone.bg(Colors.grey).withOpacity(0.1), spreadRadius: 1, blurRadius: 5)
             ],
           ),
           padding: EdgeInsets.all(16),
@@ -7141,11 +7149,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               MobileFormRow(
                 children: [
                   Expanded(
-                    child: _buildDevice3MetricCard("Relays ON", onCount.toDouble(), "", FontAwesomeIcons.toggleOn, Colors.green),
+                    child: _buildDevice3MetricCard("Relays ON", onCount.toDouble(), "", FontAwesomeIcons.toggleOn, Tone.auto(Colors.green)),
                   ),
                   SizedBox(width: 12),
                   Expanded(
-                    child: _buildDevice3MetricCard("Relays OFF", offCount.toDouble(), "", FontAwesomeIcons.toggleOff, Colors.grey),
+                    child: _buildDevice3MetricCard("Relays OFF", offCount.toDouble(), "", FontAwesomeIcons.toggleOff, Tone.auto(Colors.grey)),
                   ),
                   SizedBox(width: 12),
                   Expanded(
@@ -7153,7 +7161,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   ),
                   SizedBox(width: 12),
                   Expanded(
-                    child: _buildDevice3MetricCard("Readings", totalReadings.toDouble(), "", FontAwesomeIcons.database, Colors.purple),
+                    child: _buildDevice3MetricCard("Readings", totalReadings.toDouble(), "", FontAwesomeIcons.database, Tone.auto(Colors.purple)),
                   ),
                 ],
               ),
@@ -7180,7 +7188,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   Widget _buildRelayCard(int relayNum, bool? isOn, double? dutyPct) {
     final isMobile = _isMobile(context);
-    final color = isOn == true ? Colors.green : Colors.grey.shade400;
+    final color = isOn == true ? Tone.auto(Colors.green) : Tone.auto(Colors.grey.shade400);
     if (isPhoneLayout(context)) {
       return _phoneReadingCard(title: "Relay $relayNum",
         value: isOn == true ? 'ON' : 'OFF',
@@ -7190,13 +7198,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(isMobile ? 6 : 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isOn == true ? Colors.green.withOpacity(0.3) : const Color(0xFFF1F5F9),
+          color: isOn == true ? Tone.bg(Colors.green).withOpacity(0.3) : Tone.bg(const Color(0xFFF1F5F9)),
           width: isOn == true ? 2 : 1,
         ),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -7208,7 +7216,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           ),
           SizedBox(height: 2),
           Text("R$relayNum",
-              style: GoogleFonts.inter(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+              style: GoogleFonts.inter(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w600, color: Tone.fg(Colors.grey.shade800))),
           SizedBox(height: 2),
           Text(isOn == true ? 'ON' : 'OFF',
               style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, fontWeight: FontWeight.w500, color: color)),
@@ -7220,14 +7228,14 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
                   value: dutyPct / 100,
-                  backgroundColor: Colors.grey.shade200,
+                  backgroundColor: Tone.bg(Colors.grey.shade200),
                   valueColor: AlwaysStoppedAnimation<Color>(Constants.ctaColorLight),
                 ),
               ),
             ),
             SizedBox(height: 2),
             Text("${dutyPct.toStringAsFixed(0)}%",
-                style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, color: Colors.grey.shade600)),
+                style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, color: Tone.fg(Colors.grey.shade600))),
           ],
         ],
       ),
@@ -7239,7 +7247,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       {double? minValue, double? maxValue, String? minTime, String? maxTime}) {
     final isMobile = _isMobile(context);
     final hasReading = current != null;
-    final color = hasReading ? Colors.blue : Colors.grey.shade400;
+    final color = hasReading ? Tone.auto(Colors.blue) : Tone.auto(Colors.grey.shade400);
 
     String formatDateTime(String? isoTime) {
       if (isoTime == null) return '--';
@@ -7262,10 +7270,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(isMobile ? 6 : 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -7273,7 +7281,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           Icon(FontAwesomeIcons.tachometerAlt, color: color, size: isMobile ? 16 : 20),
           SizedBox(height: 4),
           Text("Pressure $sensorNum",
-              style: GoogleFonts.inter(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+              style: GoogleFonts.inter(fontSize: isMobile ? 10 : 11, fontWeight: FontWeight.w500, color: Tone.fg(Colors.grey.shade700))),
           SizedBox(height: 2),
           Text("${current?.toStringAsFixed(2) ?? '--'} psi",
               style: GoogleFonts.inter(fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.bold, color: color)),
@@ -7281,7 +7289,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           Container(
             padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: Tone.bg(Colors.grey.shade100),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Column(
@@ -7289,32 +7297,32 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.arrow_downward, size: isMobile ? 10 : 12, color: Colors.blue.shade700),
+                    Icon(Icons.arrow_downward, size: isMobile ? 10 : 12, color: Tone.fg(Colors.blue.shade700)),
                     SizedBox(width: 3),
                     Text("Min: ",
-                        style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, color: Colors.grey.shade600)),
+                        style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, color: Tone.fg(Colors.grey.shade600))),
                     Text("${minValue?.toStringAsFixed(2) ?? '--'} psi",
-                        style: GoogleFonts.inter(fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w600, color: Colors.blue.shade700)),
+                        style: GoogleFonts.inter(fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w600, color: Tone.fg(Colors.blue.shade700))),
                   ],
                 ),
                 if (minTime != null)
                   Text(formatDateTime(minTime),
-                      style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Colors.grey.shade500)),
+                      style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Tone.fg(Colors.grey.shade500))),
                 SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.arrow_upward, size: isMobile ? 10 : 12, color: Colors.red.shade600),
+                    Icon(Icons.arrow_upward, size: isMobile ? 10 : 12, color: Tone.fg(Colors.red.shade600)),
                     SizedBox(width: 3),
                     Text("Max: ",
-                        style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, color: Colors.grey.shade600)),
+                        style: GoogleFonts.inter(fontSize: isMobile ? 8 : 9, color: Tone.fg(Colors.grey.shade600))),
                     Text("${maxValue?.toStringAsFixed(2) ?? '--'} psi",
-                        style: GoogleFonts.inter(fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w600, color: Colors.red.shade600)),
+                        style: GoogleFonts.inter(fontSize: isMobile ? 9 : 10, fontWeight: FontWeight.w600, color: Tone.fg(Colors.red.shade600))),
                   ],
                 ),
                 if (maxTime != null)
                   Text(formatDateTime(maxTime),
-                      style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Colors.grey.shade500)),
+                      style: GoogleFonts.inter(fontSize: isMobile ? 7 : 8, color: Tone.fg(Colors.grey.shade500))),
               ],
             ),
           ),
@@ -7347,10 +7355,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)
+              BoxShadow(color: Tone.bg(Colors.grey).withOpacity(0.1), spreadRadius: 1, blurRadius: 5)
             ],
           ),
           padding: EdgeInsets.all(16),
@@ -7394,6 +7402,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       return Center(child: Text('No device data available'));
     }
 
+    final equipment = availableDevices.where((d) => d.deviceId == selectedDeviceId).firstOrNull;
     final trayWeights = [selectedDevice.tray1wt, selectedDevice.tray2wt, selectedDevice.tray3wt, selectedDevice.tray4wt];
     final trayLabels = ['Tray 1', 'Tray 2', 'Tray 3', 'Tray 4'];
     final totalWeight = trayWeights.whereType<double>().fold(0.0, (a, b) => a + b);
@@ -7403,16 +7412,21 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (equipment != null)
+          OutlinedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => BottleScanHistoryPage(deviceId: equipment.id, deviceName: equipment.name))),
+            icon: const Icon(Icons.history), label: const Text('Bottle scan history')),
+
         Text("Detailed Metrics - Bottle Vetting System",
             style: GoogleFonts.inter(
-                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B))),
+                fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.w600, color: Tone.fg(const Color(0xFF1E293B)))),
         SizedBox(height: 16),
         // Scan status & verification rate
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
+            boxShadow: [BoxShadow(color: Tone.bg(Colors.grey).withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
           ),
           padding: EdgeInsets.all(16),
           child: Column(
@@ -7423,22 +7437,22 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               SizedBox(height: 12),
               isMobile
                   ? Column(children: [
-                      _buildDevice7MetricTile("Last Scan Code", selectedDevice.codeScan ?? '--', FontAwesomeIcons.qrcode, Colors.indigo),
+                      _buildDevice7MetricTile("Last Scan Code", selectedDevice.codeScan ?? '--', FontAwesomeIcons.qrcode, Tone.auto(Colors.indigo)),
                       SizedBox(height: 8),
-                      _buildDevice7MetricTile("Status", scanVerified ? "Verified ✓" : "Unverified ✗", FontAwesomeIcons.shieldHalved, scanVerified ? Colors.green : Colors.red),
+                      _buildDevice7MetricTile("Status", scanVerified ? "Verified ✓" : "Unverified ✗", FontAwesomeIcons.shieldHalved, scanVerified ? Tone.auto(Colors.green) : Tone.auto(Colors.red)),
                       SizedBox(height: 8),
-                      _buildDevice7MetricTile("Verification Rate", "${verificationRate.toStringAsFixed(1)}%", FontAwesomeIcons.percent, Colors.blue),
+                      _buildDevice7MetricTile("Verification Rate", "${verificationRate.toStringAsFixed(1)}%", FontAwesomeIcons.percent, Tone.auto(Colors.blue)),
                       SizedBox(height: 8),
-                      _buildDevice7MetricTile("Fridge Temp", "${selectedDevice.bottleTemp?.toStringAsFixed(1) ?? '--'} °C", FontAwesomeIcons.thermometerHalf, Colors.cyan),
+                      _buildDevice7MetricTile("Fridge Temp", "${selectedDevice.bottleTemp?.toStringAsFixed(1) ?? '--'} °C", FontAwesomeIcons.thermometerHalf, Tone.auto(Colors.cyan)),
                     ])
                   : Row(children: [
-                      Expanded(child: _buildDevice7MetricTile("Last Scan Code", selectedDevice.codeScan ?? '--', FontAwesomeIcons.qrcode, Colors.indigo)),
+                      Expanded(child: _buildDevice7MetricTile("Last Scan Code", selectedDevice.codeScan ?? '--', FontAwesomeIcons.qrcode, Tone.auto(Colors.indigo))),
                       SizedBox(width: 8),
-                      Expanded(child: _buildDevice7MetricTile("Status", scanVerified ? "Verified ✓" : "Unverified ✗", FontAwesomeIcons.shieldHalved, scanVerified ? Colors.green : Colors.red)),
+                      Expanded(child: _buildDevice7MetricTile("Status", scanVerified ? "Verified ✓" : "Unverified ✗", FontAwesomeIcons.shieldHalved, scanVerified ? Tone.auto(Colors.green) : Tone.auto(Colors.red))),
                       SizedBox(width: 8),
-                      Expanded(child: _buildDevice7MetricTile("Verification Rate", "${verificationRate.toStringAsFixed(1)}%", FontAwesomeIcons.percent, Colors.blue)),
+                      Expanded(child: _buildDevice7MetricTile("Verification Rate", "${verificationRate.toStringAsFixed(1)}%", FontAwesomeIcons.percent, Tone.auto(Colors.blue))),
                       SizedBox(width: 8),
-                      Expanded(child: _buildDevice7MetricTile("Fridge Temp", "${selectedDevice.bottleTemp?.toStringAsFixed(1) ?? '--'} °C", FontAwesomeIcons.thermometerHalf, Colors.cyan)),
+                      Expanded(child: _buildDevice7MetricTile("Fridge Temp", "${selectedDevice.bottleTemp?.toStringAsFixed(1) ?? '--'} °C", FontAwesomeIcons.thermometerHalf, Tone.auto(Colors.cyan))),
                     ]),
             ],
           ),
@@ -7447,9 +7461,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         // Tray weights grid
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
+            boxShadow: [BoxShadow(color: Tone.bg(Colors.grey).withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
           ),
           padding: EdgeInsets.all(16),
           child: Column(
@@ -7459,7 +7473,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 Text("Tray Weight Analysis",
                     style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
                 Text("Total: ${totalWeight.toStringAsFixed(1)} kg",
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.indigo)),
+                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, color: Tone.fg(Colors.indigo))),
               ]),
               SizedBox(height: 12),
               _readingGrid(
@@ -7474,25 +7488,25 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   if (isPhoneLayout(context)) {
                     return _phoneReadingCard(title: trayLabels[i],
                       value: weight != null ? "${weight.toStringAsFixed(2)} kg" : '--',
-                      icon: Icons.scale_outlined, color: Colors.indigo);
+                      icon: Icons.scale_outlined, color: Tone.auto(Colors.indigo));
                   }
                   return Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.indigo.withOpacity(0.05),
+                      color: Tone.bg(Colors.indigo).withOpacity(0.05),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.indigo.withOpacity(0.2)),
+                      border: Border.all(color: Tone.bg(Colors.indigo).withOpacity(0.2)),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(FontAwesomeIcons.weightHanging, color: Colors.indigo, size: 24),
+                        Icon(FontAwesomeIcons.weightHanging, color: Tone.fg(Colors.indigo), size: 24),
                         SizedBox(height: 8),
                         Text(trayLabels[i],
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade600)),
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Tone.fg(Colors.grey.shade600))),
                         SizedBox(height: 4),
                         Text(weight != null ? "${weight.toStringAsFixed(2)} kg" : '--',
-                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Tone.fg(Colors.indigo))),
                       ],
                     ),
                   );
@@ -7505,9 +7519,9 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         // Today's scan counts
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
+            boxShadow: [BoxShadow(color: Tone.bg(Colors.grey).withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
           ),
           padding: EdgeInsets.all(16),
           child: Column(
@@ -7518,22 +7532,22 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               SizedBox(height: 12),
               isMobile
                   ? Column(children: [
-                      _buildDevice7MetricTile("Total Scans", "${selectedDevice.totalScansToday ?? 0}", FontAwesomeIcons.barcode, Colors.blueGrey),
+                      _buildDevice7MetricTile("Total Scans", "${selectedDevice.totalScansToday ?? 0}", FontAwesomeIcons.barcode, Tone.auto(Colors.blueGrey)),
                       SizedBox(height: 8),
-                      _buildDevice7MetricTile("Verified", "${selectedDevice.verifiedScansToday ?? 0}", FontAwesomeIcons.circleCheck, Colors.green),
+                      _buildDevice7MetricTile("Verified", "${selectedDevice.verifiedScansToday ?? 0}", FontAwesomeIcons.circleCheck, Tone.auto(Colors.green)),
                       SizedBox(height: 8),
-                      _buildDevice7MetricTile("Failed", "${selectedDevice.failedScansToday ?? 0}", FontAwesomeIcons.circleXmark, Colors.red),
+                      _buildDevice7MetricTile("Failed", "${selectedDevice.failedScansToday ?? 0}", FontAwesomeIcons.circleXmark, Tone.auto(Colors.red)),
                       SizedBox(height: 8),
-                      _buildDevice7MetricTile("Avg Weight", "${selectedDevice.avgTotalWeightToday?.toStringAsFixed(1) ?? '--'} kg", FontAwesomeIcons.scaleBalanced, Colors.orange),
+                      _buildDevice7MetricTile("Avg Weight", "${selectedDevice.avgTotalWeightToday?.toStringAsFixed(1) ?? '--'} kg", FontAwesomeIcons.scaleBalanced, Tone.auto(Colors.orange)),
                     ])
                   : Row(children: [
-                      Expanded(child: _buildDevice7MetricTile("Total Scans", "${selectedDevice.totalScansToday ?? 0}", FontAwesomeIcons.barcode, Colors.blueGrey)),
+                      Expanded(child: _buildDevice7MetricTile("Total Scans", "${selectedDevice.totalScansToday ?? 0}", FontAwesomeIcons.barcode, Tone.auto(Colors.blueGrey))),
                       SizedBox(width: 8),
-                      Expanded(child: _buildDevice7MetricTile("Verified", "${selectedDevice.verifiedScansToday ?? 0}", FontAwesomeIcons.circleCheck, Colors.green)),
+                      Expanded(child: _buildDevice7MetricTile("Verified", "${selectedDevice.verifiedScansToday ?? 0}", FontAwesomeIcons.circleCheck, Tone.auto(Colors.green))),
                       SizedBox(width: 8),
-                      Expanded(child: _buildDevice7MetricTile("Failed", "${selectedDevice.failedScansToday ?? 0}", FontAwesomeIcons.circleXmark, Colors.red)),
+                      Expanded(child: _buildDevice7MetricTile("Failed", "${selectedDevice.failedScansToday ?? 0}", FontAwesomeIcons.circleXmark, Tone.auto(Colors.red))),
                       SizedBox(width: 8),
-                      Expanded(child: _buildDevice7MetricTile("Avg Weight", "${selectedDevice.avgTotalWeightToday?.toStringAsFixed(1) ?? '--'} kg", FontAwesomeIcons.scaleBalanced, Colors.orange)),
+                      Expanded(child: _buildDevice7MetricTile("Avg Weight", "${selectedDevice.avgTotalWeightToday?.toStringAsFixed(1) ?? '--'} kg", FontAwesomeIcons.scaleBalanced, Tone.auto(Colors.orange))),
                     ]),
             ],
           ),
@@ -7561,7 +7575,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600)),
+                Text(title, style: GoogleFonts.inter(fontSize: 11, color: Tone.fg(Colors.grey.shade600))),
                 Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
               ],
             ),
@@ -7579,10 +7593,10 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
@@ -7594,7 +7608,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               children: [
                 Text(title,
                     style: GoogleFonts.inter(
-                        fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+                        fontSize: 12, fontWeight: FontWeight.w500, color: Tone.fg(Colors.grey.shade700))),
                 Text(value,
                     style: GoogleFonts.inter(
                         fontSize: 18, fontWeight: FontWeight.bold, color: color)),
@@ -7608,7 +7622,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   // Helper widget for Device 3 harvest card with last harvest time and count
   Widget _buildDevice3HarvestCard(bool isActive, String? lastHarvestTime, int? harvestCount) {
-    final color = isActive ? Colors.orange : Constants.ctaColorLight;
+    final color = isActive ? Tone.auto(Colors.orange) : Constants.ctaColorLight;
 
     // Format the last harvest time
     String lastHarvestDisplay = '--';
@@ -7634,19 +7648,19 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
     if (isPhoneLayout(context)) {
       return _phoneReadingCard(title: 'Harvest Status', value: isActive ? 'Active' : 'Idle',
-        icon: Iconsax.activity, color: isActive ? Colors.orange : Colors.grey,
+        icon: Iconsax.activity, color: isActive ? Tone.auto(Colors.orange) : Tone.auto(Colors.grey),
         details: ['Last: $lastHarvestDisplay', 'Harvests (24h): ${harvestCount ?? 0}']);
     }
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isActive ? Colors.orange.withOpacity(0.3) : const Color(0xFFF1F5F9),
+          color: isActive ? Tone.bg(Colors.orange).withOpacity(0.3) : Tone.bg(const Color(0xFFF1F5F9)),
           width: isActive ? 2 : 1,
         ),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
@@ -7658,28 +7672,28 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               children: [
                 Text("Harvest Status",
                     style: GoogleFonts.inter(
-                        fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+                        fontSize: 12, fontWeight: FontWeight.w500, color: Tone.fg(Colors.grey.shade700))),
                 Text(isActive ? "Active" : "Idle",
                     style: GoogleFonts.inter(
                         fontSize: 18, fontWeight: FontWeight.bold, color: color)),
                 SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.access_time, size: 12, color: Colors.grey[500]),
+                    Icon(Icons.access_time, size: 12, color: Tone.fg(Colors.grey[500])),
                     SizedBox(width: 4),
                     Text("Last: $lastHarvestDisplay",
                         style: GoogleFonts.inter(
-                            fontSize: 10, color: Colors.grey[600])),
+                            fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                   ],
                 ),
                 SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.repeat, size: 12, color: Colors.grey[500]),
+                    Icon(Icons.repeat, size: 12, color: Tone.fg(Colors.grey[500])),
                     SizedBox(width: 4),
                     Text("Harvests (24h): ${harvestCount ?? 0}",
                         style: GoogleFonts.inter(
-                            fontSize: 10, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                            fontSize: 10, color: Tone.fg(Colors.grey[600]), fontWeight: FontWeight.w500)),
                   ],
                 ),
               ],
@@ -7716,38 +7730,38 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Iconsax.activity, color: Colors.orange, size: 20),
+              Icon(Iconsax.activity, color: Tone.fg(Colors.orange), size: 20),
               SizedBox(width: 8),
               Text("Harvest Times (24h)",
                   style: GoogleFonts.inter(
-                      fontSize: 14, fontWeight: FontWeight.w600, color: Colors.orange.shade800)),
+                      fontSize: 14, fontWeight: FontWeight.w600, color: Tone.fg(Colors.orange.shade800))),
               Spacer(),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.15),
+                  color: Tone.bg(Colors.orange).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text("$harvestCount harvests",
                     style: GoogleFonts.inter(
-                        fontSize: 11, fontWeight: FontWeight.w600, color: Colors.orange.shade700)),
+                        fontSize: 11, fontWeight: FontWeight.w600, color: Tone.fg(Colors.orange.shade700))),
               ),
             ],
           ),
           SizedBox(height: 12),
           if (harvestTimes.isEmpty)
             Text("No harvests in the last 24 hours",
-                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade600))
+                style: GoogleFonts.inter(fontSize: 12, color: Tone.fg(Colors.grey.shade600)))
           else
             Wrap(
               spacing: 8,
@@ -7756,22 +7770,22 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 return Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Tone.bg(Colors.orange).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    border: Border.all(color: Tone.bg(Colors.orange).withOpacity(0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.access_time, size: 12, color: Colors.orange.shade700),
+                      Icon(Icons.access_time, size: 12, color: Tone.fg(Colors.orange.shade700)),
                       SizedBox(width: 4),
                       Text(formatHarvestTime(time),
                           style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w600, color: Colors.orange.shade800)),
+                              fontSize: 12, fontWeight: FontWeight.w600, color: Tone.fg(Colors.orange.shade800))),
                       SizedBox(width: 4),
                       Text(formatHarvestDate(time),
                           style: GoogleFonts.inter(
-                              fontSize: 10, color: Colors.grey.shade600)),
+                              fontSize: 10, color: Tone.fg(Colors.grey.shade600))),
                     ],
                   ),
                 );
@@ -7805,13 +7819,13 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         Text('Cost Estimates · R${rate.toStringAsFixed(2)}/kWh', style: gasBody(context)),
         const SizedBox(height: 10),
         _phoneReadingCard(title: 'Daily', value: dailyCost != null ? 'R${dailyCost.toStringAsFixed(2)}' : '--',
-          icon: Icons.payments_outlined, color: Colors.green),
+          icon: Icons.payments_outlined, color: Tone.auto(Colors.green)),
         const SizedBox(height: 10),
         _phoneReadingCard(title: 'Monthly', value: monthlyCost != null ? 'R${monthlyCost.toStringAsFixed(2)}' : '--',
-          icon: Icons.payments_outlined, color: Colors.green.shade600),
+          icon: Icons.payments_outlined, color: Tone.auto(Colors.green.shade600)),
         const SizedBox(height: 10),
         _phoneReadingCard(title: 'Annual', value: annualCost != null ? 'R${annualCost.toStringAsFixed(2)}' : '--',
-          icon: Icons.payments_outlined, color: Colors.green.shade800),
+          icon: Icons.payments_outlined, color: Tone.auto(Colors.green.shade800)),
         if (costPerHarvest != null) ...[
           const SizedBox(height: 10),
           Text('R${costPerHarvest.toStringAsFixed(2)}/harvest', style: gasBody(context)),
@@ -7826,40 +7840,40 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
+        boxShadow: [BoxShadow(color: Tone.bg(Colors.black).withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(FontAwesomeIcons.moneyBill, color: Colors.green.shade700, size: 18),
+              Icon(FontAwesomeIcons.moneyBill, color: Tone.fg(Colors.green.shade700), size: 18),
               SizedBox(width: 8),
               Text("Cost Estimates",
                   style: GoogleFonts.inter(
-                      fontSize: 14, fontWeight: FontWeight.w600, color: Colors.green.shade800)),
+                      fontSize: 14, fontWeight: FontWeight.w600, color: Tone.fg(Colors.green.shade800))),
               Spacer(),
               Text("R${rate.toStringAsFixed(2)}/kWh",
                   style: GoogleFonts.inter(
-                      fontSize: 11, color: Colors.grey.shade600)),
+                      fontSize: 11, color: Tone.fg(Colors.grey.shade600))),
             ],
           ),
           SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _buildCostItem("Daily", dailyCost, Colors.green)),
+              Expanded(child: _buildCostItem("Daily", dailyCost, Tone.auto(Colors.green))),
               SizedBox(width: 12),
-              Expanded(child: _buildCostItem("Monthly", monthlyCost, Colors.green.shade600)),
+              Expanded(child: _buildCostItem("Monthly", monthlyCost, Tone.auto(Colors.green.shade600))),
               SizedBox(width: 12),
-              Expanded(child: _buildCostItem("Annual", annualCost, Colors.green.shade800)),
+              Expanded(child: _buildCostItem("Annual", annualCost, Tone.auto(Colors.green.shade800))),
             ],
           ),
           if (costPerHarvest != null || energyKwh != null) ...[
             SizedBox(height: 12),
-            Divider(color: Colors.green.withOpacity(0.2)),
+            Divider(color: Tone.bg(Colors.green).withOpacity(0.2)),
             SizedBox(height: 8),
             Row(
               children: [
@@ -7867,12 +7881,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   Expanded(
                     child: Row(
                       children: [
-                        Icon(Iconsax.activity, size: 14, color: Colors.orange),
+                        Icon(Iconsax.activity, size: 14, color: Tone.fg(Colors.orange)),
                         SizedBox(width: 6),
                         Flexible(
                           child: Text("R${costPerHarvest.toStringAsFixed(2)}/harvest",
                               style: GoogleFonts.inter(
-                                  fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+                                  fontSize: 12, fontWeight: FontWeight.w500, color: Tone.fg(Colors.grey.shade700))),
                         ),
                       ],
                     ),
@@ -7881,7 +7895,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   Expanded(
                     child: Row(
                       children: [
-                        Icon(FontAwesomeIcons.chartBar, size: 14, color: Colors.teal),
+                        Icon(FontAwesomeIcons.chartBar, size: 14, color: Tone.fg(Colors.teal)),
                         SizedBox(width: 6),
                         Flexible(
                           child: Column(
@@ -7889,11 +7903,11 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                             children: [
                               Text("${energyKwh.toStringAsFixed(1)} kWh (24h)",
                                   style: GoogleFonts.inter(
-                                      fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade700)),
+                                      fontSize: 12, fontWeight: FontWeight.w500, color: Tone.fg(Colors.grey.shade700))),
                               if (energyCost24h != null)
                                 Text("R${energyCost24h.toStringAsFixed(2)} spent",
                                     style: GoogleFonts.inter(
-                                        fontSize: 11, fontWeight: FontWeight.w600, color: Colors.green.shade700)),
+                                        fontSize: 11, fontWeight: FontWeight.w600, color: Tone.fg(Colors.green.shade700))),
                             ],
                           ),
                         ),
@@ -7915,7 +7929,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       children: [
         Text(label,
             style: GoogleFonts.inter(
-                fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey.shade600)),
+                fontSize: 11, fontWeight: FontWeight.w500, color: Tone.fg(Colors.grey.shade600))),
         SizedBox(height: 4),
         Text(cost != null ? "R${cost.toStringAsFixed(2)}" : "--",
             style: GoogleFonts.inter(
@@ -7926,16 +7940,16 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
 
   // Helper to get water level color
   Color _getWaterLevelColor(double? level) {
-    if (level == null) return Colors.grey;
-    if (level < 20) return Colors.red;
-    if (level > 90) return Colors.orange;
+    if (level == null) return Tone.auto(Colors.grey);
+    if (level < 20) return Tone.auto(Colors.red);
+    if (level > 90) return Tone.auto(Colors.orange);
     return Constants.ctaColorLight;
   }
 
   Future<void> fetchLatestDeviceData({int? generation}) async {
     final requestGeneration = generation ?? _loadGeneration;
     final businessId = _businessId;
-    final response = await http.get(
+    final response = await _offline.get(
       Uri.parse('${Constants.articBaseUrl2}latest-device-data/$businessId/'),
       headers: {'Content-Type': 'application/json'},
     ).timeout(const Duration(seconds: 20));
@@ -8300,7 +8314,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
           '${Constants.articBaseUrl2}dashboard-data/?business_uid=$businessId';
       print("Fetching dashboard data from: $url (selectedDeviceId: $selectedDeviceId)");
 
-      final response = await http.get(
+      final response = await _offline.get(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
       ).timeout(const Duration(seconds: 20));
@@ -8434,7 +8448,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     final requestGeneration = generation ?? _loadGeneration;
     final businessId = _businessId;
     try {
-      final response = await http.get(
+      final response = await _offline.get(
         Uri.parse(
             '${Constants.articBaseUrl2}get_devices_by_client/$business_uid/'),
         headers: {'Content-Type': 'application/json'},
@@ -8537,12 +8551,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isEfficient
-            ? Colors.green.shade50
+            ? Tone.bg(Colors.green.shade50)
             : Constants.ctaColorLight.withOpacity(0.09),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isEfficient
-              ? Colors.green.shade200
+              ? Tone.bg(Colors.green.shade200)
               : Constants.ctaColorLight.withOpacity(0.09),
         ),
       ),
@@ -8550,7 +8564,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         children: [
           Icon(
             isEfficient ? Icons.eco : Icons.warning,
-            color: isEfficient ? Colors.green : Constants.ctaColorLight,
+            color: isEfficient ? Tone.fg(Colors.green) : Constants.ctaColorLight,
             size: 20,
           ),
           SizedBox(width: 8),
@@ -8563,7 +8577,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+                    color: Tone.fg(Colors.grey.shade600),
                   ),
                 ),
                 Text(
@@ -8572,7 +8586,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: isEfficient
-                        ? Colors.green.shade700
+                        ? Tone.fg(Colors.green.shade700)
                         : Constants.ctaColorLight,
                   ),
                 ),
@@ -8587,7 +8601,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               fontSize: 10,
               fontWeight: FontWeight.bold,
               color:
-                  isEfficient ? Colors.green.shade700 : Constants.ctaColorLight,
+                  isEfficient ? Tone.fg(Colors.green.shade700) : Constants.ctaColorLight,
             ),
           ),
         ],
@@ -8607,19 +8621,19 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       decoration: BoxDecoration(
         color: isGoodLoad
             ? Constants.ctaColorLight.withOpacity(0.08)
-            : Colors.red.shade50,
+            : Tone.bg(Colors.red.shade50),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isGoodLoad
               ? Constants.ctaColorLight.withOpacity(0.15)
-              : Colors.red.shade200,
+              : Tone.bg(Colors.red.shade200),
         ),
       ),
       child: Row(
         children: [
           Icon(
             isGoodLoad ? Icons.battery_charging_full : Icons.battery_alert,
-            color: isGoodLoad ? Colors.blue : Colors.red,
+            color: isGoodLoad ? Tone.fg(Colors.blue) : Tone.fg(Colors.red),
             size: 20,
           ),
           SizedBox(width: 8),
@@ -8632,7 +8646,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+                    color: Tone.fg(Colors.grey.shade600),
                   ),
                 ),
                 Text(
@@ -8642,7 +8656,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     fontWeight: FontWeight.bold,
                     color: isGoodLoad
                         ? Constants.ctaColorLight
-                        : Colors.red.shade700,
+                        : Tone.fg(Colors.red.shade700),
                   ),
                 ),
               ],
@@ -8653,7 +8667,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: isGoodLoad ? Constants.ctaColorLight : Colors.red.shade700,
+              color: isGoodLoad ? Constants.ctaColorLight : Tone.fg(Colors.red.shade700),
             ),
           ),
         ],
@@ -8671,17 +8685,17 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isHealthy ? Colors.green.shade50 : Colors.red.shade50,
+        color: isHealthy ? Tone.bg(Colors.green.shade50) : Tone.bg(Colors.red.shade50),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isHealthy ? Colors.green.shade200 : Colors.red.shade200,
+          color: isHealthy ? Tone.bg(Colors.green.shade200) : Tone.bg(Colors.red.shade200),
         ),
       ),
       child: Row(
         children: [
           Icon(
             isHealthy ? Icons.favorite : Icons.healing,
-            color: isHealthy ? Colors.green : Colors.red,
+            color: isHealthy ? Tone.fg(Colors.green) : Tone.fg(Colors.red),
             size: 20,
           ),
           SizedBox(width: 8),
@@ -8694,7 +8708,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+                    color: Tone.fg(Colors.grey.shade600),
                   ),
                 ),
                 Text(
@@ -8703,7 +8717,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color:
-                        isHealthy ? Colors.green.shade700 : Colors.red.shade700,
+                        isHealthy ? Tone.fg(Colors.green.shade700) : Tone.fg(Colors.red.shade700),
                   ),
                 ),
               ],
@@ -8714,7 +8728,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: isHealthy ? Colors.green.shade700 : Colors.red.shade700,
+              color: isHealthy ? Tone.fg(Colors.green.shade700) : Tone.fg(Colors.red.shade700),
             ),
           ),
         ],
@@ -8733,12 +8747,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isGoodRatio
-            ? Colors.green.shade50
+            ? Tone.bg(Colors.green.shade50)
             : Constants.ctaColorLight.withOpacity(0.09),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isGoodRatio
-              ? Colors.green.shade200
+              ? Tone.bg(Colors.green.shade200)
               : Constants.ctaColorLight.withOpacity(0.09),
         ),
       ),
@@ -8746,7 +8760,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         children: [
           Icon(
             isGoodRatio ? Icons.balance : Icons.warning,
-            color: isGoodRatio ? Colors.green : Constants.ctaColorLight,
+            color: isGoodRatio ? Tone.fg(Colors.green) : Constants.ctaColorLight,
             size: 20,
           ),
           SizedBox(width: 8),
@@ -8759,7 +8773,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+                    color: Tone.fg(Colors.grey.shade600),
                   ),
                 ),
                 Text(
@@ -8768,7 +8782,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: isGoodRatio
-                        ? Colors.green.shade700
+                        ? Tone.fg(Colors.green.shade700)
                         : Constants.ctaColorLight,
                   ),
                 ),
@@ -8781,7 +8795,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               fontSize: 10,
               fontWeight: FontWeight.bold,
               color:
-                  isGoodRatio ? Colors.green.shade700 : Constants.ctaColorLight,
+                  isGoodRatio ? Tone.fg(Colors.green.shade700) : Constants.ctaColorLight,
             ),
           ),
         ],
@@ -8803,19 +8817,19 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       decoration: BoxDecoration(
         color: isStable
             ? Constants.ctaColorLight.withOpacity(0.08)
-            : Colors.red.shade50,
+            : Tone.bg(Colors.red.shade50),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isStable
               ? Constants.ctaColorLight.withOpacity(0.15)
-              : Colors.red.shade200,
+              : Tone.bg(Colors.red.shade200),
         ),
       ),
       child: Row(
         children: [
           Icon(
             isStable ? Icons.trending_flat : Icons.trending_up,
-            color: isStable ? Colors.blue : Colors.red,
+            color: isStable ? Tone.fg(Colors.blue) : Tone.fg(Colors.red),
             size: 20,
           ),
           SizedBox(width: 8),
@@ -8827,7 +8841,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isStable ? Constants.ctaColorLight : Colors.red.shade700,
+                color: isStable ? Constants.ctaColorLight : Tone.fg(Colors.red.shade700),
               ),
             ),
           ),
@@ -8850,12 +8864,12 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isGoodSpread
-            ? Colors.green.shade50
+            ? Tone.bg(Colors.green.shade50)
             : Constants.ctaColorLight.withOpacity(0.08),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isGoodSpread
-              ? Colors.green.shade200
+              ? Tone.bg(Colors.green.shade200)
               : Constants.ctaColorLight.withOpacity(0.08),
         ),
       ),
@@ -8863,7 +8877,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
         children: [
           Icon(
             isGoodSpread ? Icons.check_circle : Icons.warning,
-            color: isGoodSpread ? Colors.green : Constants.ctaColorLight,
+            color: isGoodSpread ? Tone.fg(Colors.green) : Constants.ctaColorLight,
             size: 20,
           ),
           SizedBox(width: 8),
@@ -8876,7 +8890,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+                    color: Tone.fg(Colors.grey.shade600),
                   ),
                 ),
                 Text(
@@ -8885,7 +8899,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: isGoodSpread
-                        ? Colors.green.shade700
+                        ? Tone.fg(Colors.green.shade700)
                         : Constants.ctaColorLight,
                   ),
                 ),
@@ -8898,7 +8912,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
               fontSize: 10,
               fontWeight: FontWeight.bold,
               color: isGoodSpread
-                  ? Colors.green.shade700
+                  ? Tone.fg(Colors.green.shade700)
                   : Constants.ctaColorLight,
             ),
           ),
@@ -8927,19 +8941,19 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       decoration: BoxDecoration(
         color: isStable
             ? Constants.ctaColorLight.withOpacity(0.08)
-            : Colors.red.shade50,
+            : Tone.bg(Colors.red.shade50),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isStable
               ? Constants.ctaColorLight.withOpacity(0.15)
-              : Colors.red.shade200,
+              : Tone.bg(Colors.red.shade200),
         ),
       ),
       child: Row(
         children: [
           Icon(
             isStable ? Icons.trending_flat : Icons.trending_up,
-            color: isStable ? Colors.blue : Colors.red,
+            color: isStable ? Tone.fg(Colors.blue) : Tone.fg(Colors.red),
             size: 20,
           ),
           SizedBox(width: 8),
@@ -8952,7 +8966,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+                    color: Tone.fg(Colors.grey.shade600),
                   ),
                 ),
                 Text(
@@ -8962,7 +8976,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                     fontWeight: FontWeight.bold,
                     color: isStable
                         ? Constants.ctaColorLight
-                        : Colors.red.shade700,
+                        : Tone.fg(Colors.red.shade700),
                   ),
                 ),
               ],
@@ -8973,7 +8987,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: isStable ? Constants.ctaColorLight : Colors.red.shade700,
+              color: isStable ? Constants.ctaColorLight : Tone.fg(Colors.red.shade700),
             ),
           ),
         ],
@@ -8996,17 +9010,17 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       height: 65,
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: tempAlerts > 0 ? Colors.red.shade50 : Colors.green.shade50,
+        color: tempAlerts > 0 ? Tone.bg(Colors.red.shade50) : Tone.bg(Colors.green.shade50),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: tempAlerts > 0 ? Colors.red.shade200 : Colors.green.shade200,
+          color: tempAlerts > 0 ? Tone.bg(Colors.red.shade200) : Tone.bg(Colors.green.shade200),
         ),
       ),
       child: Row(
         children: [
           Icon(
             tempAlerts > 0 ? Icons.error : Icons.check_circle,
-            color: tempAlerts > 0 ? Colors.red : Colors.green,
+            color: tempAlerts > 0 ? Tone.fg(Colors.red) : Tone.fg(Colors.green),
             size: 20,
           ),
           SizedBox(width: 8),
@@ -9019,8 +9033,8 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: tempAlerts > 0
-                    ? Colors.red.shade700
-                    : Colors.green.shade700,
+                    ? Tone.fg(Colors.red.shade700)
+                    : Tone.fg(Colors.green.shade700),
               ),
             ),
           ),
@@ -9034,16 +9048,16 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
       margin: EdgeInsets.all(16),
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Tone.bg(Colors.grey.shade50),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: Tone.bg(Colors.grey.shade200)),
       ),
       child: Column(
         children: [
           Icon(
             Icons.analytics_outlined,
             size: 40,
-            color: Colors.grey.shade400,
+            color: Tone.fg(Colors.grey.shade400),
           ),
           SizedBox(height: 12),
           Text(
@@ -9051,7 +9065,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+              color: Tone.fg(Colors.grey.shade600),
             ),
           ),
           SizedBox(height: 6),
@@ -9059,7 +9073,7 @@ class _ArticDashboardTabState extends State<ArticDashboardTab>
             'Insufficient data for analysis',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: Colors.grey.shade500,
+              color: Tone.fg(Colors.grey.shade500),
             ),
           ),
         ],

@@ -1,5 +1,7 @@
+import '../widgets/app_tone.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
@@ -229,7 +231,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                   child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Workspace',
+                  Text('Workspace',
                       style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 10,
@@ -243,7 +245,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                           : Constants.business_name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
@@ -254,10 +256,10 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                   tooltip: 'Close navigation',
                   onPressed: () => Navigator.of(context).pop(),
                   icon:
-                      const Icon(Iconsax.close_circle, color: GasPalette.ink2)),
+                      Icon(Iconsax.close_circle, color: GasPalette.ink2)),
             ]),
           ),
-          const Divider(height: 1, color: GasPalette.border),
+          Divider(height: 1, color: GasPalette.border),
           Expanded(
               child: ListView.separated(
             padding: const EdgeInsets.all(16),
@@ -293,7 +295,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
               );
             },
           )),
-          const Divider(height: 1, color: GasPalette.border),
+          Divider(height: 1, color: GasPalette.border),
           Padding(
               padding: const EdgeInsets.all(16),
               child: OutlinedButton.icon(
@@ -311,7 +313,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
     return Container(
       padding: EdgeInsets.all(_isSidebarExpanded ? 16 : 8),
       color:
-          isMobileDrawer ? Colors.white : Colors.grey.withValues(alpha: 0.25),
+          isMobileDrawer ? Tone.bg(Colors.white) : Tone.bg(Colors.grey).withValues(alpha: 0.25),
       child: SingleChildScrollView(
         child: Column(
           children: [
@@ -329,7 +331,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                         style: GoogleFonts.inter(
                           textStyle: TextStyle(
                             fontSize: 16,
-                            color: Colors.black87,
+                            color: Tone.fg(Colors.black87),
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
                           ),
@@ -338,7 +340,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                     if (!_isSidebarExpanded)
                       Icon(
                         CupertinoIcons.home,
-                        color: Colors.black54,
+                        color: Tone.fg(Colors.black54),
                         size: 20,
                       ),
                     IconButton(
@@ -347,7 +349,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                         _isSidebarExpanded
                             ? CupertinoIcons.chevron_left
                             : CupertinoIcons.chevron_right,
-                        color: Colors.black54,
+                        color: Tone.fg(Colors.black54),
                         size: 20,
                       ),
                       padding: EdgeInsets.all(8),
@@ -369,7 +371,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                   style: GoogleFonts.inter(
                     textStyle: TextStyle(
                       fontSize: 20,
-                      color: Colors.black87,
+                      color: Tone.fg(Colors.black87),
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),
@@ -403,8 +405,8 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                           color: sideColorIndex == index
                               ? Constants.ctaColorLight
                               : (isMobileDrawer
-                                  ? Colors.grey.withValues(alpha: 0.1)
-                                  : Colors.white60),
+                                  ? Tone.auto(Colors.grey).withValues(alpha: 0.1)
+                                  : Tone.auto(Colors.white60)),
                         ),
                         child: (isMobileDrawer || _isSidebarExpanded)
                             ? Row(
@@ -415,8 +417,8 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                                     sideBarList[index].itemIcon,
                                     size: 20,
                                     color: sideColorIndex == index
-                                        ? Colors.white
-                                        : Colors.black,
+                                        ? Tone.fg(Colors.white)
+                                        : Tone.fg(Colors.black),
                                   ),
                                   SizedBox(width: 12),
                                   Expanded(
@@ -426,8 +428,8 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                                         textStyle: TextStyle(
                                             fontSize: 12,
                                             color: sideColorIndex == index
-                                                ? Colors.white
-                                                : Colors.black54,
+                                                ? Tone.fg(Colors.white)
+                                                : Tone.fg(Colors.black54),
                                             letterSpacing: 0,
                                             fontWeight: FontWeight.w500),
                                       ),
@@ -441,8 +443,8 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                                   sideBarList[index].itemIcon,
                                   size: 20,
                                   color: sideColorIndex == index
-                                      ? Colors.white
-                                      : Colors.black,
+                                      ? Tone.fg(Colors.white)
+                                      : Tone.fg(Colors.black),
                                 ),
                               ),
                       ),
@@ -479,14 +481,14 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                           style: GoogleFonts.inter(
                             textStyle: TextStyle(
                                 fontSize: 13,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                                 letterSpacing: 0,
                                 fontWeight: FontWeight.normal),
                           ),
                         )
                       : Icon(
                           CupertinoIcons.square_arrow_right,
-                          color: Colors.white,
+                          color: Tone.fg(Colors.white),
                           size: 20,
                         ),
                 ),
@@ -510,8 +512,8 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
       key: const ValueKey('mobile-navigation-surface'),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           border: Border.fromBorderSide(BorderSide(color: GasPalette.border)),
         ),
@@ -549,7 +551,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                                 height: 28,
                                 decoration: BoxDecoration(
                                   color: selected
-                                      ? const Color(0xFFE9EDF4)
+                                      ? Tone.bg(const Color(0xFFE9EDF4))
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(32),
                                 ),
@@ -583,9 +585,9 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: isMobile ? GasPalette.page : Colors.white,
+      backgroundColor: isMobile ? GasPalette.page : Tone.bg(Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Tone.bg(Colors.white),
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -594,7 +596,15 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
         leading: isMobile
             ? IconButton(
                 tooltip: 'Open navigation',
-                icon: const Icon(Iconsax.more, color: GasPalette.ink),
+                icon: SvgPicture.asset(
+                  'lib/assets/icons/menu-alt-1.svg',
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    GasPalette.ink,
+                    BlendMode.srcIn,
+                  ),
+                ),
                 onPressed: () {
                   _scaffoldKey.currentState?.openDrawer();
                 },
@@ -623,14 +633,14 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: isMobile
-                  ? const TextStyle(
+                  ? TextStyle(
                       fontFamily: 'Lato',
                       fontSize: 18,
                       color: GasPalette.ink,
                       fontWeight: FontWeight.w300)
                   : GoogleFonts.inter(
                       fontSize: 20,
-                      color: Colors.black87,
+                      color: Tone.fg(Colors.black87),
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.5),
             )),
@@ -646,12 +656,12 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 color: isMobile
                     ? Colors.transparent
-                    : Colors.grey.withValues(alpha: 0.1),
+                    : Tone.bg(Colors.grey).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(32),
               ),
               child: Icon(
                 CupertinoIcons.bell,
-                color: Colors.black54,
+                color: Tone.fg(Colors.black54),
                 size: 20,
               ),
             ),
@@ -664,7 +674,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               color: isMobile
                   ? Colors.transparent
-                  : Colors.grey.withValues(alpha: 0.1),
+                  : Tone.bg(Colors.grey).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
             ),
             child: isMobile
@@ -683,7 +693,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                           style: GoogleFonts.inter(
                             textStyle: TextStyle(
                               fontSize: 12,
-                              color: Colors.white,
+                              color: Tone.fg(Colors.white),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -704,7 +714,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                           style: GoogleFonts.inter(
                             textStyle: TextStyle(
                               fontSize: 12,
-                              color: Colors.white,
+                              color: Tone.fg(Colors.white),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -720,7 +730,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                             style: GoogleFonts.inter(
                               textStyle: TextStyle(
                                 fontSize: 13,
-                                color: Colors.black87,
+                                color: Tone.fg(Colors.black87),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -732,7 +742,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                             style: GoogleFonts.inter(
                               textStyle: TextStyle(
                                 fontSize: 11,
-                                color: Colors.black54,
+                                color: Tone.fg(Colors.black54),
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -744,7 +754,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                       SizedBox(width: 4),
                       Icon(
                         CupertinoIcons.chevron_down,
-                        color: Colors.black54,
+                        color: Tone.fg(Colors.black54),
                         size: 16,
                       ),
                     ],
@@ -761,7 +771,7 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
       ),
       drawer: isMobile
           ? Drawer(
-              backgroundColor: Colors.white,
+              backgroundColor: Tone.bg(Colors.white),
               surfaceTintColor: Colors.transparent,
               width: MediaQuery.sizeOf(context).width.clamp(0, 360) * 0.9,
               child: _buildMobileDrawer(),

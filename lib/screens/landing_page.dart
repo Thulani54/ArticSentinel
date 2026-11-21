@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_forms.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -59,7 +60,7 @@ class _LandingPageState extends State<LandingPage> {
     final isMobile = screenWidth < 768;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Tone.bg(Colors.white),
       body: Column(
         children: [
           _buildHeader(context, isMobile),
@@ -102,10 +103,10 @@ class _LandingPageState extends State<LandingPage> {
         vertical: 12,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Tone.bg(Colors.black).withValues(alpha: 0.06),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -161,7 +162,7 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                   child: Text(
                     'Login',
-                    style: GoogleFonts.lato(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                    style: GoogleFonts.lato(color: Tone.fg(Colors.white), fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -198,7 +199,7 @@ class _LandingPageState extends State<LandingPage> {
   Widget _buildMobileMenu(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,7 +221,7 @@ class _LandingPageState extends State<LandingPage> {
                     backgroundColor: Constants.ctaColorLight,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
                   ),
-                  child: Text('Login', style: GoogleFonts.lato(color: Colors.white, fontWeight: FontWeight.w500)),
+                  child: Text('Login', style: GoogleFonts.lato(color: Tone.fg(Colors.white), fontWeight: FontWeight.w500)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -281,11 +282,11 @@ class _LandingPageState extends State<LandingPage> {
         horizontal: isMobile ? 24 : 80,
         vertical: isMobile ? 56 : 100,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF222b45), Color(0xFF1a2540), Color(0xFF0f172a)],
+          colors: [Tone.auto(Color(0xFF222b45)), Tone.auto(Color(0xFF1a2540)), Tone.auto(Color(0xFF0f172a))],
         ),
       ),
       child: Column(
@@ -293,13 +294,13 @@ class _LandingPageState extends State<LandingPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: Tone.bg(Colors.white).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              border: Border.all(color: Tone.bg(Colors.white).withValues(alpha: 0.2)),
             ),
             child: Text(
               "IoT Monitoring Platform for Africa",
-              style: GoogleFonts.lato(fontSize: 13, color: Colors.white.withValues(alpha: 0.9)),
+              style: GoogleFonts.lato(fontSize: 13, color: Tone.fg(Colors.white).withValues(alpha: 0.9)),
             ),
           ),
           const SizedBox(height: 28),
@@ -310,7 +311,7 @@ class _LandingPageState extends State<LandingPage> {
             textAlign: TextAlign.center,
             style: GoogleFonts.lato(
               fontSize: isMobile ? 28 : 48,
-              color: Colors.white,
+              color: Tone.fg(Colors.white),
               fontWeight: FontWeight.w800,
               height: 1.15,
             ),
@@ -324,7 +325,7 @@ class _LandingPageState extends State<LandingPage> {
               textAlign: TextAlign.center,
               style: GoogleFonts.lato(
                 fontSize: isMobile ? 15 : 18,
-                color: Colors.white.withValues(alpha: 0.85),
+                color: Tone.fg(Colors.white).withValues(alpha: 0.85),
                 height: 1.6,
               ),
             ),
@@ -343,7 +344,7 @@ class _LandingPageState extends State<LandingPage> {
           Text(
             "No credit card required  •  Free 14-day trial  •  Cancel anytime",
             textAlign: TextAlign.center,
-            style: GoogleFonts.lato(fontSize: 12, color: Colors.white.withValues(alpha: 0.6)),
+            style: GoogleFonts.lato(fontSize: 12, color: Tone.fg(Colors.white).withValues(alpha: 0.6)),
           ),
         ],
       ),
@@ -357,14 +358,14 @@ class _LandingPageState extends State<LandingPage> {
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(32),
-          side: filled ? BorderSide.none : const BorderSide(color: Colors.white, width: 1.5),
+          side: filled ? BorderSide.none : BorderSide(color: Tone.bg(Colors.white), width: 1.5),
         ),
         backgroundColor: filled ? Constants.ctaColorGreen : Colors.transparent,
       ),
       child: Text(
         label,
         style: GoogleFonts.lato(
-          color: Colors.white,
+          color: Tone.fg(Colors.white),
           fontSize: 15,
           fontWeight: FontWeight.w600,
         ),
@@ -378,7 +379,7 @@ class _LandingPageState extends State<LandingPage> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: 28),
-      color: const Color(0xFFF8FAFC),
+      color: Tone.bg(const Color(0xFFF8FAFC)),
       child: Column(
         children: [
           Text(
@@ -427,7 +428,7 @@ class _LandingPageState extends State<LandingPage> {
       key: _aboutKey,
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 48 : 72),
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       child: Column(
         children: [
           _sectionLabel("ABOUT US"),
@@ -497,7 +498,7 @@ class _LandingPageState extends State<LandingPage> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: Tone.bg(const Color(0xFFF8FAFC)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -548,13 +549,13 @@ class _LandingPageState extends State<LandingPage> {
               children: [
                 Text(
                   stat['value']!,
-                  style: GoogleFonts.lato(fontSize: isMobile ? 26 : 34, color: Colors.white, fontWeight: FontWeight.w800),
+                  style: GoogleFonts.lato(fontSize: isMobile ? 26 : 34, color: Tone.fg(Colors.white), fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   stat['label']!,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.lato(fontSize: isMobile ? 12 : 14, color: Colors.white.withValues(alpha: 0.75)),
+                  style: GoogleFonts.lato(fontSize: isMobile ? 12 : 14, color: Tone.fg(Colors.white).withValues(alpha: 0.75)),
                 ),
               ],
             ),
@@ -586,7 +587,7 @@ class _LandingPageState extends State<LandingPage> {
       key: _featuresKey,
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 48 : 72),
-      color: const Color(0xFFF9FAFB),
+      color: Tone.bg(const Color(0xFFF9FAFB)),
       child: Column(
         children: [
           _sectionLabel("FEATURES"),
@@ -620,10 +621,10 @@ class _LandingPageState extends State<LandingPage> {
       child: Container(
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(color: Tone.bg(Colors.black).withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -663,7 +664,7 @@ class _LandingPageState extends State<LandingPage> {
       key: _industriesKey,
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 48 : 72),
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       child: Column(
         children: [
           _sectionLabel("INDUSTRIES"),
@@ -691,7 +692,7 @@ class _LandingPageState extends State<LandingPage> {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+                    border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.15)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -740,7 +741,7 @@ class _LandingPageState extends State<LandingPage> {
       key: _howItWorksKey,
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 48 : 72),
-      color: const Color(0xFFF9FAFB),
+      color: Tone.bg(const Color(0xFFF9FAFB)),
       child: Column(
         children: [
           _sectionLabel("HOW IT WORKS"),
@@ -765,7 +766,7 @@ class _LandingPageState extends State<LandingPage> {
                       height: 56,
                       decoration: BoxDecoration(color: Constants.ctaColorGreen, shape: BoxShape.circle),
                       alignment: Alignment.center,
-                      child: Text(step['step']!, style: GoogleFonts.lato(fontSize: 22, color: Colors.white, fontWeight: FontWeight.w700)),
+                      child: Text(step['step']!, style: GoogleFonts.lato(fontSize: 22, color: Tone.fg(Colors.white), fontWeight: FontWeight.w700)),
                     ),
                     const SizedBox(height: 16),
                     Text(step['title']!, textAlign: TextAlign.center, style: GoogleFonts.lato(fontSize: 17, color: Constants.ctaColorLight, fontWeight: FontWeight.w600)),
@@ -796,7 +797,7 @@ class _LandingPageState extends State<LandingPage> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 48 : 72),
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       child: Column(
         children: [
           _sectionLabel("WHY ARTIC SENTINEL"),
@@ -849,7 +850,7 @@ class _LandingPageState extends State<LandingPage> {
       key: _pricingKey,
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 48 : 72),
-      color: const Color(0xFFF9FAFB),
+      color: Tone.bg(const Color(0xFFF9FAFB)),
       child: Column(
         children: [
           _sectionLabel("PRICING"),
@@ -923,12 +924,12 @@ class _LandingPageState extends State<LandingPage> {
       child: Container(
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: highlighted ? Constants.ctaColorLight : Colors.white,
+          color: highlighted ? Constants.ctaColorLight : Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(16),
-          border: highlighted ? null : Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+          border: highlighted ? null : Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.2)),
           boxShadow: highlighted
               ? [BoxShadow(color: Constants.ctaColorLight.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))]
-              : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+              : [BoxShadow(color: Tone.bg(Colors.black).withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
         ),
         child: Column(
           children: [
@@ -937,19 +938,19 @@ class _LandingPageState extends State<LandingPage> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(color: Constants.ctaColorGreen, borderRadius: BorderRadius.circular(12)),
-                child: Text("Most Popular", style: GoogleFonts.lato(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600)),
+                child: Text("Most Popular", style: GoogleFonts.lato(fontSize: 11, color: Tone.fg(Colors.white), fontWeight: FontWeight.w600)),
               ),
-            Text(title, style: GoogleFonts.lato(fontSize: 18, color: highlighted ? Colors.white : Constants.ctaColorLight, fontWeight: FontWeight.w600)),
+            Text(title, style: GoogleFonts.lato(fontSize: 18, color: highlighted ? Tone.fg(Colors.white) : Constants.ctaColorLight, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(price, style: GoogleFonts.lato(fontSize: 36, color: highlighted ? Colors.white : Constants.ctaColorLight, fontWeight: FontWeight.w800)),
+                Text(price, style: GoogleFonts.lato(fontSize: 36, color: highlighted ? Tone.fg(Colors.white) : Constants.ctaColorLight, fontWeight: FontWeight.w800)),
                 const SizedBox(width: 4),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(period, style: GoogleFonts.lato(fontSize: 14, color: highlighted ? Colors.white.withValues(alpha: 0.7) : Constants.ctaTextColor)),
+                  child: Text(period, style: GoogleFonts.lato(fontSize: 14, color: highlighted ? Tone.fg(Colors.white).withValues(alpha: 0.7) : Constants.ctaTextColor)),
                 ),
               ],
             ),
@@ -960,7 +961,7 @@ class _LandingPageState extends State<LandingPage> {
                 children: [
                   Icon(Icons.check_circle, size: 18, color: highlighted ? Constants.ctaColorGreen : Constants.ctaColorGreen),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(f, style: GoogleFonts.lato(fontSize: 13, color: highlighted ? Colors.white.withValues(alpha: 0.9) : Constants.ctaTextColor))),
+                  Expanded(child: Text(f, style: GoogleFonts.lato(fontSize: 13, color: highlighted ? Tone.fg(Colors.white).withValues(alpha: 0.9) : Constants.ctaTextColor))),
                 ],
               ),
             )),
@@ -971,10 +972,10 @@ class _LandingPageState extends State<LandingPage> {
                 onPressed: onPressed,
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  backgroundColor: highlighted ? Colors.white : Constants.ctaColorLight,
+                  backgroundColor: highlighted ? Tone.bg(Colors.white) : Constants.ctaColorLight,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
                 ),
-                child: Text(ctaLabel, style: GoogleFonts.lato(color: highlighted ? Constants.ctaColorLight : Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+                child: Text(ctaLabel, style: GoogleFonts.lato(color: highlighted ? Constants.ctaColorLight : Tone.fg(Colors.white), fontWeight: FontWeight.w600, fontSize: 14)),
               ),
             ),
           ],
@@ -996,7 +997,7 @@ class _LandingPageState extends State<LandingPage> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 48 : 72),
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       child: Column(
         children: [
           _sectionLabel("TESTIMONIALS"),
@@ -1017,14 +1018,14 @@ class _LandingPageState extends State<LandingPage> {
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: Tone.bg(const Color(0xFFF8FAFC)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        children: List.generate(5, (i) => const Icon(Icons.star, color: Color(0xFFFBBF24), size: 16)),
+                        children: List.generate(5, (i) => Icon(Icons.star, color: Tone.fg(Color(0xFFFBBF24)), size: 16)),
                       ),
                       const SizedBox(height: 14),
                       Text('"${t['quote']!}"', style: GoogleFonts.lato(fontSize: 14, color: Constants.ctaTextColor, height: 1.6, fontStyle: FontStyle.italic)),
@@ -1061,7 +1062,7 @@ class _LandingPageState extends State<LandingPage> {
       key: _faqKey,
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 48 : 72),
-      color: const Color(0xFFF9FAFB),
+      color: Tone.bg(const Color(0xFFF9FAFB)),
       child: Column(
         children: [
           _sectionLabel("FAQ"),
@@ -1093,9 +1094,9 @@ class _LandingPageState extends State<LandingPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.12)),
+        border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.12)),
       ),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
@@ -1117,7 +1118,7 @@ class _LandingPageState extends State<LandingPage> {
       key: _contactKey,
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 48 : 72),
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       child: Column(
         children: [
           _sectionLabel("CONTACT"),
@@ -1152,7 +1153,7 @@ class _LandingPageState extends State<LandingPage> {
             child: Container(
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: Tone.bg(const Color(0xFFF8FAFC)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -1184,7 +1185,7 @@ class _LandingPageState extends State<LandingPage> {
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text("Thank you! We'll get back to you within 24 hours.", style: GoogleFonts.lato(color: Colors.white)),
+                            content: Text("Thank you! We'll get back to you within 24 hours.", style: GoogleFonts.lato(color: Tone.fg(Colors.white))),
                             backgroundColor: Constants.ctaColorGreen,
                           ),
                         );
@@ -1198,7 +1199,7 @@ class _LandingPageState extends State<LandingPage> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
                         backgroundColor: Constants.ctaColorLight,
                       ),
-                      child: Text('Send Message', style: GoogleFonts.lato(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+                      child: Text('Send Message', style: GoogleFonts.lato(color: Tone.fg(Colors.white), fontSize: 15, fontWeight: FontWeight.w500)),
                     ),
                   ),
                 ],
@@ -1243,9 +1244,9 @@ class _LandingPageState extends State<LandingPage> {
         hintStyle: GoogleFonts.lato(color: Constants.ctaTextColor.withValues(alpha: 0.6), fontSize: 14),
         prefixIcon: icon != null ? Icon(icon, size: 20, color: Constants.ctaTextColor.withValues(alpha: 0.5)) : null,
         filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
+        fillColor: Tone.bg(Colors.white),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Constants.ctaColorLight)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       )),
@@ -1258,7 +1259,7 @@ class _LandingPageState extends State<LandingPage> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 40 : 56),
-      color: const Color(0xFFF9FAFB),
+      color: Tone.bg(const Color(0xFFF9FAFB)),
       child: Column(
         children: [
           Text(
@@ -1284,9 +1285,9 @@ class _LandingPageState extends State<LandingPage> {
                       hintText: "Enter your email",
                       hintStyle: GoogleFonts.lato(color: Constants.ctaTextColor.withValues(alpha: 0.5), fontSize: 14),
                       filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(32), borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(32), borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
+                      fillColor: Tone.bg(Colors.white),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(32), borderSide: BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(32), borderSide: BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(32), borderSide: BorderSide(color: Constants.ctaColorLight)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                     )),
@@ -1296,7 +1297,7 @@ class _LandingPageState extends State<LandingPage> {
                 TextButton(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Subscribed successfully!", style: GoogleFonts.lato(color: Colors.white)), backgroundColor: Constants.ctaColorGreen),
+                      SnackBar(content: Text("Subscribed successfully!", style: GoogleFonts.lato(color: Tone.fg(Colors.white))), backgroundColor: Constants.ctaColorGreen),
                     );
                     _newsletterController.clear();
                   },
@@ -1305,7 +1306,7 @@ class _LandingPageState extends State<LandingPage> {
                     backgroundColor: Constants.ctaColorGreen,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
                   ),
-                  child: Text("Subscribe", style: GoogleFonts.lato(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 14)),
+                  child: Text("Subscribe", style: GoogleFonts.lato(color: Tone.fg(Colors.white), fontWeight: FontWeight.w500, fontSize: 14)),
                 ),
               ],
             ),
@@ -1327,11 +1328,11 @@ class _LandingPageState extends State<LandingPage> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: isMobile ? 48 : 64),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [Color(0xFF10B981), Color(0xFF059669)],
+          colors: [Tone.auto(Color(0xFF10B981)), Tone.auto(Color(0xFF059669))],
         ),
       ),
       child: Column(
@@ -1339,7 +1340,7 @@ class _LandingPageState extends State<LandingPage> {
           Text(
             "Ready to protect what matters most?",
             textAlign: TextAlign.center,
-            style: GoogleFonts.lato(fontSize: isMobile ? 22 : 32, color: Colors.white, fontWeight: FontWeight.w700),
+            style: GoogleFonts.lato(fontSize: isMobile ? 22 : 32, color: Tone.fg(Colors.white), fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           ConstrainedBox(
@@ -1348,7 +1349,7 @@ class _LandingPageState extends State<LandingPage> {
               "Join leading businesses across South Africa who trust Artic Sentinel "
               "to monitor their critical operations around the clock.",
               textAlign: TextAlign.center,
-              style: GoogleFonts.lato(fontSize: isMobile ? 14 : 17, color: Colors.white.withValues(alpha: 0.9), height: 1.5),
+              style: GoogleFonts.lato(fontSize: isMobile ? 14 : 17, color: Tone.fg(Colors.white).withValues(alpha: 0.9), height: 1.5),
             ),
           ),
           const SizedBox(height: 28),
@@ -1361,7 +1362,7 @@ class _LandingPageState extends State<LandingPage> {
                 onPressed: () => context.go('/signup'),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  backgroundColor: Colors.white,
+                  backgroundColor: Tone.bg(Colors.white),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
                 ),
                 child: Text('Start Free Trial', style: GoogleFonts.lato(color: Constants.ctaColorGreen, fontSize: 15, fontWeight: FontWeight.w600)),
@@ -1370,9 +1371,9 @@ class _LandingPageState extends State<LandingPage> {
                 onPressed: () => _scrollToSection(_contactKey),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32), side: const BorderSide(color: Colors.white, width: 1.5)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32), side: BorderSide(color: Tone.bg(Colors.white), width: 1.5)),
                 ),
-                child: Text('Request Demo', style: GoogleFonts.lato(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+                child: Text('Request Demo', style: GoogleFonts.lato(color: Tone.fg(Colors.white), fontSize: 15, fontWeight: FontWeight.w500)),
               ),
             ],
           ),
@@ -1387,7 +1388,7 @@ class _LandingPageState extends State<LandingPage> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 80, vertical: 48),
-      color: const Color(0xFF0f172a),
+      color: Tone.bg(const Color(0xFF0f172a)),
       child: Column(
         children: [
           Wrap(
@@ -1407,14 +1408,14 @@ class _LandingPageState extends State<LandingPage> {
                       children: [
                         Image.asset("lib/assets/artic_logo.png", height: 28, width: 28),
                         const SizedBox(width: 8),
-                        Text("Artic Sentinel", style: GoogleFonts.lato(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w600)),
+                        Text("Artic Sentinel", style: GoogleFonts.lato(fontSize: 18, color: Tone.fg(Colors.white), fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Text(
                       "Smart monitoring and control for modern agriculture, cold chain, and IoT operations across Africa.",
                       textAlign: isMobile ? TextAlign.center : TextAlign.left,
-                      style: GoogleFonts.lato(fontSize: 13, color: Colors.white.withValues(alpha: 0.6), height: 1.5),
+                      style: GoogleFonts.lato(fontSize: 13, color: Tone.fg(Colors.white).withValues(alpha: 0.6), height: 1.5),
                     ),
                     const SizedBox(height: 16),
                     // Social icons placeholder
@@ -1462,7 +1463,7 @@ class _LandingPageState extends State<LandingPage> {
             ],
           ),
           const SizedBox(height: 40),
-          Divider(color: Colors.white.withValues(alpha: 0.1)),
+          Divider(color: Tone.bg(Colors.white).withValues(alpha: 0.1)),
           const SizedBox(height: 20),
           Wrap(
             alignment: WrapAlignment.center,
@@ -1471,11 +1472,11 @@ class _LandingPageState extends State<LandingPage> {
             children: [
               Text(
                 '\u00a9 ${DateTime.now().year} Artic Sentinel (Pty) Ltd. All rights reserved.',
-                style: GoogleFonts.lato(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)),
+                style: GoogleFonts.lato(fontSize: 12, color: Tone.fg(Colors.white).withValues(alpha: 0.5)),
               ),
               Text(
                 'Made with \u2764 in South Africa',
-                style: GoogleFonts.lato(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)),
+                style: GoogleFonts.lato(fontSize: 12, color: Tone.fg(Colors.white).withValues(alpha: 0.5)),
               ),
             ],
           ),
@@ -1488,10 +1489,10 @@ class _LandingPageState extends State<LandingPage> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: Tone.bg(Colors.white).withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, color: Colors.white.withValues(alpha: 0.7), size: 18),
+      child: Icon(icon, color: Tone.fg(Colors.white).withValues(alpha: 0.7), size: 18),
     );
   }
 
@@ -1501,13 +1502,13 @@ class _LandingPageState extends State<LandingPage> {
       child: Column(
         crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.lato(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w600)),
+          Text(title, style: GoogleFonts.lato(fontSize: 14, color: Tone.fg(Colors.white), fontWeight: FontWeight.w600)),
           const SizedBox(height: 14),
           ...links.map((link) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: InkWell(
               onTap: link.onTap,
-              child: Text(link.label, style: GoogleFonts.lato(fontSize: 13, color: Colors.white.withValues(alpha: 0.6))),
+              child: Text(link.label, style: GoogleFonts.lato(fontSize: 13, color: Tone.fg(Colors.white).withValues(alpha: 0.6))),
             ),
           )),
         ],

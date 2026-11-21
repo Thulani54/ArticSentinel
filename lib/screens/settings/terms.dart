@@ -1,3 +1,4 @@
+import '../../widgets/app_tone.dart';
 import 'mobile_account_widgets.dart';
 import '../../widgets/mobile_forms.dart';
 import '../../gasmon/gas_theme.dart';
@@ -24,12 +25,12 @@ class _TermsOfUseState extends State<TermsOfUse> {
     }
     return AccountCard(
       elevation: isPhoneLayout(context) ? 0 : 5,
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
+      color: Tone.auto(Colors.white),
+      surfaceTintColor: Tone.bg(Colors.white),
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
           side: isPhoneLayout(context)
-              ? const BorderSide(color: GasPalette.border)
+              ? BorderSide(color: GasPalette.border)
               : BorderSide.none),
       child: Container(
         height: MediaQuery.of(context).size.height,
@@ -124,7 +125,7 @@ Widget _buildTitle1(BuildContext context, String title) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(top: 14, bottom: 6),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: GasPalette.border))),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: GasPalette.border))),
       child: Text(title, style: gasTitle(context).copyWith(fontSize: 15, fontWeight: FontWeight.w600)),
     );
   }
@@ -169,7 +170,7 @@ Widget _buildParagraph1(BuildContext context, String title) {
         margin: EdgeInsets.only(top: isPhoneLayout(context) ? 12 : 0),
         decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isPhoneLayout(context) ? GasPalette.muted : Colors.black),
+            color: isPhoneLayout(context) ? GasPalette.muted : Tone.bg(Colors.black)),
       ),
       SizedBox(
         width: 8,
@@ -184,7 +185,7 @@ Widget _buildParagraph1(BuildContext context, String title) {
               textStyle: TextStyle(
                   fontSize: 14,
                   color:
-                      isPhoneLayout(context) ? GasPalette.ink2 : Colors.black,
+                      isPhoneLayout(context) ? GasPalette.ink2 : Tone.fg(Colors.black),
                   letterSpacing: isPhoneLayout(context) ? 0 : 1.08,
                   height: 1.6,
                   fontWeight: FontWeight.w400),
@@ -205,7 +206,7 @@ Widget _buildParagraph2(BuildContext context, String title) {
         context,
         textStyle: TextStyle(
             fontSize: 14,
-            color: isPhoneLayout(context) ? GasPalette.ink2 : Colors.black,
+            color: isPhoneLayout(context) ? GasPalette.ink2 : Tone.fg(Colors.black),
             letterSpacing: isPhoneLayout(context) ? 0 : 1.08,
             height: 1.6,
             fontWeight: FontWeight.w400),

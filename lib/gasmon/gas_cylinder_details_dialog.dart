@@ -6,6 +6,10 @@
 /// Also hosts the Cylinder setup and the Bluetooth "Connect scale" flow.
 library;
 
+import '../widgets/app_tone.dart';
+import '../services/offline_read_client.dart';
+import '../widgets/offline_snapshot_banner.dart';
+
 import '../widgets/mobile_forms.dart';
 import '../widgets/app_empty_state.dart';
 
@@ -15,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/device.dart';
+import '../device_journal/cylinder_refill_history.dart';
 import 'gas_api.dart';
 import 'gas_notification_card.dart';
 import 'gas_charts.dart';
@@ -44,6 +49,7 @@ class GasCylinderDetailsDialog extends StatefulWidget {
 
 class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
     with SingleTickerProviderStateMixin {
+  final _offline = OfflineReadClient();
   GasDeviceData? _loaded;
   GasConfig? _config;
   String? _loadError;
@@ -55,6 +61,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
   bool _exporting = false;
 
   GasDeviceData get _data => _loaded!;
+  bool get _savedSnapshot => _offline.status.value != null;
 
   @override
   void initState() {
@@ -70,6 +77,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
 
   @override
   void dispose() {
+    _offline.close();
     _refresh?.cancel();
     _fillCtrl.dispose();
     super.dispose();
@@ -86,7 +94,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
     try {
       final result = widget.loadData != null
           ? await widget.loadData!()
-          : await GasApi.load(deviceId: id!, demoKey: widget.device.deviceId);
+          : await GasApi.load(deviceId: id!, demoKey: widget.device.deviceId, reader: _offline);
       if (!mounted || request != _loadGeneration || id != widget.device.id) {
         return;
       }
@@ -195,6 +203,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
   Widget _buildEmptyPage() => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+              OfflineSnapshotBanner(client: _offline, onRetry: _load),
           _buildHeader(true),
           const SizedBox(height: 20),
           AppEmptyState(
@@ -225,6 +234,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        OfflineSnapshotBanner(client: _offline, onRetry: _load),
         _buildHeader(offline),
         const SizedBox(height: 20),
         if (_loadError != null) ...[
@@ -247,7 +257,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
           GBanner(
               critical: true,
               lead:
-                  '${offline || _loadError != null ? "Last reported low gas" : "Low gas"} — ${levelPct.round()}% remaining.',
+                  '${offline || _loadError != null || _savedSnapshot ? "Last reported low gas" : "Low gas"} — ${levelPct.round()}% remaining.',
               text: 'Schedule a refill.'),
         if (offline)
           GBanner(
@@ -291,7 +301,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
             color: GasPalette.flameSoft,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.propane_tank_outlined,
+          child: Icon(Icons.propane_tank_outlined,
               color: GasPalette.flame, size: 24),
         ),
         const SizedBox(width: 14),
@@ -316,7 +326,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
         IconButton(
           tooltip: 'Close',
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.close, color: GasPalette.ink2),
+          icon: Icon(Icons.close, color: GasPalette.ink2),
         ),
       ],
     );
@@ -332,17 +342,23 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
           children: [
             if (_loaded?.hasReadings == true) ...[
               GChip(
-                  offline || _loadError != null
+                  offline || _loadError != null || _savedSnapshot
                       ? 'LAST REPORTED'
                       : 'LIVE SCALE',
-                  tone: offline || _loadError != null
+                  tone: offline || _loadError != null || _savedSnapshot
                       ? GChipTone.neutral
                       : GChipTone.good),
-              GStatusChip(
-                  online: !offline && _loadError == null,
-                  lastSeen: _data.latest.at),
+              if (_savedSnapshot)
+                const GChip('Connection unconfirmed', tone: GChipTone.neutral)
+              else
+                GStatusChip(
+                    online: !offline && _loadError == null,
+                    lastSeen: _data.latest.at),
             ] else
-              GChip(_loadError != null ? 'Reading unavailable' : 'No readings yet',
+              GChip(
+                  _loadError != null
+                      ? 'Reading unavailable'
+                      : 'No readings yet',
                   tone: GChipTone.neutral),
             OutlinedButton(
               style: _secondaryButton(),
@@ -350,6 +366,20 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
                   ? _openCylinderSetup
                   : null,
               child: const Text('Switch gas'),
+            ),
+            OutlinedButton(
+              style: _secondaryButton(),
+              onPressed: widget.device.id == null
+                  ? null
+                  : () {
+                      Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) => CylinderRefillHistoryPage(
+                              deviceId: widget.device.id!,
+                              deviceName: widget.device.name,
+                              readings: _loaded?.readings ?? const [],
+                    capacityKg: _config?.gasCapacityKg, tareKg: _config?.tareKg)));
+                    },
+              child: const Text('Refill history'),
             ),
             OutlinedButton.icon(
               style: _secondaryButton(),
@@ -366,7 +396,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
   ButtonStyle _secondaryButton() => OutlinedButton.styleFrom(
         foregroundColor: GasPalette.ink,
         backgroundColor: GasPalette.panel,
-        side: const BorderSide(color: GasPalette.border),
+        side: BorderSide(color: GasPalette.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
         textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
         minimumSize: const Size(0, 38),
@@ -374,7 +404,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
 
   ButtonStyle _primaryButton() => FilledButton.styleFrom(
         backgroundColor: GasPalette.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: Tone.fg(Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
         textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
         minimumSize: const Size(0, 38),
@@ -439,7 +469,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
     final gross = _data.scaleGrossKg;
     final lastAt = _data.latest.at;
     return GSection(
-      eyebrow: 'Right now',
+      eyebrow: _savedSnapshot || _loadError != null || _data.isOffline ? 'Last reported' : 'Right now',
       title: 'Readings',
       child: GTileGrid(
           minWidth:
@@ -456,7 +486,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
                 sub: 'tare ${_trim(_data.spec.tareKg)} kg excluded'),
             GTile(
                 label: 'Today so far',
-                value: kg1(today.kg),
+        value: '${today.kg.toStringAsFixed(2)} kg',
                 sub: '${money(today.cost)} at ${money(_data.pricePerKg)}/kg'),
             GTile(
                 label: 'Burn rate',
@@ -464,7 +494,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
                 sub: '7-day rolling average'),
             GTile(
                 label: 'Projection',
-                value: _data.isOffline || projection.emptyBy == null
+                value: _data.isOffline || _savedSnapshot || _loadError != null || projection.emptyBy == null
                     ? '—'
                     : DateFormat('d MMM').format(projection.emptyBy!),
                 sub: 'empty by, at current burn'),
@@ -598,7 +628,7 @@ class _GasCylinderDetailsDialogState extends State<GasCylinderDetailsDialog>
                     decoration: BoxDecoration(
                       border: i == shown.length - 1
                           ? null
-                          : const Border(
+                          : Border(
                               bottom: BorderSide(color: GasPalette.border)),
                     ),
                     child: _alertRow(shown[i]),

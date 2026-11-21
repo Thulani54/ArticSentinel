@@ -85,7 +85,7 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
   Widget build(BuildContext context) {
     final last = _index == _pages.length - 1;
     return Scaffold(
-      backgroundColor: GasPalette.navy,
+      backgroundColor: const Color(0xFF133648),
       body: Stack(
         children: [
           const Positioned.fill(child: CustomPaint(painter: _SonarPainter())),
@@ -96,13 +96,13 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
                   padding: const EdgeInsets.fromLTRB(24, 10, 12, 0),
                   child: Row(
                     children: [
-                      Text('Artic Sentinel.',
+                      Expanded(child: Text('Artic Sentinel.',
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.lato(
                               fontSize: 18,
                               color: Colors.white,
                               letterSpacing: 1.2,
-                              fontWeight: FontWeight.w300)),
-                      const Spacer(),
+                              fontWeight: FontWeight.w300))),
                       if (!last)
                         TextButton(
                           onPressed: () => _done('/login'),
@@ -155,7 +155,7 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
                         },
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
-                          foregroundColor: GasPalette.primary,
+                          foregroundColor: const Color(0xFF222B45),
                           minimumSize: const Size.fromHeight(52),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(32)),
@@ -175,7 +175,7 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
                       ),
                       TextButton(
                         onPressed: () => context.push('/products'),
-                        child: const Text('Explore our products',
+                        child: Text('Explore our products',
                             style: TextStyle(color: Colors.white70)),
                       ),
                     ],
@@ -255,7 +255,7 @@ class _WelcomePage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
               color: Color(0x33000000), blurRadius: 14, offset: Offset(0, 6)),
         ],
@@ -269,7 +269,7 @@ class _WelcomePage extends StatelessWidget {
               style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: GasPalette.ink)),
+                  color: const Color(0xFF173648))),
         ],
       ),
     );

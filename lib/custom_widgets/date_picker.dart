@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/Constants.dart';
@@ -82,7 +83,7 @@ class _CustomDatePickerState extends State<CustomDatePicker>
             "${Constants.formatter.format(_selectedDate.value)}",
             style: TextStyle(
               fontSize: 14,
-              color: Colors.black,
+              color: Tone.fg(Colors.black),
               letterSpacing: 0,
               fontWeight: FontWeight.w500,
               fontFamily: 'Nonchalance',
@@ -173,7 +174,7 @@ class _CustomDatePicker1State extends State<CustomDatePicker1>
             "${Constants.formatter.format(_selectedDate.value)}",
             style: TextStyle(
               fontSize: 14,
-              color: Colors.black,
+              color: Tone.fg(Colors.black),
               letterSpacing: 0,
               fontWeight: FontWeight.w500,
               fontFamily: 'Nonchalance',

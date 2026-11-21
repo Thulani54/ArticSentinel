@@ -1,3 +1,4 @@
+import 'app_tone.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 
@@ -23,10 +24,10 @@ class MobileEquipmentCard extends StatelessWidget {
         ? (device.isOnline ? GasPalette.good : GasPalette.ink2)
         : GasPalette.critInk;
     return Material(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: GasPalette.border),
+        side: BorderSide(color: GasPalette.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -71,7 +72,7 @@ class MobileEquipmentCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              const Divider(height: 1, color: GasPalette.border),
+              Divider(height: 1, color: GasPalette.border),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 12,
@@ -104,7 +105,7 @@ class MobileEquipmentCard extends StatelessWidget {
               if (device.connectedUnit != null) ...[
                 const SizedBox(height: 10),
                 Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Icon(Iconsax.link, size: 14, color: GasPalette.ink2),
+                  Icon(Iconsax.link, size: 14, color: GasPalette.ink2),
                   const SizedBox(width: 6),
                   Expanded(
                       child: Text(

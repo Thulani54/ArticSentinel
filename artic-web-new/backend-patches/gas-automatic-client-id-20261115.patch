@@ -1,0 +1,46 @@
+--- a/device/gas_views.py
++++ b/device/gas_views.py
+@@ -2,6 +2,8 @@
+ and weight readings ingested by mqtt/transfere_to_pg_gas.py."""
+ 
+ from django.db import connections
++from django.views.decorators.cache import never_cache
++from platform_admin.policy import mqtt_client_id
+ from rest_framework import status
+ from rest_framework.decorators import api_view, permission_classes
+ from rest_framework.permissions import IsAuthenticated
+@@ -219,6 +221,7 @@
+     return False
+ 
+ 
++@never_cache
+ @api_view(['POST'])
+ @permission_classes([IsAuthenticated])
+ def gas_credentials_issue(request):
+@@ -255,6 +258,8 @@
+         'credentials': {
+             'device_id': username,
+             'mqtt_host': SCALE_MQTT_HOST,
++            'mqtt_client_id': mqtt_client_id(device.pk),
++            'mqtt_tls': True,
+             'mqtt_port': SCALE_MQTT_PORT,
+             'mqtt_user': username,
+             'mqtt_pass': password,
+@@ -263,6 +268,7 @@
+     })
+ 
+ 
++@never_cache
+ @api_view(['POST'])
+ @permission_classes([IsAuthenticated])
+ def gas_credentials_status(request):
+@@ -272,5 +278,9 @@
+         return error
+     cred = GasScaleCredential.objects.filter(device=device).select_related('issued_by').first()
+     return Response({'success': True, 'issued': cred is not None,
++                     'mqtt_client_id': mqtt_client_id(device.pk),
++                     'device_id': device.device_id,
++                     'topic': f'gas_cylinder/{device.device_id}/data',
++                     'mqtt_tls': True,
+                      'issued_at': cred.issued_at.isoformat() if cred else None,
+                      'issued_by': (cred.issued_by.email if cred and cred.issued_by else None)})

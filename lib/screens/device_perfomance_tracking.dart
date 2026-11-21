@@ -1,3 +1,7 @@
+import '../widgets/app_tone.dart';
+import '../device_journal/bottle_scan_history.dart';
+import '../services/offline_read_client.dart';
+import '../widgets/offline_snapshot_banner.dart';
 import '../widgets/app_empty_state.dart';
 import '../gasmon/gas_core.dart' show isGasCylinderType;
 import '../gasmon/gas_dashboard_card.dart';
@@ -1683,8 +1687,8 @@ class Device {
 class ApiService {
   static String baseUrl = Constants.articBaseUrl2;
 
-  static Future<List<Device>> getDevices(int companyId) async {
-    final response = await http.get(
+  static Future<List<Device>> getDevices(int companyId, {OfflineReadClient? reader}) async {
+    final response = await (reader?.get ?? http.get)(
       Uri.parse('${baseUrl}api/companies/$companyId/devices/'),
       headers: {'Content-Type': 'application/json'},
     ).timeout(const Duration(seconds: 20));
@@ -1704,6 +1708,7 @@ class ApiService {
     required String startDate,
     required String endDate,
     required int companyId,
+    OfflineReadClient? reader,
   }) async {
     final queryParams = {
       'device_id': deviceId,
@@ -1716,7 +1721,7 @@ class ApiService {
     final uri = Uri.parse('${baseUrl}api/device-metrics/')
         .replace(queryParameters: queryParams);
 
-    final response = await http.get(
+    final response = await (reader?.get ?? http.get)(
       uri,
       headers: {'Content-Type': 'application/json'},
     ).timeout(const Duration(seconds: 20));
@@ -1735,6 +1740,7 @@ class ApiService {
     required String startDate,
     required String endDate,
     required int companyId,
+    OfflineReadClient? reader,
   }) async {
     final queryParams = {
       'device_id': deviceId,
@@ -1746,7 +1752,7 @@ class ApiService {
     final uri = Uri.parse('${baseUrl}api/device-metrics/')
         .replace(queryParameters: queryParams);
 
-    final response = await http.get(
+    final response = await (reader?.get ?? http.get)(
       uri,
       headers: {'Content-Type': 'application/json'},
     ).timeout(const Duration(seconds: 20));
@@ -1758,8 +1764,8 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> getDeviceDetail(String deviceId) async {
-    final response = await http.get(
+  static Future<Map<String, dynamic>> getDeviceDetail(String deviceId, {OfflineReadClient? reader}) async {
+    final response = await (reader?.get ?? http.get)(
       Uri.parse('${baseUrl}api/devices/$deviceId/'),
       headers: {'Content-Type': 'application/json'},
     ).timeout(const Duration(seconds: 20));
@@ -1784,10 +1790,13 @@ class DevicePeformanceDashboard extends StatefulWidget {
 }
 
 class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
+  final _offline = OfflineReadClient();
   List<Device> devices = [];
   Device? selectedDevice;
-  DateTime startDate = DateTime.now().subtract(const Duration(days: 7));
-  DateTime endDate = DateTime.now();
+  static DateTime _dayStart(DateTime day) => DateTime(day.year, day.month, day.day);
+  static DateTime _dayEnd(DateTime day) => DateTime(day.year, day.month, day.day, 23, 59, 59, 999);
+  DateTime startDate = _dayStart(DateTime.now().subtract(const Duration(days: 6)));
+  DateTime endDate = _dayEnd(DateTime.now());
 
   // Device Filter
   String? deviceTypeFilter;
@@ -1880,6 +1889,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   void didUpdateWidget(covariant DevicePeformanceDashboard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.companyId != widget.companyId) {
+      _offline.resetStatus();
       _inventoryGeneration++;
       _analyticsGeneration++;
       devices = [];
@@ -1937,6 +1947,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         actionLabel: 'Refresh readings', onAction: () => _loadAnalytics()));
     }
     return LayoutBuilder(builder: (context, constraints) => Column(children: [
+      OfflineSnapshotBanner(client: _offline, onRetry: () => _loadDevices()),
       if (errorMessage != null)
         ConstrainedBox(constraints: BoxConstraints(maxHeight: constraints.maxHeight * .4),
           child: SingleChildScrollView(child: AppEmptyState(kind: AppEmptyStateKind.offline, compact: true,
@@ -1950,6 +1961,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   @override
   void dispose() {
+    _offline.close();
     _refreshTimer?.cancel();
     super.dispose();
   }
@@ -1968,7 +1980,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final companyId = widget.companyId;
     setState(() { isLoading = true; errorMessage = null; });
     try {
-      final deviceList = await ApiService.getDevices(companyId);
+      final deviceList = await ApiService.getDevices(companyId, reader: _offline);
       if (!mounted || generation != _inventoryGeneration || companyId != widget.companyId) return;
       setState(() {
         devices = deviceList;
@@ -1996,12 +2008,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final requestedStart = startDate.toIso8601String();
     final requestedEnd = endDate.toIso8601String();
     setState(() {
-      if (_loadedAnalyticsKey != targetKey) _clearAnalytics();
+      if (_loadedAnalyticsKey != targetKey) { _offline.resetStatus(preserveInventory: true); _clearAnalytics(); }
       isLoading = showLoading;
       errorMessage = null;
     });
     try {
       final rawData = await ApiService.getDeviceAnalyticsRaw(
+        reader: _offline,
         deviceId: targetDeviceId, startDate: requestedStart, endDate: requestedEnd, companyId: companyId);
       if (!mounted || generation != _analyticsGeneration || targetKey != _analyticsKey) return;
       // Parse before replacing saved data so a malformed response preserves
@@ -2040,7 +2053,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: isPhoneLayout(context) ? GasPalette.page : const Color(0xFFF8FAFC),
+      color: isPhoneLayout(context) ? GasPalette.page : Tone.bg(const Color(0xFFF8FAFC)),
       child: Column(children: [
         if (isPhoneLayout(context))
           const MobileScreenHeader(title: 'Performance', padding: EdgeInsets.fromLTRB(16, 20, 16, 12))
@@ -2104,7 +2117,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: Tone.bg(Colors.red),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -2126,7 +2139,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     color:
                         deviceTypeFilter == null && onlineStatusFilter == null
                             ? Constants.ctaColorLight
-                            : Colors.grey),
+                            : Tone.fg(Colors.grey)),
                 SizedBox(width: 8),
                 Text('All Devices',
                     style: GoogleFonts.inter(
@@ -2146,8 +2159,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Icon(Icons.wifi,
                     size: 18,
                     color: onlineStatusFilter == 'online'
-                        ? Colors.green
-                        : Colors.grey),
+                        ? Tone.fg(Colors.green)
+                        : Tone.fg(Colors.grey)),
                 SizedBox(width: 8),
                 Text('Online',
                     style: GoogleFonts.inter(
@@ -2165,8 +2178,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Icon(Icons.wifi_off,
                     size: 18,
                     color: onlineStatusFilter == 'offline'
-                        ? Colors.red
-                        : Colors.grey),
+                        ? Tone.fg(Colors.red)
+                        : Tone.fg(Colors.grey)),
                 SizedBox(width: 8),
                 Text('Offline',
                     style: GoogleFonts.inter(
@@ -2189,7 +2202,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         size: 18,
                         color: deviceTypeFilter == type
                             ? Constants.ctaColorLight
-                            : Colors.grey),
+                            : Tone.fg(Colors.grey)),
                     SizedBox(width: 8),
                     Text(typeLabel,
                         style: GoogleFonts.inter(
@@ -2291,7 +2304,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       onPressed: _loadAnalytics,
                       style: FilledButton.styleFrom(
                           backgroundColor: GasPalette.primary,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Tone.fg(Colors.white),
                           minimumSize: const Size(0, 48),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(32))),
@@ -2339,14 +2352,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         isPhoneLayout(context) ? 12 : (isMobile ? 16 : 20),
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: isPhoneLayout(context)
             ? Border.all(color: GasPalette.border)
             : null,
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Tone.bg(Colors.black).withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2371,11 +2384,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: Tone.bg(const Color(0xFFF8FAFC)),
                           borderRadius: BorderRadius.circular(
                             isPhoneLayout(context) ? 32 : 36,
                           ),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
@@ -2384,7 +2397,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                               'Select Device',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: const Color(0xFF64748B),
+                                color: Tone.fg(const Color(0xFF64748B)),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -2406,8 +2419,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           color: device.isOnline
-                                              ? Colors.green
-                                              : Colors.grey,
+                                              ? Tone.bg(Colors.green)
+                                              : Tone.bg(Colors.grey),
                                         ),
                                       ),
                                       Expanded(
@@ -2441,11 +2454,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     const SizedBox(width: 8),
                     Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: Tone.bg(const Color(0xFFF8FAFC)),
                         borderRadius: BorderRadius.circular(
                           isPhoneLayout(context) ? 32 : 36,
                         ),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
                       ),
                       child: _buildFilterButton(),
                     ),
@@ -2455,11 +2468,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: Tone.bg(const Color(0xFFF8FAFC)),
                           borderRadius: BorderRadius.circular(
                             isPhoneLayout(context) ? 32 : 36,
                           ),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
                         ),
                         child: InkWell(
                           onTap: () => _selectDate(true),
@@ -2489,7 +2502,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                         'Start Date',
                                         style: GoogleFonts.inter(
                                           fontSize: 12,
-                                          color: const Color(0xFF64748B),
+                                          color: Tone.fg(const Color(0xFF64748B)),
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -2499,7 +2512,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                             .format(startDate),
                                         style: GoogleFonts.inter(
                                           fontSize: 14,
-                                          color: const Color(0xFF1E293B),
+                                          color: Tone.fg(const Color(0xFF1E293B)),
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -2523,11 +2536,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: Tone.bg(const Color(0xFFF8FAFC)),
                           borderRadius: BorderRadius.circular(
                             isPhoneLayout(context) ? 32 : 36,
                           ),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
                         ),
                         child: InkWell(
                           onTap: () => _selectDate(false),
@@ -2557,7 +2570,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                         'End Date',
                                         style: GoogleFonts.inter(
                                           fontSize: 12,
-                                          color: const Color(0xFF64748B),
+                                          color: Tone.fg(const Color(0xFF64748B)),
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -2567,7 +2580,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                             .format(endDate),
                                         style: GoogleFonts.inter(
                                           fontSize: 14,
-                                          color: const Color(0xFF1E293B),
+                                          color: Tone.fg(const Color(0xFF1E293B)),
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -2594,7 +2607,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       label: Text('Refresh'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Constants.ctaColorLight,
-                        foregroundColor: Colors.white,
+                        foregroundColor: Tone.fg(Colors.white),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 14,
@@ -2630,9 +2643,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (picked != null) {
       setState(() {
         if (isStartDate) {
-          startDate = picked;
+          startDate = _dayStart(picked);
         } else {
-          endDate = picked;
+          endDate = _dayEnd(picked);
         }
       });
     }
@@ -2651,15 +2664,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hasError ? const Color(0xFFEF4444) : const Color(0xFFF1F5F9),
+          color: hasError ? Tone.bg(const Color(0xFFEF4444)) : Tone.bg(const Color(0xFFF1F5F9)),
           width: hasError ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -2677,13 +2690,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: hasError
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF1E293B),
+                        ? Tone.bg(const Color(0xFFEF4444))
+                        : Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.thermostat_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -2697,14 +2710,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: isMobile ? 14 : 16,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
+                          color: Tone.fg(const Color(0xFF0F172A)),
                         ),
                       ),
                       Text(
                         '${tempAnalytics.totalReadings} total readings',
                         style: GoogleFonts.inter(
                           fontSize: isMobile ? 11 : 12,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                     ],
@@ -2715,7 +2728,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
+                      color: Tone.bg(const Color(0xFFEF4444)),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -2723,7 +2736,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Tone.fg(Colors.white),
                       ),
                     ),
                   ),
@@ -2809,16 +2822,16 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       width: isMobile ? double.infinity : null,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: Tone.bg(const Color(0xFFFAFAFA)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: const Color(0xFF64748B)),
+              Icon(icon, size: 16, color: Tone.fg(const Color(0xFF64748B))),
               const SizedBox(width: 6),
               Expanded(
                   child: Text(
@@ -2826,7 +2839,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
+                  color: Tone.fg(const Color(0xFF64748B)),
                 ),
               )),
             ],
@@ -2837,7 +2850,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF0F172A),
+              color: Tone.fg(const Color(0xFF0F172A)),
             ),
           ),
           const SizedBox(height: 4),
@@ -2845,7 +2858,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             subtitle,
             style: GoogleFonts.inter(
               fontSize: 11,
-              color: const Color(0xFF64748B),
+              color: Tone.fg(const Color(0xFF64748B)),
             ),
           ),
           const SizedBox(height: 4),
@@ -2853,7 +2866,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             timestamps,
             style: GoogleFonts.inter(
               fontSize: 10,
-              color: const Color(0xFF94A3B8),
+              color: Tone.fg(const Color(0xFF94A3B8)),
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -2873,15 +2886,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hasError ? const Color(0xFFEF4444) : const Color(0xFFF1F5F9),
+          color: hasError ? Tone.bg(const Color(0xFFEF4444)) : Tone.bg(const Color(0xFFF1F5F9)),
           width: hasError ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -2899,13 +2912,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: hasError
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF1E293B),
+                        ? Tone.bg(const Color(0xFFEF4444))
+                        : Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.speed_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -2919,14 +2932,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: isMobile ? 14 : 16,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
+                          color: Tone.fg(const Color(0xFF0F172A)),
                         ),
                       ),
                       Text(
                         '${pressureAnalytics.totalReadings} total readings',
                         style: GoogleFonts.inter(
                           fontSize: isMobile ? 11 : 12,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                     ],
@@ -2937,7 +2950,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
+                      color: Tone.bg(const Color(0xFFEF4444)),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -2945,7 +2958,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Tone.fg(Colors.white),
                       ),
                     ),
                   ),
@@ -3007,9 +3020,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: Tone.bg(const Color(0xFFF8FAFC)),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3019,7 +3032,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0F172A),
+                      color: Tone.fg(const Color(0xFF0F172A)),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -3036,7 +3049,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF64748B),
+                                      color: Tone.fg(const Color(0xFF64748B)),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -3057,7 +3070,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                           ""),
                                       style: GoogleFonts.inter(
                                         fontSize: 10,
-                                        color: const Color(0xFF94A3B8),
+                                        color: Tone.fg(const Color(0xFF94A3B8)),
                                       ),
                                     ),
                                 ],
@@ -3066,7 +3079,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                               Container(
                                 width: double.infinity,
                                 height: 1,
-                                color: const Color(0xFFE2E8F0),
+                                color: Tone.bg(const Color(0xFFE2E8F0)),
                               ),
                               const SizedBox(height: 16),
                               Column(
@@ -3077,7 +3090,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF64748B),
+                                      color: Tone.fg(const Color(0xFF64748B)),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -3098,7 +3111,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                           ""),
                                       style: GoogleFonts.inter(
                                         fontSize: 10,
-                                        color: const Color(0xFF94A3B8),
+                                        color: Tone.fg(const Color(0xFF94A3B8)),
                                       ),
                                     ),
                                 ],
@@ -3116,7 +3129,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF64748B),
+                                        color: Tone.fg(const Color(0xFF64748B)),
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -3137,7 +3150,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                             ""),
                                         style: GoogleFonts.inter(
                                           fontSize: 10,
-                                          color: const Color(0xFF94A3B8),
+                                          color: Tone.fg(const Color(0xFF94A3B8)),
                                         ),
                                       ),
                                   ],
@@ -3146,7 +3159,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                               Container(
                                 width: 1,
                                 height: 50,
-                                color: const Color(0xFFE2E8F0),
+                                color: Tone.bg(const Color(0xFFE2E8F0)),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -3158,7 +3171,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF64748B),
+                                        color: Tone.fg(const Color(0xFF64748B)),
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -3179,7 +3192,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                             ""),
                                         style: GoogleFonts.inter(
                                           fontSize: 10,
-                                          color: const Color(0xFF94A3B8),
+                                          color: Tone.fg(const Color(0xFF94A3B8)),
                                         ),
                                       ),
                                   ],
@@ -3223,7 +3236,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                           ""),
                                       style: GoogleFonts.inter(
                                         fontSize: 10,
-                                        color: const Color(0xFF94A3B8),
+                                        color: Tone.fg(const Color(0xFF94A3B8)),
                                       ),
                                     ),
                                 ],
@@ -3232,7 +3245,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                               Container(
                                 height: 1,
                                 width: double.infinity,
-                                color: const Color(0xFFE2E8F0),
+                                color: Tone.bg(const Color(0xFFE2E8F0)),
                               ),
                               const SizedBox(height: 16),
                               Column(
@@ -3243,7 +3256,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF64748B),
+                                      color: Tone.fg(const Color(0xFF64748B)),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -3264,7 +3277,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                           ""),
                                       style: GoogleFonts.inter(
                                         fontSize: 10,
-                                        color: const Color(0xFF94A3B8),
+                                        color: Tone.fg(const Color(0xFF94A3B8)),
                                       ),
                                     ),
                                 ],
@@ -3303,7 +3316,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                             ""),
                                         style: GoogleFonts.inter(
                                           fontSize: 10,
-                                          color: const Color(0xFF94A3B8),
+                                          color: Tone.fg(const Color(0xFF94A3B8)),
                                         ),
                                       ),
                                   ],
@@ -3312,7 +3325,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                               Container(
                                 width: 1,
                                 height: 50,
-                                color: const Color(0xFFE2E8F0),
+                                color: Tone.bg(const Color(0xFFE2E8F0)),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -3324,7 +3337,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF64748B),
+                                        color: Tone.fg(const Color(0xFF64748B)),
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -3345,7 +3358,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                             ""),
                                         style: GoogleFonts.inter(
                                           fontSize: 10,
-                                          color: const Color(0xFF94A3B8),
+                                          color: Tone.fg(const Color(0xFF94A3B8)),
                                         ),
                                       ),
                                   ],
@@ -3376,15 +3389,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hasError ? const Color(0xFFEF4444) : const Color(0xFFF1F5F9),
+          color: hasError ? Tone.bg(const Color(0xFFEF4444)) : Tone.bg(const Color(0xFFF1F5F9)),
           width: hasError ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -3402,13 +3415,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: hasError
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF1E293B),
+                        ? Tone.bg(const Color(0xFFEF4444))
+                        : Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.settings_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -3422,7 +3435,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: isMobile ? 14 : 16,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
+                          color: Tone.fg(const Color(0xFF0F172A)),
                         ),
                       ),
                       Row(
@@ -3433,8 +3446,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: status.isRunning
-                                  ? const Color(0xFF10B981)
-                                  : const Color(0xFF6B7280),
+                                  ? Tone.bg(const Color(0xFF10B981))
+                                  : Tone.bg(const Color(0xFF6B7280)),
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -3444,7 +3457,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                 : 'Currently Stopped',
                             style: GoogleFonts.inter(
                               fontSize: isMobile ? 11 : 12,
-                              color: const Color(0xFF64748B),
+                              color: Tone.fg(const Color(0xFF64748B)),
                             ),
                           ),
                         ],
@@ -3457,7 +3470,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
+                      color: Tone.bg(const Color(0xFFEF4444)),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -3465,7 +3478,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Tone.fg(Colors.white),
                       ),
                     ),
                   ),
@@ -3646,9 +3659,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       width: isMobile ? double.infinity : null,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: Tone.bg(const Color(0xFFFAFAFA)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3658,7 +3671,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
+              color: Tone.fg(const Color(0xFF64748B)),
             ),
           ),
           const SizedBox(height: 8),
@@ -3667,7 +3680,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
+              color: Tone.fg(const Color(0xFF0F172A)),
             ),
           ),
           const SizedBox(height: 4),
@@ -3675,7 +3688,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             subtitle,
             style: GoogleFonts.inter(
               fontSize: 11,
-              color: const Color(0xFF64748B),
+              color: Tone.fg(const Color(0xFF64748B)),
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -3692,23 +3705,23 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: Tone.bg(const Color(0xFFFAFAFA)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: const Color(0xFF64748B)),
+              Icon(icon, size: 16, color: Tone.fg(const Color(0xFF64748B))),
               const SizedBox(width: 6),
               Text(
                 title,
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
+                  color: Tone.fg(const Color(0xFF64748B)),
                 ),
               ),
             ],
@@ -3719,7 +3732,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF0F172A),
+              color: Tone.fg(const Color(0xFF0F172A)),
             ),
           ),
           const SizedBox(height: 4),
@@ -3727,7 +3740,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             subtitle,
             style: GoogleFonts.inter(
               fontSize: 11,
-              color: const Color(0xFF64748B),
+              color: Tone.fg(const Color(0xFF64748B)),
             ),
           ),
         ],
@@ -3740,23 +3753,23 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: Tone.bg(const Color(0xFFFAFAFA)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: const Color(0xFF64748B)),
+              Icon(icon, size: 16, color: Tone.fg(const Color(0xFF64748B))),
               const SizedBox(width: 6),
               Text(
                 title,
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
+                  color: Tone.fg(const Color(0xFF64748B)),
                 ),
               ),
             ],
@@ -3767,7 +3780,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF0F172A),
+              color: Tone.fg(const Color(0xFF0F172A)),
             ),
           ),
           const SizedBox(height: 4),
@@ -3775,7 +3788,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             subtitle,
             style: GoogleFonts.inter(
               fontSize: 11,
-              color: const Color(0xFF64748B),
+              color: Tone.fg(const Color(0xFF64748B)),
             ),
           ),
           const SizedBox(height: 4),
@@ -3783,7 +3796,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             timestamps,
             style: GoogleFonts.inter(
               fontSize: 10,
-              color: const Color(0xFF94A3B8),
+              color: Tone.fg(const Color(0xFF94A3B8)),
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -3804,7 +3817,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 )
               : Text(
                   'No data available for this device',
-                  style: GoogleFonts.inter(color: Colors.grey[600]),
+                  style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])),
                 ),
         );
 
@@ -3915,14 +3928,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: isPhoneLayout(context)
             ? Border.all(color: GasPalette.border)
             : null,
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: Tone.bg(Colors.grey.shade200),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -3946,7 +3959,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   'Monitoring 8 temperature zones | $totalReadings readings',
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Tone.fg(Colors.grey[600]),
                   ),
                 ),
               ],
@@ -3967,7 +3980,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   'Health',
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: Colors.grey[600],
+                    color: Tone.fg(Colors.grey[600]),
                   ),
                 ),
                 Text(
@@ -3994,9 +4007,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
   }
 
   Color _getHealthColor(double score) {
-    if (score >= 80) return Colors.green;
-    if (score >= 60) return Colors.orange;
-    return Colors.red;
+    if (score >= 80) return Tone.auto(Colors.green);
+    if (score >= 60) return Tone.auto(Colors.orange);
+    return Tone.auto(Colors.red);
   }
 
   Widget _buildDevice2ZoneGrid() {
@@ -4044,7 +4057,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         child: Column(
           children: [
             for (var index = 0; index < zones.length; index++) ...[
-              if (index > 0) const Divider(height: 1, color: GasPalette.border),
+              if (index > 0) Divider(height: 1, color: GasPalette.border),
               _buildZoneCard(zones[index]),
             ],
           ],
@@ -4055,14 +4068,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: isPhoneLayout(context)
             ? Border.all(color: GasPalette.border)
             : null,
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: Tone.bg(Colors.grey.shade200),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -4113,7 +4126,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final minTime = zone['minTime'] as String?;
     final maxTime = zone['maxTime'] as String?;
     final isNormal = temp < 5 && temp > -25;
-    final color = isNormal ? Constants.ctaColorLight : Colors.red;
+    final color = isNormal ? Constants.ctaColorLight : Tone.auto(Colors.red);
 
     if (isPhoneLayout(context)) {
       return Padding(
@@ -4170,15 +4183,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isNormal ? const Color(0xFFF1F5F9) : Colors.red,
+          color: isNormal ? Tone.bg(const Color(0xFFF1F5F9)) : Tone.bg(Colors.red),
           width: isNormal ? 1 : 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -4224,7 +4237,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     "Min",
                     style: GoogleFonts.inter(
                       fontSize: 9,
-                      color: Colors.grey[500],
+                      color: Tone.fg(Colors.grey[500]),
                     ),
                   ),
                   Text(
@@ -4232,14 +4245,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: Colors.blue,
+                      color: Tone.fg(Colors.blue),
                     ),
                   ),
                   Text(
                     _formatZoneTimestamp(minTime),
                     style: GoogleFonts.inter(
                       fontSize: 8,
-                      color: Colors.grey[400],
+                      color: Tone.fg(Colors.grey[400]),
                     ),
                   ),
                 ],
@@ -4248,7 +4261,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 height: 30,
                 width: 1,
                 margin: EdgeInsets.symmetric(horizontal: 8),
-                color: Colors.grey.shade300,
+                color: Tone.bg(Colors.grey.shade300),
               ),
               Column(
                 children: [
@@ -4256,7 +4269,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     "Max",
                     style: GoogleFonts.inter(
                       fontSize: 9,
-                      color: Colors.grey[500],
+                      color: Tone.fg(Colors.grey[500]),
                     ),
                   ),
                   Text(
@@ -4264,14 +4277,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: Colors.red,
+                      color: Tone.fg(Colors.red),
                     ),
                   ),
                   Text(
                     _formatZoneTimestamp(maxTime),
                     style: GoogleFonts.inter(
                       fontSize: 8,
-                      color: Colors.grey[400],
+                      color: Tone.fg(Colors.grey[400]),
                     ),
                   ),
                 ],
@@ -4290,7 +4303,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         height: 300,
         child: Center(
             child: Text('No data available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -4299,14 +4312,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     // Zone colors
     final zoneColors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.red,
-      Colors.teal,
-      Colors.pink,
-      Colors.indigo,
+      Tone.auto(Colors.blue),
+      Tone.auto(Colors.green),
+      Tone.auto(Colors.orange),
+      Tone.auto(Colors.purple),
+      Tone.auto(Colors.red),
+      Tone.auto(Colors.teal),
+      Tone.auto(Colors.pink),
+      Tone.auto(Colors.indigo),
     ];
 
     List<LineChartBarData> lineBars = [];
@@ -4335,7 +4348,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             drawVerticalLine: false,
             horizontalInterval: 5,
             getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
@@ -4356,7 +4369,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       padding: EdgeInsets.only(top: 8),
                       child: Text(time,
                           style: GoogleFonts.inter(
-                              fontSize: 10, color: Colors.grey[600])),
+                              fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                     );
                   }
                   return Text('');
@@ -4369,7 +4382,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
                     style: GoogleFonts.inter(
-                        fontSize: 10, color: Colors.grey[600])),
+                        fontSize: 10, color: Tone.fg(Colors.grey[600]))),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4399,7 +4412,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         height: 250,
         child: Center(
             child: Text('No data available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -4418,7 +4431,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             drawVerticalLine: false,
             horizontalInterval: 5,
             getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
@@ -4439,7 +4452,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       padding: EdgeInsets.only(top: 8),
                       child: Text(time,
                           style: GoogleFonts.inter(
-                              fontSize: 10, color: Colors.grey[600])),
+                              fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                     );
                   }
                   return Text('');
@@ -4452,7 +4465,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
                     style: GoogleFonts.inter(
-                        fontSize: 10, color: Colors.grey[600])),
+                        fontSize: 10, color: Tone.fg(Colors.grey[600]))),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4464,21 +4477,21 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               spots: List.generate(
                   maxTemp.length, (i) => FlSpot(i.toDouble(), maxTemp[i])),
               isCurved: true,
-              color: Colors.red,
+              color: Tone.auto(Colors.red),
               barWidth: 2,
               dotData: FlDotData(show: false),
               belowBarData:
-                  BarAreaData(show: true, color: Colors.red.withOpacity(0.1)),
+                  BarAreaData(show: true, color: Tone.auto(Colors.red).withOpacity(0.1)),
             ),
             LineChartBarData(
               spots: List.generate(
                   minTemp.length, (i) => FlSpot(i.toDouble(), minTemp[i])),
               isCurved: true,
-              color: Colors.blue,
+              color: Tone.auto(Colors.blue),
               barWidth: 2,
               dotData: FlDotData(show: false),
               belowBarData:
-                  BarAreaData(show: true, color: Colors.blue.withOpacity(0.1)),
+                  BarAreaData(show: true, color: Tone.auto(Colors.blue).withOpacity(0.1)),
             ),
           ],
           lineTouchData: LineTouchData(
@@ -4490,7 +4503,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             : 'Min: ${spot.y.toStringAsFixed(1)}°C',
                         TextStyle(
                             color:
-                                spot.barIndex == 0 ? Colors.red : Colors.blue,
+                                spot.barIndex == 0 ? Tone.fg(Colors.red) : Tone.fg(Colors.blue),
                             fontSize: 12),
                       ))
                   .toList(),
@@ -4508,7 +4521,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         height: 250,
         child: Center(
             child: Text('No data available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -4531,7 +4544,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 final zone = zones[groupIndex];
                 return BarTooltipItem(
                   'Zone ${zone.zone}\nAvg: ${zone.avg?.toStringAsFixed(1)}°C\nMin: ${zone.min?.toStringAsFixed(1)}°C\nMax: ${zone.max?.toStringAsFixed(1)}°C',
-                  GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                  GoogleFonts.inter(color: Tone.fg(Colors.white), fontSize: 11),
                 );
               },
             ),
@@ -4561,7 +4574,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
                     style: GoogleFonts.inter(
-                        fontSize: 10, color: Colors.grey[600])),
+                        fontSize: 10, color: Tone.fg(Colors.grey[600]))),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -4572,7 +4585,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             drawVerticalLine: false,
             horizontalInterval: 5,
             getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
           ),
           borderData: FlBorderData(show: false),
           barGroups: List.generate(zones.length, (index) {
@@ -4602,11 +4615,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       return Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade200,
+              color: Tone.bg(Colors.grey.shade200),
               blurRadius: 8,
               offset: Offset(0, 2),
             ),
@@ -4615,7 +4628,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         child: Center(
           child: Text(
             'No zone statistics available',
-            style: GoogleFonts.inter(color: Colors.grey[600]),
+            style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])),
           ),
         ),
       );
@@ -4626,14 +4639,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: isPhoneLayout(context)
             ? Border.all(color: GasPalette.border)
             : null,
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: Tone.bg(Colors.grey.shade200),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -4657,7 +4670,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               const SizedBox(width: 12),
               Text(
                 '${data.zoneSummary.totalReadings} readings',
-                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+                style: GoogleFonts.inter(fontSize: 12, color: Tone.fg(Colors.grey[600])),
               ),
             ],
           ),
@@ -4666,7 +4679,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Container(
             padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: Tone.bg(Colors.grey[100]),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Row(
@@ -4730,7 +4743,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             return Container(
               padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                border: Border(bottom: BorderSide(color: Tone.bg(Colors.grey.shade200))),
               ),
               child: Row(
                 children: [
@@ -4750,7 +4763,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       '${zone.min?.toStringAsFixed(1) ?? '--'}°C',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: Colors.blue,
+                        color: Tone.fg(Colors.blue),
                       ),
                     ),
                   ),
@@ -4758,7 +4771,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     flex: 2,
                     child: Text(
                       '${zone.max?.toStringAsFixed(1) ?? '--'}°C',
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.red),
+                      style: GoogleFonts.inter(fontSize: 12, color: Tone.fg(Colors.red)),
                     ),
                   ),
                   Expanded(
@@ -4774,15 +4787,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: isNormal
-                            ? Colors.green.withOpacity(0.1)
-                            : Colors.red.withOpacity(0.1),
+                            ? Tone.bg(Colors.green).withOpacity(0.1)
+                            : Tone.bg(Colors.red).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         isNormal ? 'OK' : 'Alert',
                         style: GoogleFonts.inter(
                           fontSize: 10,
-                          color: isNormal ? Colors.green : Colors.red,
+                          color: isNormal ? Tone.fg(Colors.green) : Tone.fg(Colors.red),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -4865,14 +4878,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: isPhoneLayout(context)
             ? Border.all(color: GasPalette.border)
             : null,
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
         boxShadow: [
           BoxShadow(
-              color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))
+              color: Tone.bg(Colors.grey.shade200), blurRadius: 8, offset: Offset(0, 2))
         ],
       ),
       child: Row(
@@ -4887,7 +4900,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 SizedBox(height: 8),
                 Text('$totalReadings readings | $totalHarvests harvest cycles',
                     style: GoogleFonts.inter(
-                        fontSize: 14, color: Colors.grey[600])),
+                        fontSize: 14, color: Tone.fg(Colors.grey[600]))),
               ],
             ),
           ),
@@ -4903,7 +4916,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               children: [
                 Text('Health',
                     style: GoogleFonts.inter(
-                        fontSize: 11, color: Colors.grey[600])),
+                        fontSize: 11, color: Tone.fg(Colors.grey[600]))),
                 Text('${healthScore.toStringAsFixed(0)}%',
                     style: GoogleFonts.inter(
                         fontSize: 20,
@@ -5062,14 +5075,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: isPhoneLayout(context)
             ? Border.all(color: GasPalette.border)
             : null,
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
         boxShadow: [
           BoxShadow(
-              color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))
+              color: Tone.bg(Colors.grey.shade200), blurRadius: 8, offset: Offset(0, 2))
         ],
       ),
       child: Column(
@@ -5092,40 +5105,40 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   'Ice Temp',
                   '${iceTemp.toStringAsFixed(1)}°C',
                   Icons.ac_unit,
-                  Colors.blue,
+                  Tone.auto(Colors.blue),
                   summary?.iceTemp),
               _buildDevice3MetricCard(
                   'High Side',
                   '${hsTemp.toStringAsFixed(1)}°C',
                   Icons.arrow_upward,
-                  Colors.orange,
+                  Tone.auto(Colors.orange),
                   summary?.highSideTemp),
               _buildDevice3MetricCard(
                   'Low Side',
                   '${lsTemp.toStringAsFixed(1)}°C',
                   Icons.arrow_downward,
-                  Colors.cyan,
+                  Tone.auto(Colors.cyan),
                   summary?.lowSideTemp),
               _buildDevice3MetricCard(
                   'Air Temp',
                   '${airTemp.toStringAsFixed(1)}°C',
                   Icons.air,
-                  Colors.green,
+                  Tone.auto(Colors.green),
                   summary?.airTemp),
               _buildDevice3MetricCard(
                   'Water Level',
                   '${waterLevel.toStringAsFixed(1)}%',
                   Icons.water_drop,
-                  Colors.indigo,
+                  Tone.auto(Colors.indigo),
                   summary?.waterLevel),
               _buildDevice3MetricCard(
                   'Amps',
                   '${currentAmps.toStringAsFixed(1)}A',
                   Icons.bolt,
-                  Colors.amber,
+                  Tone.auto(Colors.amber),
                   summary?.amps),
               _buildDevice3MetricCard('Harvests', '$totalHarvests',
-                  Icons.cyclone, Colors.purple, null),
+                  Icons.cyclone, Tone.auto(Colors.purple), null),
             ],
           ),
         ],
@@ -5142,12 +5155,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -5163,7 +5176,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               if (stats != null)
                 Text('Avg: ${stats.avg?.toStringAsFixed(1) ?? '--'}',
                     style: GoogleFonts.inter(
-                        fontSize: 9, color: Colors.grey[600])),
+                        fontSize: 9, color: Tone.fg(Colors.grey[600]))),
             ],
           ),
           SizedBox(height: 4),
@@ -5171,7 +5184,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                   fontSize: 18, fontWeight: FontWeight.bold, color: color)),
           Text(title,
-              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600])),
+              style: GoogleFonts.inter(fontSize: 11, color: Tone.fg(Colors.grey[600]))),
         ],
       ),
     );
@@ -5184,7 +5197,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         height: 300,
         child: Center(
             child: Text('No data available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -5201,7 +5214,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             drawVerticalLine: false,
             horizontalInterval: 10,
             getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
@@ -5222,7 +5235,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       padding: EdgeInsets.only(top: 8),
                       child: Text(time,
                           style: GoogleFonts.inter(
-                              fontSize: 10, color: Colors.grey[600])),
+                              fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                     );
                   }
                   return Text('');
@@ -5235,7 +5248,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
                     style: GoogleFonts.inter(
-                        fontSize: 10, color: Colors.grey[600])),
+                        fontSize: 10, color: Tone.fg(Colors.grey[600]))),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -5247,7 +5260,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               spots: List.generate(tempData.hsTemp.length,
                   (i) => FlSpot(i.toDouble(), tempData.hsTemp[i])),
               isCurved: true,
-              color: Colors.orange,
+              color: Tone.auto(Colors.orange),
               barWidth: 2,
               dotData: FlDotData(show: false),
             ),
@@ -5255,7 +5268,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               spots: List.generate(tempData.lsTemp.length,
                   (i) => FlSpot(i.toDouble(), tempData.lsTemp[i])),
               isCurved: true,
-              color: Colors.cyan,
+              color: Tone.auto(Colors.cyan),
               barWidth: 2,
               dotData: FlDotData(show: false),
             ),
@@ -5263,7 +5276,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               spots: List.generate(tempData.iceTemp.length,
                   (i) => FlSpot(i.toDouble(), tempData.iceTemp[i])),
               isCurved: true,
-              color: Colors.blue,
+              color: Tone.auto(Colors.blue),
               barWidth: 2,
               dotData: FlDotData(show: false),
             ),
@@ -5271,7 +5284,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               spots: List.generate(tempData.airTemp.length,
                   (i) => FlSpot(i.toDouble(), tempData.airTemp[i])),
               isCurved: true,
-              color: Colors.green,
+              color: Tone.auto(Colors.green),
               barWidth: 2,
               dotData: FlDotData(show: false),
             ),
@@ -5281,10 +5294,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               getTooltipItems: (spots) {
                 final labels = ['High Side', 'Low Side', 'Ice', 'Air'];
                 final colors = [
-                  Colors.orange,
-                  Colors.cyan,
-                  Colors.blue,
-                  Colors.green
+                  Tone.auto(Colors.orange),
+                  Tone.auto(Colors.cyan),
+                  Tone.auto(Colors.blue),
+                  Tone.auto(Colors.green)
                 ];
                 return spots
                     .map((spot) => LineTooltipItem(
@@ -5306,7 +5319,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         height: 250,
         child: Center(
             child: Text('No data available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -5323,7 +5336,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             drawVerticalLine: false,
             horizontalInterval: 10,
             getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
@@ -5344,7 +5357,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       padding: EdgeInsets.only(top: 8),
                       child: Text(time,
                           style: GoogleFonts.inter(
-                              fontSize: 10, color: Colors.grey[600])),
+                              fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                     );
                   }
                   return Text('');
@@ -5357,7 +5370,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}°',
                     style: GoogleFonts.inter(
-                        fontSize: 10, color: Colors.grey[600])),
+                        fontSize: 10, color: Tone.fg(Colors.grey[600]))),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -5369,21 +5382,21 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               spots: List.generate(tempData.hsTemp.length,
                   (i) => FlSpot(i.toDouble(), tempData.hsTemp[i])),
               isCurved: true,
-              color: Colors.orange,
+              color: Tone.auto(Colors.orange),
               barWidth: 3,
               dotData: FlDotData(show: false),
               belowBarData: BarAreaData(
-                  show: true, color: Colors.orange.withOpacity(0.1)),
+                  show: true, color: Tone.auto(Colors.orange).withOpacity(0.1)),
             ),
             LineChartBarData(
               spots: List.generate(tempData.lsTemp.length,
                   (i) => FlSpot(i.toDouble(), tempData.lsTemp[i])),
               isCurved: true,
-              color: Colors.cyan,
+              color: Tone.auto(Colors.cyan),
               barWidth: 3,
               dotData: FlDotData(show: false),
               belowBarData:
-                  BarAreaData(show: true, color: Colors.cyan.withOpacity(0.1)),
+                  BarAreaData(show: true, color: Tone.auto(Colors.cyan).withOpacity(0.1)),
             ),
           ],
           lineTouchData: LineTouchData(
@@ -5395,8 +5408,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             : 'Low Side: ${spot.y.toStringAsFixed(1)}°C',
                         TextStyle(
                             color: spot.barIndex == 0
-                                ? Colors.orange
-                                : Colors.cyan,
+                                ? Tone.fg(Colors.orange)
+                                : Tone.fg(Colors.cyan),
                             fontSize: 12),
                       ))
                   .toList(),
@@ -5414,7 +5427,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         height: 200,
         child: Center(
             child: Text('No data available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -5432,7 +5445,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             drawVerticalLine: false,
             horizontalInterval: 20,
             getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
@@ -5453,7 +5466,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       padding: EdgeInsets.only(top: 8),
                       child: Text(time,
                           style: GoogleFonts.inter(
-                              fontSize: 10, color: Colors.grey[600])),
+                              fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                     );
                   }
                   return Text('');
@@ -5466,7 +5479,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 reservedSize: 40,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}%',
                     style: GoogleFonts.inter(
-                        fontSize: 10, color: Colors.grey[600])),
+                        fontSize: 10, color: Tone.fg(Colors.grey[600]))),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -5480,15 +5493,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               spots: List.generate(
                   levels.length, (i) => FlSpot(i.toDouble(), levels[i])),
               isCurved: true,
-              color: Colors.indigo,
+              color: Tone.auto(Colors.indigo),
               barWidth: 3,
               dotData: FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
                   colors: [
-                    Colors.indigo.withOpacity(0.3),
-                    Colors.indigo.withOpacity(0.05)
+                    Tone.auto(Colors.indigo).withOpacity(0.3),
+                    Tone.auto(Colors.indigo).withOpacity(0.05)
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -5501,7 +5514,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               getTooltipItems: (spots) => spots
                   .map((spot) => LineTooltipItem(
                       'Water Level: ${spot.y.toStringAsFixed(1)}%',
-                      TextStyle(color: Colors.indigo, fontSize: 12)))
+                      TextStyle(color: Tone.fg(Colors.indigo), fontSize: 12)))
                   .toList(),
             ),
           ),
@@ -5517,7 +5530,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         height: 200,
         child: Center(
             child: Text('No data available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -5538,7 +5551,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             show: true,
             drawVerticalLine: false,
             getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
@@ -5559,7 +5572,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       padding: EdgeInsets.only(top: 8),
                       child: Text(time,
                           style: GoogleFonts.inter(
-                              fontSize: 10, color: Colors.grey[600])),
+                              fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                     );
                   }
                   return Text('');
@@ -5573,7 +5586,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 getTitlesWidget: (value, meta) => Text(
                     '${value.toStringAsFixed(1)}A',
                     style: GoogleFonts.inter(
-                        fontSize: 10, color: Colors.grey[600])),
+                        fontSize: 10, color: Tone.fg(Colors.grey[600]))),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -5587,15 +5600,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               spots: List.generate(
                   amps.length, (i) => FlSpot(i.toDouble(), amps[i])),
               isCurved: true,
-              color: Colors.amber,
+              color: Tone.auto(Colors.amber),
               barWidth: 3,
               dotData: FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
                   colors: [
-                    Colors.amber.withOpacity(0.3),
-                    Colors.amber.withOpacity(0.05)
+                    Tone.auto(Colors.amber).withOpacity(0.3),
+                    Tone.auto(Colors.amber).withOpacity(0.05)
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -5608,7 +5621,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               getTooltipItems: (spots) => spots
                   .map((spot) => LineTooltipItem(
                       'Amps: ${spot.y.toStringAsFixed(1)}A',
-                      TextStyle(color: Colors.amber.shade800, fontSize: 12)))
+                      TextStyle(color: Tone.fg(Colors.amber.shade800), fontSize: 12)))
                   .toList(),
             ),
           ),
@@ -5624,7 +5637,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         height: 200,
         child: Center(
             child: Text('No data available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -5649,7 +5662,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     groupIndex < labels.length ? labels[groupIndex] : '';
                 return BarTooltipItem(
                   '$label\n${rod.toY.toInt()} harvests',
-                  GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                  GoogleFonts.inter(color: Tone.fg(Colors.white), fontSize: 11),
                 );
               },
             ),
@@ -5674,7 +5687,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       padding: EdgeInsets.only(top: 8),
                       child: Text(time,
                           style: GoogleFonts.inter(
-                              fontSize: 9, color: Colors.grey[600])),
+                              fontSize: 9, color: Tone.fg(Colors.grey[600]))),
                     );
                   }
                   return Text('');
@@ -5687,7 +5700,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 reservedSize: 30,
                 getTitlesWidget: (value, meta) => Text('${value.toInt()}',
                     style: GoogleFonts.inter(
-                        fontSize: 10, color: Colors.grey[600])),
+                        fontSize: 10, color: Tone.fg(Colors.grey[600]))),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -5698,7 +5711,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             drawVerticalLine: false,
             horizontalInterval: 2,
             getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
           ),
           borderData: FlBorderData(show: false),
           barGroups: List.generate(counts.length, (index) {
@@ -5707,7 +5720,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               barRods: [
                 BarChartRodData(
                   toY: counts[index].toDouble(),
-                  color: Colors.purple,
+                  color: Tone.auto(Colors.purple),
                   width: labels.length > 24 ? 6 : 12,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
                 ),
@@ -5726,7 +5739,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         height: 200,
         child: Center(
             child: Text('No data available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -5748,7 +5761,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             show: true,
             drawVerticalLine: false,
             getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
@@ -5769,7 +5782,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       padding: EdgeInsets.only(top: 8),
                       child: Text(time,
                           style: GoogleFonts.inter(
-                              fontSize: 10, color: Colors.grey[600])),
+                              fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                     );
                   }
                   return Text('');
@@ -5783,7 +5796,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 getTitlesWidget: (value, meta) => Text(
                     '${value.toStringAsFixed(2)}',
                     style: GoogleFonts.inter(
-                        fontSize: 10, color: Colors.grey[600])),
+                        fontSize: 10, color: Tone.fg(Colors.grey[600]))),
               ),
             ),
             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -5797,15 +5810,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               spots: List.generate(
                   powerKw.length, (i) => FlSpot(i.toDouble(), powerKw[i])),
               isCurved: true,
-              color: Colors.green,
+              color: Tone.auto(Colors.green),
               barWidth: 3,
               dotData: FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
                   colors: [
-                    Colors.green.withOpacity(0.3),
-                    Colors.green.withOpacity(0.05)
+                    Tone.auto(Colors.green).withOpacity(0.3),
+                    Tone.auto(Colors.green).withOpacity(0.05)
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -5818,7 +5831,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               getTooltipItems: (spots) => spots
                   .map((spot) => LineTooltipItem(
                       '${spot.y.toStringAsFixed(3)} kW',
-                      TextStyle(color: Colors.green.shade800, fontSize: 12)))
+                      TextStyle(color: Tone.fg(Colors.green.shade800), fontSize: 12)))
                   .toList(),
             ),
           ),
@@ -5833,18 +5846,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       return Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-                color: Colors.grey.shade200,
+                color: Tone.bg(Colors.grey.shade200),
                 blurRadius: 8,
                 offset: Offset(0, 2))
           ],
         ),
         child: Center(
             child: Text('No insights available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -5856,14 +5869,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: isPhoneLayout(context)
             ? Border.all(color: GasPalette.border)
             : null,
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
         boxShadow: [
           BoxShadow(
-              color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))
+              color: Tone.bg(Colors.grey.shade200), blurRadius: 8, offset: Offset(0, 2))
         ],
       ),
       child: Column(
@@ -6048,19 +6061,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFAFAFA),
+                color: Tone.bg(const Color(0xFFFAFAFA)),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lightbulb_outline, color: Colors.amber, size: 20),
+                  Icon(Icons.lightbulb_outline, color: Tone.fg(Colors.amber), size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       insights.deviceHealthScore.recommendation,
                       style: GoogleFonts.inter(
-                          fontSize: 12, color: const Color(0xFF64748B)),
+                          fontSize: 12, color: Tone.fg(const Color(0xFF64748B))),
                     ),
                   ),
                 ],
@@ -6080,18 +6093,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       return Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-                color: Colors.grey.shade200,
+                color: Tone.bg(Colors.grey.shade200),
                 blurRadius: 8,
                 offset: Offset(0, 2))
           ],
         ),
         child: Center(
             child: Text('No summary available',
-                style: GoogleFonts.inter(color: Colors.grey[600]))),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600])))),
       );
     }
 
@@ -6102,28 +6115,28 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         const SizedBox(height: 4),
         Text('${summary.totalReadings} readings', style: gasBody(context)),
         const SizedBox(height: 12),
-        _buildDevice3StatRow('High Side Temp', summary.highSideTemp, Colors.orange),
-        _buildDevice3StatRow('Low Side Temp', summary.lowSideTemp, Colors.cyan),
-        _buildDevice3StatRow('Ice Temp', summary.iceTemp, Colors.blue),
-        _buildDevice3StatRow('Air Temp', summary.airTemp, Colors.green),
-        _buildDevice3StatRow('Water Level', summary.waterLevel, Colors.indigo, unit: '%'),
-        _buildDevice3StatRow('Amps', summary.amps, Colors.amber, unit: 'A'),
+        _buildDevice3StatRow('High Side Temp', summary.highSideTemp, Tone.auto(Colors.orange)),
+        _buildDevice3StatRow('Low Side Temp', summary.lowSideTemp, Tone.auto(Colors.cyan)),
+        _buildDevice3StatRow('Ice Temp', summary.iceTemp, Tone.auto(Colors.blue)),
+        _buildDevice3StatRow('Air Temp', summary.airTemp, Tone.auto(Colors.green)),
+        _buildDevice3StatRow('Water Level', summary.waterLevel, Tone.auto(Colors.indigo), unit: '%'),
+        _buildDevice3StatRow('Amps', summary.amps, Tone.auto(Colors.amber), unit: 'A'),
         _phoneReadingCard(title: 'Total Harvest Cycles', value: '${summary.totalHarvests}',
-          icon: Icons.cyclone, color: Colors.purple),
+          icon: Icons.cyclone, color: Tone.auto(Colors.purple)),
       ]);
     }
 
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: isPhoneLayout(context)
             ? Border.all(color: GasPalette.border)
             : null,
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 12),
         boxShadow: [
           BoxShadow(
-              color: Colors.grey.shade200, blurRadius: 8, offset: Offset(0, 2))
+              color: Tone.bg(Colors.grey.shade200), blurRadius: 8, offset: Offset(0, 2))
         ],
       ),
       child: Column(
@@ -6137,7 +6150,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       fontSize: 16, fontWeight: FontWeight.w600)),
               Text('${summary.totalReadings} readings',
                   style:
-                      GoogleFonts.inter(fontSize: 12, color: Colors.grey[600])),
+                      GoogleFonts.inter(fontSize: 12, color: Tone.fg(Colors.grey[600]))),
             ],
           ),
           SizedBox(height: 16),
@@ -6145,7 +6158,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Container(
             padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: Tone.bg(Colors.grey[100]),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Row(
@@ -6175,35 +6188,35 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           ),
           SizedBox(height: 8),
           _buildDevice3StatRow(
-              'High Side Temp', summary.highSideTemp, Colors.orange),
+              'High Side Temp', summary.highSideTemp, Tone.auto(Colors.orange)),
           _buildDevice3StatRow(
-              'Low Side Temp', summary.lowSideTemp, Colors.cyan),
-          _buildDevice3StatRow('Ice Temp', summary.iceTemp, Colors.blue),
-          _buildDevice3StatRow('Air Temp', summary.airTemp, Colors.green),
-          _buildDevice3StatRow('Water Level', summary.waterLevel, Colors.indigo,
+              'Low Side Temp', summary.lowSideTemp, Tone.auto(Colors.cyan)),
+          _buildDevice3StatRow('Ice Temp', summary.iceTemp, Tone.auto(Colors.blue)),
+          _buildDevice3StatRow('Air Temp', summary.airTemp, Tone.auto(Colors.green)),
+          _buildDevice3StatRow('Water Level', summary.waterLevel, Tone.auto(Colors.indigo),
               unit: '%'),
-          _buildDevice3StatRow('Amps', summary.amps, Colors.amber, unit: 'A'),
+          _buildDevice3StatRow('Amps', summary.amps, Tone.auto(Colors.amber), unit: 'A'),
           SizedBox(height: 12),
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.purple.withOpacity(0.3)),
+              border: Border.all(color: Tone.bg(Colors.purple).withOpacity(0.3)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.cyclone, color: Colors.purple, size: 20),
+                Icon(Icons.cyclone, color: Tone.fg(Colors.purple), size: 20),
                 SizedBox(width: 8),
                 Text('Total Harvest Cycles: ',
                     style: GoogleFonts.inter(
-                        fontSize: 14, color: Colors.grey[700])),
+                        fontSize: 14, color: Tone.fg(Colors.grey[700]))),
                 Text('${summary.totalHarvests}',
                     style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.purple)),
+                        color: Tone.fg(Colors.purple))),
               ],
             ),
           ),
@@ -6226,7 +6239,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        border: Border(bottom: BorderSide(color: Tone.bg(Colors.grey.shade200))),
       ),
       child: Row(
         children: [
@@ -6248,11 +6261,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Expanded(
               flex: 2,
               child: Text('${stats?.min?.toStringAsFixed(1) ?? '--'}$unit',
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.blue))),
+                  style: GoogleFonts.inter(fontSize: 12, color: Tone.fg(Colors.blue)))),
           Expanded(
               flex: 2,
               child: Text('${stats?.max?.toStringAsFixed(1) ?? '--'}$unit',
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.red))),
+                  style: GoogleFonts.inter(fontSize: 12, color: Tone.fg(Colors.red)))),
           Expanded(
               flex: 2,
               child: Text('${stats?.avg?.toStringAsFixed(1) ?? '--'}$unit',
@@ -6292,12 +6305,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Container(
             padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFF1F5F9)),
+              border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Tone.bg(Colors.black).withOpacity(0.02),
                     blurRadius: 12,
                     offset: const Offset(0, 4))
               ],
@@ -6311,7 +6324,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child:
-                      Icon(Icons.electric_bolt, color: Colors.white, size: 20),
+                      Icon(Icons.electric_bolt, color: Tone.fg(Colors.white), size: 20),
                 ),
                 SizedBox(width: 12),
                 Expanded(
@@ -6322,11 +6335,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF0F172A))),
+                              color: Tone.fg(const Color(0xFF0F172A)))),
                       Text(
                           '${stats['total_readings'] ?? 0} readings | ${compressors.length} compressors',
                           style: GoogleFonts.inter(
-                              fontSize: 13, color: Colors.grey[600])),
+                              fontSize: 13, color: Tone.fg(Colors.grey[600]))),
                     ],
                   ),
                 ),
@@ -6353,17 +6366,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   'Avg Load',
                   '${(stats['overall_avg_load'] ?? 0).toStringAsFixed(1)} A',
                   Icons.speed,
-                  Colors.blue),
+                  Tone.auto(Colors.blue)),
               _buildSummaryStatCard(
                   'Max Load',
                   '${(stats['overall_max_load'] ?? 0).toStringAsFixed(1)} A',
                   Icons.arrow_upward,
-                  Colors.orange),
+                  Tone.auto(Colors.orange)),
               _buildSummaryStatCard(
                   'Min Load',
                   '${(stats['overall_min_load'] ?? 0).toStringAsFixed(1)} A',
                   Icons.arrow_downward,
-                  Colors.teal),
+                  Tone.auto(Colors.teal)),
             ],
           ),
           SizedBox(height: spacing),
@@ -6373,7 +6386,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[800])),
+                  color: Tone.fg(Colors.grey[800]))),
           SizedBox(height: 8),
           _readingGrid(
             shrinkWrap: true,
@@ -6387,22 +6400,22 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   'Total Power',
                   '${(stats['total_power_kw'] ?? 0).toStringAsFixed(1)} kW',
                   Icons.power,
-                  Colors.deepOrange),
+                  Tone.auto(Colors.deepOrange)),
               _buildSummaryStatCard(
                   'Daily Energy',
                   '${(stats['daily_energy_estimate_kwh'] ?? 0).toStringAsFixed(1)} kWh',
                   Icons.battery_charging_full,
-                  Colors.amber),
+                  Tone.auto(Colors.amber)),
               _buildSummaryStatCard(
                   'Daily Cost',
                   'R${(stats['daily_cost_estimate'] ?? 0).toStringAsFixed(0)}',
                   Icons.attach_money,
-                  Colors.green),
+                  Tone.auto(Colors.green)),
               _buildSummaryStatCard(
                   'Power Factor',
                   '${stats['power_factor'] ?? 0.85}',
                   Icons.electric_meter,
-                  Colors.purple),
+                  Tone.auto(Colors.purple)),
             ],
           ),
           SizedBox(height: spacing),
@@ -6412,7 +6425,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[800])),
+                  color: Tone.fg(Colors.grey[800]))),
           SizedBox(height: 8),
           _readingGridBuilder(
             shrinkWrap: true,
@@ -6448,7 +6461,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               if (isPhoneLayout(context)) {
                 return _phoneReadingCard(title: 'Comp ${index + 1}',
                   value: '${avgAmp.toStringAsFixed(1)} A', icon: Icons.electric_bolt_outlined,
-                  color: avgAmp > 0.5 ? Constants.ctaColorLight : Colors.grey,
+                  color: avgAmp > 0.5 ? Constants.ctaColorLight : Tone.auto(Colors.grey),
                   details: [
                     ...phases.entries.take(3).map((e) {
                       final phaseData = e.value as Map<String, dynamic>? ?? {};
@@ -6464,15 +6477,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               return Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                       color: avgAmp > 0.5
                           ? Constants.ctaColorLight.withOpacity(0.3)
-                          : Colors.grey.withOpacity(0.2)),
+                          : Tone.bg(Colors.grey).withOpacity(0.2)),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Tone.bg(Colors.black).withOpacity(0.04),
                         blurRadius: 4,
                         offset: Offset(0, 2))
                   ],
@@ -6487,7 +6500,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             size: 16,
                             color: avgAmp > 0.5
                                 ? Constants.ctaColorLight
-                                : Colors.grey),
+                                : Tone.fg(Colors.grey)),
                         SizedBox(width: 4),
                         Text('Comp ${index + 1}',
                             style: GoogleFonts.inter(
@@ -6500,46 +6513,46 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color:
-                                avgAmp > 0.5 ? Colors.black87 : Colors.grey)),
+                                avgAmp > 0.5 ? Tone.fg(Colors.black87) : Tone.fg(Colors.grey))),
                     SizedBox(height: 4),
                     ...phases.entries.take(3).map((e) {
                       final phaseData = e.value as Map<String, dynamic>? ?? {};
                       return Text(
                           '${e.key}: ${(phaseData['avg'] ?? 0.0).toStringAsFixed(1)}A',
                           style: GoogleFonts.inter(
-                              fontSize: 10, color: Colors.grey[600]));
+                              fontSize: 10, color: Tone.fg(Colors.grey[600])));
                     }),
                     if (phases.isNotEmpty) ...[
                       Divider(height: 8, thickness: 0.5),
                       Row(
                         children: [
                           Icon(Icons.arrow_downward,
-                              size: 10, color: Colors.blue),
+                              size: 10, color: Tone.fg(Colors.blue)),
                           SizedBox(width: 2),
                           Expanded(
                               child: Text('${minAmp.toStringAsFixed(1)}A',
                                   style: GoogleFonts.inter(
                                       fontSize: 9,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.blue))),
-                          Icon(Icons.arrow_upward, size: 10, color: Colors.red),
+                                      color: Tone.fg(Colors.blue)))),
+                          Icon(Icons.arrow_upward, size: 10, color: Tone.fg(Colors.red)),
                           SizedBox(width: 2),
                           Text('${maxAmp.toStringAsFixed(1)}A',
                               style: GoogleFonts.inter(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.red)),
+                                  color: Tone.fg(Colors.red))),
                         ],
                       ),
                       SizedBox(height: 2),
                       if (minTime != null)
                         Text('Min: ${_fmtTime(minTime)}',
                             style: GoogleFonts.inter(
-                                fontSize: 8, color: Colors.grey[500])),
+                                fontSize: 8, color: Tone.fg(Colors.grey[500]))),
                       if (maxTime != null)
                         Text('Max: ${_fmtTime(maxTime)}',
                             style: GoogleFonts.inter(
-                                fontSize: 8, color: Colors.grey[500])),
+                                fontSize: 8, color: Tone.fg(Colors.grey[500]))),
                     ],
                     if (phaseImbalance > 10) ...[
                       SizedBox(height: 4),
@@ -6547,21 +6560,21 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         padding:
                             EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.15),
+                          color: Tone.bg(Colors.orange).withOpacity(0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.warning_amber,
-                                size: 10, color: Colors.orange),
+                                size: 10, color: Tone.fg(Colors.orange)),
                             SizedBox(width: 3),
                             Text(
                                 '${phaseImbalance.toStringAsFixed(1)}% imbalance',
                                 style: GoogleFonts.inter(
                                     fontSize: 8,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.orange)),
+                                    color: Tone.fg(Colors.orange))),
                           ],
                         ),
                       ),
@@ -6604,14 +6617,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       return SizedBox(height: 200, child: Center(child: Text('No data')));
 
     final colors = [
-      Colors.blue,
-      Colors.red,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.cyan,
-      Colors.pink,
-      Colors.teal
+      Tone.auto(Colors.blue),
+      Tone.auto(Colors.red),
+      Tone.auto(Colors.green),
+      Tone.auto(Colors.orange),
+      Tone.auto(Colors.purple),
+      Tone.auto(Colors.cyan),
+      Tone.auto(Colors.pink),
+      Tone.auto(Colors.teal)
     ];
 
     // Compute min/max for y-axis
@@ -6662,7 +6675,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           '\n$k: ${(pd['min'] ?? 0).toStringAsFixed(1)}-${(pd['max'] ?? 0).toStringAsFixed(1)}A';
                     });
                     return BarTooltipItem(tip,
-                        GoogleFonts.inter(color: Colors.white, fontSize: 11));
+                        GoogleFonts.inter(color: Tone.fg(Colors.white), fontSize: 11));
                   },
                 ),
               ),
@@ -6684,7 +6697,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTitlesWidget: (value, meta) => Text(
                       '${value.toStringAsFixed(0)}A',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -6696,7 +6709,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   drawVerticalLine: false,
                   horizontalInterval: 2,
                   getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+                      FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1)),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(8, (c) {
                 final compData = compressors['compressor${c + 1}']
@@ -6735,9 +6748,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       return SizedBox(height: 200, child: Center(child: Text('No data')));
 
     final phaseColors = [
-      Colors.blue.shade600,
-      Colors.amber.shade600,
-      Colors.red.shade500
+      Tone.auto(Colors.blue.shade600),
+      Tone.auto(Colors.amber.shade600),
+      Tone.auto(Colors.red.shade500)
     ];
 
     double maxVal = 0;
@@ -6787,7 +6800,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     return BarTooltipItem(
                       'Comp ${groupIndex + 1}\nPhase ${rodIndex + 1}: ${rod.toY.toStringAsFixed(1)}A',
-                      GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                      GoogleFonts.inter(color: Tone.fg(Colors.white), fontSize: 11),
                     );
                   },
                 ),
@@ -6810,7 +6823,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTitlesWidget: (value, meta) => Text(
                       '${value.toStringAsFixed(0)}A',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -6822,7 +6835,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   drawVerticalLine: false,
                   horizontalInterval: 2,
                   getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+                      FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1)),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(8, (c) {
                 final compData = compressors['compressor${c + 1}']
@@ -6889,14 +6902,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     }
 
     final colors = [
-      Colors.blue,
-      Colors.red,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.cyan,
-      Colors.pink,
-      Colors.teal
+      Tone.auto(Colors.blue),
+      Tone.auto(Colors.red),
+      Tone.auto(Colors.green),
+      Tone.auto(Colors.orange),
+      Tone.auto(Colors.purple),
+      Tone.auto(Colors.cyan),
+      Tone.auto(Colors.pink),
+      Tone.auto(Colors.teal)
     ];
 
     return Column(
@@ -6917,7 +6930,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   drawVerticalLine: false,
                   horizontalInterval: 2,
                   getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+                      FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1)),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
@@ -6934,7 +6947,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           child: Text(
                               (data[idx]['date'] ?? '').toString().substring(5),
                               style: GoogleFonts.inter(
-                                  fontSize: 10, color: Colors.grey[600])),
+                                  fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                         );
                       }
                       return Text('');
@@ -6948,7 +6961,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTitlesWidget: (value, meta) => Text(
                       '${value.toStringAsFixed(0)}A',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -6988,9 +7001,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       return SizedBox(height: 200, child: Center(child: Text('No daily data')));
 
     final phaseColors = [
-      Colors.blue.shade600,
-      Colors.amber.shade600,
-      Colors.red.shade500
+      Tone.auto(Colors.blue.shade600),
+      Tone.auto(Colors.amber.shade600),
+      Tone.auto(Colors.red.shade500)
     ];
 
     // Aggregate all compressor phase averages per day
@@ -7053,7 +7066,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   drawVerticalLine: false,
                   horizontalInterval: 2,
                   getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+                      FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1)),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
@@ -7070,7 +7083,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           child: Text(
                               (data[idx]['date'] ?? '').toString().substring(5),
                               style: GoogleFonts.inter(
-                                  fontSize: 10, color: Colors.grey[600])),
+                                  fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                         );
                       }
                       return Text('');
@@ -7084,7 +7097,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTitlesWidget: (value, meta) => Text(
                       '${value.toStringAsFixed(0)}A',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -7156,12 +7169,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Container(
             padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFF1F5F9)),
+              border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Tone.bg(Colors.black).withOpacity(0.02),
                     blurRadius: 12,
                     offset: const Offset(0, 4))
               ],
@@ -7171,10 +7184,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.indigo,
+                    color: Tone.bg(Colors.indigo),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.toggle_on, color: Colors.white, size: 20),
+                  child: Icon(Icons.toggle_on, color: Tone.fg(Colors.white), size: 20),
                 ),
                 SizedBox(width: 12),
                 Expanded(
@@ -7185,11 +7198,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF0F172A))),
+                              color: Tone.fg(const Color(0xFF0F172A)))),
                       Text(
                           '${stats['total_readings'] ?? 0} readings | 16 relays',
                           style: GoogleFonts.inter(
-                              fontSize: 13, color: Colors.grey[600])),
+                              fontSize: 13, color: Tone.fg(Colors.grey[600]))),
                     ],
                   ),
                 ),
@@ -7208,19 +7221,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             mainAxisSpacing: 8,
             children: [
               _buildSummaryStatCard('Relays ON', '${stats['relays_on'] ?? 0}',
-                  Icons.toggle_on, Colors.green),
+                  Icons.toggle_on, Tone.auto(Colors.green)),
               _buildSummaryStatCard('Relays OFF', '${stats['relays_off'] ?? 0}',
-                  Icons.toggle_off, Colors.grey),
+                  Icons.toggle_off, Tone.auto(Colors.grey)),
               _buildSummaryStatCard(
                   'Avg Duty Cycle',
                   '${(stats['avg_duty_cycle'] ?? 0).toStringAsFixed(1)}%',
                   Icons.speed,
-                  Colors.indigo),
+                  Tone.auto(Colors.indigo)),
               _buildSummaryStatCard(
                   'State Changes',
                   '${stats['total_state_changes'] ?? 0}',
                   Icons.swap_vert,
-                  Colors.orange),
+                  Tone.auto(Colors.orange)),
             ],
           ),
           SizedBox(height: spacing),
@@ -7230,7 +7243,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[800])),
+                  color: Tone.fg(Colors.grey[800]))),
           SizedBox(height: 8),
           _readingGrid(
             shrinkWrap: true,
@@ -7244,22 +7257,22 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   'Active Relays',
                   '${stats['active_relay_count'] ?? 0}',
                   Icons.power,
-                  Colors.green),
+                  Tone.auto(Colors.green)),
               _buildSummaryStatCard(
                   'Total Runtime',
                   '${(stats['total_runtime_hours'] ?? 0).toStringAsFixed(1)} hrs',
                   Icons.timer,
-                  Colors.blue),
+                  Tone.auto(Colors.blue)),
               _buildSummaryStatCard(
                   'Most Active',
                   'Relay ${stats['most_active_relay'] ?? '-'}',
                   Icons.star,
-                  Colors.amber),
+                  Tone.auto(Colors.amber)),
               _buildSummaryStatCard(
                   'Least Active',
                   'Relay ${stats['least_active_relay'] ?? '-'}',
                   Icons.star_border,
-                  Colors.grey),
+                  Tone.auto(Colors.grey)),
             ],
           ),
           SizedBox(height: spacing),
@@ -7269,7 +7282,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[800])),
+                  color: Tone.fg(Colors.grey[800]))),
           SizedBox(height: 8),
           _readingGridBuilder(
             shrinkWrap: true,
@@ -7294,7 +7307,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               if (isPhoneLayout(context)) {
                 return _phoneReadingCard(title: 'Relay ${index + 1}',
                   value: '${dutyCycle.toStringAsFixed(1)}%', icon: Icons.toggle_on_outlined,
-                  color: currentState ? Colors.green : Colors.grey,
+                  color: currentState ? Tone.auto(Colors.green) : Tone.auto(Colors.grey),
                   details: ['${currentState ? 'ON' : 'OFF'} · duty cycle',
                     '$stateChanges transitions',
                     if (runtimeHours > 0) '${runtimeHours.toStringAsFixed(1)} hrs runtime',
@@ -7303,15 +7316,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               return Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                       color: currentState
-                          ? Colors.green.withOpacity(0.3)
-                          : Colors.grey.withOpacity(0.2)),
+                          ? Tone.bg(Colors.green).withOpacity(0.3)
+                          : Tone.bg(Colors.grey).withOpacity(0.2)),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Tone.bg(Colors.black).withOpacity(0.04),
                         blurRadius: 4,
                         offset: Offset(0, 2))
                   ],
@@ -7328,8 +7341,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: currentState
-                                ? Colors.green
-                                : Colors.grey.shade400,
+                                ? Tone.bg(Colors.green)
+                                : Tone.bg(Colors.grey.shade400),
                           ),
                         ),
                         SizedBox(width: 6),
@@ -7342,7 +7355,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                 fontSize: 9,
                                 fontWeight: FontWeight.w600,
                                 color:
-                                    currentState ? Colors.green : Colors.grey)),
+                                    currentState ? Tone.fg(Colors.green) : Tone.fg(Colors.grey))),
                       ],
                     ),
                     SizedBox(height: 6),
@@ -7350,33 +7363,33 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: isActive ? Colors.green[700] : Colors.grey)),
+                            color: isActive ? Tone.fg(Colors.green[700]) : Tone.fg(Colors.grey))),
                     Text('duty cycle',
                         style: GoogleFonts.inter(
-                            fontSize: 10, color: Colors.grey[500])),
+                            fontSize: 10, color: Tone.fg(Colors.grey[500]))),
                     SizedBox(height: 4),
                     // Progress bar
                     ClipRRect(
                       borderRadius: BorderRadius.circular(3),
                       child: LinearProgressIndicator(
                         value: dutyCycle / 100,
-                        backgroundColor: Colors.grey.shade200,
+                        backgroundColor: Tone.bg(Colors.grey.shade200),
                         valueColor: AlwaysStoppedAnimation<Color>(
-                            isActive ? Colors.green : Colors.orange),
+                            isActive ? Tone.fg(Colors.green) : Tone.fg(Colors.orange)),
                         minHeight: 4,
                       ),
                     ),
                     SizedBox(height: 4),
                     Text('$stateChanges transitions',
                         style: GoogleFonts.inter(
-                            fontSize: 9, color: Colors.grey[500])),
+                            fontSize: 9, color: Tone.fg(Colors.grey[500]))),
                     if (runtimeHours > 0) ...[
                       SizedBox(height: 2),
                       Text('${runtimeHours.toStringAsFixed(1)} hrs runtime',
                           style: GoogleFonts.inter(
                               fontSize: 9,
                               fontWeight: FontWeight.w500,
-                              color: Colors.indigo)),
+                              color: Tone.fg(Colors.indigo))),
                     ],
                   ],
                 ),
@@ -7425,16 +7438,16 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 spacing: 12,
                 runSpacing: 8,
                 children: [
-                    _buildLegendItem(Colors.green.shade600, 'High Duty (>50%)'),
+                    _buildLegendItem(Tone.auto(Colors.green.shade600), 'High Duty (>50%)'),
                     SizedBox(width: 16),
-                    _buildLegendItem(Colors.orange, 'Low Duty (\u226450%)'),
+                    _buildLegendItem(Tone.auto(Colors.orange), 'Low Duty (\u226450%)'),
                   ])
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem(Colors.green.shade600, 'High Duty (>50%)'),
+                  _buildLegendItem(Tone.auto(Colors.green.shade600), 'High Duty (>50%)'),
                   SizedBox(width: 16),
-                  _buildLegendItem(Colors.orange, 'Low Duty (\u226450%)'),
+                  _buildLegendItem(Tone.auto(Colors.orange), 'Low Duty (\u226450%)'),
                 ],
               ),
         SizedBox(height: 12),
@@ -7449,7 +7462,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     return BarTooltipItem(
                       'Relay ${groupIndex + 1}\n${rod.toY.toStringAsFixed(1)}% ON',
-                      GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                      GoogleFonts.inter(color: Tone.fg(Colors.white), fontSize: 11),
                     );
                   },
                 ),
@@ -7471,7 +7484,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   reservedSize: 40,
                   getTitlesWidget: (value, meta) => Text('${value.toInt()}%',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -7484,8 +7497,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 horizontalInterval: 25,
                 getDrawingHorizontalLine: (value) => FlLine(
                     color: value == 50
-                        ? Colors.grey.shade400
-                        : Colors.grey.shade200,
+                        ? Tone.bg(Colors.grey.shade400)
+                        : Tone.bg(Colors.grey.shade200),
                     strokeWidth: value == 50 ? 1.5 : 1,
                     dashArray: value == 50 ? [5, 5] : null),
               ),
@@ -7500,12 +7513,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   barRods: [
                     BarChartRodData(
                       toY: duty,
-                      color: isHigh ? Colors.green.shade600 : Colors.orange,
+                      color: isHigh ? Tone.auto(Colors.green.shade600) : Tone.auto(Colors.orange),
                       width: 14,
                       borderRadius:
                           BorderRadius.vertical(top: Radius.circular(3)),
                       backDrawRodData: BackgroundBarChartRodData(
-                          show: true, toY: 100, color: Colors.grey.shade100),
+                          show: true, toY: 100, color: Tone.bg(Colors.grey.shade100)),
                     ),
                   ],
                 );
@@ -7549,17 +7562,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 spacing: 12,
                 runSpacing: 8,
                 children: [
-                    _buildLegendItem(Colors.indigo, 'Avg Relay Activity'),
+                    _buildLegendItem(Tone.auto(Colors.indigo), 'Avg Relay Activity'),
                     SizedBox(width: 16),
                     _buildLegendItem(
-                        Colors.red.shade400, 'Peak Relay Activity'),
+                        Tone.auto(Colors.red.shade400), 'Peak Relay Activity'),
                   ])
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem(Colors.indigo, 'Avg Relay Activity'),
+                  _buildLegendItem(Tone.auto(Colors.indigo), 'Avg Relay Activity'),
                   SizedBox(width: 16),
-                  _buildLegendItem(Colors.red.shade400, 'Peak Relay Activity'),
+                  _buildLegendItem(Tone.auto(Colors.red.shade400), 'Peak Relay Activity'),
                 ],
               ),
         SizedBox(height: 12),
@@ -7574,7 +7587,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   drawVerticalLine: false,
                   horizontalInterval: 25,
                   getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+                      FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1)),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
@@ -7585,7 +7598,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     padding: EdgeInsets.only(top: 8),
                     child: Text('${value.toInt()}h',
                         style: GoogleFonts.inter(
-                            fontSize: 10, color: Colors.grey[600])),
+                            fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                   ),
                 )),
                 leftTitles: AxisTitles(
@@ -7594,7 +7607,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   reservedSize: 40,
                   getTitlesWidget: (value, meta) => Text('${value.toInt()}%',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -7606,27 +7619,27 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 LineChartBarData(
                   spots: highRelaySpots,
                   isCurved: true,
-                  color: Colors.red.shade400,
+                  color: Tone.auto(Colors.red.shade400),
                   barWidth: 2,
                   dotData: FlDotData(show: false),
                   belowBarData: BarAreaData(
-                      show: true, color: Colors.red.withOpacity(0.06)),
+                      show: true, color: Tone.auto(Colors.red).withOpacity(0.06)),
                 ),
                 LineChartBarData(
                   spots: hourSpots,
                   isCurved: true,
-                  color: Colors.indigo,
+                  color: Tone.auto(Colors.indigo),
                   barWidth: 2.5,
                   dotData: FlDotData(show: false),
                   belowBarData: BarAreaData(
-                      show: true, color: Colors.indigo.withOpacity(0.1)),
+                      show: true, color: Tone.auto(Colors.indigo).withOpacity(0.1)),
                 ),
               ],
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
                   getTooltipItems: (spots) => spots.map((spot) {
                     final labels = ['Peak', 'Avg'];
-                    final colors = [Colors.red.shade400, Colors.indigo];
+                    final colors = [Tone.auto(Colors.red.shade400), Tone.auto(Colors.indigo)];
                     return LineTooltipItem(
                         '${labels[spot.barIndex]}: ${spot.y.toStringAsFixed(1)}%',
                         TextStyle(color: colors[spot.barIndex], fontSize: 11));
@@ -7659,14 +7672,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     }
 
     final colors = [
-      Colors.blue,
-      Colors.red,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.cyan,
-      Colors.pink,
-      Colors.teal
+      Tone.auto(Colors.blue),
+      Tone.auto(Colors.red),
+      Tone.auto(Colors.green),
+      Tone.auto(Colors.orange),
+      Tone.auto(Colors.purple),
+      Tone.auto(Colors.cyan),
+      Tone.auto(Colors.pink),
+      Tone.auto(Colors.teal)
     ];
 
     return Column(
@@ -7691,7 +7704,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   drawVerticalLine: false,
                   horizontalInterval: 25,
                   getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+                      FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1)),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
@@ -7708,7 +7721,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           child: Text(
                               (data[idx]['date'] ?? '').toString().substring(5),
                               style: GoogleFonts.inter(
-                                  fontSize: 10, color: Colors.grey[600])),
+                                  fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                         );
                       }
                       return Text('');
@@ -7721,7 +7734,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   reservedSize: 40,
                   getTitlesWidget: (value, meta) => Text('${value.toInt()}%',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -7786,12 +7799,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Container(
             padding: EdgeInsets.all(padding),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFF1F5F9)),
+              border: Border.all(color: Tone.bg(const Color(0xFFF1F5F9))),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Tone.bg(Colors.black).withOpacity(0.02),
                     blurRadius: 12,
                     offset: const Offset(0, 4))
               ],
@@ -7801,10 +7814,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.teal,
+                    color: Tone.bg(Colors.teal),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.speed, color: Colors.white, size: 20),
+                  child: Icon(Icons.speed, color: Tone.fg(Colors.white), size: 20),
                 ),
                 SizedBox(width: 12),
                 Expanded(
@@ -7815,15 +7828,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF0F172A))),
+                              color: Tone.fg(const Color(0xFF0F172A)))),
                       Text(
                           '${stats['total_readings'] ?? 0} readings | 8 sensors',
                           style: GoogleFonts.inter(
-                              fontSize: 13, color: Colors.grey[600])),
+                              fontSize: 13, color: Tone.fg(Colors.grey[600]))),
                       Text(
                           'Range: ${stats['min_overall'] ?? 0} - ${stats['max_overall'] ?? 0} psi',
                           style: GoogleFonts.inter(
-                              fontSize: 12, color: Colors.grey[500])),
+                              fontSize: 12, color: Tone.fg(Colors.grey[500]))),
                     ],
                   ),
                 ),
@@ -7845,22 +7858,22 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   'Avg Pressure',
                   '${(stats['avg_overall'] ?? 0).toStringAsFixed(2)} psi',
                   Icons.speed,
-                  Colors.teal),
+                  Tone.auto(Colors.teal)),
               _buildSummaryStatCard(
                   'Min Overall',
                   '${(stats['min_overall'] ?? 0).toStringAsFixed(2)} psi',
                   Icons.arrow_downward,
-                  Colors.blue),
+                  Tone.auto(Colors.blue)),
               _buildSummaryStatCard(
                   'Max Overall',
                   '${(stats['max_overall'] ?? 0).toStringAsFixed(2)} psi',
                   Icons.arrow_upward,
-                  Colors.red),
+                  Tone.auto(Colors.red)),
               _buildSummaryStatCard(
                   'Most Stable',
                   'Sensor ${stats['most_stable_sensor'] ?? '-'}',
                   Icons.check_circle,
-                  Colors.green),
+                  Tone.auto(Colors.green)),
             ],
           ),
           SizedBox(height: spacing),
@@ -7870,7 +7883,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[800])),
+                  color: Tone.fg(Colors.grey[800]))),
           SizedBox(height: 8),
           _readingGrid(
             shrinkWrap: true,
@@ -7884,22 +7897,22 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   'Stability Score',
                   '${(stats['avg_stability_score'] ?? 0).toStringAsFixed(1)}%',
                   Icons.verified,
-                  Colors.teal),
+                  Tone.auto(Colors.teal)),
               _buildSummaryStatCard(
                   'Most Stable',
                   'Sensor ${stats['most_stable_sensor'] ?? '-'}',
                   Icons.check_circle,
-                  Colors.green),
+                  Tone.auto(Colors.green)),
               _buildSummaryStatCard(
                   'Least Stable',
                   'Sensor ${stats['least_stable_sensor'] ?? '-'}',
                   Icons.warning,
-                  Colors.orange),
+                  Tone.auto(Colors.orange)),
               _buildSummaryStatCard(
                   'Avg Pressure',
                   '${(stats['avg_overall'] ?? 0).toStringAsFixed(2)} psi',
                   Icons.speed,
-                  Colors.blue),
+                  Tone.auto(Colors.blue)),
             ],
           ),
           SizedBox(height: spacing),
@@ -7909,7 +7922,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[800])),
+                  color: Tone.fg(Colors.grey[800]))),
           SizedBox(height: 8),
           _readingGridBuilder(
             shrinkWrap: true,
@@ -7937,7 +7950,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               if (isPhoneLayout(context)) {
                 return _phoneReadingCard(title: 'Sensor ${index + 1}',
                   value: '${avg.toStringAsFixed(2)} psi', icon: Icons.speed,
-                  color: Colors.teal, details: ['Average pressure',
+                  color: Tone.auto(Colors.teal), details: ['Average pressure',
                     'Min: ${min.toStringAsFixed(2)}${minTime != null ? ' · ${_fmtTime(minTime)}' : ''}',
                     'Max: ${max.toStringAsFixed(2)}${maxTime != null ? ' · ${_fmtTime(maxTime)}' : ''}',
                     'Range: ${range.toStringAsFixed(3)} psi',
@@ -7947,12 +7960,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               return Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Tone.bg(Colors.white),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.teal.withOpacity(0.2)),
+                  border: Border.all(color: Tone.bg(Colors.teal).withOpacity(0.2)),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Tone.bg(Colors.black).withOpacity(0.04),
                         blurRadius: 4,
                         offset: Offset(0, 2))
                   ],
@@ -7963,7 +7976,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.speed, size: 16, color: Colors.teal),
+                        Icon(Icons.speed, size: 16, color: Tone.fg(Colors.teal)),
                         SizedBox(width: 4),
                         Text('Sensor ${index + 1}',
                             style: GoogleFonts.inter(
@@ -7975,53 +7988,53 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87)),
+                            color: Tone.fg(Colors.black87))),
                     Text('average',
                         style: GoogleFonts.inter(
-                            fontSize: 9, color: Colors.grey[500])),
+                            fontSize: 9, color: Tone.fg(Colors.grey[500]))),
                     Divider(height: 10, thickness: 0.5),
                     Row(
                       children: [
                         Icon(Icons.arrow_downward,
-                            size: 10, color: Colors.blue),
+                            size: 10, color: Tone.fg(Colors.blue)),
                         SizedBox(width: 2),
                         Expanded(
                             child: Text('${min.toStringAsFixed(2)}',
                                 style: GoogleFonts.inter(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.blue))),
-                        Icon(Icons.arrow_upward, size: 10, color: Colors.red),
+                                    color: Tone.fg(Colors.blue)))),
+                        Icon(Icons.arrow_upward, size: 10, color: Tone.fg(Colors.red)),
                         SizedBox(width: 2),
                         Text('${max.toStringAsFixed(2)}',
                             style: GoogleFonts.inter(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.red)),
+                                color: Tone.fg(Colors.red))),
                       ],
                     ),
                     SizedBox(height: 2),
                     if (minTime != null)
                       Text('Min: ${_fmtTime(minTime)}',
                           style: GoogleFonts.inter(
-                              fontSize: 8, color: Colors.grey[500])),
+                              fontSize: 8, color: Tone.fg(Colors.grey[500]))),
                     if (maxTime != null)
                       Text('Max: ${_fmtTime(maxTime)}',
                           style: GoogleFonts.inter(
-                              fontSize: 8, color: Colors.grey[500])),
+                              fontSize: 8, color: Tone.fg(Colors.grey[500]))),
                     SizedBox(height: 4),
                     Text('Range: ${range.toStringAsFixed(3)} psi',
                         style: GoogleFonts.inter(
-                            fontSize: 9, color: Colors.grey[600])),
+                            fontSize: 9, color: Tone.fg(Colors.grey[600]))),
                     SizedBox(height: 4),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: stabilityScore >= 80
-                            ? Colors.green.withOpacity(0.1)
+                            ? Tone.bg(Colors.green).withOpacity(0.1)
                             : stabilityScore >= 50
-                                ? Colors.orange.withOpacity(0.1)
-                                : Colors.red.withOpacity(0.1),
+                                ? Tone.bg(Colors.orange).withOpacity(0.1)
+                                : Tone.bg(Colors.red).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
@@ -8035,10 +8048,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                     : Icons.error,
                             size: 10,
                             color: stabilityScore >= 80
-                                ? Colors.green
+                                ? Tone.fg(Colors.green)
                                 : stabilityScore >= 50
-                                    ? Colors.orange
-                                    : Colors.red,
+                                    ? Tone.fg(Colors.orange)
+                                    : Tone.fg(Colors.red),
                           ),
                           SizedBox(width: 3),
                           Text('${stabilityScore.toStringAsFixed(0)}% stable',
@@ -8046,10 +8059,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                   fontSize: 8,
                                   fontWeight: FontWeight.w600,
                                   color: stabilityScore >= 80
-                                      ? Colors.green
+                                      ? Tone.fg(Colors.green)
                                       : stabilityScore >= 50
-                                          ? Colors.orange
-                                          : Colors.red)),
+                                          ? Tone.fg(Colors.orange)
+                                          : Tone.fg(Colors.red))),
                         ],
                       ),
                     ),
@@ -8089,14 +8102,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       return SizedBox(height: 200, child: Center(child: Text('No data')));
 
     final colors = [
-      Colors.blue,
-      Colors.red,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.cyan,
-      Colors.pink,
-      Colors.teal
+      Tone.auto(Colors.blue),
+      Tone.auto(Colors.red),
+      Tone.auto(Colors.green),
+      Tone.auto(Colors.orange),
+      Tone.auto(Colors.purple),
+      Tone.auto(Colors.cyan),
+      Tone.auto(Colors.pink),
+      Tone.auto(Colors.teal)
     ];
 
     double maxVal = 0;
@@ -8129,7 +8142,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         {};
                     return BarTooltipItem(
                       'Sensor ${groupIndex + 1}\nAvg: ${(sensorData['avg'] ?? 0).toStringAsFixed(2)} psi\nMin: ${(sensorData['min'] ?? 0).toStringAsFixed(2)} psi\nMax: ${(sensorData['max'] ?? 0).toStringAsFixed(2)} psi',
-                      GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                      GoogleFonts.inter(color: Tone.fg(Colors.white), fontSize: 11),
                     );
                   },
                 ),
@@ -8152,7 +8165,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTitlesWidget: (value, meta) => Text(
                       '${value.toStringAsFixed(1)}',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -8164,7 +8177,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   drawVerticalLine: false,
                   horizontalInterval: 1,
                   getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+                      FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1)),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(8, (i) {
                 final sensorData =
@@ -8224,20 +8237,20 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 spacing: 12,
                 runSpacing: 8,
                 children: [
-                    _buildLegendItem(Colors.red, 'Max'),
+                    _buildLegendItem(Tone.auto(Colors.red), 'Max'),
                     SizedBox(width: 16),
-                    _buildLegendItem(Colors.teal, 'Average'),
+                    _buildLegendItem(Tone.auto(Colors.teal), 'Average'),
                     SizedBox(width: 16),
-                    _buildLegendItem(Colors.blue, 'Min'),
+                    _buildLegendItem(Tone.auto(Colors.blue), 'Min'),
                   ])
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem(Colors.red, 'Max'),
+                  _buildLegendItem(Tone.auto(Colors.red), 'Max'),
                   SizedBox(width: 16),
-                  _buildLegendItem(Colors.teal, 'Average'),
+                  _buildLegendItem(Tone.auto(Colors.teal), 'Average'),
                   SizedBox(width: 16),
-                  _buildLegendItem(Colors.blue, 'Min'),
+                  _buildLegendItem(Tone.auto(Colors.blue), 'Min'),
                 ],
               ),
         SizedBox(height: 12),
@@ -8250,7 +8263,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   drawVerticalLine: false,
                   horizontalInterval: 0.5,
                   getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+                      FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1)),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
@@ -8276,7 +8289,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTitlesWidget: (value, meta) => Text(
                       '${value.toStringAsFixed(1)}',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -8288,34 +8301,34 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 LineChartBarData(
                   spots: maxSpots,
                   isCurved: true,
-                  color: Colors.red,
+                  color: Tone.auto(Colors.red),
                   barWidth: 2,
                   dotData: FlDotData(show: true),
                   belowBarData: BarAreaData(
-                      show: true, color: Colors.red.withOpacity(0.08)),
+                      show: true, color: Tone.auto(Colors.red).withOpacity(0.08)),
                 ),
                 LineChartBarData(
                   spots: avgSpots,
                   isCurved: true,
-                  color: Colors.teal,
+                  color: Tone.auto(Colors.teal),
                   barWidth: 2.5,
                   dotData: FlDotData(show: true),
                 ),
                 LineChartBarData(
                   spots: minSpots,
                   isCurved: true,
-                  color: Colors.blue,
+                  color: Tone.auto(Colors.blue),
                   barWidth: 2,
                   dotData: FlDotData(show: true),
                   belowBarData: BarAreaData(
-                      show: true, color: Colors.blue.withOpacity(0.08)),
+                      show: true, color: Tone.auto(Colors.blue).withOpacity(0.08)),
                 ),
               ],
               lineTouchData: LineTouchData(
                 touchTooltipData: LineTouchTooltipData(
                   getTooltipItems: (spots) => spots.map((spot) {
                     final names = ['Max', 'Avg', 'Min'];
-                    final clrs = [Colors.red, Colors.teal, Colors.blue];
+                    final clrs = [Tone.auto(Colors.red), Tone.auto(Colors.teal), Tone.auto(Colors.blue)];
                     return LineTooltipItem(
                         '${names[spot.barIndex]}: ${spot.y.toStringAsFixed(2)} psi',
                         TextStyle(color: clrs[spot.barIndex], fontSize: 11));
@@ -8347,14 +8360,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     }
 
     final colors = [
-      Colors.blue,
-      Colors.red,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.cyan,
-      Colors.pink,
-      Colors.teal
+      Tone.auto(Colors.blue),
+      Tone.auto(Colors.red),
+      Tone.auto(Colors.green),
+      Tone.auto(Colors.orange),
+      Tone.auto(Colors.purple),
+      Tone.auto(Colors.cyan),
+      Tone.auto(Colors.pink),
+      Tone.auto(Colors.teal)
     ];
 
     return Column(
@@ -8375,7 +8388,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   drawVerticalLine: false,
                   horizontalInterval: 0.5,
                   getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+                      FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1)),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
@@ -8392,7 +8405,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           child: Text(
                               (data[idx]['date'] ?? '').toString().substring(5),
                               style: GoogleFonts.inter(
-                                  fontSize: 10, color: Colors.grey[600])),
+                                  fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                         );
                       }
                       return Text('');
@@ -8406,7 +8419,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTitlesWidget: (value, meta) => Text(
                       '${value.toStringAsFixed(1)}',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -8464,16 +8477,16 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 spacing: 12,
                 runSpacing: 8,
                 children: [
-                    _buildLegendItem(Colors.green, 'Stable (low range)'),
+                    _buildLegendItem(Tone.auto(Colors.green), 'Stable (low range)'),
                     SizedBox(width: 16),
-                    _buildLegendItem(Colors.orange, 'Unstable (high range)'),
+                    _buildLegendItem(Tone.auto(Colors.orange), 'Unstable (high range)'),
                   ])
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem(Colors.green, 'Stable (low range)'),
+                  _buildLegendItem(Tone.auto(Colors.green), 'Stable (low range)'),
                   SizedBox(width: 16),
-                  _buildLegendItem(Colors.orange, 'Unstable (high range)'),
+                  _buildLegendItem(Tone.auto(Colors.orange), 'Unstable (high range)'),
                 ],
               ),
         SizedBox(height: 12),
@@ -8491,7 +8504,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         {};
                     return BarTooltipItem(
                       'Sensor ${groupIndex + 1}\nRange: ${rod.toY.toStringAsFixed(3)} psi\nMin: ${(sData['min'] ?? 0).toStringAsFixed(2)}\nMax: ${(sData['max'] ?? 0).toStringAsFixed(2)}',
-                      GoogleFonts.inter(color: Colors.white, fontSize: 11),
+                      GoogleFonts.inter(color: Tone.fg(Colors.white), fontSize: 11),
                     );
                   },
                 ),
@@ -8514,7 +8527,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   getTitlesWidget: (value, meta) => Text(
                       '${value.toStringAsFixed(2)}',
                       style: GoogleFonts.inter(
-                          fontSize: 10, color: Colors.grey[600])),
+                          fontSize: 10, color: Tone.fg(Colors.grey[600]))),
                 )),
                 topTitles:
                     AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -8525,7 +8538,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
+                      FlLine(color: Tone.bg(Colors.grey.shade200), strokeWidth: 1)),
               borderData: FlBorderData(show: false),
               barGroups: List.generate(8, (i) {
                 final range = ranges[i];
@@ -8536,7 +8549,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   barRods: [
                     BarChartRodData(
                       toY: range,
-                      color: isStable ? Colors.green : Colors.orange,
+                      color: isStable ? Tone.auto(Colors.green) : Tone.auto(Colors.orange),
                       width: 24,
                       borderRadius:
                           BorderRadius.vertical(top: Radius.circular(4)),
@@ -8576,9 +8589,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         Map<String, dynamic>.from(stats['tray_weights'] as Map? ?? {});
 
     Color _scanStatusColor(double rate) {
-      if (rate >= 90) return Colors.green;
-      if (rate >= 70) return Colors.orange;
-      return Colors.red;
+      if (rate >= 90) return Tone.auto(Colors.green);
+      if (rate >= 70) return Tone.auto(Colors.orange);
+      return Tone.auto(Colors.red);
     }
 
     return SingleChildScrollView(
@@ -8586,14 +8599,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (selectedDevice != null)
+            OutlinedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => BottleScanHistoryPage(deviceId: selectedDevice!.id, deviceName: selectedDevice!.name))),
+              icon: const Icon(Icons.history), label: const Text('Bottle scan history')),
           // ── Header summary row ─────────────────────────────────────────────
           Container(
             padding: EdgeInsets.all(isMobile ? 16 : 20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.deepPurple.shade700,
-                  Colors.deepPurple.shade400
+                  Tone.auto(Colors.deepPurple.shade700),
+                  Tone.auto(Colors.deepPurple.shade400)
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -8601,7 +8618,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.deepPurple.shade200,
+                    color: Tone.bg(Colors.deepPurple.shade200),
                     blurRadius: 12,
                     offset: Offset(0, 4))
               ],
@@ -8610,16 +8627,16 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  Icon(Icons.qr_code_scanner, color: Colors.white, size: 22),
+                  Icon(Icons.qr_code_scanner, color: Tone.fg(Colors.white), size: 22),
                   SizedBox(width: 8),
                   if (isPhoneLayout(context))
                     Expanded(child: Text('Bottle Vetting System',
-                      style: GoogleFonts.inter(color: Colors.white,
+                      style: GoogleFonts.inter(color: Tone.fg(Colors.white),
                         fontSize: 16, fontWeight: FontWeight.w700)))
                   else
                   Text('Bottle Vetting System',
                       style: GoogleFonts.inter(
-                          color: Colors.white,
+                          color: Tone.fg(Colors.white),
                           fontSize: 16,
                           fontWeight: FontWeight.w700)),
                 ]),
@@ -8638,17 +8655,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             'Total Bottles',
                             totalBottles.toString(),
                             Icons.liquor,
-                            Colors.amber.shade300),
+                            Tone.auto(Colors.amber.shade300)),
                         SizedBox(height: 8),
                         _device7StatCard(
                             'Fridge Temp',
                             '${avgTemp.toStringAsFixed(1)}°C',
                             Icons.thermostat,
                             avgTemp <= 4
-                                ? Colors.cyan.shade200
+                                ? Tone.auto(Colors.cyan.shade200)
                                 : avgTemp <= 8
-                                    ? Colors.orange.shade300
-                                    : Colors.red.shade300),
+                                    ? Tone.auto(Colors.orange.shade300)
+                                    : Tone.auto(Colors.red.shade300)),
                       ])
                     : Row(children: [
                         Expanded(
@@ -8667,7 +8684,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                 'Total Bottles',
                                 totalBottles.toString(),
                                 Icons.liquor,
-                                Colors.amber.shade300)),
+                                Tone.auto(Colors.amber.shade300))),
                         SizedBox(width: 12),
                         Expanded(
                             child: _device7StatCard(
@@ -8675,10 +8692,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                                 '${avgTemp.toStringAsFixed(1)}°C',
                                 Icons.thermostat,
                                 avgTemp <= 4
-                                    ? Colors.cyan.shade200
+                                    ? Tone.auto(Colors.cyan.shade200)
                                     : avgTemp <= 8
-                                        ? Colors.orange.shade300
-                                        : Colors.red.shade300)),
+                                        ? Tone.auto(Colors.orange.shade300)
+                                        : Tone.auto(Colors.red.shade300))),
                       ]),
               ],
             ),
@@ -8735,27 +8752,27 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        color: Tone.bg(Colors.white).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Icon(Icons.document_scanner, color: Colors.blue.shade300, size: 20),
+            Icon(Icons.document_scanner, color: Tone.fg(Colors.blue.shade300), size: 20),
             SizedBox(width: 10),
             Text("Today's Scans",
                 style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     fontSize: 13,
                     fontWeight: FontWeight.w600)),
           ]),
           SizedBox(height: 10),
-          _scanRow('Total Scans (In)', scansIn, Colors.green.shade300),
+          _scanRow('Total Scans (In)', scansIn, Tone.auto(Colors.green.shade300)),
           SizedBox(height: 6),
-          _scanRow('Total Scans Out', scansOut, Colors.red.shade300),
+          _scanRow('Total Scans Out', scansOut, Tone.auto(Colors.red.shade300)),
           SizedBox(height: 6),
-          _scanRow('Active (Inside)', activeScans, Colors.amber.shade300),
+          _scanRow('Active (Inside)', activeScans, Tone.auto(Colors.amber.shade300)),
         ],
       ),
     );
@@ -8772,7 +8789,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
           SizedBox(width: 8),
           Text(label,
-              style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
+              style: GoogleFonts.inter(color: Tone.fg(Colors.white70), fontSize: 11)),
         ]),
         Text('$value',
             style: GoogleFonts.inter(
@@ -8786,7 +8803,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Tone.bg(Colors.white).withOpacity(0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -8796,11 +8813,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(value,
                 style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     fontSize: 18,
                     fontWeight: FontWeight.w700)),
             Text(label,
-                style: GoogleFonts.inter(color: Colors.white70, fontSize: 11)),
+                style: GoogleFonts.inter(color: Tone.fg(Colors.white70), fontSize: 11)),
           ]),
         ],
       ),
@@ -8811,17 +8828,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Colors.white,
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Tone.bg(Colors.black).withOpacity(0.06),
                 blurRadius: 8,
                 offset: Offset(0, 2))
           ]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Icon(Icons.thermostat, color: Colors.blue.shade600, size: 18),
+          Icon(Icons.thermostat, color: Tone.fg(Colors.blue.shade600), size: 18),
           SizedBox(width: 6),
           Text('Fridge Temperature',
               style:
@@ -8834,26 +8851,26 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   fontSize: 36,
                   fontWeight: FontWeight.w700,
                   color: avg <= 4
-                      ? Colors.blue.shade700
+                      ? Tone.fg(Colors.blue.shade700)
                       : avg <= 8
-                          ? Colors.orange
-                          : Colors.red)),
+                          ? Tone.fg(Colors.orange)
+                          : Tone.fg(Colors.red))),
         ),
         SizedBox(height: 8),
         Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
           Column(children: [
             Text('${min.toStringAsFixed(1)}°C',
                 style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600, color: Colors.blue.shade700)),
+                    fontWeight: FontWeight.w600, color: Tone.fg(Colors.blue.shade700))),
             Text('Min',
-                style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+                style: GoogleFonts.inter(fontSize: 11, color: Tone.fg(Colors.grey))),
           ]),
           Column(children: [
             Text('${max.toStringAsFixed(1)}°C',
                 style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600, color: Colors.red.shade400)),
+                    fontWeight: FontWeight.w600, color: Tone.fg(Colors.red.shade400))),
             Text('Max',
-                style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
+                style: GoogleFonts.inter(fontSize: 11, color: Tone.fg(Colors.grey))),
           ]),
         ]),
       ]),
@@ -8862,18 +8879,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
   Widget _buildDevice7VerificationCard(double rate, int verified, int total) {
     final color = rate >= 90
-        ? Colors.green
+        ? Tone.auto(Colors.green)
         : rate >= 70
-            ? Colors.orange
-            : Colors.red;
+            ? Tone.auto(Colors.orange)
+            : Tone.auto(Colors.red);
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Colors.white,
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Tone.bg(Colors.black).withOpacity(0.06),
                 blurRadius: 8,
                 offset: Offset(0, 2))
           ]),
@@ -8894,7 +8911,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               child: CircularProgressIndicator(
                 value: rate / 100,
                 strokeWidth: 10,
-                backgroundColor: Colors.grey.shade200,
+                backgroundColor: Tone.bg(Colors.grey.shade200),
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
             ),
@@ -8907,7 +8924,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         Center(
             child: Text('$verified / $total scans verified',
                 style: GoogleFonts.inter(
-                    fontSize: 12, color: Colors.grey.shade600))),
+                    fontSize: 12, color: Tone.fg(Colors.grey.shade600)))),
       ]),
     );
   }
@@ -8917,10 +8934,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final trays = ['tray1', 'tray2', 'tray3', 'tray4'];
     final labels = ['Tray 1', 'Tray 2', 'Tray 3', 'Tray 4'];
     final colors = [
-      Colors.blue.shade400,
-      Colors.teal.shade400,
-      Colors.purple.shade400,
-      Colors.orange.shade400
+      Tone.auto(Colors.blue.shade400),
+      Tone.auto(Colors.teal.shade400),
+      Tone.auto(Colors.purple.shade400),
+      Tone.auto(Colors.orange.shade400)
     ];
 
     List<Widget> cards = List.generate(trays.length, (i) {
@@ -8936,11 +8953,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       return Container(
         padding: EdgeInsets.all(14),
         decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Tone.bg(Colors.black).withValues(alpha: 0.05),
                   blurRadius: 6,
                   offset: Offset(0, 2))
             ]),
@@ -8957,15 +8974,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                   fontSize: 20, fontWeight: FontWeight.w700, color: colors[i])),
           Text('avg weight',
-              style: GoogleFonts.inter(fontSize: 10, color: Colors.grey)),
+              style: GoogleFonts.inter(fontSize: 10, color: Tone.fg(Colors.grey))),
           SizedBox(height: 4),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('↓ ${min.toStringAsFixed(2)}',
                 style: GoogleFonts.inter(
-                    fontSize: 11, color: Colors.blue.shade600)),
+                    fontSize: 11, color: Tone.fg(Colors.blue.shade600))),
             Text('↑ ${max.toStringAsFixed(2)}',
                 style: GoogleFonts.inter(
-                    fontSize: 11, color: Colors.red.shade400)),
+                    fontSize: 11, color: Tone.fg(Colors.red.shade400))),
           ]),
         ]),
       );
@@ -8975,18 +8992,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final bottleSummary = Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Tone.bg(Colors.black).withValues(alpha: 0.05),
               blurRadius: 6,
               offset: Offset(0, 2))
         ],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Icon(Icons.liquor, color: Colors.deepPurple, size: 18),
+          Icon(Icons.liquor, color: Tone.fg(Colors.deepPurple), size: 18),
           SizedBox(width: 6),
           Text('Bottle Tracking',
               style:
@@ -8997,13 +9014,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildBottleCountColumn(
-                'Scanned In', scansIn, Colors.green.shade600),
-            Container(width: isPhoneLayout(context) ? null : 1, height: isPhoneLayout(context) ? 1 : 40, color: Colors.grey.shade200),
+                'Scanned In', scansIn, Tone.auto(Colors.green.shade600)),
+            Container(width: isPhoneLayout(context) ? null : 1, height: isPhoneLayout(context) ? 1 : 40, color: Tone.bg(Colors.grey.shade200)),
             _buildBottleCountColumn(
-                'Still Inside', activeScans, Colors.amber.shade700),
-            Container(width: isPhoneLayout(context) ? null : 1, height: isPhoneLayout(context) ? 1 : 40, color: Colors.grey.shade200),
+                'Still Inside', activeScans, Tone.auto(Colors.amber.shade700)),
+            Container(width: isPhoneLayout(context) ? null : 1, height: isPhoneLayout(context) ? 1 : 40, color: Tone.bg(Colors.grey.shade200)),
             _buildBottleCountColumn(
-                'Scanned Out', scansOut, Colors.red.shade400),
+                'Scanned Out', scansOut, Tone.auto(Colors.red.shade400)),
           ],
         ),
       ]),
@@ -9054,7 +9071,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               fontSize: 24, fontWeight: FontWeight.w700, color: color)),
       SizedBox(height: 2),
       Text(label,
-          style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600)),
+          style: GoogleFonts.inter(fontSize: 11, color: Tone.fg(Colors.grey.shade600))),
     ]);
   }
 
@@ -9063,10 +9080,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data.isEmpty)
       return Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.bar_chart_outlined, size: 48, color: Colors.grey.shade300),
+        Icon(Icons.bar_chart_outlined, size: 48, color: Tone.fg(Colors.grey.shade300)),
         const SizedBox(height: 8),
         Text('No scan data available',
-            style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+            style: GoogleFonts.inter(color: Tone.fg(Colors.grey[500]), fontSize: 14)),
       ]));
 
     final maxScans = data
@@ -9080,9 +9097,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     return Column(children: [
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        _buildLegendItem(Colors.deepPurple, 'Total Scans'),
+        _buildLegendItem(Tone.auto(Colors.deepPurple), 'Total Scans'),
         const SizedBox(width: 20),
-        _buildLegendItem(Colors.green.shade600, 'Verified'),
+        _buildLegendItem(Tone.auto(Colors.green.shade600), 'Verified'),
       ]),
       const SizedBox(height: 8),
       Expanded(
@@ -9096,7 +9113,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               drawVerticalLine: false,
               horizontalInterval: hInterval,
               getDrawingHorizontalLine: (v) =>
-                  FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+                  FlLine(color: Tone.bg(Colors.grey.shade100), strokeWidth: 1),
             ),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
@@ -9115,7 +9132,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       child: Text(
                           parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
                           style: GoogleFonts.inter(
-                              fontSize: 9, color: Colors.grey[500])));
+                              fontSize: 9, color: Tone.fg(Colors.grey[500]))));
                 },
               )),
               leftTitles: AxisTitles(
@@ -9125,7 +9142,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 interval: hInterval,
                 getTitlesWidget: (v, m) => Text('${v.toInt()}',
                     style: GoogleFonts.inter(
-                        fontSize: 9, color: Colors.grey[500])),
+                        fontSize: 9, color: Tone.fg(Colors.grey[500]))),
               )),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles:
@@ -9133,13 +9150,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             ),
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (_) => Colors.blueGrey.shade800,
+                getTooltipColor: (_) => Tone.auto(Colors.blueGrey.shade800),
                 getTooltipItems: (spots) => spots.map((spot) {
                   final d = data[spot.x.toInt()];
                   final isTotal = spot.barIndex == 0;
                   return LineTooltipItem(
                     isTotal ? '${d['date']}\n' : '',
-                    GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                    GoogleFonts.inter(color: Tone.fg(Colors.white60), fontSize: 10),
                     children: [
                       TextSpan(
                         text: isTotal
@@ -9147,8 +9164,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             : 'Verified: ${spot.y.toInt()} scans',
                         style: TextStyle(
                             color: isTotal
-                                ? Colors.purple.shade200
-                                : Colors.green.shade300,
+                                ? Tone.fg(Colors.purple.shade200)
+                                : Tone.fg(Colors.green.shade300),
                             fontWeight: FontWeight.w600,
                             fontSize: 11),
                       )
@@ -9165,23 +9182,23 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         (data[i]['scans'] as num?)?.toDouble() ?? 0)),
                 isCurved: true,
                 curveSmoothness: 0.3,
-                color: Colors.deepPurple,
+                color: Tone.auto(Colors.deepPurple),
                 barWidth: 2.5,
                 dotData: FlDotData(
                   show: data.length <= 7,
                   getDotPainter: (s, p, b, i) => FlDotCirclePainter(
-                      radius: 3, color: Colors.deepPurple, strokeWidth: 0),
+                      radius: 3, color: Tone.auto(Colors.deepPurple), strokeWidth: 0),
                 ),
                 shadow: Shadow(
-                    color: Colors.deepPurple.withValues(alpha: 0.25),
+                    color: Tone.auto(Colors.deepPurple).withValues(alpha: 0.25),
                     blurRadius: 6,
                     offset: const Offset(0, 2)),
                 belowBarData: BarAreaData(
                     show: true,
                     gradient: LinearGradient(
                         colors: [
-                          Colors.deepPurple.withValues(alpha: 0.18),
-                          Colors.deepPurple.withValues(alpha: 0.01)
+                          Tone.auto(Colors.deepPurple).withValues(alpha: 0.18),
+                          Tone.auto(Colors.deepPurple).withValues(alpha: 0.01)
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter)),
@@ -9193,23 +9210,23 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         (data[i]['verified'] as num?)?.toDouble() ?? 0)),
                 isCurved: true,
                 curveSmoothness: 0.3,
-                color: Colors.green.shade600,
+                color: Tone.auto(Colors.green.shade600),
                 barWidth: 2.5,
                 dotData: FlDotData(
                   show: data.length <= 7,
                   getDotPainter: (s, p, b, i) => FlDotCirclePainter(
-                      radius: 3, color: Colors.green.shade600, strokeWidth: 0),
+                      radius: 3, color: Tone.auto(Colors.green.shade600), strokeWidth: 0),
                 ),
                 shadow: Shadow(
-                    color: Colors.green.withValues(alpha: 0.25),
+                    color: Tone.auto(Colors.green).withValues(alpha: 0.25),
                     blurRadius: 6,
                     offset: const Offset(0, 2)),
                 belowBarData: BarAreaData(
                     show: true,
                     gradient: LinearGradient(
                         colors: [
-                          Colors.green.withValues(alpha: 0.12),
-                          Colors.green.withValues(alpha: 0.01)
+                          Tone.auto(Colors.green).withValues(alpha: 0.12),
+                          Tone.auto(Colors.green).withValues(alpha: 0.01)
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter)),
@@ -9226,10 +9243,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data.isEmpty)
       return Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.liquor_outlined, size: 48, color: Colors.grey.shade300),
+        Icon(Icons.liquor_outlined, size: 48, color: Tone.fg(Colors.grey.shade300)),
         const SizedBox(height: 8),
         Text('No bottle data available',
-            style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+            style: GoogleFonts.inter(color: Tone.fg(Colors.grey[500]), fontSize: 14)),
       ]));
 
     final allValues = data.expand((d) => [
@@ -9247,11 +9264,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     return Column(children: [
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        _buildLegendItem(Colors.green.shade500, 'Scanned In'),
+        _buildLegendItem(Tone.auto(Colors.green.shade500), 'Scanned In'),
         const SizedBox(width: 16),
-        _buildLegendItem(Colors.red.shade400, 'Scanned Out'),
+        _buildLegendItem(Tone.auto(Colors.red.shade400), 'Scanned Out'),
         const SizedBox(width: 16),
-        _buildLegendItem(Colors.amber.shade700, 'Active (Inside)'),
+        _buildLegendItem(Tone.auto(Colors.amber.shade700), 'Active (Inside)'),
       ]),
       const SizedBox(height: 8),
       Expanded(
@@ -9265,7 +9282,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 drawVerticalLine: false,
                 horizontalInterval: hInterval,
                 getDrawingHorizontalLine: (v) =>
-                    FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+                    FlLine(color: Tone.bg(Colors.grey.shade100), strokeWidth: 1)),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
               bottomTitles: AxisTitles(
@@ -9283,7 +9300,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       child: Text(
                           parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
                           style: GoogleFonts.inter(
-                              fontSize: 9, color: Colors.grey[500])));
+                              fontSize: 9, color: Tone.fg(Colors.grey[500]))));
                 },
               )),
               leftTitles: AxisTitles(
@@ -9293,7 +9310,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 interval: hInterval,
                 getTitlesWidget: (v, m) => Text('${v.toInt()}',
                     style: GoogleFonts.inter(
-                        fontSize: 9, color: Colors.grey[500])),
+                        fontSize: 9, color: Tone.fg(Colors.grey[500]))),
               )),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles:
@@ -9301,7 +9318,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             ),
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (_) => Colors.blueGrey.shade800,
+                getTooltipColor: (_) => Tone.auto(Colors.blueGrey.shade800),
                 getTooltipItems: (spots) => spots.map((spot) {
                   final d = data[spot.x.toInt()];
                   final labels = [
@@ -9310,13 +9327,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     'Active: ${spot.y.toInt()} bottles'
                   ];
                   final colors = [
-                    Colors.green.shade300,
-                    Colors.red.shade300,
-                    Colors.amber.shade300
+                    Tone.auto(Colors.green.shade300),
+                    Tone.auto(Colors.red.shade300),
+                    Tone.auto(Colors.amber.shade300)
                   ];
                   return LineTooltipItem(
                     spot.barIndex == 0 ? '${d['date']}\n' : '',
-                    GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                    GoogleFonts.inter(color: Tone.fg(Colors.white60), fontSize: 10),
                     children: [
                       TextSpan(
                         text: labels[spot.barIndex],
@@ -9338,20 +9355,20 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         (data[i]['scans_in'] as num?)?.toDouble() ?? 0)),
                 isCurved: true,
                 curveSmoothness: 0.3,
-                color: Colors.green.shade500,
+                color: Tone.auto(Colors.green.shade500),
                 barWidth: 2.5,
                 dotData: FlDotData(
                     show: data.length <= 7,
                     getDotPainter: (s, p, b, i) => FlDotCirclePainter(
                         radius: 3,
-                        color: Colors.green.shade500,
+                        color: Tone.auto(Colors.green.shade500),
                         strokeWidth: 0)),
                 belowBarData: BarAreaData(
                     show: true,
                     gradient: LinearGradient(
                         colors: [
-                          Colors.green.withValues(alpha: 0.15),
-                          Colors.green.withValues(alpha: 0.01)
+                          Tone.auto(Colors.green).withValues(alpha: 0.15),
+                          Tone.auto(Colors.green).withValues(alpha: 0.01)
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter)),
@@ -9363,12 +9380,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         (data[i]['scans_out'] as num?)?.toDouble() ?? 0)),
                 isCurved: true,
                 curveSmoothness: 0.3,
-                color: Colors.red.shade400,
+                color: Tone.auto(Colors.red.shade400),
                 barWidth: 2.5,
                 dotData: FlDotData(
                     show: data.length <= 7,
                     getDotPainter: (s, p, b, i) => FlDotCirclePainter(
-                        radius: 3, color: Colors.red.shade400, strokeWidth: 0)),
+                        radius: 3, color: Tone.auto(Colors.red.shade400), strokeWidth: 0)),
               ),
               LineChartBarData(
                 spots: List.generate(
@@ -9377,21 +9394,21 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         (data[i]['active'] as num?)?.toDouble() ?? 0)),
                 isCurved: true,
                 curveSmoothness: 0.3,
-                color: Colors.amber.shade700,
+                color: Tone.auto(Colors.amber.shade700),
                 barWidth: 2.5,
                 dashArray: [6, 3],
                 dotData: FlDotData(
                     show: data.length <= 7,
                     getDotPainter: (s, p, b, i) => FlDotCirclePainter(
                         radius: 3,
-                        color: Colors.amber.shade700,
+                        color: Tone.auto(Colors.amber.shade700),
                         strokeWidth: 0)),
                 belowBarData: BarAreaData(
                     show: true,
                     gradient: LinearGradient(
                         colors: [
-                          Colors.amber.withValues(alpha: 0.12),
-                          Colors.amber.withValues(alpha: 0.01)
+                          Tone.auto(Colors.amber).withValues(alpha: 0.12),
+                          Tone.auto(Colors.amber).withValues(alpha: 0.01)
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter)),
@@ -9407,10 +9424,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     final trays = ['tray1', 'tray2', 'tray3', 'tray4'];
     final labels = ['Tray 1', 'Tray 2', 'Tray 3', 'Tray 4'];
     final colors = [
-      Colors.blue.shade400,
-      Colors.teal.shade400,
-      Colors.purple.shade400,
-      Colors.orange.shade400
+      Tone.auto(Colors.blue.shade400),
+      Tone.auto(Colors.teal.shade400),
+      Tone.auto(Colors.purple.shade400),
+      Tone.auto(Colors.orange.shade400)
     ];
 
     final avgs = trays.map((t) {
@@ -9438,7 +9455,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             maxY: yMax,
             barTouchData: BarTouchData(
               touchTooltipData: BarTouchTooltipData(
-                getTooltipColor: (_) => Colors.blueGrey.shade800,
+                getTooltipColor: (_) => Tone.auto(Colors.blueGrey.shade800),
                 getTooltipItem: (group, gi, rod, ri) {
                   final t = Map<String, dynamic>.from(
                       trayMap[trays[gi]] as Map? ?? {});
@@ -9447,7 +9464,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   final mx = (t['max'] as num?)?.toDouble() ?? 0.0;
                   return BarTooltipItem(
                     '${labels[gi]}\n',
-                    GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                    GoogleFonts.inter(color: Tone.fg(Colors.white60), fontSize: 10),
                     children: [
                       TextSpan(
                           text: 'Avg: ${avg.toStringAsFixed(3)} kg\n',
@@ -9459,7 +9476,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           text:
                               'Min: ${mn.toStringAsFixed(3)} kg   Max: ${mx.toStringAsFixed(3)} kg',
                           style:
-                              TextStyle(color: Colors.white54, fontSize: 10)),
+                              TextStyle(color: Tone.fg(Colors.white54), fontSize: 10)),
                     ],
                   );
                 },
@@ -9470,7 +9487,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 drawVerticalLine: false,
                 horizontalInterval: yMax / 4,
                 getDrawingHorizontalLine: (v) =>
-                    FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+                    FlLine(color: Tone.bg(Colors.grey.shade100), strokeWidth: 1)),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
               bottomTitles: AxisTitles(
@@ -9496,7 +9513,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 interval: yMax / 4,
                 getTitlesWidget: (v, m) => Text('${v.toStringAsFixed(2)} kg',
                     style: GoogleFonts.inter(
-                        fontSize: 9, color: Colors.grey[500])),
+                        fontSize: 9, color: Tone.fg(Colors.grey[500]))),
               )),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles:
@@ -9528,10 +9545,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data.isEmpty)
       return Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.access_time_outlined, size: 48, color: Colors.grey.shade300),
+        Icon(Icons.access_time_outlined, size: 48, color: Tone.fg(Colors.grey.shade300)),
         const SizedBox(height: 8),
         Text('No hourly data available',
-            style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+            style: GoogleFonts.inter(color: Tone.fg(Colors.grey[500]), fontSize: 14)),
       ]));
 
     String formatHour(String h) {
@@ -9553,9 +9570,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
 
     return Column(children: [
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        _buildLegendItem(Colors.indigo.shade400, 'Total Scans'),
+        _buildLegendItem(Tone.auto(Colors.indigo.shade400), 'Total Scans'),
         const SizedBox(width: 20),
-        _buildLegendItem(Colors.green.shade500, 'Verified'),
+        _buildLegendItem(Tone.auto(Colors.green.shade500), 'Verified'),
       ]),
       const SizedBox(height: 8),
       Expanded(
@@ -9567,14 +9584,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             maxY: yMax,
             barTouchData: BarTouchData(
               touchTooltipData: BarTouchTooltipData(
-                getTooltipColor: (_) => Colors.blueGrey.shade800,
+                getTooltipColor: (_) => Tone.auto(Colors.blueGrey.shade800),
                 getTooltipItem: (group, gi, rod, ri) {
                   final d = data[gi];
                   final scans = d['scans'] ?? 0;
                   final verified = d['verified'] ?? 0;
                   return BarTooltipItem(
                     '${formatHour(d['hour']?.toString() ?? '')}\n',
-                    GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                    GoogleFonts.inter(color: Tone.fg(Colors.white60), fontSize: 10),
                     children: [
                       TextSpan(
                           text: ri == 0
@@ -9582,8 +9599,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                               : 'Verified: $verified',
                           style: TextStyle(
                               color: ri == 0
-                                  ? Colors.indigo.shade200
-                                  : Colors.green.shade300,
+                                  ? Tone.fg(Colors.indigo.shade200)
+                                  : Tone.fg(Colors.green.shade300),
                               fontWeight: FontWeight.w600,
                               fontSize: 11)),
                     ],
@@ -9596,7 +9613,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 drawVerticalLine: false,
                 horizontalInterval: yMax / 4,
                 getDrawingHorizontalLine: (v) =>
-                    FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+                    FlLine(color: Tone.bg(Colors.grey.shade100), strokeWidth: 1)),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
               bottomTitles: AxisTitles(
@@ -9612,7 +9629,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       child: Text(
                           formatHour(data[idx]['hour']?.toString() ?? ''),
                           style: GoogleFonts.inter(
-                              fontSize: 9, color: Colors.grey[500])));
+                              fontSize: 9, color: Tone.fg(Colors.grey[500]))));
                 },
               )),
               leftTitles: AxisTitles(
@@ -9622,7 +9639,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 interval: yMax / 4,
                 getTitlesWidget: (v, m) => Text('${v.toInt()}',
                     style: GoogleFonts.inter(
-                        fontSize: 9, color: Colors.grey[500])),
+                        fontSize: 9, color: Tone.fg(Colors.grey[500]))),
               )),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles:
@@ -9635,7 +9652,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 BarChartRodData(
                   toY: scans,
                   gradient: LinearGradient(
-                      colors: [Colors.indigo.shade400, Colors.indigo.shade200],
+                      colors: [Tone.auto(Colors.indigo.shade400), Tone.auto(Colors.indigo.shade200)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter),
                   width: barWidth,
@@ -9645,7 +9662,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 BarChartRodData(
                   toY: verified,
                   gradient: LinearGradient(
-                      colors: [Colors.green.shade400, Colors.green.shade200],
+                      colors: [Tone.auto(Colors.green.shade400), Tone.auto(Colors.green.shade200)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter),
                   width: barWidth,
@@ -9667,10 +9684,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     if (data.isEmpty)
       return Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.thermostat_outlined, size: 48, color: Colors.grey.shade300),
+        Icon(Icons.thermostat_outlined, size: 48, color: Tone.fg(Colors.grey.shade300)),
         const SizedBox(height: 8),
         Text('No temperature data',
-            style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 14)),
+            style: GoogleFonts.inter(color: Tone.fg(Colors.grey[500]), fontSize: 14)),
       ]));
 
     final temps =
@@ -9685,9 +9702,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
         : 1.0;
 
     Color tempColor(double t) {
-      if (t <= 4) return Colors.blue.shade500;
-      if (t <= 8) return Colors.orange.shade500;
-      return Colors.red.shade500;
+      if (t <= 4) return Tone.auto(Colors.blue.shade500);
+      if (t <= 8) return Tone.auto(Colors.orange.shade500);
+      return Tone.auto(Colors.red.shade500);
     }
 
     return Column(children: [
@@ -9696,9 +9713,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           runSpacing: 4,
           alignment: WrapAlignment.center,
           children: [
-            _buildLegendItem(Colors.blue.shade500, '≤ 4°C Optimal'),
-            _buildLegendItem(Colors.orange.shade500, '4–8°C Warning'),
-            _buildLegendItem(Colors.red.shade500, '> 8°C Critical'),
+            _buildLegendItem(Tone.auto(Colors.blue.shade500), '≤ 4°C Optimal'),
+            _buildLegendItem(Tone.auto(Colors.orange.shade500), '4–8°C Warning'),
+            _buildLegendItem(Tone.auto(Colors.red.shade500), '> 8°C Critical'),
           ]),
       const SizedBox(height: 8),
       Expanded(
@@ -9712,7 +9729,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 drawVerticalLine: false,
                 horizontalInterval: hInterval,
                 getDrawingHorizontalLine: (v) =>
-                    FlLine(color: Colors.grey.shade100, strokeWidth: 1)),
+                    FlLine(color: Tone.bg(Colors.grey.shade100), strokeWidth: 1)),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
               bottomTitles: AxisTitles(
@@ -9730,7 +9747,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       child: Text(
                           parts.length == 3 ? '${parts[2]}/${parts[1]}' : d,
                           style: GoogleFonts.inter(
-                              fontSize: 9, color: Colors.grey[500])));
+                              fontSize: 9, color: Tone.fg(Colors.grey[500]))));
                 },
               )),
               leftTitles: AxisTitles(
@@ -9740,7 +9757,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 interval: hInterval,
                 getTitlesWidget: (v, m) => Text('${v.toStringAsFixed(1)}°C',
                     style: GoogleFonts.inter(
-                        fontSize: 9, color: Colors.grey[500])),
+                        fontSize: 9, color: Tone.fg(Colors.grey[500]))),
               )),
               topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               rightTitles:
@@ -9748,13 +9765,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             ),
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (_) => Colors.blueGrey.shade800,
+                getTooltipColor: (_) => Tone.auto(Colors.blueGrey.shade800),
                 getTooltipItems: (spots) => spots.map((spot) {
                   final d = data[spot.x.toInt()];
                   final color = tempColor(spot.y);
                   return LineTooltipItem(
                     '${d['date']}\n',
-                    GoogleFonts.inter(color: Colors.white60, fontSize: 10),
+                    GoogleFonts.inter(color: Tone.fg(Colors.white60), fontSize: 10),
                     children: [
                       TextSpan(
                         text: '${spot.y.toStringAsFixed(1)}°C avg fridge temp',
@@ -9775,26 +9792,26 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 isCurved: true,
                 curveSmoothness: 0.3,
                 barWidth: 2.5,
-                color: Colors.cyan.shade500,
+                color: Tone.auto(Colors.cyan.shade500),
                 dotData: FlDotData(
                   show: true,
                   getDotPainter: (spot, pct, bar, i) => FlDotCirclePainter(
                     radius: 4,
                     color: tempColor(spot.y),
                     strokeWidth: 1.5,
-                    strokeColor: Colors.white,
+                    strokeColor: Tone.bg(Colors.white),
                   ),
                 ),
                 shadow: Shadow(
-                    color: Colors.cyan.withValues(alpha: 0.25),
+                    color: Tone.auto(Colors.cyan).withValues(alpha: 0.25),
                     blurRadius: 6,
                     offset: const Offset(0, 2)),
                 belowBarData: BarAreaData(
                     show: true,
                     gradient: LinearGradient(
                         colors: [
-                          Colors.cyan.withValues(alpha: 0.15),
-                          Colors.cyan.withValues(alpha: 0.01)
+                          Tone.auto(Colors.cyan).withValues(alpha: 0.15),
+                          Tone.auto(Colors.cyan).withValues(alpha: 0.01)
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter)),
@@ -10039,17 +10056,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: (isUnstable || hasLongOpenings)
-              ? const Color(0xFFEF4444)
-              : const Color(0xFFF1F5F9),
+              ? Tone.bg(const Color(0xFFEF4444))
+              : Tone.bg(const Color(0xFFF1F5F9)),
           width: (isUnstable || hasLongOpenings) ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -10067,13 +10084,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: (isUnstable || hasLongOpenings)
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF1E293B),
+                        ? Tone.bg(const Color(0xFFEF4444))
+                        : Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.door_front_door_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -10084,7 +10101,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: isMobile ? 14 : 16,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0F172A),
+                      color: Tone.fg(const Color(0xFF0F172A)),
                     ),
                   ),
                 ),
@@ -10093,8 +10110,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: isUnstable
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF64748B),
+                        ? Tone.bg(const Color(0xFFEF4444))
+                        : Tone.bg(const Color(0xFF64748B)),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -10102,7 +10119,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Tone.fg(Colors.white),
                     ),
                   ),
                 ),
@@ -10190,13 +10207,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isUnstable
-                    ? const Color(0xFFFEF2F2)
-                    : const Color(0xFFFAFAFA),
+                    ? Tone.bg(const Color(0xFFFEF2F2))
+                    : Tone.bg(const Color(0xFFFAFAFA)),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isUnstable
-                      ? const Color(0xFFEF4444)
-                      : const Color(0xFFE2E8F0),
+                      ? Tone.bg(const Color(0xFFEF4444))
+                      : Tone.bg(const Color(0xFFE2E8F0)),
                 ),
               ),
               child: Row(
@@ -10204,8 +10221,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   Icon(
                     Icons.analytics_rounded,
                     color: isUnstable
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF64748B),
+                        ? Tone.fg(const Color(0xFFEF4444))
+                        : Tone.fg(const Color(0xFF64748B)),
                     size: 18,
                   ),
                   const SizedBox(width: 12),
@@ -10218,7 +10235,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -10227,7 +10244,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                               stabilityStatus, variance),
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: const Color(0xFF0F172A),
+                            color: Tone.fg(const Color(0xFF0F172A)),
                           ),
                         ),
                       ],
@@ -10284,17 +10301,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: hasCriticalCondition
-              ? const Color(0xFFEF4444)
-              : const Color(0xFFF1F5F9),
+              ? Tone.bg(const Color(0xFFEF4444))
+              : Tone.bg(const Color(0xFFF1F5F9)),
           width: hasCriticalCondition ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -10312,13 +10329,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: hasCriticalCondition
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF1E293B),
+                        ? Tone.bg(const Color(0xFFEF4444))
+                        : Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.analytics_outlined,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -10329,7 +10346,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: isMobile ? 14 : 16,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0F172A),
+                      color: Tone.fg(const Color(0xFF0F172A)),
                     ),
                   ),
                 ),
@@ -10338,7 +10355,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
+                      color: Tone.bg(const Color(0xFFEF4444)),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -10346,7 +10363,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Tone.fg(Colors.white),
                       ),
                     ),
                   ),
@@ -10359,10 +10376,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: enhanced.currentStatus.isRunning
-                    ? const Color(0xFFFAFAFA)
-                    : const Color(0xFFFAFAFA),
+                    ? Tone.bg(const Color(0xFFFAFAFA))
+                    : Tone.bg(const Color(0xFFFAFAFA)),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
               ),
               child: Row(
                 children: [
@@ -10372,8 +10389,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: enhanced.currentStatus.isRunning
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFF6B7280),
+                          ? Tone.bg(const Color(0xFF10B981))
+                          : Tone.bg(const Color(0xFF6B7280)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -10386,7 +10403,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                         Text(
@@ -10396,7 +10413,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF0F172A),
+                            color: Tone.fg(const Color(0xFF0F172A)),
                           ),
                         ),
                       ],
@@ -10407,7 +10424,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF64748B),
+                      color: Tone.fg(const Color(0xFF64748B)),
                     ),
                   ),
                 ],
@@ -10494,17 +10511,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: hasCriticalIssue
-              ? const Color(0xFFEF4444)
-              : const Color(0xFFF1F5F9),
+              ? Tone.bg(const Color(0xFFEF4444))
+              : Tone.bg(const Color(0xFFF1F5F9)),
           width: hasCriticalIssue ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -10522,13 +10539,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: hasCriticalIssue
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF1E293B),
+                        ? Tone.bg(const Color(0xFFEF4444))
+                        : Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.insights_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -10539,7 +10556,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: isMobile ? 14 : 16,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0F172A),
+                      color: Tone.fg(const Color(0xFF0F172A)),
                     ),
                   ),
                 ),
@@ -10548,7 +10565,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
+                      color: Tone.bg(const Color(0xFFEF4444)),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -10556,7 +10573,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Tone.fg(Colors.white),
                       ),
                     ),
                   ),
@@ -10654,14 +10671,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 decoration: BoxDecoration(
                   color: _isMaintenanceCritical(
                           insights.maintenanceUrgency.urgencyLevel)
-                      ? const Color(0xFFFEF2F2)
-                      : const Color(0xFFFAFAFA),
+                      ? Tone.bg(const Color(0xFFFEF2F2))
+                      : Tone.bg(const Color(0xFFFAFAFA)),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: _isMaintenanceCritical(
                             insights.maintenanceUrgency.urgencyLevel)
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFFE2E8F0),
+                        ? Tone.bg(const Color(0xFFEF4444))
+                        : Tone.bg(const Color(0xFFE2E8F0)),
                   ),
                 ),
                 child: Row(
@@ -10670,8 +10687,8 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       Icons.info_outline_rounded,
                       color: _isMaintenanceCritical(
                               insights.maintenanceUrgency.urgencyLevel)
-                          ? const Color(0xFFEF4444)
-                          : const Color(0xFF64748B),
+                          ? Tone.fg(const Color(0xFFEF4444))
+                          : Tone.fg(const Color(0xFF64748B)),
                       size: 18,
                     ),
                     const SizedBox(width: 12),
@@ -10684,7 +10701,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF64748B),
+                              color: Tone.fg(const Color(0xFF64748B)),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -10693,7 +10710,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
-                              color: const Color(0xFF0F172A),
+                              color: Tone.fg(const Color(0xFF0F172A)),
                             ),
                           ),
                         ],
@@ -10722,10 +10739,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       width: isMobile ? double.infinity : null,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isError ? const Color(0xFFFEF2F2) : const Color(0xFFFAFAFA),
+        color: isError ? Tone.bg(const Color(0xFFFEF2F2)) : Tone.bg(const Color(0xFFFAFAFA)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isError ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
+          color: isError ? Tone.bg(const Color(0xFFEF4444)) : Tone.bg(const Color(0xFFE2E8F0)),
         ),
       ),
       child: Column(
@@ -10735,12 +10752,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color:
-                  isError ? const Color(0xFFEF4444) : const Color(0xFF1E293B),
+                  isError ? Tone.bg(const Color(0xFFEF4444)) : Tone.bg(const Color(0xFF1E293B)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
-              color: Colors.white,
+              color: Tone.fg(Colors.white),
               size: 16,
             ),
           ),
@@ -10750,7 +10767,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
+              color: Tone.fg(const Color(0xFF0F172A)),
             ),
           ),
           const SizedBox(height: 4),
@@ -10758,7 +10775,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             title,
             style: GoogleFonts.inter(
               fontSize: 11,
-              color: const Color(0xFF64748B),
+              color: Tone.fg(const Color(0xFF64748B)),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -10767,14 +10784,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
               color:
-                  isError ? const Color(0xFFEF4444) : const Color(0xFF64748B),
+                  isError ? Tone.bg(const Color(0xFFEF4444)) : Tone.bg(const Color(0xFF64748B)),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               subtitle,
               style: GoogleFonts.inter(
                 fontSize: 9,
-                color: Colors.white,
+                color: Tone.fg(Colors.white),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -10803,15 +10820,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         border: Border.all(
             color: isPhoneLayout(context)
                 ? GasPalette.border
-                : const Color(0xFFF1F5F9)),
+                : Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -10828,12 +10845,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.bar_chart_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -10844,7 +10861,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
+                    color: Tone.fg(const Color(0xFF0F172A)),
                   ),
                 )),
               ],
@@ -10859,16 +10876,16 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     runSpacing: 8,
                     children: [
                         _buildLegendItem(
-                            const Color(0xFF64748B), 'Compressor Starts'),
-                        _buildLegendItem(const Color(0xFF94A3B8), 'Door Opens'),
+                            Tone.auto(const Color(0xFF64748B)), 'Compressor Starts'),
+                        _buildLegendItem(Tone.auto(const Color(0xFF94A3B8)), 'Door Opens'),
                       ])
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildLegendItem(
-                          const Color(0xFF64748B), 'Compressor Starts'),
+                          Tone.auto(const Color(0xFF64748B)), 'Compressor Starts'),
                       const SizedBox(width: 24),
-                      _buildLegendItem(const Color(0xFF94A3B8), 'Door Opens'),
+                      _buildLegendItem(Tone.auto(const Color(0xFF94A3B8)), 'Door Opens'),
                     ],
                   ),
             const SizedBox(height: 16),
@@ -10882,11 +10899,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     drawVerticalLine: true,
                     drawHorizontalLine: true,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                     getDrawingVerticalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                   ),
@@ -10901,7 +10918,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -10911,7 +10928,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toInt().toString(),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -10922,7 +10939,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -10932,7 +10949,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toInt().toString(),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -10941,7 +10958,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   borderData: FlBorderData(
                     show: true,
                     border:
-                        Border.all(color: const Color(0xFFF1F5F9), width: 1),
+                        Border.all(color: Tone.bg(const Color(0xFFF1F5F9)), width: 1),
                   ),
                   barGroups:
                       data.compressorStartCycles.asMap().entries.map((e) {
@@ -10950,13 +10967,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       barRods: [
                         BarChartRodData(
                           toY: e.value.toDouble(),
-                          color: const Color(0xFF64748B),
+                          color: Tone.auto(const Color(0xFF64748B)),
                           width: 8,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         BarChartRodData(
                           toY: data.doorOpenCycles[e.key].toDouble(),
-                          color: const Color(0xFF94A3B8),
+                          color: Tone.auto(const Color(0xFF94A3B8)),
                           width: 8,
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -10977,15 +10994,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         border: Border.all(
             color: isPhoneLayout(context)
                 ? GasPalette.border
-                : const Color(0xFFF1F5F9)),
+                : Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -11002,12 +11019,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.analytics_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -11018,7 +11035,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
+                    color: Tone.fg(const Color(0xFF0F172A)),
                   ),
                 )),
               ],
@@ -11032,16 +11049,16 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                        _buildLegendItem(const Color(0xFF64748B), 'Temp-Power'),
+                        _buildLegendItem(Tone.auto(const Color(0xFF64748B)), 'Temp-Power'),
                         _buildLegendItem(
-                            const Color(0xFF94A3B8), 'Door Impact'),
+                            Tone.auto(const Color(0xFF94A3B8)), 'Door Impact'),
                       ])
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendItem(const Color(0xFF64748B), 'Temp-Power'),
+                      _buildLegendItem(Tone.auto(const Color(0xFF64748B)), 'Temp-Power'),
                       const SizedBox(width: 24),
-                      _buildLegendItem(const Color(0xFF94A3B8), 'Door Impact'),
+                      _buildLegendItem(Tone.auto(const Color(0xFF94A3B8)), 'Door Impact'),
                     ],
                   ),
             const SizedBox(height: 16),
@@ -11055,11 +11072,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     drawVerticalLine: true,
                     drawHorizontalLine: true,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                     getDrawingVerticalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                   ),
@@ -11074,7 +11091,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -11084,7 +11101,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toStringAsFixed(2),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -11095,7 +11112,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -11105,7 +11122,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toInt().toString(),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -11114,7 +11131,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   borderData: FlBorderData(
                     show: true,
                     border:
-                        Border.all(color: const Color(0xFFF1F5F9), width: 1),
+                        Border.all(color: Tone.bg(const Color(0xFFF1F5F9)), width: 1),
                   ),
                   lineBarsData: [
                     LineChartBarData(
@@ -11124,7 +11141,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
                       isCurved: true,
-                      color: const Color(0xFF64748B),
+                      color: Tone.auto(const Color(0xFF64748B)),
                       barWidth: 2,
                       dotData: FlDotData(show: false),
                     ),
@@ -11135,7 +11152,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
                       isCurved: true,
-                      color: const Color(0xFF94A3B8),
+                      color: Tone.auto(const Color(0xFF94A3B8)),
                       barWidth: 2,
                       dotData: FlDotData(show: false),
                     ),
@@ -11159,17 +11176,17 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: hasCriticalPeak
-              ? const Color(0xFFEF4444)
-              : const Color(0xFFF1F5F9),
+              ? Tone.bg(const Color(0xFFEF4444))
+              : Tone.bg(const Color(0xFFF1F5F9)),
           width: hasCriticalPeak ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -11187,13 +11204,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: hasCriticalPeak
-                        ? const Color(0xFFEF4444)
-                        : const Color(0xFF1E293B),
+                        ? Tone.bg(const Color(0xFFEF4444))
+                        : Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.trending_up_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -11204,7 +11221,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF0F172A),
+                      color: Tone.fg(const Color(0xFF0F172A)),
                     ),
                   ),
                 ),
@@ -11213,7 +11230,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
+                      color: Tone.bg(const Color(0xFFEF4444)),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -11221,7 +11238,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Tone.fg(Colors.white),
                       ),
                     ),
                   ),
@@ -11281,7 +11298,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
+              color: Tone.fg(const Color(0xFF64748B)),
             ),
           ))
         else
@@ -11290,7 +11307,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
+              color: Tone.fg(const Color(0xFF64748B)),
             ),
           ),
       ],
@@ -11305,12 +11322,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Tone.bg(Colors.black).withOpacity(0.04),
               blurRadius: 4,
               offset: Offset(0, 2))
         ],
@@ -11327,14 +11344,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Text(title,
                     style: GoogleFonts.inter(
                         fontSize: 10,
-                        color: Colors.grey[600],
+                        color: Tone.fg(Colors.grey[600]),
                         fontWeight: FontWeight.w500)),
                 SizedBox(height: 2),
                 Text(value,
                     style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87)),
+                        color: Tone.fg(Colors.black87))),
               ],
             ),
           ),
@@ -11349,14 +11366,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       height: growWithContent ? null : 500,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: isPhoneLayout(context)
             ? Border.all(color: GasPalette.border)
             : null,
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Tone.bg(Colors.black).withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -11370,7 +11387,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF1E293B),
+              color: Tone.fg(const Color(0xFF1E293B)),
             ),
           ),
           const SizedBox(height: 16),
@@ -11385,14 +11402,14 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       height: 700,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: isPhoneLayout(context)
             ? Border.all(color: GasPalette.border)
             : null,
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Tone.bg(Colors.black).withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -11406,7 +11423,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF1E293B),
+              color: Tone.fg(const Color(0xFF1E293B)),
             ),
           ),
           const SizedBox(height: 16),
@@ -11428,12 +11445,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 runSpacing: 8,
                 children: [
                     _buildLegendItem(
-                        Colors.lightBlue, 'Ice Buildup Percentage'),
+                        Tone.auto(Colors.lightBlue), 'Ice Buildup Percentage'),
                   ])
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem(Colors.lightBlue, 'Ice Buildup Percentage'),
+                  _buildLegendItem(Tone.auto(Colors.lightBlue), 'Ice Buildup Percentage'),
                 ],
               ),
         const SizedBox(height: 16),
@@ -11446,11 +11463,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 drawVerticalLine: true,
                 drawHorizontalLine: true,
                 getDrawingHorizontalLine: (value) => FlLine(
-                  color: Colors.grey.shade300,
+                  color: Tone.bg(Colors.grey.shade300),
                   strokeWidth: 1,
                 ),
                 getDrawingVerticalLine: (value) => FlLine(
-                  color: Colors.grey.shade300,
+                  color: Tone.bg(Colors.grey.shade300),
                   strokeWidth: 1,
                 ),
               ),
@@ -11465,7 +11482,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: Tone.fg(Colors.grey.shade700),
                     ),
                   ),
                   sideTitles: SideTitles(
@@ -11483,7 +11500,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: Tone.fg(Colors.grey.shade700),
                     ),
                   ),
                   sideTitles: SideTitles(
@@ -11498,7 +11515,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
               borderData: FlBorderData(
                 show: true,
-                border: Border.all(color: Colors.grey.shade300, width: 1),
+                border: Border.all(color: Tone.bg(Colors.grey.shade300), width: 1),
               ),
               barGroups: data.icePercentage.asMap().entries.map((e) {
                 return BarChartGroupData(
@@ -11506,7 +11523,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   barRods: [
                     BarChartRodData(
                       toY: e.value,
-                      color: Colors.lightBlue,
+                      color: Tone.auto(Colors.lightBlue),
                       width: 12,
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -11531,18 +11548,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 spacing: 12,
                 runSpacing: 8,
                 children: [
-                    _buildLegendItem(Colors.red, 'High Temp'),
-                    _buildLegendItem(Colors.orange, 'High Pressure'),
-                    _buildLegendItem(Colors.purple, 'High Power'),
+                    _buildLegendItem(Tone.auto(Colors.red), 'High Temp'),
+                    _buildLegendItem(Tone.auto(Colors.orange), 'High Pressure'),
+                    _buildLegendItem(Tone.auto(Colors.purple), 'High Power'),
                   ])
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem(Colors.red, 'High Temp'),
+                  _buildLegendItem(Tone.auto(Colors.red), 'High Temp'),
                   const SizedBox(width: 16),
-                  _buildLegendItem(Colors.orange, 'High Pressure'),
+                  _buildLegendItem(Tone.auto(Colors.orange), 'High Pressure'),
                   const SizedBox(width: 16),
-                  _buildLegendItem(Colors.purple, 'High Power'),
+                  _buildLegendItem(Tone.auto(Colors.purple), 'High Power'),
                 ],
               ),
         const SizedBox(height: 16),
@@ -11555,11 +11572,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 drawVerticalLine: true,
                 drawHorizontalLine: true,
                 getDrawingHorizontalLine: (value) => FlLine(
-                  color: Colors.grey.shade300,
+                  color: Tone.bg(Colors.grey.shade300),
                   strokeWidth: 1,
                 ),
                 getDrawingVerticalLine: (value) => FlLine(
-                  color: Colors.grey.shade300,
+                  color: Tone.bg(Colors.grey.shade300),
                   strokeWidth: 1,
                 ),
               ),
@@ -11574,7 +11591,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: Tone.fg(Colors.grey.shade700),
                     ),
                   ),
                   sideTitles: SideTitles(
@@ -11592,7 +11609,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: Tone.fg(Colors.grey.shade700),
                     ),
                   ),
                   sideTitles: SideTitles(
@@ -11607,7 +11624,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
               borderData: FlBorderData(
                 show: true,
-                border: Border.all(color: Colors.grey.shade300, width: 1),
+                border: Border.all(color: Tone.bg(Colors.grey.shade300), width: 1),
               ),
               barGroups: data.highTempAlerts.asMap().entries.map((e) {
                 return BarChartGroupData(
@@ -11615,19 +11632,19 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   barRods: [
                     BarChartRodData(
                       toY: e.value.toDouble(),
-                      color: Colors.red,
+                      color: Tone.auto(Colors.red),
                       width: 6,
                       borderRadius: BorderRadius.circular(2),
                     ),
                     BarChartRodData(
                       toY: data.highPressureAlerts[e.key].toDouble(),
-                      color: Colors.orange,
+                      color: Tone.auto(Colors.orange),
                       width: 6,
                       borderRadius: BorderRadius.circular(2),
                     ),
                     BarChartRodData(
                       toY: data.highPowerConsumptionAlerts[e.key].toDouble(),
-                      color: Colors.purple,
+                      color: Tone.auto(Colors.purple),
                       width: 6,
                       borderRadius: BorderRadius.circular(2),
                     ),
@@ -11652,15 +11669,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 spacing: 12,
                 runSpacing: 8,
                 children: [
-                    _buildLegendItem(Colors.red, 'High Pressure'),
-                    _buildLegendItem(Colors.blue, 'Low Pressure'),
+                    _buildLegendItem(Tone.auto(Colors.red), 'High Pressure'),
+                    _buildLegendItem(Tone.auto(Colors.blue), 'Low Pressure'),
                   ])
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem(Colors.red, 'High Pressure'),
+                  _buildLegendItem(Tone.auto(Colors.red), 'High Pressure'),
                   const SizedBox(width: 16),
-                  _buildLegendItem(Colors.blue, 'Low Pressure'),
+                  _buildLegendItem(Tone.auto(Colors.blue), 'Low Pressure'),
                 ],
               ),
         const SizedBox(height: 16),
@@ -11673,11 +11690,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 drawVerticalLine: true,
                 drawHorizontalLine: true,
                 getDrawingHorizontalLine: (value) => FlLine(
-                  color: Colors.grey.shade300,
+                  color: Tone.bg(Colors.grey.shade300),
                   strokeWidth: 1,
                 ),
                 getDrawingVerticalLine: (value) => FlLine(
-                  color: Colors.grey.shade300,
+                  color: Tone.bg(Colors.grey.shade300),
                   strokeWidth: 1,
                 ),
               ),
@@ -11692,7 +11709,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: Tone.fg(Colors.grey.shade700),
                     ),
                   ),
                   sideTitles: SideTitles(
@@ -11710,7 +11727,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: Tone.fg(Colors.grey.shade700),
                     ),
                   ),
                   sideTitles: SideTitles(
@@ -11725,7 +11742,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               ),
               borderData: FlBorderData(
                 show: true,
-                border: Border.all(color: Colors.grey.shade300, width: 1),
+                border: Border.all(color: Tone.bg(Colors.grey.shade300), width: 1),
               ),
               lineBarsData: [
                 LineChartBarData(
@@ -11735,7 +11752,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       .map((e) => FlSpot(e.key.toDouble(), e.value))
                       .toList(),
                   isCurved: true,
-                  color: Colors.red,
+                  color: Tone.auto(Colors.red),
                   barWidth: 2,
                   dotData: FlDotData(show: false),
                 ),
@@ -11746,7 +11763,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       .map((e) => FlSpot(e.key.toDouble(), e.value))
                       .toList(),
                   isCurved: true,
-                  color: Colors.blue,
+                  color: Tone.auto(Colors.blue),
                   barWidth: 2,
                   dotData: FlDotData(show: false),
                 ),
@@ -11772,13 +11789,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               Expanded(
                 child: Column(
                   children: [
-                    _buildLegendItem(Colors.blue, 'Daily Avg Temperature'),
+                    _buildLegendItem(Tone.auto(Colors.blue), 'Daily Avg Temperature'),
                     Text(
                       'Daily Average Temperature',
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
+                        color: Tone.fg(Colors.grey.shade700),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -11790,11 +11807,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             drawVerticalLine: true,
                             drawHorizontalLine: true,
                             getDrawingHorizontalLine: (value) => FlLine(
-                              color: Colors.grey.shade300,
+                              color: Tone.bg(Colors.grey.shade300),
                               strokeWidth: 1,
                             ),
                             getDrawingVerticalLine: (value) => FlLine(
-                              color: Colors.grey.shade300,
+                              color: Tone.bg(Colors.grey.shade300),
                               strokeWidth: 1,
                             ),
                           ),
@@ -11827,7 +11844,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           borderData: FlBorderData(
                             show: true,
                             border: Border.all(
-                                color: Colors.grey.shade300, width: 1),
+                                color: Tone.bg(Colors.grey.shade300), width: 1),
                           ),
                           barGroups: data.dailyAvgTemp.asMap().entries.map((e) {
                             return BarChartGroupData(
@@ -11835,7 +11852,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                               barRods: [
                                 BarChartRodData(
                                   toY: e.value,
-                                  color: Colors.blue,
+                                  color: Tone.auto(Colors.blue),
                                   width: 12,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
@@ -11858,13 +11875,13 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               Expanded(
                 child: Column(
                   children: [
-                    _buildLegendItem(Colors.green, 'Daily Duty Cycle'),
+                    _buildLegendItem(Tone.auto(Colors.green), 'Daily Duty Cycle'),
                     Text(
                       'Daily Duty Cycle',
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
+                        color: Tone.fg(Colors.grey.shade700),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -11876,11 +11893,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                             drawVerticalLine: true,
                             drawHorizontalLine: true,
                             getDrawingHorizontalLine: (value) => FlLine(
-                              color: Colors.grey.shade300,
+                              color: Tone.bg(Colors.grey.shade300),
                               strokeWidth: 1,
                             ),
                             getDrawingVerticalLine: (value) => FlLine(
-                              color: Colors.grey.shade300,
+                              color: Tone.bg(Colors.grey.shade300),
                               strokeWidth: 1,
                             ),
                           ),
@@ -11913,7 +11930,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           borderData: FlBorderData(
                             show: true,
                             border: Border.all(
-                                color: Colors.grey.shade300, width: 1),
+                                color: Tone.bg(Colors.grey.shade300), width: 1),
                           ),
                           barGroups:
                               data.dailyDutyCycle.asMap().entries.map((e) {
@@ -11922,7 +11939,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                               barRods: [
                                 BarChartRodData(
                                   toY: e.value,
-                                  color: Colors.green,
+                                  color: Tone.auto(Colors.green),
                                   width: 12,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
@@ -11953,7 +11970,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade300, width: 1),
+            border: Border.all(color: Tone.bg(Colors.grey.shade300), width: 1),
           ),
         ),
         const SizedBox(width: 8),
@@ -11962,7 +11979,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
+            color: Tone.fg(Colors.grey.shade700),
           ),
         ),
       ],
@@ -11974,9 +11991,9 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFFAFAFA),
+          color: Tone.bg(const Color(0xFFFAFAFA)),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -11986,7 +12003,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF64748B),
+                color: Tone.fg(const Color(0xFF64748B)),
               ),
             ),
             const SizedBox(height: 8),
@@ -11995,7 +12012,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF0F172A),
+                color: Tone.fg(const Color(0xFF0F172A)),
               ),
             ),
           ],
@@ -12021,7 +12038,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF64748B),
+            color: Tone.fg(const Color(0xFF64748B)),
           ),
         ),
       ],
@@ -12033,15 +12050,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         border: Border.all(
             color: isPhoneLayout(context)
                 ? GasPalette.border
-                : const Color(0xFFF1F5F9)),
+                : Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -12058,12 +12075,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.thermostat_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -12074,7 +12091,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
+                    color: Tone.fg(const Color(0xFF0F172A)),
                   ),
                 )),
               ],
@@ -12088,18 +12105,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                        _buildLegendItem(Colors.blue, 'Drain Temperature'),
-                        _buildLegendItem(Colors.orange, 'Air Temp'),
-                        _buildLegendItem(Colors.green, 'Coil Temp'),
+                        _buildLegendItem(Tone.auto(Colors.blue), 'Drain Temperature'),
+                        _buildLegendItem(Tone.auto(Colors.orange), 'Air Temp'),
+                        _buildLegendItem(Tone.auto(Colors.green), 'Coil Temp'),
                       ])
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendItem(Colors.blue, 'Drain Temperature'),
+                      _buildLegendItem(Tone.auto(Colors.blue), 'Drain Temperature'),
                       const SizedBox(width: 24),
-                      _buildLegendItem(Colors.orange, 'Air Temp'),
+                      _buildLegendItem(Tone.auto(Colors.orange), 'Air Temp'),
                       const SizedBox(width: 24),
-                      _buildLegendItem(Colors.green, 'Coil Temp'),
+                      _buildLegendItem(Tone.auto(Colors.green), 'Coil Temp'),
                     ],
                   ),
             const SizedBox(height: 16),
@@ -12113,11 +12130,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     drawVerticalLine: true,
                     drawHorizontalLine: true,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                     getDrawingVerticalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                   ),
@@ -12132,7 +12149,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -12142,7 +12159,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toStringAsFixed(1),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -12153,7 +12170,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -12163,7 +12180,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           '${value.toInt().toString().padLeft(2, '0')}:00',
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -12172,7 +12189,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   borderData: FlBorderData(
                     show: true,
                     border:
-                        Border.all(color: const Color(0xFFF1F5F9), width: 1),
+                        Border.all(color: Tone.bg(const Color(0xFFF1F5F9)), width: 1),
                   ),
                   lineBarsData: [
                     LineChartBarData(
@@ -12182,7 +12199,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
                       isCurved: true,
-                      color: Colors.blue,
+                      color: Tone.auto(Colors.blue),
                       barWidth: 3,
                       dotData: const FlDotData(show: false),
                     ),
@@ -12193,7 +12210,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
                       isCurved: true,
-                      color: Colors.orange,
+                      color: Tone.auto(Colors.orange),
                       barWidth: 2,
                       dotData: const FlDotData(show: false),
                     ),
@@ -12204,7 +12221,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
                       isCurved: true,
-                      color: Colors.green,
+                      color: Tone.auto(Colors.green),
                       barWidth: 2,
                       dotData: const FlDotData(show: false),
                     ),
@@ -12223,15 +12240,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         border: Border.all(
             color: isPhoneLayout(context)
                 ? GasPalette.border
-                : const Color(0xFFF1F5F9)),
+                : Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -12248,12 +12265,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.analytics_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -12264,7 +12281,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
+                    color: Tone.fg(const Color(0xFF0F172A)),
                   ),
                 )),
               ],
@@ -12276,10 +12293,10 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               alignment: WrapAlignment.center,
               spacing: 16,
               children: [
-                _buildLegendItem(Colors.purple, 'Main Temp'),
-                _buildLegendItem(Colors.blue, 'Air Temp'),
-                _buildLegendItem(Colors.orange, 'Coil Temp'),
-                _buildLegendItem(Colors.green, 'Drain Temp'),
+                _buildLegendItem(Tone.auto(Colors.purple), 'Main Temp'),
+                _buildLegendItem(Tone.auto(Colors.blue), 'Air Temp'),
+                _buildLegendItem(Tone.auto(Colors.orange), 'Coil Temp'),
+                _buildLegendItem(Tone.auto(Colors.green), 'Drain Temp'),
               ],
             ),
             const SizedBox(height: 16),
@@ -12293,11 +12310,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     drawVerticalLine: true,
                     drawHorizontalLine: true,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                     getDrawingVerticalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                   ),
@@ -12312,7 +12329,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -12322,7 +12339,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toStringAsFixed(2),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -12333,7 +12350,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -12343,7 +12360,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toStringAsFixed(0),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -12352,7 +12369,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   borderData: FlBorderData(
                     show: true,
                     border:
-                        Border.all(color: const Color(0xFFF1F5F9), width: 1),
+                        Border.all(color: Tone.bg(const Color(0xFFF1F5F9)), width: 1),
                   ),
                   barGroups: data.tempVariance.asMap().entries.map((e) {
                     return BarChartGroupData(
@@ -12360,7 +12377,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                       barRods: [
                         BarChartRodData(
                           toY: e.value,
-                          color: Colors.purple,
+                          color: Tone.auto(Colors.purple),
                           width: 3,
                           borderRadius: BorderRadius.circular(2),
                         ),
@@ -12368,7 +12385,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           toY: e.key < data.airTempVariance.length
                               ? data.airTempVariance[e.key]
                               : 0,
-                          color: Colors.blue,
+                          color: Tone.auto(Colors.blue),
                           width: 3,
                           borderRadius: BorderRadius.circular(2),
                         ),
@@ -12376,7 +12393,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           toY: e.key < data.coilTempVariance.length
                               ? data.coilTempVariance[e.key]
                               : 0,
-                          color: Colors.orange,
+                          color: Tone.auto(Colors.orange),
                           width: 3,
                           borderRadius: BorderRadius.circular(2),
                         ),
@@ -12384,7 +12401,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           toY: e.key < data.drainTempVariance.length
                               ? data.drainTempVariance[e.key]
                               : 0,
-                          color: Colors.green,
+                          color: Tone.auto(Colors.green),
                           width: 3,
                           borderRadius: BorderRadius.circular(2),
                         ),
@@ -12403,7 +12420,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF0F172A),
+                color: Tone.fg(const Color(0xFF0F172A)),
               ),
             ),
             const SizedBox(height: 12),
@@ -12491,7 +12508,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
+                    color: Tone.fg(const Color(0xFF64748B)),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -12520,15 +12537,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         border: Border.all(
             color: isPhoneLayout(context)
                 ? GasPalette.border
-                : const Color(0xFFF1F5F9)),
+                : Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -12545,12 +12562,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.bolt_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -12561,7 +12578,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
+                    color: Tone.fg(const Color(0xFF0F172A)),
                   ),
                 )),
               ],
@@ -12575,12 +12592,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                        _buildLegendItem(Colors.red, 'Total Power Consumption'),
+                        _buildLegendItem(Tone.auto(Colors.red), 'Total Power Consumption'),
                       ])
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendItem(Colors.red, 'Total Power Consumption'),
+                      _buildLegendItem(Tone.auto(Colors.red), 'Total Power Consumption'),
                     ],
                   ),
             const SizedBox(height: 16),
@@ -12594,11 +12611,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     drawVerticalLine: true,
                     drawHorizontalLine: true,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                     getDrawingVerticalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                   ),
@@ -12613,7 +12630,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -12623,7 +12640,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toStringAsFixed(2),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -12634,7 +12651,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -12644,7 +12661,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           '${value.toInt().toString().padLeft(2, '0')}:00',
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -12653,7 +12670,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   borderData: FlBorderData(
                     show: true,
                     border:
-                        Border.all(color: const Color(0xFFF1F5F9), width: 1),
+                        Border.all(color: Tone.bg(const Color(0xFFF1F5F9)), width: 1),
                   ),
                   lineBarsData: [
                     LineChartBarData(
@@ -12663,7 +12680,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
                       isCurved: true,
-                      color: Colors.red,
+                      color: Tone.auto(Colors.red),
                       barWidth: 3,
                       dotData: const FlDotData(show: false),
                     ),
@@ -12682,15 +12699,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         border: Border.all(
             color: isPhoneLayout(context)
                 ? GasPalette.border
-                : const Color(0xFFF1F5F9)),
+                : Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -12707,12 +12724,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.electrical_services_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -12723,7 +12740,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
+                    color: Tone.fg(const Color(0xFF0F172A)),
                   ),
                 )),
               ],
@@ -12737,18 +12754,18 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                        _buildLegendItem(Colors.red, 'Phase 1'),
-                        _buildLegendItem(Colors.yellow, 'Phase 2'),
-                        _buildLegendItem(Colors.blue, 'Phase 3'),
+                        _buildLegendItem(Tone.auto(Colors.red), 'Phase 1'),
+                        _buildLegendItem(Tone.auto(Colors.yellow), 'Phase 2'),
+                        _buildLegendItem(Tone.auto(Colors.blue), 'Phase 3'),
                       ])
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendItem(Colors.red, 'Phase 1'),
+                      _buildLegendItem(Tone.auto(Colors.red), 'Phase 1'),
                       const SizedBox(width: 24),
-                      _buildLegendItem(Colors.yellow, 'Phase 2'),
+                      _buildLegendItem(Tone.auto(Colors.yellow), 'Phase 2'),
                       const SizedBox(width: 24),
-                      _buildLegendItem(Colors.blue, 'Phase 3'),
+                      _buildLegendItem(Tone.auto(Colors.blue), 'Phase 3'),
                     ],
                   ),
             const SizedBox(height: 16),
@@ -12762,11 +12779,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     drawVerticalLine: true,
                     drawHorizontalLine: true,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                     getDrawingVerticalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                   ),
@@ -12781,7 +12798,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -12791,7 +12808,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toStringAsFixed(1),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -12802,7 +12819,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -12812,7 +12829,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           '${value.toInt().toString().padLeft(2, '0')}:00',
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -12821,7 +12838,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   borderData: FlBorderData(
                     show: true,
                     border:
-                        Border.all(color: const Color(0xFFF1F5F9), width: 1),
+                        Border.all(color: Tone.bg(const Color(0xFFF1F5F9)), width: 1),
                   ),
                   lineBarsData: [
                     LineChartBarData(
@@ -12831,7 +12848,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
                       isCurved: false,
-                      color: Colors.red,
+                      color: Tone.auto(Colors.red),
                       barWidth: 2,
                       dotData: const FlDotData(show: false),
                     ),
@@ -12842,7 +12859,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
                       isCurved: false,
-                      color: Colors.yellow,
+                      color: Tone.auto(Colors.yellow),
                       barWidth: 2,
                       dotData: const FlDotData(show: false),
                     ),
@@ -12853,7 +12870,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
                       isCurved: false,
-                      color: Colors.blue,
+                      color: Tone.auto(Colors.blue),
                       barWidth: 2,
                       dotData: const FlDotData(show: false),
                     ),
@@ -12872,15 +12889,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         border: Border.all(
             color: isPhoneLayout(context)
                 ? GasPalette.border
-                : const Color(0xFFF1F5F9)),
+                : Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -12897,12 +12914,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.settings_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -12913,7 +12930,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
+                    color: Tone.fg(const Color(0xFF0F172A)),
                   ),
                 )),
               ],
@@ -12927,15 +12944,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                        _buildLegendItem(Colors.green, 'Compressor On'),
-                        _buildLegendItem(Colors.red.shade400, 'Compressor Off'),
+                        _buildLegendItem(Tone.auto(Colors.green), 'Compressor On'),
+                        _buildLegendItem(Tone.auto(Colors.red.shade400), 'Compressor Off'),
                       ])
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendItem(Colors.green, 'Compressor On'),
+                      _buildLegendItem(Tone.auto(Colors.green), 'Compressor On'),
                       const SizedBox(width: 24),
-                      _buildLegendItem(Colors.red.shade400, 'Compressor Off'),
+                      _buildLegendItem(Tone.auto(Colors.red.shade400), 'Compressor Off'),
                     ],
                   ),
             const SizedBox(height: 16),
@@ -12949,11 +12966,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     drawVerticalLine: true,
                     drawHorizontalLine: true,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                     getDrawingVerticalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                   ),
@@ -12968,7 +12985,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -12978,7 +12995,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toInt().toString(),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -12989,7 +13006,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -12999,7 +13016,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toInt().toString(),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -13008,7 +13025,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   borderData: FlBorderData(
                     show: true,
                     border:
-                        Border.all(color: const Color(0xFFF1F5F9), width: 1),
+                        Border.all(color: Tone.bg(const Color(0xFFF1F5F9)), width: 1),
                   ),
                   barGroups: data.compressorOnCount.asMap().entries.map((e) {
                     return BarChartGroupData(
@@ -13017,7 +13034,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         // Compressor On
                         BarChartRodData(
                           toY: e.value.toDouble(),
-                          color: Colors.green,
+                          color: Tone.auto(Colors.green),
                           width: 12,
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -13026,7 +13043,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           toY: e.key < data.compressorOffCount.length
                               ? data.compressorOffCount[e.key].toDouble()
                               : 0.0,
-                          color: Colors.red.shade400,
+                          color: Tone.auto(Colors.red.shade400),
                           width: 12,
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -13047,15 +13064,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         border: Border.all(
             color: isPhoneLayout(context)
                 ? GasPalette.border
-                : const Color(0xFFF1F5F9)),
+                : Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -13072,12 +13089,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.eco_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -13088,7 +13105,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
+                    color: Tone.fg(const Color(0xFF0F172A)),
                   ),
                 )),
               ],
@@ -13102,12 +13119,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                        _buildLegendItem(Colors.teal, 'Compressor Duty Cycle'),
+                        _buildLegendItem(Tone.auto(Colors.teal), 'Compressor Duty Cycle'),
                       ])
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendItem(Colors.teal, 'Compressor Duty Cycle'),
+                      _buildLegendItem(Tone.auto(Colors.teal), 'Compressor Duty Cycle'),
                     ],
                   ),
             const SizedBox(height: 16),
@@ -13121,11 +13138,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     drawVerticalLine: true,
                     drawHorizontalLine: true,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                     getDrawingVerticalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                   ),
@@ -13140,7 +13157,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -13150,7 +13167,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           '${value.toStringAsFixed(1)}%',
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -13161,7 +13178,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -13171,7 +13188,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           '${value.toInt().toString().padLeft(2, '0')}:00',
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -13180,7 +13197,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   borderData: FlBorderData(
                     show: true,
                     border:
-                        Border.all(color: const Color(0xFFF1F5F9), width: 1),
+                        Border.all(color: Tone.bg(const Color(0xFFF1F5F9)), width: 1),
                   ),
                   lineBarsData: [
                     LineChartBarData(
@@ -13190,7 +13207,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           .map((e) => FlSpot(e.key.toDouble(), e.value))
                           .toList(),
                       isCurved: true,
-                      color: Colors.teal,
+                      color: Tone.auto(Colors.teal),
                       barWidth: 3,
                       dotData: const FlDotData(show: false),
                     ),
@@ -13209,15 +13226,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 14 : 16),
         border: Border.all(
             color: isPhoneLayout(context)
                 ? GasPalette.border
-                : const Color(0xFFF1F5F9)),
+                : Tone.bg(const Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Tone.bg(Colors.black).withOpacity(0.02),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -13234,12 +13251,12 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: Tone.bg(const Color(0xFF1E293B)),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.door_front_door_rounded,
-                    color: Colors.white,
+                    color: Tone.fg(Colors.white),
                     size: 18,
                   ),
                 ),
@@ -13250,7 +13267,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
+                    color: Tone.fg(const Color(0xFF0F172A)),
                   ),
                 )),
               ],
@@ -13264,15 +13281,15 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                        _buildLegendItem(Colors.amber, 'Door Opens'),
-                        _buildLegendItem(Colors.blueGrey, 'Door Closes'),
+                        _buildLegendItem(Tone.auto(Colors.amber), 'Door Opens'),
+                        _buildLegendItem(Tone.auto(Colors.blueGrey), 'Door Closes'),
                       ])
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildLegendItem(Colors.amber, 'Door Opens'),
+                      _buildLegendItem(Tone.auto(Colors.amber), 'Door Opens'),
                       const SizedBox(width: 24),
-                      _buildLegendItem(Colors.blueGrey, 'Door Closes'),
+                      _buildLegendItem(Tone.auto(Colors.blueGrey), 'Door Closes'),
                     ],
                   ),
             const SizedBox(height: 16),
@@ -13286,11 +13303,11 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                     drawVerticalLine: true,
                     drawHorizontalLine: true,
                     getDrawingHorizontalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                     getDrawingVerticalLine: (value) => FlLine(
-                      color: const Color(0xFFF1F5F9),
+                      color: Tone.bg(const Color(0xFFF1F5F9)),
                       strokeWidth: 1,
                     ),
                   ),
@@ -13305,7 +13322,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -13315,7 +13332,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toInt().toString(),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -13326,7 +13343,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF64748B),
+                          color: Tone.fg(const Color(0xFF64748B)),
                         ),
                       ),
                       sideTitles: SideTitles(
@@ -13336,7 +13353,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           value.toInt().toString(),
                           style: GoogleFonts.inter(
                             fontSize: 10,
-                            color: const Color(0xFF64748B),
+                            color: Tone.fg(const Color(0xFF64748B)),
                           ),
                         ),
                       ),
@@ -13345,7 +13362,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                   borderData: FlBorderData(
                     show: true,
                     border:
-                        Border.all(color: const Color(0xFFF1F5F9), width: 1),
+                        Border.all(color: Tone.bg(const Color(0xFFF1F5F9)), width: 1),
                   ),
                   barGroups: data.doorOpenCount.asMap().entries.map((e) {
                     return BarChartGroupData(
@@ -13354,7 +13371,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                         // Door Opens
                         BarChartRodData(
                           toY: e.value.toDouble(),
-                          color: Colors.amber,
+                          color: Tone.auto(Colors.amber),
                           width: 12,
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -13363,7 +13380,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
                           toY: e.key < data.doorClosedCount.length
                               ? data.doorClosedCount[e.key].toDouble()
                               : 0.0,
-                          color: Colors.blueGrey,
+                          color: Tone.auto(Colors.blueGrey),
                           width: 12,
                           borderRadius: BorderRadius.circular(4),
                         ),
@@ -13386,23 +13403,23 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
       width: isMobile ? double.infinity : null,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: Tone.bg(const Color(0xFFFAFAFA)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: const Color(0xFF64748B)),
+              Icon(icon, size: 16, color: Tone.fg(const Color(0xFF64748B))),
               const SizedBox(width: 6),
               Text(
                 title,
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
+                  color: Tone.fg(const Color(0xFF64748B)),
                 ),
               ),
             ],
@@ -13413,7 +13430,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF0F172A),
+              color: Tone.fg(const Color(0xFF0F172A)),
             ),
           ),
           const SizedBox(height: 4),
@@ -13421,7 +13438,7 @@ class _DevicePeformanceDashboardState extends State<DevicePeformanceDashboard> {
             subtitle,
             style: GoogleFonts.inter(
               fontSize: 11,
-              color: const Color(0xFF64748B),
+              color: Tone.fg(const Color(0xFF64748B)),
             ),
           ),
         ],

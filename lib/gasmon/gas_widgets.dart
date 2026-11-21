@@ -2,6 +2,7 @@
 /// presence and severity chips.
 library;
 
+import '../widgets/app_tone.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -36,9 +37,9 @@ class GPanel extends StatelessWidget {
         color: GasPalette.panel,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: GasPalette.border),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-              color: Color(0x05133648), blurRadius: 3, offset: Offset(0, 2)),
+              color: Tone.bg(Color(0x05133648)), blurRadius: 3, offset: Offset(0, 2)),
         ],
       ),
       child: child,
@@ -113,7 +114,7 @@ class GPresenceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = online ? GasPalette.good : GasPalette.warn;
-    final fg = light ? Colors.white70 : GasPalette.ink2;
+    final fg = light ? Tone.auto(Colors.white70) : GasPalette.ink2;
     final label = online
         ? 'Reporting now'
         : lastSeen == null
@@ -393,7 +394,7 @@ class GSegment<T> extends StatelessWidget {
                   child: Text(label(v),
                       style: gasBody(context).copyWith(
                           fontWeight: FontWeight.w700,
-                          color: v == selected ? Colors.white : GasPalette.ink2)),
+                          color: v == selected ? Tone.auto(Colors.white) : GasPalette.ink2)),
                 ),
               ),
             ),

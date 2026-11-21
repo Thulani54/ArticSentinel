@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_screen.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_forms.dart';
@@ -258,7 +259,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 dividerColor: Colors.transparent,
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicator: BoxDecoration(
-                    color: const Color(0xFFE9EDF4),
+                    color: Tone.bg(const Color(0xFFE9EDF4)),
                     borderRadius: BorderRadius.circular(32)),
                 labelColor: GasPalette.primary,
                 unselectedLabelColor: GasPalette.ink2,
@@ -281,7 +282,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                             child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                            const CircularProgressIndicator(
+                            CircularProgressIndicator(
                                 color: GasPalette.primary),
                             const SizedBox(height: 16),
                             Text('Loading communication data…',
@@ -316,7 +317,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                                                   'Emails sent',
                                                   '${totals['email_sent'] ?? 0}')),
                                         ]),
-                                    const Divider(
+                                    Divider(
                                         height: 20, color: GasPalette.border),
                                     Row(
                                         crossAxisAlignment:
@@ -492,7 +493,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                           .copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
                   Text(subtitle, style: gasSmall(context)),
-                  const Divider(height: 16, color: GasPalette.border),
+                  Divider(height: 16, color: GasPalette.border),
                   for (final value in values.entries)
                     _phoneCommunicationValue(value.key, value.value),
                 ])),
@@ -529,9 +530,9 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: Tone.bg(const Color(0xFFF1F5F9)),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0)), width: 1),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -540,11 +541,11 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
           isScrollable: true,
           dividerColor: Colors.transparent,
           indicator: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Tone.bg(Colors.black).withOpacity(0.08),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -557,7 +558,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
           ),
           indicatorSize: TabBarIndicatorSize.tab,
           labelColor: Constants.ctaColorLight,
-          unselectedLabelColor: const Color(0xFF64748B),
+          unselectedLabelColor: Tone.fg(const Color(0xFF64748B)),
           labelStyle: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -605,11 +606,11 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Tone.bg(Colors.black).withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -629,7 +630,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
+                color: Tone.fg(const Color(0xFF64748B)),
               ),
             ),
           ],
@@ -643,12 +644,12 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.red.withOpacity(0.2)),
+        border: Border.all(color: Tone.bg(Colors.red).withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.withOpacity(0.1),
+            color: Tone.bg(Colors.red).withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -661,12 +662,12 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
+                color: Tone.bg(Colors.red.shade50),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.error_outline_rounded,
-                color: Colors.red.shade600,
+                color: Tone.fg(Colors.red.shade600),
                 size: 48,
               ),
             ),
@@ -676,7 +677,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.red.shade800,
+                color: Tone.fg(Colors.red.shade800),
               ),
             ),
             const SizedBox(height: 8),
@@ -684,7 +685,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               _error,
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: Colors.red.shade700,
+                color: Tone.fg(Colors.red.shade700),
               ),
               textAlign: TextAlign.center,
             ),
@@ -697,7 +698,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 backgroundColor: isPhoneLayout(context)
                     ? GasPalette.primary
                     : Constants.ctaColorLight,
-                foregroundColor: Colors.white,
+                foregroundColor: Tone.fg(Colors.white),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
@@ -757,7 +758,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: Tone.fg(const Color(0xFF1E293B)),
               ),
             ),
           ],
@@ -765,11 +766,11 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -803,7 +804,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             Icon(
               Icons.timeline_rounded,
               size: 64,
-              color: Colors.grey.shade400,
+              color: Tone.fg(Colors.grey.shade400),
             ),
             const SizedBox(height: 16),
             Text(
@@ -811,7 +812,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
+                color: Tone.fg(const Color(0xFF64748B)),
               ),
             ),
             const SizedBox(height: 8),
@@ -819,7 +820,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               'Communication logs will appear here',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: const Color(0xFF9CA3AF),
+                color: Tone.fg(const Color(0xFF9CA3AF)),
               ),
             ),
           ],
@@ -840,13 +841,13 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
         title: 'Emails Sent',
         value: '${totals['email_sent'] ?? 0}',
         icon: Icons.email_rounded,
-        color: const Color(0xFF10B981),
+        color: Tone.auto(const Color(0xFF10B981)),
       ),
       _StatCard(
         title: 'OTP Generated',
         value: '${totals['otp_generated'] ?? 0}',
         icon: Icons.security_rounded,
-        color: const Color(0xFFF59E0B),
+        color: Tone.auto(const Color(0xFFF59E0B)),
       ),
       _StatCard(
         title: 'Total Cost',
@@ -864,13 +865,13 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.1),
+                color: Tone.bg(const Color(0xFF10B981)).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.analytics_rounded,
                 size: 20,
-                color: Color(0xFF10B981),
+                color: Tone.fg(Color(0xFF10B981)),
               ),
             ),
             const SizedBox(width: 12),
@@ -879,7 +880,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: Tone.fg(const Color(0xFF1E293B)),
               ),
             ),
           ],
@@ -905,12 +906,12 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: stat.color.withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Tone.bg(Colors.black).withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -942,7 +943,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             style: GoogleFonts.inter(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              color: Tone.fg(Colors.grey[800]),
             ),
           ),
           const SizedBox(height: 4),
@@ -950,7 +951,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             stat.title,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: Tone.fg(Colors.grey[600]),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1001,11 +1002,11 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
           SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black12,
+                  color: Tone.bg(Colors.black12),
                   blurRadius: 8,
                   offset: Offset(0, 2),
                 ),
@@ -1059,11 +1060,11 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Tone.bg(Colors.black12),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -1092,14 +1093,14 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             style: GoogleFonts.inter(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              color: Tone.fg(Colors.grey[800]),
             ),
           ),
           Text(
             title,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: Tone.fg(Colors.grey[600]),
             ),
           ),
         ],
@@ -1117,7 +1118,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
+            color: Tone.fg(Colors.grey[800]),
           ),
         ),
       ],
@@ -1129,16 +1130,16 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: provider['is_active']
-              ? Colors.green.withOpacity(0.3)
-              : Colors.grey.withOpacity(0.3),
+              ? Tone.bg(Colors.green).withOpacity(0.3)
+              : Tone.bg(Colors.grey).withOpacity(0.3),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Tone.bg(Colors.black).withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1172,8 +1173,8 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: provider['is_active']
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.red.withOpacity(0.1),
+                      ? Tone.bg(Colors.green).withOpacity(0.1)
+                      : Tone.bg(Colors.red).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -1185,7 +1186,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color:
-                            provider['is_active'] ? Colors.green : Colors.red,
+                            provider['is_active'] ? Tone.bg(Colors.green) : Tone.bg(Colors.red),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -1195,7 +1196,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color:
-                            provider['is_active'] ? Colors.green : Colors.red,
+                            provider['is_active'] ? Tone.fg(Colors.green) : Tone.fg(Colors.red),
                       ),
                     ),
                   ],
@@ -1209,7 +1210,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E293B),
+              color: Tone.fg(const Color(0xFF1E293B)),
             ),
           ),
           const SizedBox(height: 12),
@@ -1230,7 +1231,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: Tone.bg(const Color(0xFFF1F5F9)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -1238,7 +1239,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF64748B),
+                  color: Tone.fg(const Color(0xFF64748B)),
                 ),
               ),
             ),
@@ -1257,14 +1258,14 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E293B),
+            color: Tone.fg(const Color(0xFF1E293B)),
           ),
         ),
         Text(
           label,
           style: GoogleFonts.inter(
             fontSize: 11,
-            color: const Color(0xFF64748B),
+            color: Tone.fg(const Color(0xFF64748B)),
           ),
         ),
       ],
@@ -1275,11 +1276,11 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     return Container(
       height: 300,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Tone.bg(Colors.black).withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1292,7 +1293,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             Icon(
               Icons.text_snippet_rounded,
               size: 64,
-              color: Colors.grey.shade400,
+              color: Tone.fg(Colors.grey.shade400),
             ),
             const SizedBox(height: 16),
             Text(
@@ -1300,7 +1301,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF64748B),
+                color: Tone.fg(const Color(0xFF64748B)),
               ),
             ),
             const SizedBox(height: 8),
@@ -1308,7 +1309,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               'Create message templates to get started',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: const Color(0xFF9CA3AF),
+                color: Tone.fg(const Color(0xFF9CA3AF)),
               ),
             ),
           ],
@@ -1322,11 +1323,11 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Tone.bg(Colors.black).withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1358,7 +1359,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  color: Tone.bg(const Color(0xFF10B981)).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -1366,7 +1367,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF10B981),
+                    color: Tone.fg(const Color(0xFF10B981)),
                   ),
                 ),
               ),
@@ -1376,7 +1377,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF59E0B).withOpacity(0.1),
+                    color: Tone.bg(const Color(0xFFF59E0B)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -1384,7 +1385,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFFF59E0B),
+                      color: Tone.fg(const Color(0xFFF59E0B)),
                     ),
                   ),
                 ),
@@ -1396,7 +1397,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E293B),
+              color: Tone.fg(const Color(0xFF1E293B)),
             ),
           ),
           if (template['subject'] != null &&
@@ -1406,7 +1407,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               'Subject: ${template['subject']}',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: const Color(0xFF64748B),
+                color: Tone.fg(const Color(0xFF64748B)),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1416,7 +1417,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             template['message'] ?? '',
             style: GoogleFonts.inter(
               fontSize: 13,
-              color: const Color(0xFF64748B),
+              color: Tone.fg(const Color(0xFF64748B)),
               height: 1.4,
             ),
             maxLines: 3,
@@ -1426,7 +1427,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: Tone.bg(const Color(0xFFF1F5F9)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -1434,7 +1435,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF64748B),
+                color: Tone.fg(const Color(0xFF64748B)),
               ),
             ),
           ),
@@ -1470,7 +1471,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.fg(const Color(0xFF1E293B)),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1478,7 +1479,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                   log['message'] ?? '',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: const Color(0xFF64748B),
+                    color: Tone.fg(const Color(0xFF64748B)),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1490,7 +1491,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             _formatDateTime(log['created_at']),
             style: GoogleFonts.inter(
               fontSize: 11,
-              color: const Color(0xFF9CA3AF),
+              color: Tone.fg(const Color(0xFF9CA3AF)),
             ),
           ),
         ],
@@ -1503,7 +1504,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+          bottom: BorderSide(color: Tone.bg(Colors.grey[200]), width: 1),
         ),
       ),
       child: Column(
@@ -1531,7 +1532,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 log['communication_type_display'] ?? '',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: Tone.fg(Colors.grey[600]),
                 ),
               ),
               Spacer(),
@@ -1539,7 +1540,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 _formatDateTime(log['created_at']),
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.grey[500],
+                  color: Tone.fg(Colors.grey[500]),
                 ),
               ),
             ],
@@ -1551,7 +1552,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[800],
+                color: Tone.fg(Colors.grey[800]),
               ),
             ),
             SizedBox(height: 4),
@@ -1560,7 +1561,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             log['message'] ?? '',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: Tone.fg(Colors.grey[600]),
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -1571,14 +1572,14 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             Container(
               padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.red[50],
+                color: Tone.bg(Colors.red[50]),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 'Error: ${log['error_message']}',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.red[700],
+                  color: Tone.fg(Colors.red[700]),
                 ),
               ),
             ),
@@ -1593,11 +1594,11 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Tone.bg(Colors.black12),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -1628,7 +1629,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 otp['otp_type_display'] ?? '',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: Tone.fg(Colors.grey[600]),
                 ),
               ),
             ],
@@ -1639,7 +1640,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[800],
+              color: Tone.fg(Colors.grey[800]),
             ),
           ),
           SizedBox(height: 4),
@@ -1647,7 +1648,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             'Attempts: ${otp['attempts']}/${otp['max_attempts']}',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: Tone.fg(Colors.grey[600]),
             ),
           ),
           SizedBox(height: 4),
@@ -1655,14 +1656,14 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             'Created: ${_formatDateTime(otp['created_at'])}',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: Colors.grey[500],
+              color: Tone.fg(Colors.grey[500]),
             ),
           ),
           Text(
             'Expires: ${_formatDateTime(otp['expires_at'])}',
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: Colors.grey[500],
+              color: Tone.fg(Colors.grey[500]),
             ),
           ),
         ],
@@ -1675,11 +1676,11 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: Tone.bg(Colors.black12),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -1710,7 +1711,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 'Priority: ${queue['priority_display'] ?? ''}',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: Tone.fg(Colors.grey[600]),
                 ),
               ),
             ],
@@ -1721,7 +1722,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              color: Tone.fg(Colors.grey[800]),
             ),
           ),
           if (queue['description'] != null &&
@@ -1731,7 +1732,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
               queue['description'],
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Tone.fg(Colors.grey[600]),
               ),
             ),
           ],
@@ -1742,7 +1743,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 'Recipients: ${queue['total_recipients']}',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: Tone.fg(Colors.grey[600]),
                 ),
               ),
               SizedBox(width: 16),
@@ -1750,7 +1751,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 'Success: ${queue['successful_count']}',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.green,
+                  color: Tone.fg(Colors.green),
                 ),
               ),
               SizedBox(width: 16),
@@ -1758,7 +1759,7 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
                 'Failed: ${queue['failed_count']}',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.red,
+                  color: Tone.fg(Colors.red),
                 ),
               ),
             ],
@@ -1771,17 +1772,17 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
   Color _getProviderTypeColor(String? type) {
     switch (type) {
       case 'sms':
-        return Colors.blue;
+        return Tone.auto(Colors.blue);
       case 'email':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'push':
-        return Colors.orange;
+        return Tone.auto(Colors.orange);
       case 'whatsapp':
-        return Colors.teal;
+        return Tone.auto(Colors.teal);
       case 'telegram':
-        return Colors.indigo;
+        return Tone.auto(Colors.indigo);
       default:
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
     }
   }
 
@@ -1789,20 +1790,20 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
     switch (status) {
       case 'sent':
       case 'delivered':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'pending':
-        return Colors.orange;
+        return Tone.auto(Colors.orange);
       case 'failed':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       default:
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
     }
   }
 
   Color _getOTPStatusColor(Map<String, dynamic> otp) {
-    if (otp['is_used']) return Colors.green;
-    if (otp['is_expired'] || !otp['is_valid']) return Colors.red;
-    return Colors.orange;
+    if (otp['is_used']) return Tone.auto(Colors.green);
+    if (otp['is_expired'] || !otp['is_valid']) return Tone.auto(Colors.red);
+    return Tone.auto(Colors.orange);
   }
 
   String _getOTPStatusText(Map<String, dynamic> otp) {
@@ -1815,16 +1816,16 @@ class _CommunicationDashboardState extends State<CommunicationDashboard>
   Color _getQueueStatusColor(String? status) {
     switch (status) {
       case 'completed':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'processing':
-        return Colors.blue;
+        return Tone.auto(Colors.blue);
       case 'pending':
-        return Colors.orange;
+        return Tone.auto(Colors.orange);
       case 'failed':
       case 'cancelled':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       default:
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
     }
   }
 

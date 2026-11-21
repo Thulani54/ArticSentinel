@@ -48,3 +48,6 @@ app.*.map.json
 .secrets/
 *.p8
 *-service-account*.json
+
+# Private backend snapshots for the November email/security repair.
+/tmp/email-repair-20261108/

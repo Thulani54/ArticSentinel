@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import '../widgets/mobile_forms.dart';
 import 'dart:convert';
 
@@ -92,7 +93,7 @@ class _HealthWellnessState extends State<HealthWellness> {
           padding: const EdgeInsets.only(left: 24, right: 24),
           child: Divider(
             thickness: 0.5,
-            color: Colors.black54,
+            color: Tone.bg(Colors.black54),
           ),
         ),
         SizedBox(
@@ -106,8 +107,8 @@ class _HealthWellnessState extends State<HealthWellness> {
                 flex: 3,
                 child: CustomCard(
                   elevation: 5,
-                  color: Colors.white,
-                  surfaceTintColor: Colors.white,
+                  color: Tone.auto(Colors.white),
+                  surfaceTintColor: Tone.bg(Colors.white),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   child: Container(
@@ -125,8 +126,8 @@ class _HealthWellnessState extends State<HealthWellness> {
                 flex: 2,
                 child: CustomCard(
                   elevation: 5,
-                  color: Colors.white,
-                  surfaceTintColor: Colors.white,
+                  color: Tone.auto(Colors.white),
+                  surfaceTintColor: Tone.bg(Colors.white),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   child: Container(
@@ -161,9 +162,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                   bottom:
                                       index < appointList.length - 1 ? 16 : 0),
                               child: InkWell(
-                                hoverColor: Colors.white,
-                                splashColor: Colors.white,
-                                focusColor: Colors.white,
+                                hoverColor: Tone.bg(Colors.white),
+                                splashColor: Tone.bg(Colors.white),
+                                focusColor: Tone.bg(Colors.white),
                                 child: Container(
                                   //height: 60,
                                   padding: EdgeInsets.only(
@@ -179,9 +180,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                     children: [
                                       Card(
                                         elevation: 10,
-                                        color: Colors.white,
-                                        shadowColor: Colors.black,
-                                        surfaceTintColor: Colors.white,
+                                        color: Tone.bg(Colors.white),
+                                        shadowColor: Tone.bg(Colors.black),
+                                        surfaceTintColor: Tone.bg(Colors.white),
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(360)),
@@ -191,7 +192,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                             child: Icon(
                                               CupertinoIcons.mail,
                                               size: 32,
-                                              color: Colors.black,
+                                              color: Tone.fg(Colors.black),
                                             ),
                                           ),
                                         ),
@@ -216,9 +217,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                 Text(
                                                   "Appointment By: ${appointment.firstName} ${appointment.lastName} ",
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.w500),
@@ -236,9 +237,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                 Text(
                                                   appointment.topic,
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 13,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.w400),
@@ -254,7 +255,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                               children: [
                                                 Icon(
                                                   CupertinoIcons.time,
-                                                  color: Colors.black54,
+                                                  color: Tone.fg(Colors.black54),
                                                   size: 18,
                                                 ),
                                                 SizedBox(
@@ -265,9 +266,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                       .format(appointment
                                                           .appointDate),
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 13,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.w400),
@@ -315,14 +316,14 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                     ),
                                                     //margin: EdgeInsets.only(top: 16),
                                                     decoration: BoxDecoration(
-                                                      color: Colors.white,
+                                                      color: Tone.bg(Colors.white),
                                                       shape: BoxShape.rectangle,
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               16),
-                                                      boxShadow: const [
+                                                      boxShadow: [
                                                         BoxShadow(
-                                                          color: Colors.black26,
+                                                          color: Tone.bg(Colors.black26),
                                                           blurRadius: 10.0,
                                                           offset:
                                                               Offset(0.0, 10.0),
@@ -409,9 +410,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                                             .format(appointment.appointDate),
                                                                         style: GoogleFonts
                                                                             .inter(
-                                                                          textStyle: const TextStyle(
+                                                                          textStyle: TextStyle(
                                                                               fontSize: 13,
-                                                                              color: Colors.black,
+                                                                              color: Tone.fg(Colors.black),
                                                                               letterSpacing: 0,
                                                                               fontWeight: FontWeight.w400),
                                                                         ),
@@ -538,8 +539,8 @@ class _HealthWellnessState extends State<HealthWellness> {
                 flex: 3,
                 child: CustomCard(
                   elevation: 5,
-                  color: Colors.white,
-                  surfaceTintColor: Colors.white,
+                  color: Tone.auto(Colors.white),
+                  surfaceTintColor: Tone.bg(Colors.white),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   child: Container(
@@ -607,7 +608,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                 style: GoogleFonts.inter(
                                                   textStyle: TextStyle(
                                                       fontSize: 16,
-                                                      color: Colors.black,
+                                                      color: Tone.fg(Colors.black),
                                                       letterSpacing: 0,
                                                       fontWeight:
                                                           FontWeight.bold),
@@ -645,7 +646,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                               style: GoogleFonts.inter(
                                 textStyle: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.black,
+                                    color: Tone.fg(Colors.black),
                                     letterSpacing: 0,
                                     fontWeight: FontWeight.w500),
                               ),
@@ -686,8 +687,8 @@ class _HealthWellnessState extends State<HealthWellness> {
                 flex: 2,
                 child: CustomCard(
                   elevation: 5,
-                  color: Colors.white,
-                  surfaceTintColor: Colors.white,
+                  color: Tone.auto(Colors.white),
+                  surfaceTintColor: Tone.bg(Colors.white),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   child: Container(
@@ -711,7 +712,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                   style: GoogleFonts.inter(
                                     textStyle: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.black,
+                                        color: Tone.fg(Colors.black),
                                         letterSpacing: 0,
                                         fontWeight: FontWeight.w500),
                                   ),
@@ -747,7 +748,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                   style: GoogleFonts.inter(
                                     textStyle: TextStyle(
                                         fontSize: 13,
-                                        color: Colors.white,
+                                        color: Tone.fg(Colors.white),
                                         letterSpacing: 0,
                                         fontWeight: FontWeight.normal),
                                   ),
@@ -794,7 +795,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                 child: Center(
                                                   child: Icon(
                                                     Icons.search,
-                                                    color: Colors.white,
+                                                    color: Tone.fg(Colors.white),
                                                   ),
                                                 ),
                                               ),
@@ -805,17 +806,17 @@ class _HealthWellnessState extends State<HealthWellness> {
                                         hintStyle: GoogleFonts.inter(
                                           textStyle: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.grey,
+                                              color: Tone.fg(Colors.grey),
                                               letterSpacing: 0,
                                               fontWeight: FontWeight.normal),
                                         ),
                                         filled: true,
-                                        fillColor: Colors.white,
+                                        fillColor: Tone.bg(Colors.white),
                                         contentPadding:
                                             EdgeInsets.only(left: 16),
                                         enabledBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                              color: Colors.grey
+                                              color: Tone.bg(Colors.grey)
                                                   .withOpacity(0.35)),
                                           borderRadius:
                                               BorderRadius.circular(360),
@@ -849,9 +850,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                   bottom:
                                       index < appointList.length - 1 ? 16 : 0),
                               child: InkWell(
-                                hoverColor: Colors.white,
-                                splashColor: Colors.white,
-                                focusColor: Colors.white,
+                                hoverColor: Tone.bg(Colors.white),
+                                splashColor: Tone.bg(Colors.white),
+                                focusColor: Tone.bg(Colors.white),
                                 child: Container(
                                   //height: 60,
                                   padding: EdgeInsets.only(
@@ -867,9 +868,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                     children: [
                                       Card(
                                         elevation: 10,
-                                        color: Colors.white,
-                                        shadowColor: Colors.black,
-                                        surfaceTintColor: Colors.white,
+                                        color: Tone.bg(Colors.white),
+                                        shadowColor: Tone.bg(Colors.black),
+                                        surfaceTintColor: Tone.bg(Colors.white),
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(360)),
@@ -879,7 +880,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                             child: Icon(
                                               CupertinoIcons.mail,
                                               size: 32,
-                                              color: Colors.black,
+                                              color: Tone.fg(Colors.black),
                                             ),
                                           ),
                                         ),
@@ -904,9 +905,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                 Text(
                                                   appointment.topic,
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.w500),
@@ -926,9 +927,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                       .format(appointment
                                                           .appointDate),
                                                   style: GoogleFonts.inter(
-                                                    textStyle: const TextStyle(
+                                                    textStyle: TextStyle(
                                                         fontSize: 13,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.w400),
@@ -976,14 +977,14 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                     ),
                                                     //margin: EdgeInsets.only(top: 16),
                                                     decoration: BoxDecoration(
-                                                      color: Colors.white,
+                                                      color: Tone.bg(Colors.white),
                                                       shape: BoxShape.rectangle,
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               16),
-                                                      boxShadow: const [
+                                                      boxShadow: [
                                                         BoxShadow(
-                                                          color: Colors.black26,
+                                                          color: Tone.bg(Colors.black26),
                                                           blurRadius: 10.0,
                                                           offset:
                                                               Offset(0.0, 10.0),
@@ -1070,9 +1071,9 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                                             .format(appointment.appointDate),
                                                                         style: GoogleFonts
                                                                             .inter(
-                                                                          textStyle: const TextStyle(
+                                                                          textStyle: TextStyle(
                                                                               fontSize: 13,
-                                                                              color: Colors.black,
+                                                                              color: Tone.fg(Colors.black),
                                                                               letterSpacing: 0,
                                                                               fontWeight: FontWeight.w400),
                                                                         ),
@@ -1199,8 +1200,8 @@ class _HealthWellnessState extends State<HealthWellness> {
                 flex: 2,
                 child: CustomCard(
                   elevation: 5,
-                  color: Colors.white,
-                  surfaceTintColor: Colors.white,
+                  color: Tone.auto(Colors.white),
+                  surfaceTintColor: Tone.bg(Colors.white),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   child: Container(
@@ -1227,7 +1228,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                       autofocus: false,
                                       decoration: mobileInputDecoration(context, InputDecoration(
                                         errorStyle:
-                                            TextStyle(color: Colors.red),
+                                            TextStyle(color: Tone.fg(Colors.red)),
                                         suffixIcon: InkWell(
                                           onTap: () {
                                             getSpecialDoctor(
@@ -1253,7 +1254,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                 child: Center(
                                                   child: Icon(
                                                     Icons.search,
-                                                    color: Colors.white,
+                                                    color: Tone.fg(Colors.white),
                                                   ),
                                                 ),
                                               ),
@@ -1264,17 +1265,17 @@ class _HealthWellnessState extends State<HealthWellness> {
                                         hintStyle: GoogleFonts.inter(
                                           textStyle: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.grey,
+                                              color: Tone.fg(Colors.grey),
                                               letterSpacing: 0,
                                               fontWeight: FontWeight.normal),
                                         ),
                                         filled: true,
-                                        fillColor: Colors.white,
+                                        fillColor: Tone.bg(Colors.white),
                                         contentPadding:
                                             EdgeInsets.only(left: 16),
                                         enabledBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
-                                              color: Colors.grey
+                                              color: Tone.bg(Colors.grey)
                                                   .withOpacity(0.35)),
                                           borderRadius:
                                               BorderRadius.circular(360),
@@ -1314,7 +1315,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                               child: Icon(
                                                 CupertinoIcons.person,
                                                 size: 40,
-                                                color: Colors.white,
+                                                color: Tone.fg(Colors.white),
                                               ),
                                             )
                                           : ClipRRect(
@@ -1336,7 +1337,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                         style: GoogleFonts.inter(
                                           textStyle: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.black,
+                                              color: Tone.fg(Colors.black),
                                               letterSpacing: 0,
                                               fontWeight: FontWeight.w600),
                                         ),
@@ -1368,7 +1369,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                   style: GoogleFonts.inter(
                                                     textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.white,
+                                                        color: Tone.fg(Colors.white),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.w600),
@@ -1389,7 +1390,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                   style: GoogleFonts.inter(
                                                     textStyle: TextStyle(
                                                         fontSize: 13,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.w400),
@@ -1417,7 +1418,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                   style: GoogleFonts.inter(
                                                     textStyle: TextStyle(
                                                         fontSize: 14,
-                                                        color: Colors.white,
+                                                        color: Tone.fg(Colors.white),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.w600),
@@ -1438,7 +1439,7 @@ class _HealthWellnessState extends State<HealthWellness> {
                                                   style: GoogleFonts.inter(
                                                     textStyle: TextStyle(
                                                         fontSize: 13,
-                                                        color: Colors.black,
+                                                        color: Tone.fg(Colors.black),
                                                         letterSpacing: 0,
                                                         fontWeight:
                                                             FontWeight.w400),
@@ -1655,9 +1656,9 @@ class HeartBeatState extends State<HeartBeat> {
               Text(
                 "Average Heart beat",
                 style: GoogleFonts.inter(
-                  textStyle: const TextStyle(
+                  textStyle: TextStyle(
                       fontSize: 18,
-                      color: Colors.black,
+                      color: Tone.fg(Colors.black),
                       letterSpacing: 0,
                       fontWeight: FontWeight.normal),
                 ),
@@ -1669,7 +1670,7 @@ class HeartBeatState extends State<HeartBeat> {
                     style: GoogleFonts.inter(
                       textStyle: TextStyle(
                           fontSize: 13,
-                          color: Colors.black,
+                          color: Tone.fg(Colors.black),
                           letterSpacing: 0,
                           fontWeight: FontWeight.w500),
                     ),
@@ -1683,7 +1684,7 @@ class HeartBeatState extends State<HeartBeat> {
                     decoration: BoxDecoration(
                         border: Border.all(
                             color: Constants.ctaColorGreen, width: 1.0),
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Tone.bg(Colors.grey).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(32)),
                     child: Center(
                       child: DropdownButton<String>(
@@ -1693,7 +1694,7 @@ class HeartBeatState extends State<HeartBeat> {
                           padding: const EdgeInsets.only(left: 8.0),
                           child: Text(
                             "Select Period",
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                            style: TextStyle(color: Tone.fg(Colors.grey), fontSize: 14),
                           ),
                         ),
                         onChanged: (String? newValue) {
@@ -1708,7 +1709,7 @@ class HeartBeatState extends State<HeartBeat> {
                                   child: Padding(
                                     padding: const EdgeInsets.only(left: 8.0),
                                     child: Text("${item}",
-                                        style: TextStyle(color: Colors.black)),
+                                        style: TextStyle(color: Tone.fg(Colors.black))),
                                   ),
                                 ),
                                 value: item);
@@ -1754,7 +1755,7 @@ class HeartBeatState extends State<HeartBeat> {
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: ((group) {
-                      return Colors.grey;
+                      return Tone.auto(Colors.grey);
                     }),
                     getTooltipItem: (a, b, c, d) => null,
                   ),
@@ -1850,9 +1851,9 @@ class HeartBeatState extends State<HeartBeat> {
               Text(
                 "Average Heart Beat(23bpm)",
                 style: GoogleFonts.inter(
-                  textStyle: const TextStyle(
+                  textStyle: TextStyle(
                       fontSize: 14,
-                      color: Colors.black,
+                      color: Tone.fg(Colors.black),
                       letterSpacing: 0,
                       fontWeight: FontWeight.w400),
                 ),
@@ -1873,9 +1874,9 @@ class HeartBeatState extends State<HeartBeat> {
               Text(
                 "Actual Heart Beat Per Minute",
                 style: GoogleFonts.inter(
-                  textStyle: const TextStyle(
+                  textStyle: TextStyle(
                       fontSize: 14,
-                      color: Colors.black,
+                      color: Tone.fg(Colors.black),
                       letterSpacing: 0,
                       fontWeight: FontWeight.w400),
                 ),
@@ -1891,8 +1892,8 @@ class HeartBeatState extends State<HeartBeat> {
   }
 
   Widget leftTitles(double value, TitleMeta meta) {
-    const style = TextStyle(
-      color: Color(0xffAAAAAA),
+    final style = TextStyle(
+      color: Tone.fg(Color(0xffAAAAAA)),
       fontWeight: FontWeight.w400,
       fontSize: 14,
     );
@@ -1938,8 +1939,8 @@ class HeartBeatState extends State<HeartBeat> {
 
     final Widget text = Text(
       titles[value.toInt()],
-      style: const TextStyle(
-        color: Color(0xffAAAAAA),
+      style: TextStyle(
+        color: Tone.fg(Color(0xffAAAAAA)),
         fontWeight: FontWeight.w400,
         fontSize: 14,
       ),
@@ -1980,7 +1981,7 @@ class HeartBeatState extends State<HeartBeat> {
         Container(
           width: width,
           height: 10,
-          color: Colors.white.withOpacity(0.4),
+          color: Tone.bg(Colors.white).withOpacity(0.4),
         ),
         const SizedBox(
           width: space,
@@ -1988,7 +1989,7 @@ class HeartBeatState extends State<HeartBeat> {
         Container(
           width: width,
           height: 28,
-          color: Colors.white.withOpacity(0.8),
+          color: Tone.bg(Colors.white).withOpacity(0.8),
         ),
         const SizedBox(
           width: space,
@@ -1996,7 +1997,7 @@ class HeartBeatState extends State<HeartBeat> {
         Container(
           width: width,
           height: 42,
-          color: Colors.white.withOpacity(1),
+          color: Tone.bg(Colors.white).withOpacity(1),
         ),
         const SizedBox(
           width: space,
@@ -2004,7 +2005,7 @@ class HeartBeatState extends State<HeartBeat> {
         Container(
           width: width,
           height: 28,
-          color: Colors.white.withOpacity(0.8),
+          color: Tone.bg(Colors.white).withOpacity(0.8),
         ),
         const SizedBox(
           width: space,
@@ -2012,7 +2013,7 @@ class HeartBeatState extends State<HeartBeat> {
         Container(
           width: width,
           height: 10,
-          color: Colors.white.withOpacity(0.4),
+          color: Tone.bg(Colors.white).withOpacity(0.4),
         ),
       ],
     );
@@ -2046,7 +2047,7 @@ class _LivestockActivityState extends State<LivestockActivity> {
           //color: Color(0xFF20263A),
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              color: Colors.grey.shade50),
+              color: Tone.bg(Colors.grey.shade50)),
           child: LineChart(
             showAvg ? avgData() : mainData(),
           ),
@@ -2059,7 +2060,7 @@ class _LivestockActivityState extends State<LivestockActivity> {
             style: GoogleFonts.inter(
               textStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.black,
+                  color: Tone.fg(Colors.black),
                   letterSpacing: 0,
                   fontWeight: FontWeight.w400),
             ),
@@ -2073,7 +2074,7 @@ class _LivestockActivityState extends State<LivestockActivity> {
             style: GoogleFonts.inter(
               textStyle: TextStyle(
                   fontSize: 14,
-                  color: Colors.black54,
+                  color: Tone.fg(Colors.black54),
                   letterSpacing: 0,
                   fontWeight: FontWeight.w500),
             ),
@@ -2084,48 +2085,48 @@ class _LivestockActivityState extends State<LivestockActivity> {
   }
 
   Widget bottomTitleWidgets(double value, TitleMeta meta) {
-    const style = TextStyle(
+    final style = TextStyle(
         fontWeight: FontWeight.normal, fontSize: 12, color: Color(0XFF737791));
     Widget text;
     switch (value.toInt()) {
       case 0:
-        text = const Text('Jan', style: style);
+        text = Text('Jan', style: style);
         break;
       case 1:
-        text = const Text('Feb', style: style);
+        text = Text('Feb', style: style);
         break;
       case 2:
-        text = const Text('Mar', style: style);
+        text = Text('Mar', style: style);
         break;
       case 3:
-        text = const Text('Apr', style: style);
+        text = Text('Apr', style: style);
         break;
       case 4:
-        text = const Text('May', style: style);
+        text = Text('May', style: style);
         break;
       case 5:
-        text = const Text('Jun', style: style);
+        text = Text('Jun', style: style);
         break;
       case 6:
-        text = const Text('Jul', style: style);
+        text = Text('Jul', style: style);
         break;
       case 7:
-        text = const Text('Aug', style: style);
+        text = Text('Aug', style: style);
         break;
       case 8:
-        text = const Text('Sep', style: style);
+        text = Text('Sep', style: style);
         break;
       case 9:
-        text = const Text('Oct', style: style);
+        text = Text('Oct', style: style);
         break;
       case 10:
-        text = const Text('Nov', style: style);
+        text = Text('Nov', style: style);
         break;
       case 11:
-        text = const Text('Dec', style: style);
+        text = Text('Dec', style: style);
         break;
       default:
-        text = const Text('', style: style);
+        text = Text('', style: style);
         break;
     }
 
@@ -2136,7 +2137,7 @@ class _LivestockActivityState extends State<LivestockActivity> {
   }
 
   Widget leftTitleWidgets(double value, TitleMeta meta) {
-    const style = TextStyle(
+    final style = TextStyle(
         fontWeight: FontWeight.normal, fontSize: 12, color: Color(0XFF737791));
     String text;
     switch (value.toInt()) {
@@ -2176,7 +2177,7 @@ class _LivestockActivityState extends State<LivestockActivity> {
           //verticalInterval: 1,
           getDrawingHorizontalLine: (value) {
             return FlLine(
-              color: Colors.black54,
+              color: Tone.bg(Colors.black54),
               strokeWidth: 0.5,
             );
           }),

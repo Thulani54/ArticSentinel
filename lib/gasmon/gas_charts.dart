@@ -64,7 +64,7 @@ class GasBurnBarChart extends StatelessWidget {
             drawVerticalLine: false,
             horizontalInterval: interval,
             getDrawingHorizontalLine: (v) =>
-                const FlLine(color: GasPalette.border, strokeWidth: 1),
+                FlLine(color: GasPalette.border, strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             topTitles:
@@ -170,7 +170,7 @@ class GasCostLineChart extends StatelessWidget {
             drawVerticalLine: false,
             horizontalInterval: _niceInterval(maxY),
             getDrawingHorizontalLine: (v) =>
-                const FlLine(color: GasPalette.border, strokeWidth: 1),
+                FlLine(color: GasPalette.border, strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             topTitles:

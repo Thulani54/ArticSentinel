@@ -1,3 +1,4 @@
+import '../../widgets/app_tone.dart';
 import '../../widgets/app_empty_state.dart';
 import 'mobile_account_widgets.dart';
 import '../../gasmon/gas_theme.dart';
@@ -132,12 +133,12 @@ class _BillManagementState extends State<BillManagement>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
+            Icon(Icons.error_outline, color: Tone.fg(Colors.white)),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: Colors.red,
+        backgroundColor: Tone.bg(Colors.red),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -149,12 +150,12 @@ class _BillManagementState extends State<BillManagement>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
+            Icon(Icons.check_circle_rounded, color: Tone.fg(Colors.white)),
             const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: Tone.bg(Colors.green),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -167,31 +168,31 @@ class _BillManagementState extends State<BillManagement>
         title: 'Total Bills',
         value: '${_statistics['total_bills'] ?? 0}',
         icon: Icons.receipt_long_rounded,
-        color: const Color(0xFF3B82F6),
+        color: Tone.auto(const Color(0xFF3B82F6)),
       ),
       _BillStatCard(
         title: 'Recurring',
         value: '${_statistics['recurring_bills'] ?? 0}',
         icon: Icons.repeat_rounded,
-        color: const Color(0xFF10B981),
+        color: Tone.auto(const Color(0xFF10B981)),
       ),
       _BillStatCard(
         title: 'Paid Bills',
         value: '${_statistics['paid_bills'] ?? 0}',
         icon: Icons.check_circle_rounded,
-        color: const Color(0xFF06B6D4),
+        color: Tone.auto(const Color(0xFF06B6D4)),
       ),
       _BillStatCard(
         title: 'Total Amount',
         value: 'R${(_statistics['total_amount'] ?? 0).toStringAsFixed(2)}',
         icon: Icons.monetization_on_rounded,
-        color: const Color(0xFF8B5CF6),
+        color: Tone.auto(const Color(0xFF8B5CF6)),
       ),
       _BillStatCard(
         title: 'Pending',
         value: '${_statistics['pending_bills'] ?? 0}',
         icon: Icons.pending_rounded,
-        color: const Color(0xFFF59E0B),
+        color: Tone.auto(const Color(0xFFF59E0B)),
       ),
     ];
   }
@@ -200,7 +201,7 @@ class _BillManagementState extends State<BillManagement>
   Widget build(BuildContext context) {
     if (isPhoneLayout(context)) return _buildMobileBills();
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Tone.bg(const Color(0xFFF8FAFC)),
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -238,8 +239,8 @@ class _BillManagementState extends State<BillManagement>
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _sendBill,
-        backgroundColor: const Color(0xFF3B82F6),
-        foregroundColor: Colors.white,
+        backgroundColor: Tone.bg(const Color(0xFF3B82F6)),
+        foregroundColor: Tone.fg(Colors.white),
         icon: const Icon(Icons.add_rounded),
         label: Text(
           'Send Bill',
@@ -269,7 +270,7 @@ class _BillManagementState extends State<BillManagement>
             child: SizedBox(height: 28 + MediaQuery.textScalerOf(context).scale(68), child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: billStatistics.length,
-              separatorBuilder: (context, index) => const VerticalDivider(
+              separatorBuilder: (context, index) => VerticalDivider(
                   width: 1, indent: 14, endIndent: 14, color: GasPalette.border),
               itemBuilder: (context, index) => _buildStatCard(billStatistics[index], index),
             )),
@@ -286,8 +287,8 @@ class _BillManagementState extends State<BillManagement>
               tooltip: 'Filter bills', onPressed: _showFilterDialog,
               style: IconButton.styleFrom(
                   minimumSize: const Size(48, 48),
-                  backgroundColor: Colors.white, foregroundColor: GasPalette.ink2,
-                  side: const BorderSide(color: GasPalette.border),
+                  backgroundColor: Tone.bg(Colors.white), foregroundColor: GasPalette.ink2,
+                  side: BorderSide(color: GasPalette.border),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32))),
               icon: const Icon(Icons.tune_rounded, size: 20),
             ),
@@ -313,7 +314,7 @@ class _BillManagementState extends State<BillManagement>
           else
             GPanel(padding: EdgeInsets.zero, child: Column(children: [
               for (var index = 0; index < _filteredBills.length; index++) ...[
-                if (index > 0) const Divider(height: 1, color: GasPalette.border),
+                if (index > 0) Divider(height: 1, color: GasPalette.border),
                 _buildBillCard(_filteredBills[index]),
               ],
             ])),
@@ -339,13 +340,13 @@ class _BillManagementState extends State<BillManagement>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.1),
+                color: Tone.bg(const Color(0xFF10B981)).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.analytics_rounded,
                 size: 20,
-                color: Color(0xFF10B981),
+                color: Tone.fg(Color(0xFF10B981)),
               ),
             ),
             const SizedBox(width: 12),
@@ -355,7 +356,7 @@ class _BillManagementState extends State<BillManagement>
                 context,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: Tone.auto(const Color(0xFF1E293B)),
               ),
             ),
           ],
@@ -415,12 +416,12 @@ class _BillManagementState extends State<BillManagement>
               decoration: accountSurface(
                   context,
                   BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: stat.color.withOpacity(0.2)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Tone.bg(Colors.black).withOpacity(0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -453,7 +454,7 @@ class _BillManagementState extends State<BillManagement>
                           context,
                           fontSize: stat.value.contains('R') ? 16 : 24,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E293B),
+                          color: Tone.auto(const Color(0xFF1E293B)),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -467,7 +468,7 @@ class _BillManagementState extends State<BillManagement>
                       context,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: Tone.auto(const Color(0xFF64748B)),
                     ),
                   ),
                   if (stat.value.contains('R')) ...[
@@ -494,11 +495,11 @@ class _BillManagementState extends State<BillManagement>
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -519,29 +520,29 @@ class _BillManagementState extends State<BillManagement>
                             'Search bills by description, recipient, or amount...',
                         hintStyle: accountInter(
                           context,
-                          color: const Color(0xFF9CA3AF),
+                          color: Tone.auto(const Color(0xFF9CA3AF)),
                         ),
-                        prefixIcon: const Icon(
+                        prefixIcon: Icon(
                           Icons.search_rounded,
-                          color: Color(0xFF6B7280),
+                          color: Tone.fg(Color(0xFF6B7280)),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
-                              const BorderSide(color: Color(0xFFE5E7EB)),
+                              BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
-                              const BorderSide(color: Color(0xFFE5E7EB)),
+                              BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF3B82F6), width: 2),
+                          borderSide: BorderSide(
+                              color: Tone.bg(Color(0xFF3B82F6)), width: 2),
                         ),
                         filled: true,
-                        fillColor: const Color(0xFFF9FAFB),
+                        fillColor: Tone.bg(const Color(0xFFF9FAFB)),
                       )),
                 ),
               ),
@@ -557,12 +558,12 @@ class _BillManagementState extends State<BillManagement>
                     context,
                     OutlinedButton.styleFrom(
                       foregroundColor: _selectedFilter == 'All'
-                          ? const Color(0xFF64748B)
-                          : const Color(0xFF3B82F6),
+                          ? Tone.fg(const Color(0xFF64748B))
+                          : Tone.fg(const Color(0xFF3B82F6)),
                       side: BorderSide(
                         color: _selectedFilter == 'All'
-                            ? const Color(0xFFE2E8F0)
-                            : const Color(0xFF3B82F6),
+                            ? Tone.bg(const Color(0xFFE2E8F0))
+                            : Tone.bg(const Color(0xFF3B82F6)),
                       ),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
@@ -578,7 +579,7 @@ class _BillManagementState extends State<BillManagement>
               // View Toggle
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: Tone.bg(const Color(0xFFF1F5F9)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -588,8 +589,8 @@ class _BillManagementState extends State<BillManagement>
                       icon: Icon(
                         Icons.view_list_rounded,
                         color: !_isGridView
-                            ? const Color(0xFF3B82F6)
-                            : const Color(0xFF64748B),
+                            ? Tone.fg(const Color(0xFF3B82F6))
+                            : Tone.fg(const Color(0xFF64748B)),
                       ),
                     ),
                     IconButton(
@@ -597,8 +598,8 @@ class _BillManagementState extends State<BillManagement>
                       icon: Icon(
                         Icons.grid_view_rounded,
                         color: _isGridView
-                            ? const Color(0xFF3B82F6)
-                            : const Color(0xFF64748B),
+                            ? Tone.fg(const Color(0xFF3B82F6))
+                            : Tone.fg(const Color(0xFF64748B)),
                       ),
                     ),
                   ],
@@ -615,7 +616,7 @@ class _BillManagementState extends State<BillManagement>
                   style: accountInter(
                     context,
                     fontSize: 14,
-                    color: const Color(0xFF64748B),
+                    color: Tone.auto(const Color(0xFF64748B)),
                   ),
                 ),
                 Chip(
@@ -624,13 +625,13 @@ class _BillManagementState extends State<BillManagement>
                     setState(() => _selectedFilter = 'All');
                     _filterBills();
                   },
-                  backgroundColor: const Color(0xFF3B82F6).withOpacity(0.1),
+                  backgroundColor: Tone.bg(const Color(0xFF3B82F6)).withOpacity(0.1),
                   labelStyle: accountInter(
                     context,
-                    color: const Color(0xFF3B82F6),
+                    color: Tone.auto(const Color(0xFF3B82F6)),
                     fontWeight: FontWeight.w600,
                   ),
-                  deleteIconColor: const Color(0xFF3B82F6),
+                  deleteIconColor: Tone.auto(const Color(0xFF3B82F6)),
                 ),
               ],
             ),
@@ -649,13 +650,13 @@ class _BillManagementState extends State<BillManagement>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                color: Tone.bg(const Color(0xFF8B5CF6)).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.receipt_rounded,
                 size: 20,
-                color: Color(0xFF8B5CF6),
+                color: Tone.fg(Color(0xFF8B5CF6)),
               ),
             ),
             const SizedBox(width: 12),
@@ -665,7 +666,7 @@ class _BillManagementState extends State<BillManagement>
                 context,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: Tone.auto(const Color(0xFF1E293B)),
               ),
             ),
           ],
@@ -688,7 +689,7 @@ class _BillManagementState extends State<BillManagement>
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
           )),
       child: const Center(
@@ -783,14 +784,14 @@ class _BillManagementState extends State<BillManagement>
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: _getStatusColor(bill.status).withOpacity(0.3),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -826,7 +827,7 @@ class _BillManagementState extends State<BillManagement>
               context,
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF1E293B),
+              color: Tone.auto(const Color(0xFF1E293B)),
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -837,7 +838,7 @@ class _BillManagementState extends State<BillManagement>
             style: accountInter(
               context,
               fontSize: 12,
-              color: const Color(0xFF64748B),
+              color: Tone.auto(const Color(0xFF64748B)),
             ),
           ),
           const SizedBox(height: 8),
@@ -849,7 +850,7 @@ class _BillManagementState extends State<BillManagement>
                   context,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E293B),
+                  color: Tone.auto(const Color(0xFF1E293B)),
                 ),
               ),
               const Spacer(),
@@ -865,7 +866,7 @@ class _BillManagementState extends State<BillManagement>
                     context,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: Tone.auto(Colors.white),
                   ),
                 ),
               ),
@@ -881,11 +882,11 @@ class _BillManagementState extends State<BillManagement>
       decoration: accountSurface(
           context,
           BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Tone.bg(Colors.black).withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -897,7 +898,7 @@ class _BillManagementState extends State<BillManagement>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: Tone.bg(const Color(0xFFF8FAFC)),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -913,7 +914,7 @@ class _BillManagementState extends State<BillManagement>
                       context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: Tone.auto(const Color(0xFF64748B)),
                     ),
                   ),
                 ),
@@ -924,7 +925,7 @@ class _BillManagementState extends State<BillManagement>
                       context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: Tone.auto(const Color(0xFF64748B)),
                     ),
                   ),
                 ),
@@ -935,7 +936,7 @@ class _BillManagementState extends State<BillManagement>
                       context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: Tone.auto(const Color(0xFF64748B)),
                     ),
                   ),
                 ),
@@ -946,7 +947,7 @@ class _BillManagementState extends State<BillManagement>
                       context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: Tone.auto(const Color(0xFF64748B)),
                     ),
                   ),
                 ),
@@ -957,7 +958,7 @@ class _BillManagementState extends State<BillManagement>
                       context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: Tone.auto(const Color(0xFF64748B)),
                     ),
                   ),
                 ),
@@ -968,7 +969,7 @@ class _BillManagementState extends State<BillManagement>
                       context,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: Tone.auto(const Color(0xFF64748B)),
                     ),
                   ),
                 ),
@@ -1003,7 +1004,7 @@ class _BillManagementState extends State<BillManagement>
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: Tone.bg(const Color(0xFFF1F5F9)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -1013,7 +1014,7 @@ class _BillManagementState extends State<BillManagement>
                   context,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
+                  color: Tone.auto(const Color(0xFF64748B)),
                 ),
               ),
             ),
@@ -1029,8 +1030,8 @@ class _BillManagementState extends State<BillManagement>
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: bill.type == 'Recurring'
-                        ? const Color(0xFF10B981).withOpacity(0.1)
-                        : const Color(0xFF3B82F6).withOpacity(0.1),
+                        ? Tone.bg(const Color(0xFF10B981)).withOpacity(0.1)
+                        : Tone.bg(const Color(0xFF3B82F6)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Row(
@@ -1042,8 +1043,8 @@ class _BillManagementState extends State<BillManagement>
                             : Icons.receipt_rounded,
                         size: 12,
                         color: bill.type == 'Recurring'
-                            ? const Color(0xFF10B981)
-                            : const Color(0xFF3B82F6),
+                            ? Tone.fg(const Color(0xFF10B981))
+                            : Tone.fg(const Color(0xFF3B82F6)),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -1053,8 +1054,8 @@ class _BillManagementState extends State<BillManagement>
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: bill.type == 'Recurring'
-                              ? const Color(0xFF10B981)
-                              : const Color(0xFF3B82F6),
+                              ? Tone.auto(const Color(0xFF10B981))
+                              : Tone.auto(const Color(0xFF3B82F6)),
                         ),
                       ),
                     ],
@@ -1075,7 +1076,7 @@ class _BillManagementState extends State<BillManagement>
                     context,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.auto(const Color(0xFF1E293B)),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1085,7 +1086,7 @@ class _BillManagementState extends State<BillManagement>
                   style: accountInter(
                     context,
                     fontSize: 12,
-                    color: const Color(0xFF64748B),
+                    color: Tone.auto(const Color(0xFF64748B)),
                   ),
                 ),
               ],
@@ -1099,13 +1100,13 @@ class _BillManagementState extends State<BillManagement>
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    color: Tone.bg(const Color(0xFF3B82F6)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(
                     Icons.person_rounded,
                     size: 14,
-                    color: const Color(0xFF3B82F6),
+                    color: Tone.fg(const Color(0xFF3B82F6)),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1116,7 +1117,7 @@ class _BillManagementState extends State<BillManagement>
                       context,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF1E293B),
+                      color: Tone.auto(const Color(0xFF1E293B)),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1134,7 +1135,7 @@ class _BillManagementState extends State<BillManagement>
                 context,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E293B),
+                color: Tone.auto(const Color(0xFF1E293B)),
               ),
             ),
           ),
@@ -1150,7 +1151,7 @@ class _BillManagementState extends State<BillManagement>
                     context,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.auto(const Color(0xFF1E293B)),
                   ),
                 ),
                 Text(
@@ -1180,7 +1181,7 @@ class _BillManagementState extends State<BillManagement>
                   context,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: Tone.auto(Colors.white),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1217,8 +1218,8 @@ class _BillManagementState extends State<BillManagement>
           value: 'view',
           child: Row(
             children: [
-              const Icon(Icons.visibility_rounded,
-                  size: 16, color: Color(0xFF3B82F6)),
+              Icon(Icons.visibility_rounded,
+                  size: 16, color: Tone.fg(Color(0xFF3B82F6))),
               const SizedBox(width: 8),
               Text(
                 'View Details',
@@ -1231,8 +1232,8 @@ class _BillManagementState extends State<BillManagement>
           value: 'edit',
           child: Row(
             children: [
-              const Icon(Icons.edit_rounded,
-                  size: 16, color: Color(0xFFF59E0B)),
+              Icon(Icons.edit_rounded,
+                  size: 16, color: Tone.fg(Color(0xFFF59E0B))),
               const SizedBox(width: 8),
               Text(
                 'Edit Bill',
@@ -1245,8 +1246,8 @@ class _BillManagementState extends State<BillManagement>
           value: 'duplicate',
           child: Row(
             children: [
-              const Icon(Icons.content_copy_rounded,
-                  size: 16, color: Color(0xFF8B5CF6)),
+              Icon(Icons.content_copy_rounded,
+                  size: 16, color: Tone.fg(Color(0xFF8B5CF6))),
               const SizedBox(width: 8),
               Text(
                 'Duplicate',
@@ -1259,8 +1260,8 @@ class _BillManagementState extends State<BillManagement>
           value: 'delete',
           child: Row(
             children: [
-              const Icon(Icons.delete_rounded,
-                  size: 16, color: Color(0xFFEF4444)),
+              Icon(Icons.delete_rounded,
+                  size: 16, color: Tone.fg(Color(0xFFEF4444))),
               const SizedBox(width: 8),
               Text(
                 'Delete Bill',
@@ -1273,13 +1274,13 @@ class _BillManagementState extends State<BillManagement>
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F5F9),
+          color: Tone.bg(const Color(0xFFF1F5F9)),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.more_horiz_rounded,
           size: 16,
-          color: Color(0xFF64748B),
+          color: Tone.fg(Color(0xFF64748B)),
         ),
       ),
     );
@@ -1295,7 +1296,7 @@ class _BillManagementState extends State<BillManagement>
           decoration: accountSurface(
               context,
               BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
               )),
           child: Column(
@@ -1305,7 +1306,7 @@ class _BillManagementState extends State<BillManagement>
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withOpacity(0.1),
+                  color: Tone.bg(const Color(0xFF3B82F6)).withOpacity(0.1),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
@@ -1316,12 +1317,12 @@ class _BillManagementState extends State<BillManagement>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3B82F6),
+                        color: Tone.bg(const Color(0xFF3B82F6)),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.filter_list_rounded,
-                        color: Colors.white,
+                        color: Tone.fg(Colors.white),
                         size: 16,
                       ),
                     ),
@@ -1332,7 +1333,7 @@ class _BillManagementState extends State<BillManagement>
                         context,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.auto(const Color(0xFF1E293B)),
                       ),
                     ),
                   ],
@@ -1356,8 +1357,8 @@ class _BillManagementState extends State<BillManagement>
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: _selectedFilter == filter
-                              ? const Color(0xFF3B82F6)
-                              : const Color(0xFFE2E8F0),
+                              ? Tone.bg(const Color(0xFF3B82F6))
+                              : Tone.bg(const Color(0xFFE2E8F0)),
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -1375,7 +1376,7 @@ class _BillManagementState extends State<BillManagement>
                             ),
                             value: filter,
                             groupValue: _selectedFilter,
-                            activeColor: const Color(0xFF3B82F6),
+                            activeColor: Tone.auto(const Color(0xFF3B82F6)),
                             onChanged: (value) {
                               setState(() => _selectedFilter = value!);
                               Navigator.pop(context);
@@ -1397,13 +1398,13 @@ class _BillManagementState extends State<BillManagement>
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'paid':
-        return const Color(0xFF10B981);
+        return Tone.auto(const Color(0xFF10B981));
       case 'sent':
-        return const Color(0xFFF59E0B);
+        return Tone.auto(const Color(0xFFF59E0B));
       case 'draft':
-        return const Color(0xFF64748B);
+        return Tone.auto(const Color(0xFF64748B));
       default:
-        return const Color(0xFF64748B);
+        return Tone.auto(const Color(0xFF64748B));
     }
   }
 
@@ -1431,11 +1432,11 @@ class _BillManagementState extends State<BillManagement>
     final difference = dueDate.difference(now).inDays;
 
     if (difference < 0) {
-      return const Color(0xFFEF4444);
+      return Tone.auto(const Color(0xFFEF4444));
     } else if (difference <= 7) {
-      return const Color(0xFFF59E0B);
+      return Tone.auto(const Color(0xFFF59E0B));
     } else {
-      return const Color(0xFF10B981);
+      return Tone.auto(const Color(0xFF10B981));
     }
   }
 
@@ -1466,7 +1467,7 @@ class _BillManagementState extends State<BillManagement>
           decoration: accountSurface(
               context,
               BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
               )),
           child: Column(
@@ -1476,7 +1477,7 @@ class _BillManagementState extends State<BillManagement>
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Tone.bg(Colors.red).withOpacity(0.1),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
@@ -1487,12 +1488,12 @@ class _BillManagementState extends State<BillManagement>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: Tone.bg(Colors.red),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.warning_rounded,
-                        color: Colors.white,
+                        color: Tone.fg(Colors.white),
                         size: 16,
                       ),
                     ),
@@ -1503,7 +1504,7 @@ class _BillManagementState extends State<BillManagement>
                         context,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
+                        color: Tone.auto(const Color(0xFF1E293B)),
                       ),
                     ),
                   ],
@@ -1520,7 +1521,7 @@ class _BillManagementState extends State<BillManagement>
                       style: accountInter(
                         context,
                         fontSize: 14,
-                        color: const Color(0xFF64748B),
+                        color: Tone.auto(const Color(0xFF64748B)),
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
@@ -1554,8 +1555,8 @@ class _BillManagementState extends State<BillManagement>
                             style: accountButtonStyle(
                                 context,
                                 ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: Tone.bg(Colors.red),
+                                  foregroundColor: Tone.fg(Colors.white),
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(

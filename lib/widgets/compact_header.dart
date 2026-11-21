@@ -1,3 +1,4 @@
+import 'app_tone.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/Constants.dart';
@@ -21,10 +22,10 @@ class CompactHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         border: Border(
           bottom: BorderSide(
-            color: Colors.grey.withOpacity(0.1),
+            color: Tone.bg(Colors.grey).withOpacity(0.1),
             width: 1,
           ),
         ),
@@ -54,14 +55,14 @@ class CompactHeader extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.fg(const Color(0xFF1E293B)),
                   ),
                 ),
                 Text(
                   description,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: const Color(0xFF64748B),
+                    color: Tone.fg(const Color(0xFF64748B)),
                     fontWeight: FontWeight.w400,
                   ),
                 ),

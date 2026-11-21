@@ -1,3 +1,4 @@
+import 'app_tone.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -38,8 +39,8 @@ Future<T?> showMobileDialog<T>({
 );
 
 Widget _phoneFullscreenDialog(Widget child) => AnnotatedRegion<SystemUiOverlayStyle>(
-  value: SystemUiOverlayStyle.dark.copyWith(systemNavigationBarColor: Colors.white),
-  child: Dialog.fullscreen(backgroundColor: Colors.white, child: child),
+  value: SystemUiOverlayStyle.dark.copyWith(systemNavigationBarColor: Tone.auto(Colors.white)),
+  child: Dialog.fullscreen(backgroundColor: Tone.bg(Colors.white), child: child),
 );
 
 InputDecoration mobileInputDecoration(
@@ -57,16 +58,16 @@ InputDecoration mobileInputDecoration(
     suffixIcon: _fieldAction(original.suffixIcon),
     suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
     filled: true,
-    fillColor: const Color(0xFFF7F8FA),
-    labelStyle: const TextStyle(color: Color(0xFF50586B), fontSize: 14),
-    hintStyle: const TextStyle(color: Color(0xFF697386), fontSize: 14),
+    fillColor: Tone.bg(const Color(0xFFF7F8FA)),
+    labelStyle: TextStyle(color: Tone.fg(Color(0xFF50586B)), fontSize: 14),
+    hintStyle: TextStyle(color: Tone.fg(Color(0xFF697386)), fontSize: 14),
     contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-    border: border(const Color(0xFFD9DDE5)),
-    enabledBorder: border(const Color(0xFFD9DDE5)),
-    disabledBorder: border(const Color(0xFFE3E6ED)),
-    focusedBorder: border(const Color(0xFF252C44)),
-    errorBorder: border(const Color(0xFFB42318)),
-    focusedErrorBorder: border(const Color(0xFFB42318)),
+    border: border(Tone.auto(const Color(0xFFD9DDE5))),
+    enabledBorder: border(Tone.auto(const Color(0xFFD9DDE5))),
+    disabledBorder: border(Tone.auto(const Color(0xFFE3E6ED))),
+    focusedBorder: border(Tone.auto(const Color(0xFF252C44))),
+    errorBorder: border(Tone.auto(const Color(0xFFB42318))),
+    focusedErrorBorder: border(Tone.auto(const Color(0xFFB42318))),
     errorMaxLines: 3,
     helperMaxLines: 3,
   );
@@ -260,8 +261,8 @@ class MobileAlertDialog extends StatelessWidget {
                 child: Row(children: [
                   Expanded(
                       child: DefaultTextStyle(
-                          style: const TextStyle(
-                              color: Color(0xFF252C44),
+                          style: TextStyle(
+                              color: Tone.fg(Color(0xFF252C44)),
                               fontSize: 20,
                               fontWeight: FontWeight.w600),
                           child: title ?? const SizedBox.shrink())),
@@ -275,8 +276,8 @@ class MobileAlertDialog extends StatelessWidget {
                 child: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
                     child: DefaultTextStyle(
-                        style: const TextStyle(
-                            color: Color(0xFF252C44),
+                        style: TextStyle(
+                            color: Tone.fg(Color(0xFF252C44)),
                             fontSize: 15,
                             height: 1.4),
                         child: content ?? const SizedBox.shrink()))),

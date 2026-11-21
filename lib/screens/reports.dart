@@ -1,3 +1,5 @@
+import '../widgets/app_tone.dart';
+import '../services/shared_preferences.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/mobile_screen.dart';
 import '../gasmon/gas_theme.dart';
@@ -15,7 +17,6 @@ import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:universal_html/html.dart' as html;
 import 'package:pdf/pdf.dart';
@@ -24,7 +25,6 @@ import 'package:printing/printing.dart';
 import 'package:open_file/open_file.dart';
 
 import '../constants/Constants.dart';
-import '../custom_widgets/customCard.dart';
 import '../constants/models/device.dart';
 
 class DevicePerformanceData {
@@ -101,7 +101,6 @@ class DevicePerformanceApiService {
     try {
       final url =
           '${baseUrl}api/devices/$deviceId/analytics/?start_date=$startDate&end_date=$endDate';
-      print('Fetching device performance from: $url');
 
       final response = await http.get(
         Uri.parse(url),
@@ -109,7 +108,6 @@ class DevicePerformanceApiService {
       );
 
       if (response.statusCode == 200) {
-        print('API Response: ${response.body}');
         final data = json.decode(response.body);
 
         // Extract temperature analytics
@@ -173,13 +171,10 @@ class DevicePerformanceApiService {
               dailyUptimeData?.map((e) => e as Map<String, dynamic>).toList(),
         );
       } else {
-        print(
-            'Failed to load device analytics. Status: ${response.statusCode}, Body: ${response.body}');
         throw Exception('Failed to load device analytics');
       }
     } catch (e) {
       // Log the error for debugging
-      print('ERROR in getDevicePerformance for device $deviceId: $e');
 
       // Return default data on error
       return DevicePerformanceData(
@@ -240,7 +235,6 @@ class TemperatureAnalysisApiService {
     try {
       final url =
           '${baseUrl}api/devices/$deviceId/temperature-analytics/?start_date=$startDate&end_date=$endDate';
-      print('Fetching temperature analysis from: $url');
 
       final response = await http.get(
         Uri.parse(url),
@@ -248,7 +242,6 @@ class TemperatureAnalysisApiService {
       );
 
       if (response.statusCode == 200) {
-        print('Temperature Analysis API Response received');
         final data = json.decode(response.body);
 
         final overallStats = data['overall_statistics'] ?? {};
@@ -273,12 +266,9 @@ class TemperatureAnalysisApiService {
           timeInRanges: timeInRanges,
         );
       } else {
-        print(
-            'Failed to load temperature analysis. Status: ${response.statusCode}');
         throw Exception('Failed to load temperature analysis');
       }
     } catch (e) {
-      print('ERROR in getTemperatureAnalysis: $e');
       // Return default data on error
       return TemperatureAnalysisData(
         deviceId: deviceId,
@@ -330,7 +320,6 @@ class AlertsSummaryApiService {
     try {
       final url =
           '${baseUrl}api/alerts/summary/?business_id=$businessId&start_date=$startDate&end_date=$endDate';
-      print('Fetching alerts summary from: $url');
 
       final response = await http.get(
         Uri.parse(url),
@@ -338,7 +327,6 @@ class AlertsSummaryApiService {
       );
 
       if (response.statusCode == 200) {
-        print('Alerts Summary API Response received');
         final data = json.decode(response.body);
 
         return AlertsSummaryData(
@@ -369,11 +357,9 @@ class AlertsSummaryApiService {
               [],
         );
       } else {
-        print('Failed to load alerts summary. Status: ${response.statusCode}');
         throw Exception('Failed to load alerts summary');
       }
     } catch (e) {
-      print('ERROR in getAlertsSummary: $e');
       // Return default data on error
       return AlertsSummaryData(
         overallStats: {},
@@ -425,11 +411,13 @@ class MaintenanceReportApiService {
     required String endDate,
   }) async {
     try {
-      final url = '${baseUrl}api/maintenance/report/?business_id=$businessId&start_date=$startDate&end_date=$endDate';
-      print('Fetching maintenance report from: $url');
+      final url =
+          '${baseUrl}api/maintenance/report/?business_id=$businessId&start_date=$startDate&end_date=$endDate';
 
-      final response = await http.get(Uri.parse(url));
-      print('Maintenance report response status: ${response.statusCode}');
+      final response = await http.get(Uri.parse(url), headers: {
+        if ((await Sharedprefs.getAuthTokenPreference())?.isNotEmpty == true)
+          'Authorization': 'Token ${await Sharedprefs.getAuthTokenPreference()}'
+      }).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -444,10 +432,11 @@ class MaintenanceReportApiService {
                   ?.map((e) => e as Map<String, dynamic>)
                   .toList() ??
               [],
-          maintenanceByPriority: (data['maintenance_by_priority'] as List<dynamic>?)
-                  ?.map((e) => e as Map<String, dynamic>)
-                  .toList() ??
-              [],
+          maintenanceByPriority:
+              (data['maintenance_by_priority'] as List<dynamic>?)
+                      ?.map((e) => e as Map<String, dynamic>)
+                      .toList() ??
+                  [],
           monthlyTrend: (data['monthly_trend'] as List<dynamic>?)
                   ?.map((e) => e as Map<String, dynamic>)
                   .toList() ??
@@ -468,24 +457,11 @@ class MaintenanceReportApiService {
               [],
         );
       } else {
-        print('Failed to load maintenance report. Status: ${response.statusCode}');
         throw Exception('Failed to load maintenance report');
       }
     } catch (e) {
-      print('ERROR in getMaintenanceReport: $e');
-      // Return default data on error
-      return MaintenanceReportData(
-        overallStats: {},
-        maintenanceByType: [],
-        maintenanceByDevice: [],
-        maintenanceByPriority: [],
-        monthlyTrend: [],
-        costAnalysis: {},
-        durationAnalysis: {},
-        recentCompleted: [],
-        upcomingMaintenance: [],
-        overdueMaintenance: [],
-      );
+      throw Exception(
+          'Unable to load maintenance reports. Check your connection and retry.');
     }
   }
 }
@@ -511,7 +487,6 @@ class ReportApiService {
   }) async {
     try {
       final url = '${baseUrl}api/reports/generate/';
-      print('Saving report to: $url');
 
       final response = await http.post(
         Uri.parse(url),
@@ -534,15 +509,11 @@ class ReportApiService {
       );
 
       if (response.statusCode == 201) {
-        print('Report saved successfully');
         return json.decode(response.body);
       } else {
-        print(
-            'Failed to save report. Status: ${response.statusCode}, Body: ${response.body}');
         throw Exception('Failed to save report');
       }
     } catch (e) {
-      print('ERROR in saveReport: $e');
       throw Exception('Error saving report: $e');
     }
   }
@@ -558,8 +529,6 @@ class ReportApiService {
         url += '&report_type=$reportType';
       }
 
-      print('Fetching report history from: $url');
-
       final response = await http.get(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
@@ -567,10 +536,10 @@ class ReportApiService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data is! Map || data['success'] == false) throw Exception('Report history unavailable');
+        if (data is! Map || data['success'] == false)
+          throw Exception('Report history unavailable');
         return data['reports'] ?? [];
       } else {
-        print('Failed to load report history. Status: ${response.statusCode}');
         throw Exception('Failed to load report history');
       }
     } catch (e) {
@@ -581,7 +550,6 @@ class ReportApiService {
   static Future<Map<String, dynamic>> getReportDetail(String reportId) async {
     try {
       final url = '${baseUrl}api/reports/$reportId/';
-      print('Fetching report detail from: $url');
 
       final response = await http.get(
         Uri.parse(url),
@@ -591,11 +559,9 @@ class ReportApiService {
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        print('Failed to load report detail. Status: ${response.statusCode}');
         throw Exception('Failed to load report detail');
       }
     } catch (e) {
-      print('ERROR in getReportDetail: $e');
       throw Exception('Error fetching report detail: $e');
     }
   }
@@ -603,7 +569,6 @@ class ReportApiService {
   static Future<void> deleteReport(String reportId) async {
     try {
       final url = '${baseUrl}api/reports/$reportId/delete/';
-      print('Deleting report: $url');
 
       final response = await http.delete(
         Uri.parse(url),
@@ -611,13 +576,10 @@ class ReportApiService {
       );
 
       if (response.statusCode == 200) {
-        print('Report deleted successfully');
       } else {
-        print('Failed to delete report. Status: ${response.statusCode}');
         throw Exception('Failed to delete report');
       }
     } catch (e) {
-      print('ERROR in deleteReport: $e');
       throw Exception('Error deleting report: $e');
     }
   }
@@ -812,11 +774,14 @@ class _ReportsState extends State<Reports> {
   }
 
   Widget _buildReportHistoryError() => AppEmptyState(
-    kind: AppEmptyStateKind.offline,
-    title: 'Reports could not be loaded',
-    message: 'Check your internet connection and try again. Your saved reports are still available once connected.',
-    actionLabel: 'Try again', onAction: _loadReportHistory, compact: true,
-  );
+        kind: AppEmptyStateKind.offline,
+        title: 'Reports could not be loaded',
+        message:
+            'Check your internet connection and try again. Your saved reports are still available once connected.',
+        actionLabel: 'Try again',
+        onAction: _loadReportHistory,
+        compact: true,
+      );
 
   // Remove old static list - now using dynamic data from backend
   /*final List<DownloadedReport> downloadedReports = [
@@ -1015,42 +980,42 @@ class _ReportsState extends State<Reports> {
       name: 'Device Performance',
       description: 'Comprehensive analysis of device metrics and performance',
       icon: FontAwesomeIcons.chartLine,
-      color: Color(0xFF4A90E2),
+      color: Tone.auto(Color(0xFF4A90E2)),
     ),
     ReportType(
       id: 'temperature_analytics',
       name: 'Temperature Analytics',
       description: 'Temperature trends and variations across devices',
       icon: FontAwesomeIcons.temperatureHalf,
-      color: Color(0xFFE94B3C),
+      color: Tone.auto(Color(0xFFE94B3C)),
     ),
     ReportType(
       id: 'alerts_summary',
       name: 'Alerts Summary',
       description: 'Overview of all alerts and notifications',
       icon: FontAwesomeIcons.bellConcierge,
-      color: Color(0xFFF5A623),
+      color: Tone.auto(Color(0xFFF5A623)),
     ),
     ReportType(
       id: 'maintenance_history',
       name: 'Maintenance History',
       description: 'Maintenance activities and service records',
       icon: FontAwesomeIcons.screwdriverWrench,
-      color: Color(0xFF7B68EE),
+      color: Tone.auto(Color(0xFF7B68EE)),
     ),
     ReportType(
       id: 'energy_consumption',
       name: 'Energy Consumption',
       description: 'Power usage analysis and efficiency metrics',
       icon: FontAwesomeIcons.bolt,
-      color: Color(0xFF50C878),
+      color: Tone.auto(Color(0xFF50C878)),
     ),
     ReportType(
       id: 'compliance_report',
       name: 'Compliance Report',
       description: 'Regulatory compliance and audit trail',
       icon: FontAwesomeIcons.shieldHalved,
-      color: Color(0xFF9B59B6),
+      color: Tone.auto(Color(0xFF9B59B6)),
     ),
   ];
 
@@ -1105,9 +1070,7 @@ class _ReportsState extends State<Reports> {
             endDate: endDateStr,
           );
           reportData.add(data);
-        } catch (e) {
-          print('Error fetching data for ${device.deviceId}: $e');
-        }
+        } catch (e) {}
       }
     } else {
       // Fetch data for selected device
@@ -1136,9 +1099,7 @@ class _ReportsState extends State<Reports> {
           endDate: endDateStr,
         );
         reportData.add(data);
-      } catch (e) {
-        print('Error fetching data for ${device.deviceId}: $e');
-      }
+      } catch (e) {}
     }
 
     // Store the generated report data
@@ -1199,9 +1160,7 @@ class _ReportsState extends State<Reports> {
         pageCount: 10,
         fileSize: '${(reportData.length * 0.5).toStringAsFixed(1)} MB',
       );
-      print('Report saved to backend successfully');
     } catch (e) {
-      print('Failed to save report to backend: $e');
       // Continue anyway - report is still available locally
     }
   }
@@ -1228,9 +1187,7 @@ class _ReportsState extends State<Reports> {
             endDate: endDateStr,
           );
           reportData.add(data);
-        } catch (e) {
-          print('Error fetching temperature data for ${device.deviceId}: $e');
-        }
+        } catch (e) {}
       }
     } else {
       final device = deviceList.firstWhere(
@@ -1258,9 +1215,7 @@ class _ReportsState extends State<Reports> {
           endDate: endDateStr,
         );
         reportData.add(data);
-      } catch (e) {
-        print('Error fetching temperature data for ${device.deviceId}: $e');
-      }
+      } catch (e) {}
     }
 
     setState(() {
@@ -1315,10 +1270,7 @@ class _ReportsState extends State<Reports> {
         pageCount: 8,
         fileSize: '${(reportData.length * 0.4).toStringAsFixed(1)} MB',
       );
-      print('Temperature report saved to backend successfully');
-    } catch (e) {
-      print('Failed to save temperature report to backend: $e');
-    }
+    } catch (e) {}
   }
 
   // Generate Alerts Summary Report
@@ -1378,13 +1330,8 @@ class _ReportsState extends State<Reports> {
           fileSize:
               '${(data.alertsByDevice.length * 0.3 + 0.5).toStringAsFixed(1)} MB',
         );
-        print('Alerts summary report saved to backend successfully');
-      } catch (e) {
-        print('Failed to save alerts summary report to backend: $e');
-      }
-    } catch (e) {
-      print('Error fetching alerts summary: $e');
-    }
+      } catch (e) {}
+    } catch (e) {}
   }
 
   // Generate Maintenance Report
@@ -1398,20 +1345,11 @@ class _ReportsState extends State<Reports> {
       final startDateStr = DateFormat('yyyy-MM-dd').format(startDate);
       final endDateStr = DateFormat('yyyy-MM-dd').format(endDate);
 
-      print(
-          'Fetching maintenance report for business: ${widget.companyId}, from $startDateStr to $endDateStr');
-
       final data = await MaintenanceReportApiService.getMaintenanceReport(
         businessId: widget.companyId,
         startDate: startDateStr,
         endDate: endDateStr,
       );
-
-      print('Maintenance report data received:');
-      print('  - Overall stats: ${data.overallStats}');
-      print('  - Maintenance by type count: ${data.maintenanceByType.length}');
-      print('  - Maintenance by device count: ${data.maintenanceByDevice.length}');
-      print('  - Recent completed count: ${data.recentCompleted.length}');
 
       setState(() {
         lastGeneratedMaintenanceReportData = data;
@@ -1419,8 +1357,6 @@ class _ReportsState extends State<Reports> {
         lastGeneratedMaintenanceReportEndDate = endDateStr;
         lastGeneratedMaintenanceReportPeriod = selectedPeriod;
       });
-
-      print('Maintenance report data loaded successfully and stored in state');
 
       // Save report to backend
       try {
@@ -1455,450 +1391,10 @@ class _ReportsState extends State<Reports> {
           fileSize:
               '${(data.maintenanceByDevice.length * 0.5 + 1.0).toStringAsFixed(1)} MB',
         );
-        print('Maintenance report saved to backend successfully');
-      } catch (e) {
-        print('Failed to save maintenance report to backend: $e');
-      }
+      } catch (e) {}
     } catch (e) {
-      print('Error fetching maintenance report: $e');
+      rethrow;
     }
-  }
-
-  Future<void> _downloadMaintenanceSampleData() async {
-    try {
-      // Create sample maintenance data
-      List<List<dynamic>> rows = [
-        // Header row
-        ['Device Name', 'Device ID', 'Maintenance Type', 'Scheduled Date', 'Priority', 'Status', 'Estimated Cost', 'Actual Cost', 'Estimated Duration (hrs)', 'Actual Duration (hrs)', 'Description'],
-        // Sample data rows
-        ['Chiller Unit A1', 'DEV001', 'Preventive Maintenance', '2025-01-15', 'Normal', 'Scheduled', '500', '', '2', '', 'Quarterly maintenance check'],
-        ['Freezer Room B2', 'DEV002', 'Emergency Repair', '2025-01-10', 'Critical', 'Completed', '1200', '1350', '4', '5', 'Compressor replacement'],
-        ['Chiller Unit C3', 'DEV003', 'Inspection', '2025-01-20', 'Low', 'Scheduled', '200', '', '1', '', 'Annual safety inspection'],
-        ['Freezer Unit D4', 'DEV004', 'Calibration Check', '2025-01-12', 'Normal', 'In Progress', '300', '', '1.5', '', 'Temperature sensor calibration'],
-        ['Chiller Room E5', 'DEV005', 'Preventive Maintenance', '2025-01-25', 'Normal', 'Scheduled', '450', '', '2', '', 'Filter replacement and cleaning'],
-        ['Freezer Unit F6', 'DEV006', 'Component Replacement', '2024-12-28', 'High', 'Overdue', '800', '', '3', '', 'Replace worn evaporator fan'],
-        ['Chiller Unit G7', 'DEV007', 'Preventive Maintenance', '2024-12-20', 'Normal', 'Completed', '500', '520', '2', '2.5', 'Routine maintenance completed'],
-        ['Freezer Room H8', 'DEV008', 'System Upgrade', '2025-01-30', 'Low', 'Scheduled', '2000', '', '8', '', 'Control system firmware update'],
-        ['Chiller Unit I9', 'DEV009', 'Emergency Repair', '2024-12-15', 'Emergency', 'Completed', '1500', '1450', '6', '5.5', 'Refrigerant leak repair'],
-        ['Freezer Unit J10', 'DEV010', 'Inspection', '2025-01-18', 'Normal', 'Scheduled', '250', '', '1', '', 'Monthly inspection'],
-      ];
-
-      // Convert to CSV
-      String csv = const ListToCsvConverter().convert(rows);
-
-      if (kIsWeb) {
-        // Web download
-        final bytes = utf8.encode(csv);
-        final blob = html.Blob([bytes]);
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.document.createElement('a') as html.AnchorElement
-          ..href = url
-          ..style.display = 'none'
-          ..download = 'maintenance_sample_data.csv';
-        html.document.body?.children.add(anchor);
-        anchor.click();
-        html.document.body?.children.remove(anchor);
-        html.Url.revokeObjectUrl(url);
-      } else {
-        // Desktop/Mobile download
-        Directory? directory;
-        if (Platform.isAndroid) {
-          directory = await getExternalStorageDirectory();
-        } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-          directory = await getDownloadsDirectory();
-        } else {
-          directory = await getApplicationDocumentsDirectory();
-        }
-
-        if (directory != null) {
-          final String path = '${directory.path}/maintenance_sample_data.csv';
-          final File file = File(path);
-          await file.writeAsString(csv);
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Sample data downloaded to: $path'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 5),
-                action: SnackBarAction(
-                  label: 'OK',
-                  textColor: Colors.white,
-                  onPressed: () {},
-                ),
-              ),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      print('Error downloading sample data: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error downloading sample data: $e'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _downloadSampleMaintenancePDFReport() async {
-    try {
-      final pdf = pw.Document();
-      final now = DateTime.now();
-      final dateFormat = DateFormat('MMMM dd, yyyy');
-      final timeFormat = DateFormat('HH:mm');
-
-      // Sample data for 10 devices
-      final sampleDevices = [
-        {'name': 'Chiller Unit A1', 'id': 'DEV001', 'location': 'Building A - Floor 1', 'status': 'Operational'},
-        {'name': 'Freezer Room B2', 'id': 'DEV002', 'location': 'Building B - Floor 2', 'status': 'Operational'},
-        {'name': 'Chiller Unit C3', 'id': 'DEV003', 'location': 'Building C - Floor 3', 'status': 'Operational'},
-        {'name': 'Freezer Unit D4', 'id': 'DEV004', 'location': 'Building D - Floor 1', 'status': 'Maintenance'},
-        {'name': 'Chiller Room E5', 'id': 'DEV005', 'location': 'Building E - Floor 2', 'status': 'Operational'},
-        {'name': 'Freezer Unit F6', 'id': 'DEV006', 'location': 'Building F - Floor 3', 'status': 'Alert'},
-        {'name': 'Chiller Unit G7', 'id': 'DEV007', 'location': 'Building G - Floor 1', 'status': 'Operational'},
-        {'name': 'Freezer Room H8', 'id': 'DEV008', 'location': 'Building H - Floor 2', 'status': 'Operational'},
-        {'name': 'Chiller Unit I9', 'id': 'DEV009', 'location': 'Building I - Floor 3', 'status': 'Operational'},
-        {'name': 'Freezer Unit J10', 'id': 'DEV010', 'location': 'Building J - Floor 1', 'status': 'Operational'},
-      ];
-
-      final maintenanceRecords = [
-        {'device': 'DEV001', 'type': 'Preventive', 'date': '2025-01-15', 'priority': 'Normal', 'status': 'Scheduled', 'cost': '\$500', 'duration': '2.0 hrs'},
-        {'device': 'DEV002', 'type': 'Emergency', 'date': '2025-01-10', 'priority': 'Critical', 'status': 'Completed', 'cost': '\$1,350', 'duration': '5.0 hrs'},
-        {'device': 'DEV003', 'type': 'Inspection', 'date': '2025-01-20', 'priority': 'Low', 'status': 'Scheduled', 'cost': '\$200', 'duration': '1.0 hrs'},
-        {'device': 'DEV004', 'type': 'Calibration', 'date': '2025-01-12', 'priority': 'Normal', 'status': 'In Progress', 'cost': '\$300', 'duration': '1.5 hrs'},
-        {'device': 'DEV005', 'type': 'Preventive', 'date': '2025-01-25', 'priority': 'Normal', 'status': 'Scheduled', 'cost': '\$450', 'duration': '2.0 hrs'},
-        {'device': 'DEV006', 'type': 'Component Replace', 'date': '2024-12-28', 'priority': 'High', 'status': 'Overdue', 'cost': '\$800', 'duration': '3.0 hrs'},
-        {'device': 'DEV007', 'type': 'Preventive', 'date': '2024-12-20', 'priority': 'Normal', 'status': 'Completed', 'cost': '\$520', 'duration': '2.5 hrs'},
-        {'device': 'DEV008', 'type': 'System Upgrade', 'date': '2025-01-30', 'priority': 'Low', 'status': 'Scheduled', 'cost': '\$2,000', 'duration': '8.0 hrs'},
-        {'device': 'DEV009', 'type': 'Emergency', 'date': '2024-12-15', 'priority': 'Emergency', 'status': 'Completed', 'cost': '\$1,450', 'duration': '5.5 hrs'},
-        {'device': 'DEV010', 'type': 'Inspection', 'date': '2025-01-18', 'priority': 'Normal', 'status': 'Scheduled', 'cost': '\$250', 'duration': '1.0 hrs'},
-      ];
-
-      // Add pages to PDF
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: pw.EdgeInsets.all(32),
-          build: (context) => [
-            // Header
-            pw.Container(
-              padding: pw.EdgeInsets.only(bottom: 20),
-              decoration: pw.BoxDecoration(
-                border: pw.Border(bottom: pw.BorderSide(width: 2, color: PdfColors.blue800)),
-              ),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(
-                    'MAINTENANCE REPORT',
-                    style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
-                  ),
-                  pw.SizedBox(height: 8),
-                  pw.Text(
-                    'Sample Report - Fully Populated Data',
-                    style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700),
-                  ),
-                  pw.SizedBox(height: 8),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text('Report Date: ${dateFormat.format(now)}', style: pw.TextStyle(fontSize: 10)),
-                      pw.Text('Generated: ${timeFormat.format(now)}', style: pw.TextStyle(fontSize: 10)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            pw.SizedBox(height: 20),
-
-            // Executive Summary
-            pw.Container(
-              padding: pw.EdgeInsets.all(16),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.blue50,
-                borderRadius: pw.BorderRadius.circular(8),
-              ),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text('Executive Summary', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-                  pw.SizedBox(height: 12),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildPdfSummaryBox('Total Devices', '10', PdfColors.blue800),
-                      _buildPdfSummaryBox('Total Maintenance', '10', PdfColors.green800),
-                      _buildPdfSummaryBox('Completed', '2', PdfColors.teal800),
-                      _buildPdfSummaryBox('Overdue', '1', PdfColors.red800),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            pw.SizedBox(height: 20),
-
-            // Device List
-            pw.Text('Device Inventory', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 12),
-            _buildPdfDeviceTable(sampleDevices),
-            pw.SizedBox(height: 24),
-
-            // Maintenance Records
-            pw.Text('Maintenance Records', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 12),
-            _buildPdfMaintenanceTable(maintenanceRecords),
-            pw.SizedBox(height: 24),
-
-            // Cost Analysis
-            pw.Text('Cost Analysis', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 12),
-            pw.Container(
-              padding: pw.EdgeInsets.all(12),
-              decoration: pw.BoxDecoration(
-                border: pw.Border.all(color: PdfColors.grey400),
-                borderRadius: pw.BorderRadius.circular(8),
-              ),
-              child: pw.Column(
-                children: [
-                  _buildPdfCostRow('Total Estimated Cost', '\$8,770', false),
-                  pw.Divider(),
-                  _buildPdfCostRow('Total Actual Cost (Completed)', '\$1,870', false),
-                  pw.Divider(),
-                  _buildPdfCostRow('Average Cost per Maintenance', '\$877', false),
-                  pw.Divider(),
-                  _buildPdfCostRow('Budget Variance', '+\$420', true),
-                ],
-              ),
-            ),
-            pw.SizedBox(height: 24),
-
-            // Maintenance by Priority
-            pw.Text('Maintenance by Priority', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 12),
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-              children: [
-                _buildPdfPriorityCard('Emergency', '1', PdfColors.red),
-                _buildPdfPriorityCard('Critical', '1', PdfColors.orange),
-                _buildPdfPriorityCard('High', '1', PdfColors.amber),
-                _buildPdfPriorityCard('Normal', '5', PdfColors.blue),
-                _buildPdfPriorityCard('Low', '2', PdfColors.green),
-              ],
-            ),
-            pw.SizedBox(height: 24),
-
-            // Recommendations
-            pw.Container(
-              padding: pw.EdgeInsets.all(16),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.amber50,
-                borderRadius: pw.BorderRadius.circular(8),
-                border: pw.Border.all(color: PdfColors.amber200),
-              ),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Row(
-                    children: [
-                      pw.Container(
-                        width: 4,
-                        height: 20,
-                        color: PdfColors.amber800,
-                      ),
-                      pw.SizedBox(width: 8),
-                      pw.Text('Recommendations', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.amber900)),
-                    ],
-                  ),
-                  pw.SizedBox(height: 12),
-                  _buildPdfBulletPoint('Address overdue maintenance on Freezer Unit F6 (DEV006) immediately'),
-                  _buildPdfBulletPoint('Schedule preventive maintenance for all operational units within next 30 days'),
-                  _buildPdfBulletPoint('Monitor DEV004 currently under maintenance for completion status'),
-                  _buildPdfBulletPoint('Budget allocation: Additional \$6,900 needed for scheduled maintenance'),
-                ],
-              ),
-            ),
-
-            // Footer
-            pw.SizedBox(height: 32),
-            pw.Container(
-              padding: pw.EdgeInsets.only(top: 12),
-              decoration: pw.BoxDecoration(
-                border: pw.Border(top: pw.BorderSide(color: PdfColors.grey400)),
-              ),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text('Arctic Sentinel - Maintenance Management System', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                  pw.Text('Page 1 of 1', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-
-      // Save PDF
-      final bytes = await pdf.save();
-
-      if (kIsWeb) {
-        // Web download
-        final blob = html.Blob([bytes], 'application/pdf');
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.document.createElement('a') as html.AnchorElement
-          ..href = url
-          ..style.display = 'none'
-          ..download = 'sample_maintenance_report_${DateFormat('yyyyMMdd').format(now)}.pdf';
-        html.document.body?.children.add(anchor);
-        anchor.click();
-        html.document.body?.children.remove(anchor);
-        html.Url.revokeObjectUrl(url);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Sample PDF report downloaded successfully!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      } else {
-        // Desktop/Mobile
-        Directory? directory;
-        if (Platform.isAndroid) {
-          directory = await getExternalStorageDirectory();
-        } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-          directory = await getDownloadsDirectory();
-        } else {
-          directory = await getApplicationDocumentsDirectory();
-        }
-
-        if (directory != null) {
-          final String path = '${directory.path}/sample_maintenance_report_${DateFormat('yyyyMMdd').format(now)}.pdf';
-          final File file = File(path);
-          await file.writeAsBytes(bytes);
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Sample PDF report saved to:\n$path'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 5),
-                action: SnackBarAction(
-                  label: 'OPEN',
-                  textColor: Colors.white,
-                  onPressed: () async {
-                    try {
-                      await Printing.sharePdf(bytes: bytes, filename: 'sample_maintenance_report.pdf');
-                    } catch (e) {
-                      print('Error opening PDF: $e');
-                    }
-                  },
-                ),
-              ),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      print('Error generating sample PDF report: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error generating PDF: $e'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  pw.Widget _buildPdfSummaryBox(String label, String value, PdfColor color) {
-    return pw.Container(
-      padding: pw.EdgeInsets.all(8),
-      child: pw.Column(
-        children: [
-          pw.Text(value, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: color)),
-          pw.SizedBox(height: 4),
-          pw.Text(label, style: pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _buildPdfDeviceTable(List<Map<String, String>> devices) {
-    return pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey400),
-      children: [
-        // Header
-        pw.TableRow(
-          decoration: pw.BoxDecoration(color: PdfColors.grey300),
-          children: [
-            _buildPdfTableHeader('Device Name'),
-            _buildPdfTableHeader('Device ID'),
-            _buildPdfTableHeader('Location'),
-            _buildPdfTableHeader('Status'),
-          ],
-        ),
-        // Data rows
-        ...devices.map((device) => pw.TableRow(
-          children: [
-            _buildPdfTableCell(device['name']!),
-            _buildPdfTableCell(device['id']!),
-            _buildPdfTableCell(device['location']!),
-            _buildPdfTableCell(device['status']!, getPdfStatusColor(device['status']!)),
-          ],
-        )),
-      ],
-    );
-  }
-
-  pw.Widget _buildPdfMaintenanceTable(List<Map<String, String>> records) {
-    return pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey400),
-      columnWidths: {
-        0: pw.FlexColumnWidth(1),
-        1: pw.FlexColumnWidth(1.5),
-        2: pw.FlexColumnWidth(1.2),
-        3: pw.FlexColumnWidth(1),
-        4: pw.FlexColumnWidth(1.2),
-        5: pw.FlexColumnWidth(1),
-        6: pw.FlexColumnWidth(1),
-      },
-      children: [
-        // Header
-        pw.TableRow(
-          decoration: pw.BoxDecoration(color: PdfColors.grey300),
-          children: [
-            _buildPdfTableHeader('Device'),
-            _buildPdfTableHeader('Type'),
-            _buildPdfTableHeader('Date'),
-            _buildPdfTableHeader('Priority'),
-            _buildPdfTableHeader('Status'),
-            _buildPdfTableHeader('Cost'),
-            _buildPdfTableHeader('Duration'),
-          ],
-        ),
-        // Data rows
-        ...records.map((record) => pw.TableRow(
-          children: [
-            _buildPdfTableCell(record['device']!, null, 8),
-            _buildPdfTableCell(record['type']!, null, 8),
-            _buildPdfTableCell(record['date']!, null, 8),
-            _buildPdfTableCell(record['priority']!, getPdfPriorityColor(record['priority']!), 8),
-            _buildPdfTableCell(record['status']!, getPdfStatusColor(record['status']!), 8),
-            _buildPdfTableCell(record['cost']!, null, 8),
-            _buildPdfTableCell(record['duration']!, null, 8),
-          ],
-        )),
-      ],
-    );
   }
 
   pw.Widget _buildPdfTableHeader(String text) {
@@ -1912,13 +1408,16 @@ class _ReportsState extends State<Reports> {
     );
   }
 
-  pw.Widget _buildPdfTableCell(String text, [PdfColor? bgColor, double fontSize = 10]) {
+  pw.Widget _buildPdfTableCell(String text,
+      [PdfColor? bgColor, double fontSize = 10]) {
     return pw.Container(
       padding: pw.EdgeInsets.all(6),
       color: bgColor,
       child: pw.Text(
         text,
-        style: pw.TextStyle(fontSize: fontSize, color: bgColor != null ? PdfColors.white : PdfColors.black),
+        style: pw.TextStyle(
+            fontSize: fontSize,
+            color: bgColor != null ? PdfColors.white : PdfColors.black),
         textAlign: pw.TextAlign.center,
       ),
     );
@@ -1956,49 +1455,6 @@ class _ReportsState extends State<Reports> {
       default:
         return PdfColors.grey800;
     }
-  }
-
-  pw.Widget _buildPdfCostRow(String label, String amount, bool isBold) {
-    return pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      children: [
-        pw.Text(label, style: pw.TextStyle(fontSize: 10, fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal)),
-        pw.Text(amount, style: pw.TextStyle(fontSize: 10, fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal)),
-      ],
-    );
-  }
-
-  pw.Widget _buildPdfPriorityCard(String label, String count, PdfColor color) {
-    return pw.Container(
-      width: 70,
-      padding: pw.EdgeInsets.all(8),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: color),
-        borderRadius: pw.BorderRadius.circular(8),
-      ),
-      child: pw.Column(
-        children: [
-          pw.Text(count, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: color)),
-          pw.SizedBox(height: 4),
-          pw.Text(label, style: pw.TextStyle(fontSize: 8)),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _buildPdfBulletPoint(String text) {
-    return pw.Padding(
-      padding: pw.EdgeInsets.only(bottom: 6),
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text('• ', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-          pw.Expanded(
-            child: pw.Text(text, style: pw.TextStyle(fontSize: 10)),
-          ),
-        ],
-      ),
-    );
   }
 
   DateTime _getStartDate(DateTime endDate) {
@@ -2043,12 +1499,12 @@ class _ReportsState extends State<Reports> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: Tone.bg(Colors.white),
             child: Container(
               padding: EdgeInsets.all(24),
               constraints: BoxConstraints(maxWidth: 600),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -2061,12 +1517,12 @@ class _ReportsState extends State<Reports> {
                       Container(
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Color(0xFF4A90E2).withValues(alpha: 0.1),
+                          color: Tone.bg(Color(0xFF4A90E2)).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           FontAwesomeIcons.chartLine,
-                          color: Color(0xFF4A90E2),
+                          color: Tone.fg(Color(0xFF4A90E2)),
                           size: 24,
                         ),
                       ),
@@ -2080,14 +1536,14 @@ class _ReportsState extends State<Reports> {
                               style: GoogleFonts.inter(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                color: Tone.fg(Colors.black87),
                               ),
                             ),
                             Text(
                               'Configure report parameters',
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: Colors.black54,
+                                color: Tone.fg(Colors.black54),
                               ),
                             ),
                           ],
@@ -2107,7 +1563,7 @@ class _ReportsState extends State<Reports> {
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Tone.fg(Colors.black87),
                     ),
                   ),
                   SizedBox(height: 8),
@@ -2115,14 +1571,14 @@ class _ReportsState extends State<Reports> {
                     Container(
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
+                        color: Tone.bg(Colors.red).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         errorMessage,
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          color: Colors.red,
+                          color: Tone.fg(Colors.red),
                         ),
                       ),
                     )
@@ -2131,19 +1587,19 @@ class _ReportsState extends State<Reports> {
                       padding:
                           EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: Tone.bg(Colors.grey.shade300)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           isDense: isPhoneLayout(context),
-                        value: selectedDevice,
+                          value: selectedDevice,
                           isExpanded: true,
                           icon: Icon(Icons.keyboard_arrow_down,
                               color: Constants.ctaColorLight),
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            color: Colors.black87,
+                            color: Tone.fg(Colors.black87),
                           ),
                           items: [
                             DropdownMenuItem(
@@ -2172,26 +1628,26 @@ class _ReportsState extends State<Reports> {
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Tone.fg(Colors.black87),
                     ),
                   ),
                   SizedBox(height: 8),
                   _ReportFormSurface(
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(color: Tone.bg(Colors.grey.shade300)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                          isDense: isPhoneLayout(context),
+                        isDense: isPhoneLayout(context),
                         value: selectedMetric,
                         isExpanded: true,
                         icon: Icon(Icons.keyboard_arrow_down,
                             color: Constants.ctaColorLight),
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: Colors.black87,
+                          color: Tone.fg(Colors.black87),
                         ),
                         items: [
                           DropdownMenuItem(
@@ -2231,11 +1687,12 @@ class _ReportsState extends State<Reports> {
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Tone.fg(Colors.black87),
                     ),
                   ),
                   SizedBox(height: 8),
-                  _ReportOptionSurface(child: CheckboxListTile(
+                  _ReportOptionSurface(
+                      child: CheckboxListTile(
                     title: Text(
                       'Include Charts & Graphs',
                       style: GoogleFonts.inter(fontSize: 14),
@@ -2249,7 +1706,8 @@ class _ReportsState extends State<Reports> {
                     contentPadding: EdgeInsets.zero,
                     controlAffinity: ListTileControlAffinity.leading,
                   )),
-                  _ReportOptionSurface(child: CheckboxListTile(
+                  _ReportOptionSurface(
+                      child: CheckboxListTile(
                     title: Text(
                       'Include Raw Data',
                       style: GoogleFonts.inter(fontSize: 14),
@@ -2271,10 +1729,11 @@ class _ReportsState extends State<Reports> {
                       Expanded(
                         child: TextButton(
                           style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                            backgroundColor: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                              borderRadius: BorderRadius.circular(
+                                  isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -2282,7 +1741,7 @@ class _ReportsState extends State<Reports> {
                             'Cancel',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.black87,
+                              color: Tone.fg(Colors.black87),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -2295,7 +1754,8 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Constants.ctaColorLight,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                              borderRadius: BorderRadius.circular(
+                                  isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () async {
@@ -2315,7 +1775,6 @@ class _ReportsState extends State<Reports> {
                                 deviceList: deviceList,
                               );
                             } catch (e) {
-                              print('Error generating report: $e');
                             } finally {
                               if (mounted) {
                                 setState(() {
@@ -2329,7 +1788,7 @@ class _ReportsState extends State<Reports> {
                             'Generate Report',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.white,
+                              color: Tone.fg(Colors.white),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -2361,7 +1820,6 @@ class _ReportsState extends State<Reports> {
           await DevicePerformanceApiService.getDevices(widget.companyId);
       isLoadingDevices = false;
     } catch (e) {
-      print('Error loading devices: $e');
       isLoadingDevices = false;
     }
 
@@ -2373,12 +1831,12 @@ class _ReportsState extends State<Reports> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: Tone.bg(Colors.white),
             child: Container(
               padding: EdgeInsets.all(24),
               constraints: BoxConstraints(maxWidth: 600),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: SingleChildScrollView(
@@ -2392,12 +1850,12 @@ class _ReportsState extends State<Reports> {
                         Container(
                           padding: EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Color(0xFFE94B3C).withValues(alpha: 0.1),
+                            color: Tone.bg(Color(0xFFE94B3C)).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
                             FontAwesomeIcons.temperatureHalf,
-                            color: Color(0xFFE94B3C),
+                            color: Tone.fg(Color(0xFFE94B3C)),
                             size: 24,
                           ),
                         ),
@@ -2411,14 +1869,14 @@ class _ReportsState extends State<Reports> {
                                 style: GoogleFonts.inter(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                                  color: Tone.fg(Colors.black87),
                                 ),
                               ),
                               Text(
                                 'Configure temperature analysis',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: Colors.black54,
+                                  color: Tone.fg(Colors.black54),
                                 ),
                               ),
                             ],
@@ -2438,37 +1896,39 @@ class _ReportsState extends State<Reports> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Tone.fg(Colors.black87),
                       ),
                     ),
                     SizedBox(height: 8),
                     _ReportFormSurface(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: Tone.bg(Colors.grey.shade300)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: isLoadingDevices
                           ? Center(child: CircularProgressIndicator())
                           : DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                          isDense: isPhoneLayout(context),
-                        value: selectedDevice,
+                                isDense: isPhoneLayout(context),
+                                value: selectedDevice,
                                 isExpanded: true,
                                 icon: Icon(Icons.keyboard_arrow_down,
                                     color: Constants.ctaColorLight),
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
-                                  color: Colors.black87,
+                                  color: Tone.fg(Colors.black87),
                                 ),
                                 items: [
                                   DropdownMenuItem(
                                       value: 'all', child: Text('All Devices')),
-                                  ...deviceList.map((device) => DropdownMenuItem(
-                                        value: device.deviceId,
-                                        child: Text(
-                                            '${device.name} (${device.deviceId})'),
-                                      )),
+                                  ...deviceList
+                                      .map((device) => DropdownMenuItem(
+                                            value: device.deviceId,
+                                            child: Text(
+                                                '${device.name} (${device.deviceId})'),
+                                          )),
                                 ],
                                 onChanged: (value) {
                                   setDialogState(() {
@@ -2486,7 +1946,7 @@ class _ReportsState extends State<Reports> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Tone.fg(Colors.black87),
                       ),
                     ),
                     SizedBox(height: 8),
@@ -2511,16 +1971,20 @@ class _ReportsState extends State<Reports> {
                               padding: EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 12),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
+                                border: Border.all(color: Tone.bg(Colors.grey.shade300)),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 children: [
-                                  if (!isPhoneLayout(context)) Icon(Icons.calendar_today,
-                                      size: 16, color: Constants.ctaColorLight),
-                                  if (!isPhoneLayout(context)) SizedBox(width: 8),
+                                  if (!isPhoneLayout(context))
+                                    Icon(Icons.calendar_today,
+                                        size: 16,
+                                        color: Constants.ctaColorLight),
+                                  if (!isPhoneLayout(context))
+                                    SizedBox(width: 8),
                                   Text(
-                                    DateFormat('MMM dd, yyyy').format(startDate),
+                                    DateFormat('MMM dd, yyyy')
+                                        .format(startDate),
                                     style: GoogleFonts.inter(fontSize: 14),
                                   ),
                                 ],
@@ -2551,14 +2015,17 @@ class _ReportsState extends State<Reports> {
                               padding: EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 12),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
+                                border: Border.all(color: Tone.bg(Colors.grey.shade300)),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 children: [
-                                  if (!isPhoneLayout(context)) Icon(Icons.calendar_today,
-                                      size: 16, color: Constants.ctaColorLight),
-                                  if (!isPhoneLayout(context)) SizedBox(width: 8),
+                                  if (!isPhoneLayout(context))
+                                    Icon(Icons.calendar_today,
+                                        size: 16,
+                                        color: Constants.ctaColorLight),
+                                  if (!isPhoneLayout(context))
+                                    SizedBox(width: 8),
                                   Text(
                                     DateFormat('MMM dd, yyyy').format(endDate),
                                     style: GoogleFonts.inter(fontSize: 14),
@@ -2578,26 +2045,27 @@ class _ReportsState extends State<Reports> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Tone.fg(Colors.black87),
                       ),
                     ),
                     SizedBox(height: 8),
                     _ReportFormSurface(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: Tone.bg(Colors.grey.shade300)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           isDense: isPhoneLayout(context),
-                        value: temperatureRange,
+                          value: temperatureRange,
                           isExpanded: true,
                           icon: Icon(Icons.keyboard_arrow_down,
                               color: Constants.ctaColorLight),
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            color: Colors.black87,
+                            color: Tone.fg(Colors.black87),
                           ),
                           items: [
                             DropdownMenuItem(
@@ -2621,7 +2089,8 @@ class _ReportsState extends State<Reports> {
                     SizedBox(height: 16),
 
                     // Options
-                    _ReportOptionSurface(child: CheckboxListTile(
+                    _ReportOptionSurface(
+                        child: CheckboxListTile(
                       title: Text(
                         'Highlight Temperature Anomalies',
                         style: GoogleFonts.inter(fontSize: 14),
@@ -2643,10 +2112,12 @@ class _ReportsState extends State<Reports> {
                         Expanded(
                           child: TextButton(
                             style: TextButton.styleFrom(
-                              backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                              backgroundColor:
+                                  Tone.bg(Colors.grey).withValues(alpha: 0.1),
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             onPressed: () => Navigator.pop(context),
@@ -2654,7 +2125,7 @@ class _ReportsState extends State<Reports> {
                               'Cancel',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: Colors.black87,
+                                color: Tone.fg(Colors.black87),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -2667,7 +2138,8 @@ class _ReportsState extends State<Reports> {
                               backgroundColor: Constants.ctaColorLight,
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             onPressed: deviceList.isEmpty
@@ -2676,11 +2148,13 @@ class _ReportsState extends State<Reports> {
                                     Navigator.pop(context);
                                     setState(() {
                                       isGenerating = true;
-                                      selectedReportType = 'temperature_analytics';
+                                      selectedReportType =
+                                          'temperature_analytics';
                                     });
 
-                                    final startDateStr =
-                                        startDate.toIso8601String().split('T')[0];
+                                    final startDateStr = startDate
+                                        .toIso8601String()
+                                        .split('T')[0];
                                     final endDateStr =
                                         endDate.toIso8601String().split('T')[0];
 
@@ -2704,7 +2178,7 @@ class _ReportsState extends State<Reports> {
                               'Generate Report',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -2741,9 +2215,7 @@ class _ReportsState extends State<Reports> {
             endDate: endDate,
           );
           reportData.add(data);
-        } catch (e) {
-          print('Error fetching temperature data for ${device.deviceId}: $e');
-        }
+        } catch (e) {}
       }
     } else {
       final device = deviceList.firstWhere(
@@ -2764,17 +2236,14 @@ class _ReportsState extends State<Reports> {
         ),
       );
       try {
-        final data =
-            await TemperatureAnalysisApiService.getTemperatureAnalysis(
+        final data = await TemperatureAnalysisApiService.getTemperatureAnalysis(
           deviceId: device.deviceId,
           deviceName: device.name,
           startDate: startDate,
           endDate: endDate,
         );
         reportData.add(data);
-      } catch (e) {
-        print('Error fetching temperature data for ${device.deviceId}: $e');
-      }
+      } catch (e) {}
     }
 
     // Store the generated report data
@@ -2792,7 +2261,7 @@ class _ReportsState extends State<Reports> {
       'Alerts Summary Report',
       'Configure alert filters',
       FontAwesomeIcons.bellConcierge,
-      Color(0xFFF5A623),
+      Tone.auto(Color(0xFFF5A623)),
       'alerts_summary',
       [
         {
@@ -2822,8 +2291,8 @@ class _ReportsState extends State<Reports> {
       'Maintenance History Report',
       'Configure maintenance records',
       FontAwesomeIcons.screwdriverWrench,
-      Color(0xFF7B68EE),
-      'maintenance_report',  // Changed from 'maintenance_history' to 'maintenance_report'
+      Tone.auto(Color(0xFF7B68EE)),
+      'maintenance_report', // Changed from 'maintenance_history' to 'maintenance_report'
       [
         {
           'label': 'Maintenance Type',
@@ -2842,7 +2311,7 @@ class _ReportsState extends State<Reports> {
       'Energy Consumption Report',
       'Configure energy analysis',
       FontAwesomeIcons.bolt,
-      Color(0xFF50C878),
+      Tone.auto(Color(0xFF50C878)),
       'energy_consumption',
       [
         {
@@ -2872,7 +2341,7 @@ class _ReportsState extends State<Reports> {
       'Compliance Report',
       'Configure compliance audit',
       FontAwesomeIcons.shieldHalved,
-      Color(0xFF9B59B6),
+      Tone.auto(Color(0xFF9B59B6)),
       'compliance_report',
       [
         {
@@ -2908,12 +2377,12 @@ class _ReportsState extends State<Reports> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: Tone.bg(Colors.white),
             child: Container(
               padding: EdgeInsets.all(24),
               constraints: BoxConstraints(maxWidth: 600),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -2941,14 +2410,14 @@ class _ReportsState extends State<Reports> {
                               style: GoogleFonts.inter(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                color: Tone.fg(Colors.black87),
                               ),
                             ),
                             Text(
                               subtitle,
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: Colors.black54,
+                                color: Tone.fg(Colors.black54),
                               ),
                             ),
                           ],
@@ -2972,7 +2441,7 @@ class _ReportsState extends State<Reports> {
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                            color: Tone.fg(Colors.black87),
                           ),
                         ),
                         SizedBox(height: 8),
@@ -2980,19 +2449,19 @@ class _ReportsState extends State<Reports> {
                           padding:
                               EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade300),
+                            border: Border.all(color: Tone.bg(Colors.grey.shade300)),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
-                          isDense: isPhoneLayout(context),
-                        value: selectedValues[dropdown['label']],
+                              isDense: isPhoneLayout(context),
+                              value: selectedValues[dropdown['label']],
                               isExpanded: true,
                               icon: Icon(Icons.keyboard_arrow_down,
                                   color: Constants.ctaColorLight),
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: Colors.black87,
+                                color: Tone.fg(Colors.black87),
                               ),
                               items: (dropdown['options'] as List<String>)
                                   .map((option) => DropdownMenuItem(
@@ -3015,103 +2484,17 @@ class _ReportsState extends State<Reports> {
 
                   SizedBox(height: 8),
 
-                  // Download Sample Data Buttons (only for maintenance_report)
-                  if (reportId == 'maintenance_report') ...[
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'No maintenance data? Download sample data to populate your database.',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 12),
-                          MobileFormRow(
-                            children: [
-                              Expanded(
-                                child: TextButton.icon(
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 6),
-                                    ),
-                                  ),
-                                  onPressed: () async {
-                                    Navigator.pop(context);
-                                    await _downloadMaintenanceSampleData();
-                                  },
-                                  icon: Icon(Icons.table_chart, color: Colors.white, size: 16),
-                                  label: Text(
-                                    'CSV Data',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: TextButton.icon(
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 6),
-                                    ),
-                                  ),
-                                  onPressed: () async {
-                                    Navigator.pop(context);
-                                    await _downloadSampleMaintenancePDFReport();
-                                  },
-                                  icon: Icon(Icons.picture_as_pdf, color: Colors.white, size: 16),
-                                  label: Text(
-                                    'PDF Report',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                  ],
-
                   // Footer buttons
                   MobileFormRow(
                     children: [
                       Expanded(
                         child: TextButton(
                           style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                            backgroundColor: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                              borderRadius: BorderRadius.circular(
+                                  isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -3119,7 +2502,7 @@ class _ReportsState extends State<Reports> {
                             'Cancel',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.black87,
+                              color: Tone.fg(Colors.black87),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -3132,7 +2515,8 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Constants.ctaColorLight,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                              borderRadius: BorderRadius.circular(
+                                  isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () async {
@@ -3153,13 +2537,20 @@ class _ReportsState extends State<Reports> {
                                 _showPDFPreviewDialog(title, reportId);
                               }
                             } else if (reportId == 'maintenance_report') {
-                              await _generateMaintenanceReport(
-                                  selectedPeriod: selectedPeriod);
-                              if (mounted) {
-                                setState(() {
-                                  isGenerating = false;
-                                });
-                                _showPDFPreviewDialog(title, reportId);
+                              try {
+                                await _generateMaintenanceReport(
+                                    selectedPeriod: selectedPeriod);
+                                if (mounted)
+                                  _showPDFPreviewDialog(title, reportId);
+                              } catch (_) {
+                                if (mounted)
+                                  ScaffoldMessenger.of(this.context)
+                                      .showSnackBar(const SnackBar(
+                                          content: Text(
+                                              'Unable to generate maintenance report. Please retry.')));
+                              } finally {
+                                if (mounted)
+                                  setState(() => isGenerating = false);
                               }
                             } else {
                               // Default behavior for other reports (simulated delay)
@@ -3177,7 +2568,7 @@ class _ReportsState extends State<Reports> {
                             'Generate Report',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.white,
+                              color: Tone.fg(Colors.white),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -3211,12 +2602,12 @@ class _ReportsState extends State<Reports> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: Tone.bg(Colors.white),
             child: Container(
               padding: EdgeInsets.all(24),
               constraints: BoxConstraints(maxWidth: 800, maxHeight: 700),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -3231,12 +2622,12 @@ class _ReportsState extends State<Reports> {
                           Container(
                             padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.purple.withValues(alpha: 0.1),
+                              color: Tone.bg(Colors.purple).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               CupertinoIcons.time,
-                              color: Colors.purple,
+                              color: Tone.fg(Colors.purple),
                               size: 24,
                             ),
                           ),
@@ -3249,14 +2640,14 @@ class _ReportsState extends State<Reports> {
                                 style: GoogleFonts.inter(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                                  color: Tone.fg(Colors.black87),
                                 ),
                               ),
                               Text(
                                 '${scheduledReports.length} total schedules',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: Colors.black54,
+                                  color: Tone.fg(Colors.black54),
                                 ),
                               ),
                             ],
@@ -3281,10 +2672,10 @@ class _ReportsState extends State<Reports> {
                           margin: EdgeInsets.only(bottom: 12),
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.05),
+                            color: Tone.bg(Colors.grey).withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.grey.withValues(alpha: 0.2),
+                              color: Tone.bg(Colors.grey).withValues(alpha: 0.2),
                             ),
                           ),
                           child: Row(
@@ -3317,7 +2708,7 @@ class _ReportsState extends State<Reports> {
                                             style: GoogleFonts.inter(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: Colors.black87,
+                                              color: Tone.fg(Colors.black87),
                                             ),
                                           ),
                                         ),
@@ -3328,9 +2719,9 @@ class _ReportsState extends State<Reports> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: report.isActive
-                                                ? Colors.green
+                                                ? Tone.bg(Colors.green)
                                                     .withValues(alpha: 0.1)
-                                                : Colors.grey
+                                                : Tone.bg(Colors.grey)
                                                     .withValues(alpha: 0.1),
                                             borderRadius:
                                                 BorderRadius.circular(4),
@@ -3343,8 +2734,8 @@ class _ReportsState extends State<Reports> {
                                               fontSize: 11,
                                               fontWeight: FontWeight.w500,
                                               color: report.isActive
-                                                  ? Colors.green
-                                                  : Colors.grey,
+                                                  ? Tone.fg(Colors.green)
+                                                  : Tone.fg(Colors.grey),
                                             ),
                                           ),
                                         ),
@@ -3356,28 +2747,28 @@ class _ReportsState extends State<Reports> {
                                         Icon(
                                           CupertinoIcons.clock,
                                           size: 12,
-                                          color: Colors.black54,
+                                          color: Tone.fg(Colors.black54),
                                         ),
                                         SizedBox(width: 4),
                                         Text(
                                           report.frequency,
                                           style: GoogleFonts.inter(
                                             fontSize: 12,
-                                            color: Colors.black54,
+                                            color: Tone.fg(Colors.black54),
                                           ),
                                         ),
                                         SizedBox(width: 16),
                                         Icon(
                                           CupertinoIcons.arrow_right_circle,
                                           size: 12,
-                                          color: Colors.black54,
+                                          color: Tone.fg(Colors.black54),
                                         ),
                                         SizedBox(width: 4),
                                         Text(
                                           report.nextRun,
                                           style: GoogleFonts.inter(
                                             fontSize: 12,
-                                            color: Colors.black54,
+                                            color: Tone.fg(Colors.black54),
                                           ),
                                         ),
                                       ],
@@ -3388,14 +2779,14 @@ class _ReportsState extends State<Reports> {
                                         Icon(
                                           CupertinoIcons.doc,
                                           size: 12,
-                                          color: Colors.black54,
+                                          color: Tone.fg(Colors.black54),
                                         ),
                                         SizedBox(width: 4),
                                         Text(
                                           'Format: ${report.format}',
                                           style: GoogleFonts.inter(
                                             fontSize: 12,
-                                            color: Colors.black54,
+                                            color: Tone.fg(Colors.black54),
                                           ),
                                         ),
                                       ],
@@ -3411,7 +2802,7 @@ class _ReportsState extends State<Reports> {
                                     icon: Icon(
                                       CupertinoIcons.pencil,
                                       size: 18,
-                                      color: Colors.blue,
+                                      color: Tone.fg(Colors.blue),
                                     ),
                                     onPressed: () {},
                                     tooltip: 'Edit',
@@ -3420,7 +2811,7 @@ class _ReportsState extends State<Reports> {
                                     icon: Icon(
                                       CupertinoIcons.trash,
                                       size: 18,
-                                      color: Colors.red,
+                                      color: Tone.fg(Colors.red),
                                     ),
                                     onPressed: () {},
                                     tooltip: 'Delete',
@@ -3444,7 +2835,7 @@ class _ReportsState extends State<Reports> {
                           'Showing ${startIndex + 1}-$endIndex of ${scheduledReports.length}',
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: Colors.black54,
+                            color: Tone.fg(Colors.black54),
                           ),
                         ),
                         Row(
@@ -3475,7 +2866,7 @@ class _ReportsState extends State<Reports> {
                                   decoration: BoxDecoration(
                                     color: currentPage == index
                                         ? Constants.ctaColorLight
-                                        : Colors.grey.withValues(alpha: 0.1),
+                                        : Tone.bg(Colors.grey).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -3484,8 +2875,8 @@ class _ReportsState extends State<Reports> {
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       color: currentPage == index
-                                          ? Colors.white
-                                          : Colors.black54,
+                                          ? Tone.fg(Colors.white)
+                                          : Tone.fg(Colors.black54),
                                     ),
                                   ),
                                 ),
@@ -3517,10 +2908,11 @@ class _ReportsState extends State<Reports> {
                       Expanded(
                         child: TextButton(
                           style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                            backgroundColor: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                              borderRadius: BorderRadius.circular(
+                                  isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -3528,7 +2920,7 @@ class _ReportsState extends State<Reports> {
                             'Close',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.black87,
+                              color: Tone.fg(Colors.black87),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -3541,7 +2933,8 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Constants.ctaColorLight,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                              borderRadius: BorderRadius.circular(
+                                  isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () {
@@ -3553,14 +2946,14 @@ class _ReportsState extends State<Reports> {
                               Icon(
                                 CupertinoIcons.add,
                                 size: 16,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                               ),
                               SizedBox(width: 8),
                               Text(
                                 'Create New',
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -3586,20 +2979,33 @@ class _ReportsState extends State<Reports> {
 
   bool _showUnavailableReportLibrary() {
     if (!_reportHistoryFailed && !isLoadingReports) return false;
-    showMobileDialog(context: context, builder: (dialogContext) => MobileAlertDialog(
-      title: const Text('Report library'),
-      content: SizedBox(width: 360, child: isLoadingReports
-        ? const Padding(padding: EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
-            CircularProgressIndicator(), SizedBox(height: 16), Text('Loading reports…'),
-          ]))
-        : AppEmptyState(kind: AppEmptyStateKind.offline, compact: true,
-            title: 'Reports could not be loaded',
-            message: 'Check your internet connection and try again.',
-            actionLabel: 'Try again', onAction: () {
-              Navigator.of(dialogContext).pop();
-              _loadReportHistory();
-            })),
-    ));
+    showMobileDialog(
+        context: context,
+        builder: (dialogContext) => MobileAlertDialog(
+              title: const Text('Report library'),
+              content: SizedBox(
+                  width: 360,
+                  child: isLoadingReports
+                      ? const Padding(
+                          padding: EdgeInsets.all(32),
+                          child:
+                              Column(mainAxisSize: MainAxisSize.min, children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text('Loading reports…'),
+                          ]))
+                      : AppEmptyState(
+                          kind: AppEmptyStateKind.offline,
+                          compact: true,
+                          title: 'Reports could not be loaded',
+                          message:
+                              'Check your internet connection and try again.',
+                          actionLabel: 'Try again',
+                          onAction: () {
+                            Navigator.of(dialogContext).pop();
+                            _loadReportHistory();
+                          })),
+            ));
     return true;
   }
 
@@ -3640,19 +3046,19 @@ class _ReportsState extends State<Reports> {
           Color _getReportColor(String reportType) {
             switch (reportType) {
               case 'device_performance':
-                return Color(0xFF4A90E2);
+                return Tone.auto(Color(0xFF4A90E2));
               case 'temperature_analysis':
-                return Color(0xFFE94B3C);
+                return Tone.auto(Color(0xFFE94B3C));
               case 'alerts_summary':
-                return Color(0xFFF5A623);
+                return Tone.auto(Color(0xFFF5A623));
               case 'maintenance':
-                return Color(0xFF7B68EE);
+                return Tone.auto(Color(0xFF7B68EE));
               case 'energy_consumption':
-                return Color(0xFF50C878);
+                return Tone.auto(Color(0xFF50C878));
               case 'compliance':
-                return Color(0xFF9B59B6);
+                return Tone.auto(Color(0xFF9B59B6));
               default:
-                return Colors.grey;
+                return Tone.auto(Colors.grey);
             }
           }
 
@@ -3660,12 +3066,12 @@ class _ReportsState extends State<Reports> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: Tone.bg(Colors.white),
             child: Container(
               padding: EdgeInsets.all(24),
               constraints: BoxConstraints(maxWidth: 900, maxHeight: 700),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -3680,12 +3086,12 @@ class _ReportsState extends State<Reports> {
                           Container(
                             padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.1),
+                              color: Tone.bg(Colors.green).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               CupertinoIcons.arrow_down_circle,
-                              color: Colors.green,
+                              color: Tone.fg(Colors.green),
                               size: 24,
                             ),
                           ),
@@ -3698,14 +3104,14 @@ class _ReportsState extends State<Reports> {
                                 style: GoogleFonts.inter(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                                  color: Tone.fg(Colors.black87),
                                 ),
                               ),
                               Text(
                                 '${downloadedReports.length} total downloads',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: Colors.black54,
+                                  color: Tone.fg(Colors.black54),
                                 ),
                               ),
                             ],
@@ -3750,10 +3156,10 @@ class _ReportsState extends State<Reports> {
                           margin: EdgeInsets.only(bottom: 12),
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.05),
+                            color: Tone.bg(Colors.grey).withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.grey.withValues(alpha: 0.2),
+                              color: Tone.bg(Colors.grey).withValues(alpha: 0.2),
                             ),
                           ),
                           child: Row(
@@ -3783,7 +3189,7 @@ class _ReportsState extends State<Reports> {
                                       style: GoogleFonts.inter(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
+                                        color: Tone.fg(Colors.black87),
                                       ),
                                     ),
                                     SizedBox(height: 6),
@@ -3792,28 +3198,28 @@ class _ReportsState extends State<Reports> {
                                         Icon(
                                           CupertinoIcons.person,
                                           size: 12,
-                                          color: Colors.black54,
+                                          color: Tone.fg(Colors.black54),
                                         ),
                                         SizedBox(width: 4),
                                         Text(
                                           generatedBy,
                                           style: GoogleFonts.inter(
                                             fontSize: 12,
-                                            color: Colors.black54,
+                                            color: Tone.fg(Colors.black54),
                                           ),
                                         ),
                                         SizedBox(width: 16),
                                         Icon(
                                           CupertinoIcons.clock,
                                           size: 12,
-                                          color: Colors.black54,
+                                          color: Tone.fg(Colors.black54),
                                         ),
                                         SizedBox(width: 4),
                                         Text(
                                           formattedDate,
                                           style: GoogleFonts.inter(
                                             fontSize: 12,
-                                            color: Colors.black54,
+                                            color: Tone.fg(Colors.black54),
                                           ),
                                         ),
                                       ],
@@ -3824,14 +3230,14 @@ class _ReportsState extends State<Reports> {
                                         Icon(
                                           CupertinoIcons.doc,
                                           size: 12,
-                                          color: Colors.black54,
+                                          color: Tone.fg(Colors.black54),
                                         ),
                                         SizedBox(width: 4),
                                         Text(
                                           'PDF • $fileSize • $pageCount pages',
                                           style: GoogleFonts.inter(
                                             fontSize: 12,
-                                            color: Colors.black54,
+                                            color: Tone.fg(Colors.black54),
                                           ),
                                         ),
                                       ],
@@ -3847,7 +3253,7 @@ class _ReportsState extends State<Reports> {
                                     icon: Icon(
                                       CupertinoIcons.eye,
                                       size: 18,
-                                      color: Colors.blue,
+                                      color: Tone.fg(Colors.blue),
                                     ),
                                     onPressed: () {},
                                     tooltip: 'View',
@@ -3856,7 +3262,7 @@ class _ReportsState extends State<Reports> {
                                     icon: Icon(
                                       CupertinoIcons.cloud_download,
                                       size: 18,
-                                      color: Colors.green,
+                                      color: Tone.fg(Colors.green),
                                     ),
                                     onPressed: () {},
                                     tooltip: 'Download Again',
@@ -3880,7 +3286,7 @@ class _ReportsState extends State<Reports> {
                           'Showing ${startIndex + 1}-$endIndex of ${downloadedReports.length}',
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: Colors.black54,
+                            color: Tone.fg(Colors.black54),
                           ),
                         ),
                         Row(
@@ -3911,7 +3317,7 @@ class _ReportsState extends State<Reports> {
                                   decoration: BoxDecoration(
                                     color: downloadsCurrentPage == index
                                         ? Constants.ctaColorLight
-                                        : Colors.grey.withValues(alpha: 0.1),
+                                        : Tone.bg(Colors.grey).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -3920,8 +3326,8 @@ class _ReportsState extends State<Reports> {
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       color: downloadsCurrentPage == index
-                                          ? Colors.white
-                                          : Colors.black54,
+                                          ? Tone.fg(Colors.white)
+                                          : Tone.fg(Colors.black54),
                                     ),
                                   ),
                                 ),
@@ -3953,10 +3359,11 @@ class _ReportsState extends State<Reports> {
                       Expanded(
                         child: TextButton(
                           style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                            backgroundColor: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                              borderRadius: BorderRadius.circular(
+                                  isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -3964,7 +3371,7 @@ class _ReportsState extends State<Reports> {
                             'Close',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.black87,
+                              color: Tone.fg(Colors.black87),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -3977,7 +3384,8 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Constants.ctaColorLight,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                              borderRadius: BorderRadius.circular(
+                                  isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () {
@@ -3989,14 +3397,14 @@ class _ReportsState extends State<Reports> {
                               Icon(
                                 CupertinoIcons.square_arrow_up,
                                 size: 16,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                               ),
                               SizedBox(width: 8),
                               Text(
                                 'Export List',
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -4057,19 +3465,19 @@ class _ReportsState extends State<Reports> {
           Color _getReportColor(String reportType) {
             switch (reportType) {
               case 'device_performance':
-                return Color(0xFF4A90E2);
+                return Tone.auto(Color(0xFF4A90E2));
               case 'temperature_analysis':
-                return Color(0xFFE94B3C);
+                return Tone.auto(Color(0xFFE94B3C));
               case 'alerts_summary':
-                return Color(0xFFF5A623);
+                return Tone.auto(Color(0xFFF5A623));
               case 'maintenance':
-                return Color(0xFF7B68EE);
+                return Tone.auto(Color(0xFF7B68EE));
               case 'energy_consumption':
-                return Color(0xFF50C878);
+                return Tone.auto(Color(0xFF50C878));
               case 'compliance':
-                return Color(0xFF9B59B6);
+                return Tone.auto(Color(0xFF9B59B6));
               default:
-                return Colors.grey;
+                return Tone.auto(Colors.grey);
             }
           }
 
@@ -4077,12 +3485,12 @@ class _ReportsState extends State<Reports> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: Tone.bg(Colors.white),
             child: Container(
               padding: EdgeInsets.all(24),
               constraints: BoxConstraints(maxWidth: 900, maxHeight: 700),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -4097,12 +3505,12 @@ class _ReportsState extends State<Reports> {
                           Container(
                             padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.1),
+                              color: Tone.bg(Colors.blue).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               CupertinoIcons.doc_text,
-                              color: Colors.blue,
+                              color: Tone.fg(Colors.blue),
                               size: 24,
                             ),
                           ),
@@ -4115,14 +3523,14 @@ class _ReportsState extends State<Reports> {
                                 style: GoogleFonts.inter(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                                  color: Tone.fg(Colors.black87),
                                 ),
                               ),
                               Text(
                                 '${downloadedReports.length} total reports',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: Colors.black54,
+                                  color: Tone.fg(Colors.black54),
                                 ),
                               ),
                             ],
@@ -4147,7 +3555,7 @@ class _ReportsState extends State<Reports> {
                                 Icon(
                                   CupertinoIcons.doc_text,
                                   size: 64,
-                                  color: Colors.grey.shade300,
+                                  color: Tone.fg(Colors.grey.shade300),
                                 ),
                                 SizedBox(height: 16),
                                 Text(
@@ -4155,7 +3563,7 @@ class _ReportsState extends State<Reports> {
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.grey.shade500,
+                                    color: Tone.fg(Colors.grey.shade500),
                                   ),
                                 ),
                                 SizedBox(height: 8),
@@ -4163,221 +3571,233 @@ class _ReportsState extends State<Reports> {
                                   'Generate a report from the options above',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: Colors.grey.shade400,
+                                    color: Tone.fg(Colors.grey.shade400),
                                   ),
                                 ),
                               ],
                             ),
                           )
                         : ListView.builder(
-                      itemCount: currentPageReports.length,
-                      itemBuilder: (context, index) {
-                        final report = currentPageReports[index];
-                        final reportType = report['report_type'] ?? '';
-                        final reportName = report['report_name'] ?? 'Unknown Report';
-                        final generatedBy = report['generated_by'] ?? 'System';
-                        final generatedAt = report['generated_at'] ?? '';
-                        final fileSize = report['file_size'] ?? '';
-                        final status = report['status'] ?? 'completed';
-                        final icon = _getReportIcon(reportType);
-                        final color = _getReportColor(reportType);
-                        final isProcessing = status == 'generating';
+                            itemCount: currentPageReports.length,
+                            itemBuilder: (context, index) {
+                              final report = currentPageReports[index];
+                              final reportType = report['report_type'] ?? '';
+                              final reportName =
+                                  report['report_name'] ?? 'Unknown Report';
+                              final generatedBy =
+                                  report['generated_by'] ?? 'System';
+                              final generatedAt = report['generated_at'] ?? '';
+                              final fileSize = report['file_size'] ?? '';
+                              final status = report['status'] ?? 'completed';
+                              final icon = _getReportIcon(reportType);
+                              final color = _getReportColor(reportType);
+                              final isProcessing = status == 'generating';
 
-                        // Format the date
-                        String formattedDate = generatedAt;
-                        try {
-                          final dateTime = DateTime.parse(generatedAt);
-                          formattedDate =
-                              '${dateTime.month}/${dateTime.day}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-                        } catch (e) {
-                          // Use as is if parsing fails
-                        }
+                              // Format the date
+                              String formattedDate = generatedAt;
+                              try {
+                                final dateTime = DateTime.parse(generatedAt);
+                                formattedDate =
+                                    '${dateTime.month}/${dateTime.day}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+                              } catch (e) {
+                                // Use as is if parsing fails
+                              }
 
-                        return Container(
-                          margin: EdgeInsets.only(bottom: 12),
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.grey.withValues(alpha: 0.2),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              // Icon
-                              Container(
-                                padding: EdgeInsets.all(12),
+                              return Container(
+                                margin: EdgeInsets.only(bottom: 12),
+                                padding: EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: color.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: Tone.bg(Colors.grey).withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Tone.bg(Colors.grey).withValues(alpha: 0.2),
+                                  ),
                                 ),
-                                child: Icon(
-                                  icon,
-                                  color: color,
-                                  size: 20,
-                                ),
-                              ),
-                              SizedBox(width: 16),
-
-                              // Report Details
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                child: Row(
                                   children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            reportName,
-                                            style: GoogleFonts.inter(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: isProcessing
-                                                ? Colors.orange
-                                                    .withValues(alpha: 0.1)
-                                                : Colors.green
-                                                    .withValues(alpha: 0.1),
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
+                                    // Icon
+                                    Container(
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: color.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        icon,
+                                        color: color,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    SizedBox(width: 16),
+
+                                    // Report Details
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
                                             children: [
-                                              if (isProcessing)
-                                                Padding(
-                                                  padding:
-                                                      EdgeInsets.only(right: 4),
-                                                  child: SizedBox(
-                                                    width: 10,
-                                                    height: 10,
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      color: Colors.orange,
-                                                    ),
+                                              Expanded(
+                                                child: Text(
+                                                  reportName,
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Tone.fg(Colors.black87),
                                                   ),
                                                 ),
-                                              Text(
-                                                status == 'completed' ? 'Ready' : status,
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w500,
+                                              ),
+                                              Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4,
+                                                ),
+                                                decoration: BoxDecoration(
                                                   color: isProcessing
-                                                      ? Colors.orange
-                                                      : Colors.green,
+                                                      ? Tone.bg(Colors.orange)
+                                                          .withValues(
+                                                              alpha: 0.1)
+                                                      : Tone.bg(Colors.green).withValues(
+                                                          alpha: 0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    if (isProcessing)
+                                                      Padding(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                                right: 4),
+                                                        child: SizedBox(
+                                                          width: 10,
+                                                          height: 10,
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                            strokeWidth: 2,
+                                                            color:
+                                                                Tone.fg(Colors.orange),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    Text(
+                                                      status == 'completed'
+                                                          ? 'Ready'
+                                                          : status,
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: isProcessing
+                                                            ? Tone.fg(Colors.orange)
+                                                            : Tone.fg(Colors.green),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ),
-                                      ],
+                                          SizedBox(height: 6),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                CupertinoIcons.person,
+                                                size: 12,
+                                                color: Tone.fg(Colors.black54),
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                generatedBy,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 12,
+                                                  color: Tone.fg(Colors.black54),
+                                                ),
+                                              ),
+                                              SizedBox(width: 16),
+                                              Icon(
+                                                CupertinoIcons.clock,
+                                                size: 12,
+                                                color: Tone.fg(Colors.black54),
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                report.generatedDate,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 12,
+                                                  color: Tone.fg(Colors.black54),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 6),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                CupertinoIcons.doc,
+                                                size: 12,
+                                                color: Tone.fg(Colors.black54),
+                                              ),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                '${report.format}${!isProcessing ? ' • ${report.fileSize}' : ''}',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 12,
+                                                  color: Tone.fg(Colors.black54),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    SizedBox(height: 6),
+
+                                    // Actions
                                     Row(
                                       children: [
-                                        Icon(
-                                          CupertinoIcons.person,
-                                          size: 12,
-                                          color: Colors.black54,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          generatedBy,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: Colors.black54,
+                                        IconButton(
+                                          icon: Icon(
+                                            CupertinoIcons.eye,
+                                            size: 18,
+                                            color: isProcessing
+                                                ? Tone.fg(Colors.grey)
+                                                : Tone.fg(Colors.blue),
                                           ),
+                                          onPressed:
+                                              isProcessing ? null : () {},
+                                          tooltip: 'View',
                                         ),
-                                        SizedBox(width: 16),
-                                        Icon(
-                                          CupertinoIcons.clock,
-                                          size: 12,
-                                          color: Colors.black54,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          report.generatedDate,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: Colors.black54,
+                                        IconButton(
+                                          icon: Icon(
+                                            CupertinoIcons.cloud_download,
+                                            size: 18,
+                                            color: isProcessing
+                                                ? Tone.fg(Colors.grey)
+                                                : Tone.fg(Colors.green),
                                           ),
+                                          onPressed:
+                                              isProcessing ? null : () {},
+                                          tooltip: 'Download',
                                         ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 6),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          CupertinoIcons.doc,
-                                          size: 12,
-                                          color: Colors.black54,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          '${report.format}${!isProcessing ? ' • ${report.fileSize}' : ''}',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: Colors.black54,
+                                        IconButton(
+                                          icon: Icon(
+                                            CupertinoIcons.trash,
+                                            size: 18,
+                                            color: Tone.fg(Colors.red),
                                           ),
+                                          onPressed: () {},
+                                          tooltip: 'Delete',
                                         ),
                                       ],
                                     ),
                                   ],
                                 ),
-                              ),
-
-                              // Actions
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: Icon(
-                                      CupertinoIcons.eye,
-                                      size: 18,
-                                      color: isProcessing
-                                          ? Colors.grey
-                                          : Colors.blue,
-                                    ),
-                                    onPressed: isProcessing ? null : () {},
-                                    tooltip: 'View',
-                                  ),
-                                  IconButton(
-                                    icon: Icon(
-                                      CupertinoIcons.cloud_download,
-                                      size: 18,
-                                      color: isProcessing
-                                          ? Colors.grey
-                                          : Colors.green,
-                                    ),
-                                    onPressed: isProcessing ? null : () {},
-                                    tooltip: 'Download',
-                                  ),
-                                  IconButton(
-                                    icon: Icon(
-                                      CupertinoIcons.trash,
-                                      size: 18,
-                                      color: Colors.red,
-                                    ),
-                                    onPressed: () {},
-                                    tooltip: 'Delete',
-                                  ),
-                                ],
-                              ),
-                            ],
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
 
                   // Pagination
@@ -4390,7 +3810,7 @@ class _ReportsState extends State<Reports> {
                           'Showing ${startIndex + 1}-$endIndex of ${generatedReports.length}',
                           style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: Colors.black54,
+                            color: Tone.fg(Colors.black54),
                           ),
                         ),
                         Row(
@@ -4421,7 +3841,7 @@ class _ReportsState extends State<Reports> {
                                   decoration: BoxDecoration(
                                     color: generatedCurrentPage == index
                                         ? Constants.ctaColorLight
-                                        : Colors.grey.withValues(alpha: 0.1),
+                                        : Tone.bg(Colors.grey).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -4430,8 +3850,8 @@ class _ReportsState extends State<Reports> {
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       color: generatedCurrentPage == index
-                                          ? Colors.white
-                                          : Colors.black54,
+                                          ? Tone.fg(Colors.white)
+                                          : Tone.fg(Colors.black54),
                                     ),
                                   ),
                                 ),
@@ -4463,10 +3883,11 @@ class _ReportsState extends State<Reports> {
                       Expanded(
                         child: TextButton(
                           style: TextButton.styleFrom(
-                            backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                            backgroundColor: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                              borderRadius: BorderRadius.circular(
+                                  isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () => Navigator.pop(context),
@@ -4474,7 +3895,7 @@ class _ReportsState extends State<Reports> {
                             'Close',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.black87,
+                              color: Tone.fg(Colors.black87),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -4487,7 +3908,8 @@ class _ReportsState extends State<Reports> {
                             backgroundColor: Constants.ctaColorLight,
                             padding: EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                              borderRadius: BorderRadius.circular(
+                                  isPhoneLayout(context) ? 32 : 8),
                             ),
                           ),
                           onPressed: () {
@@ -4500,14 +3922,14 @@ class _ReportsState extends State<Reports> {
                               Icon(
                                 CupertinoIcons.add_circled,
                                 size: 16,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                               ),
                               SizedBox(width: 8),
                               Text(
                                 'Generate New',
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -4538,12 +3960,12 @@ class _ReportsState extends State<Reports> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Tone.bg(Colors.white),
         child: Container(
           padding: EdgeInsets.all(24),
           constraints: BoxConstraints(maxWidth: 400),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -4552,12 +3974,12 @@ class _ReportsState extends State<Reports> {
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: Tone.bg(Colors.green).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.check_circle,
-                  color: Colors.green,
+                  color: Tone.fg(Colors.green),
                   size: 48,
                 ),
               ),
@@ -4567,7 +3989,7 @@ class _ReportsState extends State<Reports> {
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: Tone.fg(Colors.black87),
                 ),
               ),
               SizedBox(height: 8),
@@ -4576,7 +3998,7 @@ class _ReportsState extends State<Reports> {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: Colors.black54,
+                  color: Tone.fg(Colors.black54),
                 ),
               ),
               SizedBox(height: 24),
@@ -4585,10 +4007,11 @@ class _ReportsState extends State<Reports> {
                   Expanded(
                     child: TextButton(
                       style: TextButton.styleFrom(
-                        backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                        backgroundColor: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                          borderRadius: BorderRadius.circular(
+                              isPhoneLayout(context) ? 32 : 8),
                         ),
                       ),
                       onPressed: () => Navigator.pop(context),
@@ -4596,7 +4019,7 @@ class _ReportsState extends State<Reports> {
                         'Close',
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: Colors.black87,
+                          color: Tone.fg(Colors.black87),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -4606,10 +4029,11 @@ class _ReportsState extends State<Reports> {
                   Expanded(
                     child: TextButton(
                       style: TextButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Tone.bg(Colors.blue),
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                          borderRadius: BorderRadius.circular(
+                              isPhoneLayout(context) ? 32 : 8),
                         ),
                       ),
                       onPressed: () {
@@ -4620,7 +4044,7 @@ class _ReportsState extends State<Reports> {
                         'Preview',
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: Colors.white,
+                          color: Tone.fg(Colors.white),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -4633,21 +4057,23 @@ class _ReportsState extends State<Reports> {
                         backgroundColor: Constants.ctaColorLight,
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                          borderRadius: BorderRadius.circular(
+                              isPhoneLayout(context) ? 32 : 8),
                         ),
                       ),
                       onPressed: () {
                         Navigator.pop(context);
                         _showDownloadDialog(
                           reportName,
-                          onGenerate: () => _generateAndSavePDF('temperature_analysis'),
+                          onGenerate: () =>
+                              _generateAndSavePDF('temperature_analysis'),
                         );
                       },
                       child: Text(
                         'Download',
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: Colors.white,
+                          color: Tone.fg(Colors.white),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -4664,7 +4090,8 @@ class _ReportsState extends State<Reports> {
 
   void _showPDFPreviewDialog(String reportName, [String? reportType]) {
     // Build the actual PDF document based on report type
-    final pw.Document pdfDoc = _buildPDFDocumentForType(reportType ?? 'device_performance');
+    final pw.Document pdfDoc =
+        _buildPDFDocumentForType(reportType ?? 'device_performance');
 
     showMobileDialog(
       context: context,
@@ -4673,12 +4100,12 @@ class _ReportsState extends State<Reports> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: Tone.bg(Colors.white),
           child: Container(
             width: MediaQuery.of(context).size.width * 0.9,
             height: MediaQuery.of(context).size.height * 0.9,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -4687,14 +4114,14 @@ class _ReportsState extends State<Reports> {
                 Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Tone.bg(Colors.white),
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
                     ),
                     border: Border(
                       bottom: BorderSide(
-                        color: Colors.grey.withValues(alpha: 0.2),
+                        color: Tone.bg(Colors.grey).withValues(alpha: 0.2),
                       ),
                     ),
                   ),
@@ -4715,14 +4142,14 @@ class _ReportsState extends State<Reports> {
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                color: Tone.fg(Colors.black87),
                               ),
                             ),
                             Text(
                               'PDF Preview',
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: Colors.black54,
+                                color: Tone.fg(Colors.black54),
                               ),
                             ),
                           ],
@@ -4732,24 +4159,28 @@ class _ReportsState extends State<Reports> {
                       TextButton.icon(
                         style: TextButton.styleFrom(
                           backgroundColor: Constants.ctaColorLight,
-                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                            borderRadius: BorderRadius.circular(
+                                isPhoneLayout(context) ? 32 : 8),
                           ),
                         ),
                         onPressed: () {
                           Navigator.pop(context);
                           _showDownloadDialog(
                             reportName,
-                            onGenerate: () => _generateAndSavePDF(reportType ?? 'device_performance'),
+                            onGenerate: () => _generateAndSavePDF(
+                                reportType ?? 'device_performance'),
                           );
                         },
-                        icon: Icon(CupertinoIcons.cloud_download, size: 16, color: Colors.white),
+                        icon: Icon(CupertinoIcons.cloud_download,
+                            size: 16, color: Tone.fg(Colors.white)),
                         label: Text(
                           'Download',
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: Colors.white,
+                            color: Tone.fg(Colors.white),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -4769,7 +4200,8 @@ class _ReportsState extends State<Reports> {
                     canChangeOrientation: false,
                     canChangePageFormat: false,
                     canDebug: false,
-                    pdfFileName: '${reportType ?? "report"}_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+                    pdfFileName:
+                        '${reportType ?? "report"}_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
                   ),
                 ),
               ],
@@ -4942,7 +4374,7 @@ class _ReportsState extends State<Reports> {
           style: GoogleFonts.inter(
             fontSize: 14 * zoomLevel,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Tone.fg(Colors.black87),
           ),
         ),
         SizedBox(height: 6 * zoomLevel),
@@ -4950,7 +4382,7 @@ class _ReportsState extends State<Reports> {
           'This comprehensive report analyzes ${lastGeneratedReportData!.length} device${lastGeneratedReportData!.length > 1 ? "s" : ""} over the specified period, providing detailed insights into performance, efficiency, and operational health.',
           style: GoogleFonts.inter(
             fontSize: 9 * zoomLevel,
-            color: Colors.black54,
+            color: Tone.fg(Colors.black54),
             height: 1.4,
           ),
         ),
@@ -4961,9 +4393,9 @@ class _ReportsState extends State<Reports> {
         Container(
           padding: EdgeInsets.all(10 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.blue.withValues(alpha: 0.05),
+            color: Tone.bg(Colors.blue).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+            border: Border.all(color: Tone.bg(Colors.blue).withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -4971,14 +4403,14 @@ class _ReportsState extends State<Reports> {
               Row(
                 children: [
                   Icon(Icons.lightbulb_outline,
-                      size: 12 * zoomLevel, color: Colors.blue),
+                      size: 12 * zoomLevel, color: Tone.fg(Colors.blue)),
                   SizedBox(width: 6 * zoomLevel),
                   Text(
                     'Key Findings',
                     style: GoogleFonts.inter(
                       fontSize: 11 * zoomLevel,
                       fontWeight: FontWeight.w600,
-                      color: Colors.blue.shade700,
+                      color: Tone.fg(Colors.blue.shade700),
                     ),
                   ),
                 ],
@@ -4987,23 +4419,23 @@ class _ReportsState extends State<Reports> {
               _buildFindingItem(
                   'Fleet Health: $healthyDevices/${lastGeneratedReportData!.length} devices in good condition',
                   avgUptime > 85 ? Icons.check_circle : Icons.warning,
-                  avgUptime > 85 ? Colors.green : Colors.orange,
+                  avgUptime > 85 ? Tone.auto(Colors.green) : Tone.auto(Colors.orange),
                   zoomLevel),
               _buildFindingItem(
                   'Average Uptime: ${avgUptime.toStringAsFixed(1)}% ${avgUptime > 90 ? "(Excellent)" : avgUptime > 80 ? "(Good)" : "(Needs Attention)"}',
                   Icons.access_time,
-                  avgUptime > 85 ? Colors.green : Colors.orange,
+                  avgUptime > 85 ? Tone.auto(Colors.green) : Tone.auto(Colors.orange),
                   zoomLevel),
               _buildFindingItem(
                   'Total Power Consumption: ${totalPower.toStringAsFixed(1)} kWh across all devices',
                   Icons.bolt,
-                  Colors.orange,
+                  Tone.auto(Colors.orange),
                   zoomLevel),
               if (criticalDevices > 0)
                 _buildFindingItem(
                     '$criticalDevices device${criticalDevices > 1 ? "s" : ""} require immediate attention',
                     Icons.error_outline,
-                    Colors.red,
+                    Tone.auto(Colors.red),
                     zoomLevel),
             ],
           ),
@@ -5019,7 +4451,7 @@ class _ReportsState extends State<Reports> {
                   'Devices',
                   '${lastGeneratedReportData!.length}',
                   Icons.devices,
-                  Colors.blue,
+                  Tone.auto(Colors.blue),
                   zoomLevel),
             ),
             SizedBox(width: 8 * zoomLevel),
@@ -5028,7 +4460,7 @@ class _ReportsState extends State<Reports> {
                   'Avg Temp',
                   '${avgTemp.toStringAsFixed(1)}°C',
                   Icons.thermostat,
-                  Colors.cyan,
+                  Tone.auto(Colors.cyan),
                   zoomLevel),
             ),
             SizedBox(width: 8 * zoomLevel),
@@ -5037,7 +4469,7 @@ class _ReportsState extends State<Reports> {
                   'Uptime',
                   '${avgUptime.toStringAsFixed(0)}%',
                   Icons.trending_up,
-                  Colors.green,
+                  Tone.auto(Colors.green),
                   zoomLevel),
             ),
             SizedBox(width: 8 * zoomLevel),
@@ -5046,7 +4478,7 @@ class _ReportsState extends State<Reports> {
                   'Power',
                   '${avgPower.toStringAsFixed(1)}kW',
                   Icons.bolt,
-                  Colors.orange,
+                  Tone.auto(Colors.orange),
                   zoomLevel),
             ),
           ],
@@ -5057,7 +4489,7 @@ class _ReportsState extends State<Reports> {
         // Performance Highlights Table
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Column(
@@ -5065,7 +4497,7 @@ class _ReportsState extends State<Reports> {
               Container(
                 padding: EdgeInsets.all(8 * zoomLevel),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.1),
+                  color: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(4),
                     topRight: Radius.circular(4),
@@ -5079,22 +4511,22 @@ class _ReportsState extends State<Reports> {
                   'Best Uptime',
                   bestUptime.deviceName,
                   '${bestUptime.uptime.toStringAsFixed(1)}%',
-                  Colors.green,
+                  Tone.auto(Colors.green),
                   zoomLevel),
               _buildTableRow(
                   'Lowest Uptime',
                   worstUptime.deviceName,
                   '${worstUptime.uptime.toStringAsFixed(1)}%',
-                  Colors.orange,
+                  Tone.auto(Colors.orange),
                   zoomLevel),
               _buildTableRow(
                   'Highest Power Usage',
                   highestPower.deviceName,
                   '${highestPower.powerConsumption.toStringAsFixed(1)} kWh',
-                  Colors.red,
+                  Tone.auto(Colors.red),
                   zoomLevel),
               _buildTableRow('Total Door Operations', 'All Devices',
-                  '$totalDoors', Colors.blue, zoomLevel),
+                  '$totalDoors', Tone.auto(Colors.blue), zoomLevel),
             ],
           ),
         ),
@@ -5105,9 +4537,9 @@ class _ReportsState extends State<Reports> {
         Container(
           padding: EdgeInsets.all(8 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.05),
+            color: Tone.bg(Colors.green).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+            border: Border.all(color: Tone.bg(Colors.green).withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -5117,7 +4549,7 @@ class _ReportsState extends State<Reports> {
                 style: GoogleFonts.inter(
                   fontSize: 10 * zoomLevel,
                   fontWeight: FontWeight.w600,
-                  color: Colors.green.shade700,
+                  color: Tone.fg(Colors.green.shade700),
                 ),
               ),
               SizedBox(height: 6 * zoomLevel),
@@ -5156,7 +4588,7 @@ class _ReportsState extends State<Reports> {
             child: Text(
               text,
               style: GoogleFonts.inter(
-                  fontSize: 8 * zoomLevel, color: Colors.black87, height: 1.3),
+                  fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black87), height: 1.3),
             ),
           ),
         ],
@@ -5182,13 +4614,13 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 11 * zoomLevel,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Tone.fg(Colors.black87),
             ),
           ),
           Text(
             label,
             style: GoogleFonts.inter(
-                fontSize: 7 * zoomLevel, color: Colors.black54),
+                fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
           ),
         ],
       ),
@@ -5202,7 +4634,7 @@ class _ReportsState extends State<Reports> {
           horizontal: 8 * zoomLevel, vertical: 6 * zoomLevel),
       decoration: BoxDecoration(
         border: Border(
-            bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
+            bottom: BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
       ),
       child: Row(
         children: [
@@ -5216,7 +4648,7 @@ class _ReportsState extends State<Reports> {
             flex: 2,
             child: Text(device,
                 style: GoogleFonts.inter(
-                    fontSize: 8 * zoomLevel, color: Colors.black54)),
+                    fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black54))),
           ),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -5243,12 +4675,12 @@ class _ReportsState extends State<Reports> {
         children: [
           Text('• ',
               style: GoogleFonts.inter(
-                  fontSize: 8 * zoomLevel, color: Colors.green.shade700)),
+                  fontSize: 8 * zoomLevel, color: Tone.fg(Colors.green.shade700))),
           Expanded(
             child: Text(
               text,
               style: GoogleFonts.inter(
-                  fontSize: 8 * zoomLevel, color: Colors.black87),
+                  fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black87)),
             ),
           ),
         ],
@@ -5277,7 +4709,7 @@ class _ReportsState extends State<Reports> {
           style: GoogleFonts.inter(
             fontSize: 14 * zoomLevel,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Tone.fg(Colors.black87),
           ),
         ),
         SizedBox(height: 8 * zoomLevel),
@@ -5289,7 +4721,7 @@ class _ReportsState extends State<Reports> {
               child: Container(
                 padding: EdgeInsets.all(6 * zoomLevel),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.05),
+                  color: Tone.bg(Colors.blue).withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Column(
@@ -5298,10 +4730,10 @@ class _ReportsState extends State<Reports> {
                         style: GoogleFonts.inter(
                             fontSize: 12 * zoomLevel,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue)),
+                            color: Tone.fg(Colors.blue))),
                     Text('Total Devices',
                         style: GoogleFonts.inter(
-                            fontSize: 7 * zoomLevel, color: Colors.black54)),
+                            fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54))),
                   ],
                 ),
               ),
@@ -5311,7 +4743,7 @@ class _ReportsState extends State<Reports> {
               child: Container(
                 padding: EdgeInsets.all(6 * zoomLevel),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.05),
+                  color: Tone.bg(Colors.green).withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Column(
@@ -5320,10 +4752,10 @@ class _ReportsState extends State<Reports> {
                         style: GoogleFonts.inter(
                             fontSize: 12 * zoomLevel,
                             fontWeight: FontWeight.bold,
-                            color: Colors.green)),
+                            color: Tone.fg(Colors.green))),
                     Text('Avg Uptime',
                         style: GoogleFonts.inter(
-                            fontSize: 7 * zoomLevel, color: Colors.black54)),
+                            fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54))),
                   ],
                 ),
               ),
@@ -5333,7 +4765,7 @@ class _ReportsState extends State<Reports> {
               child: Container(
                 padding: EdgeInsets.all(6 * zoomLevel),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.05),
+                  color: Tone.bg(Colors.orange).withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Column(
@@ -5342,10 +4774,10 @@ class _ReportsState extends State<Reports> {
                         style: GoogleFonts.inter(
                             fontSize: 12 * zoomLevel,
                             fontWeight: FontWeight.bold,
-                            color: Colors.orange)),
+                            color: Tone.fg(Colors.orange))),
                     Text('Total kWh',
                         style: GoogleFonts.inter(
-                            fontSize: 7 * zoomLevel, color: Colors.black54)),
+                            fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54))),
                   ],
                 ),
               ),
@@ -5358,7 +4790,7 @@ class _ReportsState extends State<Reports> {
         // Main metrics table
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Column(
@@ -5416,9 +4848,9 @@ class _ReportsState extends State<Reports> {
                     decoration: BoxDecoration(
                       border: Border(
                           bottom: BorderSide(
-                              color: Colors.grey.withValues(alpha: 0.1))),
+                              color: Tone.bg(Colors.grey).withValues(alpha: 0.1))),
                       color: device.uptime < 80
-                          ? Colors.red.withValues(alpha: 0.02)
+                          ? Tone.bg(Colors.red).withValues(alpha: 0.02)
                           : null,
                     ),
                     child: Row(
@@ -5446,10 +4878,10 @@ class _ReportsState extends State<Reports> {
                                 horizontal: 4, vertical: 2),
                             decoration: BoxDecoration(
                               color: device.uptime > 90
-                                  ? Colors.green.withValues(alpha: 0.1)
+                                  ? Tone.bg(Colors.green).withValues(alpha: 0.1)
                                   : device.uptime > 80
-                                      ? Colors.orange.withValues(alpha: 0.1)
-                                      : Colors.red.withValues(alpha: 0.1),
+                                      ? Tone.bg(Colors.orange).withValues(alpha: 0.1)
+                                      : Tone.bg(Colors.red).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(3),
                             ),
                             child: Text(
@@ -5458,10 +4890,10 @@ class _ReportsState extends State<Reports> {
                                 fontSize: 7 * zoomLevel,
                                 fontWeight: FontWeight.w600,
                                 color: device.uptime > 90
-                                    ? Colors.green
+                                    ? Tone.fg(Colors.green)
                                     : device.uptime > 80
-                                        ? Colors.orange
-                                        : Colors.red,
+                                        ? Tone.fg(Colors.orange)
+                                        : Tone.fg(Colors.red),
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -5505,7 +4937,7 @@ class _ReportsState extends State<Reports> {
         // Additional details table
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Column(
@@ -5513,7 +4945,7 @@ class _ReportsState extends State<Reports> {
               Container(
                 padding: EdgeInsets.all(6 * zoomLevel),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.1),
+                  color: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(4),
                     topRight: Radius.circular(4),
@@ -5567,7 +4999,7 @@ class _ReportsState extends State<Reports> {
                     decoration: BoxDecoration(
                       border: Border(
                           bottom: BorderSide(
-                              color: Colors.grey.withValues(alpha: 0.1))),
+                              color: Tone.bg(Colors.grey).withValues(alpha: 0.1))),
                     ),
                     child: Row(
                       children: [
@@ -5582,13 +5014,13 @@ class _ReportsState extends State<Reports> {
                                 '${device.minTemperature.toStringAsFixed(1)}°',
                                 style: GoogleFonts.inter(
                                     fontSize: 7 * zoomLevel,
-                                    color: Colors.blue),
+                                    color: Tone.fg(Colors.blue)),
                                 textAlign: TextAlign.center)),
                         Expanded(
                             child: Text(
                                 '${device.maxTemperature.toStringAsFixed(1)}°',
                                 style: GoogleFonts.inter(
-                                    fontSize: 7 * zoomLevel, color: Colors.red),
+                                    fontSize: 7 * zoomLevel, color: Tone.fg(Colors.red)),
                                 textAlign: TextAlign.center)),
                         Expanded(
                             child: Text(
@@ -5635,7 +5067,7 @@ class _ReportsState extends State<Reports> {
           style: GoogleFonts.inter(
             fontSize: 14 * zoomLevel,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Tone.fg(Colors.black87),
           ),
         ),
         SizedBox(height: 12 * zoomLevel),
@@ -5645,9 +5077,9 @@ class _ReportsState extends State<Reports> {
           height: 200 * zoomLevel,
           padding: EdgeInsets.all(12 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.blue.withValues(alpha: 0.02),
+            color: Tone.bg(Colors.blue).withValues(alpha: 0.02),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+            border: Border.all(color: Tone.bg(Colors.blue).withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -5668,7 +5100,7 @@ class _ReportsState extends State<Reports> {
                           getTitlesWidget: (value, meta) => Text(
                             '${value.toInt()}°C',
                             style: GoogleFonts.inter(
-                                fontSize: 7 * zoomLevel, color: Colors.black54),
+                                fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
                           ),
                         ),
                       ),
@@ -5683,7 +5115,7 @@ class _ReportsState extends State<Reports> {
                                 'D${value.toInt() + 1}',
                                 style: GoogleFonts.inter(
                                     fontSize: 7 * zoomLevel,
-                                    color: Colors.black54),
+                                    color: Tone.fg(Colors.black54)),
                               );
                             }
                             return Text('');
@@ -5698,7 +5130,7 @@ class _ReportsState extends State<Reports> {
                     borderData: FlBorderData(
                         show: true,
                         border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.2))),
+                            color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
                     lineBarsData: [
                       // Average temperature line
                       LineChartBarData(
@@ -5709,12 +5141,12 @@ class _ReportsState extends State<Reports> {
                                 e.key.toDouble(), e.value.avgTemperature))
                             .toList(),
                         isCurved: true,
-                        color: Colors.blue,
+                        color: Tone.auto(Colors.blue),
                         barWidth: 2,
                         dotData: FlDotData(show: true),
                         belowBarData: BarAreaData(
                             show: true,
-                            color: Colors.blue.withValues(alpha: 0.1)),
+                            color: Tone.auto(Colors.blue).withValues(alpha: 0.1)),
                       ),
                       // Max temperature line
                       LineChartBarData(
@@ -5725,7 +5157,7 @@ class _ReportsState extends State<Reports> {
                                 e.key.toDouble(), e.value.maxTemperature))
                             .toList(),
                         isCurved: true,
-                        color: Colors.red,
+                        color: Tone.auto(Colors.red),
                         barWidth: 1.5,
                         dotData: FlDotData(show: false),
                         dashArray: [5, 5],
@@ -5739,7 +5171,7 @@ class _ReportsState extends State<Reports> {
                                 e.key.toDouble(), e.value.minTemperature))
                             .toList(),
                         isCurved: true,
-                        color: Colors.cyan,
+                        color: Tone.auto(Colors.cyan),
                         barWidth: 1.5,
                         dotData: FlDotData(show: false),
                         dashArray: [5, 5],
@@ -5752,11 +5184,11 @@ class _ReportsState extends State<Reports> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem('Avg', Colors.blue, zoomLevel),
+                  _buildLegendItem('Avg', Tone.auto(Colors.blue), zoomLevel),
                   SizedBox(width: 12 * zoomLevel),
-                  _buildLegendItem('Max', Colors.red, zoomLevel),
+                  _buildLegendItem('Max', Tone.auto(Colors.red), zoomLevel),
                   SizedBox(width: 12 * zoomLevel),
-                  _buildLegendItem('Min', Colors.cyan, zoomLevel),
+                  _buildLegendItem('Min', Tone.auto(Colors.cyan), zoomLevel),
                 ],
               ),
             ],
@@ -5767,7 +5199,7 @@ class _ReportsState extends State<Reports> {
         Container(
           padding: EdgeInsets.all(10 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.05),
+            color: Tone.bg(Colors.grey).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Column(
@@ -5809,7 +5241,7 @@ class _ReportsState extends State<Reports> {
                         Container(
                           height: 12 * zoomLevel,
                           decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.1),
+                            color: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -5858,7 +5290,7 @@ class _ReportsState extends State<Reports> {
           style: GoogleFonts.inter(
             fontSize: 14 * zoomLevel,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Tone.fg(Colors.black87),
           ),
         ),
         SizedBox(height: 12 * zoomLevel),
@@ -5868,9 +5300,9 @@ class _ReportsState extends State<Reports> {
           height: 250 * zoomLevel,
           padding: EdgeInsets.all(12 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.orange.withValues(alpha: 0.02),
+            color: Tone.bg(Colors.orange).withValues(alpha: 0.02),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+            border: Border.all(color: Tone.bg(Colors.orange).withValues(alpha: 0.2)),
           ),
           child: Column(
             children: [
@@ -5899,7 +5331,7 @@ class _ReportsState extends State<Reports> {
                               titleStyle: GoogleFonts.inter(
                                 fontSize: 8 * zoomLevel,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                               ),
                             );
                           }).toList(),
@@ -5956,7 +5388,7 @@ class _ReportsState extends State<Reports> {
         Container(
           padding: EdgeInsets.all(10 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.05),
+            color: Tone.bg(Colors.grey).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Column(
@@ -5996,7 +5428,7 @@ class _ReportsState extends State<Reports> {
                         Container(
                           height: 12 * zoomLevel,
                           decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.1),
+                            color: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -6006,7 +5438,7 @@ class _ReportsState extends State<Reports> {
                           child: Container(
                             height: 12 * zoomLevel,
                             decoration: BoxDecoration(
-                              color: Colors.orange,
+                              color: Tone.bg(Colors.orange),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -6046,7 +5478,7 @@ class _ReportsState extends State<Reports> {
           style: GoogleFonts.inter(
             fontSize: 14 * zoomLevel,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Tone.fg(Colors.black87),
           ),
         ),
         SizedBox(height: 12 * zoomLevel),
@@ -6056,9 +5488,9 @@ class _ReportsState extends State<Reports> {
           height: 220 * zoomLevel,
           padding: EdgeInsets.all(12 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.02),
+            color: Tone.bg(Colors.green).withValues(alpha: 0.02),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+            border: Border.all(color: Tone.bg(Colors.green).withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -6081,7 +5513,7 @@ class _ReportsState extends State<Reports> {
                           getTitlesWidget: (value, meta) => Text(
                             '${value.toInt()}%',
                             style: GoogleFonts.inter(
-                                fontSize: 7 * zoomLevel, color: Colors.black54),
+                                fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
                           ),
                         ),
                       ),
@@ -6098,7 +5530,7 @@ class _ReportsState extends State<Reports> {
                                   'D${value.toInt() + 1}',
                                   style: GoogleFonts.inter(
                                       fontSize: 7 * zoomLevel,
-                                      color: Colors.black54),
+                                      color: Tone.fg(Colors.black54)),
                                 ),
                               );
                             }
@@ -6115,7 +5547,7 @@ class _ReportsState extends State<Reports> {
                     borderData: FlBorderData(
                         show: true,
                         border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.2))),
+                            color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
                     barGroups:
                         lastGeneratedReportData!.asMap().entries.map((e) {
                       return BarChartGroupData(
@@ -6124,8 +5556,8 @@ class _ReportsState extends State<Reports> {
                           BarChartRodData(
                             toY: e.value.uptime,
                             color: e.value.uptime > 80
-                                ? Colors.green
-                                : Colors.orange,
+                                ? Tone.auto(Colors.green)
+                                : Tone.auto(Colors.orange),
                             width: 16 * zoomLevel,
                             borderRadius: BorderRadius.only(
                               topLeft: Radius.circular(4),
@@ -6146,7 +5578,7 @@ class _ReportsState extends State<Reports> {
         Container(
           padding: EdgeInsets.all(10 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.05),
+            color: Tone.bg(Colors.grey).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Column(
@@ -6188,7 +5620,7 @@ class _ReportsState extends State<Reports> {
                         Container(
                           height: 12 * zoomLevel,
                           decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.1),
+                            color: Tone.bg(Colors.grey).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -6198,8 +5630,8 @@ class _ReportsState extends State<Reports> {
                             height: 12 * zoomLevel,
                             decoration: BoxDecoration(
                               color: device.uptime > 80
-                                  ? Colors.green
-                                  : Colors.orange,
+                                  ? Tone.bg(Colors.green)
+                                  : Tone.bg(Colors.orange),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -6232,7 +5664,7 @@ class _ReportsState extends State<Reports> {
           style: GoogleFonts.inter(
             fontSize: 14 * zoomLevel,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Tone.fg(Colors.black87),
           ),
         ),
         SizedBox(height: 12 * zoomLevel),
@@ -6240,7 +5672,7 @@ class _ReportsState extends State<Reports> {
           'This page compares all devices across key performance metrics.',
           style: GoogleFonts.inter(
             fontSize: 10 * zoomLevel,
-            color: Colors.black54,
+            color: Tone.fg(Colors.black54),
             height: 1.5,
           ),
         ),
@@ -6249,7 +5681,7 @@ class _ReportsState extends State<Reports> {
               margin: EdgeInsets.only(bottom: 12 * zoomLevel),
               padding: EdgeInsets.all(10 * zoomLevel),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.2)),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Column(
@@ -6329,7 +5761,7 @@ class _ReportsState extends State<Reports> {
           style: GoogleFonts.inter(
             fontSize: 14 * zoomLevel,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Tone.fg(Colors.black87),
           ),
         ),
         SizedBox(height: 12 * zoomLevel),
@@ -6339,9 +5771,9 @@ class _ReportsState extends State<Reports> {
           height: 250 * zoomLevel,
           padding: EdgeInsets.all(12 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.purple.withValues(alpha: 0.02),
+            color: Tone.bg(Colors.purple).withValues(alpha: 0.02),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.purple.withValues(alpha: 0.2)),
+            border: Border.all(color: Tone.bg(Colors.purple).withValues(alpha: 0.2)),
           ),
           child: Column(
             children: [
@@ -6370,7 +5802,7 @@ class _ReportsState extends State<Reports> {
                               titleStyle: GoogleFonts.inter(
                                 fontSize: 8 * zoomLevel,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                               ),
                             );
                           }).toList(),
@@ -6403,7 +5835,7 @@ class _ReportsState extends State<Reports> {
                                             style: GoogleFonts.inter(
                                               fontSize: 9 * zoomLevel,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.white,
+                                              color: Tone.fg(Colors.white),
                                             ),
                                           ),
                                         ),
@@ -6433,7 +5865,7 @@ class _ReportsState extends State<Reports> {
         Container(
           padding: EdgeInsets.all(10 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.05),
+            color: Tone.bg(Colors.grey).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Column(
@@ -6463,15 +5895,15 @@ class _ReportsState extends State<Reports> {
                   margin: EdgeInsets.only(bottom: 6 * zoomLevel),
                   padding: EdgeInsets.all(8 * zoomLevel),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.05),
+                    color: Tone.bg(Colors.red).withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(4),
                     border:
-                        Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                        Border.all(color: Tone.bg(Colors.red).withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.warning_amber,
-                          size: 14 * zoomLevel, color: Colors.orange),
+                          size: 14 * zoomLevel, color: Tone.fg(Colors.orange)),
                       SizedBox(width: 8 * zoomLevel),
                       Expanded(
                         child: Column(
@@ -6485,7 +5917,7 @@ class _ReportsState extends State<Reports> {
                                 'Health Grade: ${device.healthGrade} - Requires maintenance',
                                 style: GoogleFonts.inter(
                                     fontSize: 8 * zoomLevel,
-                                    color: Colors.black54)),
+                                    color: Tone.fg(Colors.black54))),
                           ],
                         ),
                       ),
@@ -6510,7 +5942,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 14 * zoomLevel,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Tone.fg(Colors.black87),
             ),
           ),
           SizedBox(height: 12 * zoomLevel),
@@ -6521,7 +5953,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 11 * zoomLevel,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Tone.fg(Colors.black87),
             ),
           ),
           SizedBox(height: 8 * zoomLevel),
@@ -6535,7 +5967,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 11 * zoomLevel,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Tone.fg(Colors.black87),
             ),
           ),
           SizedBox(height: 8 * zoomLevel),
@@ -6549,7 +5981,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 11 * zoomLevel,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Tone.fg(Colors.black87),
             ),
           ),
           SizedBox(height: 8 * zoomLevel),
@@ -6584,12 +6016,12 @@ class _ReportsState extends State<Reports> {
     if (allDailyData.isEmpty) {
       return Text('No daily temperature data available',
           style: GoogleFonts.inter(
-              fontSize: 9 * zoomLevel, color: Colors.black54));
+              fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)));
     }
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+        border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -6654,7 +6086,7 @@ class _ReportsState extends State<Reports> {
                   vertical: 6 * zoomLevel, horizontal: 12 * zoomLevel),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                  bottom: BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2)),
                 ),
               ),
               child: Row(
@@ -6672,13 +6104,13 @@ class _ReportsState extends State<Reports> {
                   Expanded(
                     child: Text('${minTemp.toStringAsFixed(1)}°',
                         style: GoogleFonts.inter(
-                            fontSize: 8 * zoomLevel, color: Colors.blue),
+                            fontSize: 8 * zoomLevel, color: Tone.fg(Colors.blue)),
                         textAlign: TextAlign.center),
                   ),
                   Expanded(
                     child: Text('${maxTemp.toStringAsFixed(1)}°',
                         style: GoogleFonts.inter(
-                            fontSize: 8 * zoomLevel, color: Colors.red),
+                            fontSize: 8 * zoomLevel, color: Tone.fg(Colors.red)),
                         textAlign: TextAlign.center),
                   ),
                 ],
@@ -6707,12 +6139,12 @@ class _ReportsState extends State<Reports> {
     if (allDailyData.isEmpty) {
       return Text('No daily door operations data available',
           style: GoogleFonts.inter(
-              fontSize: 9 * zoomLevel, color: Colors.black54));
+              fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)));
     }
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+        border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -6753,7 +6185,7 @@ class _ReportsState extends State<Reports> {
                   vertical: 6 * zoomLevel, horizontal: 12 * zoomLevel),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                  bottom: BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2)),
                 ),
               ),
               child: Row(
@@ -6813,12 +6245,12 @@ class _ReportsState extends State<Reports> {
     if (allDailyData.isEmpty) {
       return Text('No daily power consumption data available',
           style: GoogleFonts.inter(
-              fontSize: 9 * zoomLevel, color: Colors.black54));
+              fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)));
     }
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+        border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -6877,7 +6309,7 @@ class _ReportsState extends State<Reports> {
                   vertical: 6 * zoomLevel, horizontal: 12 * zoomLevel),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                  bottom: BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2)),
                 ),
               ),
               child: Row(
@@ -6932,7 +6364,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 14 * zoomLevel,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Tone.fg(Colors.black87),
             ),
           ),
           SizedBox(height: 16 * zoomLevel),
@@ -6942,8 +6374,8 @@ class _ReportsState extends State<Reports> {
             height: 200 * zoomLevel,
             padding: EdgeInsets.all(12 * zoomLevel),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+              color: Tone.bg(Colors.white),
+              border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -6967,8 +6399,8 @@ class _ReportsState extends State<Reports> {
             height: 200 * zoomLevel,
             padding: EdgeInsets.all(12 * zoomLevel),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+              color: Tone.bg(Colors.white),
+              border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -6992,8 +6424,8 @@ class _ReportsState extends State<Reports> {
             height: 180 * zoomLevel,
             padding: EdgeInsets.all(12 * zoomLevel),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+              color: Tone.bg(Colors.white),
+              border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -7036,7 +6468,7 @@ class _ReportsState extends State<Reports> {
       return Center(
         child: Text('No daily temperature data available',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54)),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54))),
       );
     }
 
@@ -7054,7 +6486,7 @@ class _ReportsState extends State<Reports> {
               getTitlesWidget: (value, meta) => Text(
                 '${value.toInt()}°',
                 style: GoogleFonts.inter(
-                    fontSize: 7 * zoomLevel, color: Colors.black54),
+                    fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
               ),
             ),
           ),
@@ -7071,7 +6503,7 @@ class _ReportsState extends State<Reports> {
                     child: Text(
                       date.substring(5),
                       style: GoogleFonts.inter(
-                          fontSize: 6 * zoomLevel, color: Colors.black54),
+                          fontSize: 6 * zoomLevel, color: Tone.fg(Colors.black54)),
                     ),
                   );
                 }
@@ -7084,7 +6516,7 @@ class _ReportsState extends State<Reports> {
         ),
         borderData: FlBorderData(
             show: true,
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
+            border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
         lineBarsData: [
           // Average line
           LineChartBarData(
@@ -7094,7 +6526,7 @@ class _ReportsState extends State<Reports> {
               return FlSpot(entry.key.toDouble(), avg);
             }).toList(),
             isCurved: true,
-            color: Colors.orange,
+            color: Tone.auto(Colors.orange),
             barWidth: 2 * zoomLevel,
             dotData: FlDotData(show: false),
           ),
@@ -7106,7 +6538,7 @@ class _ReportsState extends State<Reports> {
               return FlSpot(entry.key.toDouble(), min);
             }).toList(),
             isCurved: true,
-            color: Colors.blue,
+            color: Tone.auto(Colors.blue),
             barWidth: 1.5 * zoomLevel,
             dotData: FlDotData(show: false),
           ),
@@ -7118,7 +6550,7 @@ class _ReportsState extends State<Reports> {
               return FlSpot(entry.key.toDouble(), max);
             }).toList(),
             isCurved: true,
-            color: Colors.red,
+            color: Tone.auto(Colors.red),
             barWidth: 1.5 * zoomLevel,
             dotData: FlDotData(show: false),
           ),
@@ -7159,7 +6591,7 @@ class _ReportsState extends State<Reports> {
       return Center(
         child: Text('No daily power consumption data available',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54)),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54))),
       );
     }
 
@@ -7177,7 +6609,7 @@ class _ReportsState extends State<Reports> {
               getTitlesWidget: (value, meta) => Text(
                 '${value.toInt()}',
                 style: GoogleFonts.inter(
-                    fontSize: 7 * zoomLevel, color: Colors.black54),
+                    fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
               ),
             ),
           ),
@@ -7194,7 +6626,7 @@ class _ReportsState extends State<Reports> {
                     child: Text(
                       date.substring(5),
                       style: GoogleFonts.inter(
-                          fontSize: 6 * zoomLevel, color: Colors.black54),
+                          fontSize: 6 * zoomLevel, color: Tone.fg(Colors.black54)),
                     ),
                   );
                 }
@@ -7207,7 +6639,7 @@ class _ReportsState extends State<Reports> {
         ),
         borderData: FlBorderData(
             show: true,
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
+            border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
         lineBarsData: [
           // Total line
           LineChartBarData(
@@ -7215,7 +6647,7 @@ class _ReportsState extends State<Reports> {
               return FlSpot(entry.key.toDouble(), entry.value.value['total']!);
             }).toList(),
             isCurved: true,
-            color: Colors.deepOrange,
+            color: Tone.auto(Colors.deepOrange),
             barWidth: 2 * zoomLevel,
             dotData: FlDotData(show: false),
           ),
@@ -7242,7 +6674,7 @@ class _ReportsState extends State<Reports> {
       return Center(
         child: Text('No daily door operations data available',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54)),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54))),
       );
     }
 
@@ -7261,7 +6693,7 @@ class _ReportsState extends State<Reports> {
               getTitlesWidget: (value, meta) => Text(
                 '${value.toInt()}',
                 style: GoogleFonts.inter(
-                    fontSize: 7 * zoomLevel, color: Colors.black54),
+                    fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
               ),
             ),
           ),
@@ -7278,7 +6710,7 @@ class _ReportsState extends State<Reports> {
                     child: Text(
                       date.substring(5),
                       style: GoogleFonts.inter(
-                          fontSize: 6 * zoomLevel, color: Colors.black54),
+                          fontSize: 6 * zoomLevel, color: Tone.fg(Colors.black54)),
                     ),
                   );
                 }
@@ -7291,7 +6723,7 @@ class _ReportsState extends State<Reports> {
         ),
         borderData: FlBorderData(
             show: true,
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2))),
+            border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
         barGroups: sortedEntries.asMap().entries.map((entry) {
           return BarChartGroupData(
             x: entry.key,
@@ -7333,7 +6765,7 @@ class _ReportsState extends State<Reports> {
           style: GoogleFonts.inter(
             fontSize: 14 * zoomLevel,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Tone.fg(Colors.black87),
           ),
         ),
         SizedBox(height: 12 * zoomLevel),
@@ -7342,7 +6774,7 @@ class _ReportsState extends State<Reports> {
             'Improve Overall Uptime',
             'Average uptime is ${avgUptime.toStringAsFixed(1)}%. Consider investigating devices with low uptime.',
             Icons.trending_up,
-            Colors.orange,
+            Tone.auto(Colors.orange),
             zoomLevel,
           ),
         if (lowUptimeDevices > 0)
@@ -7350,7 +6782,7 @@ class _ReportsState extends State<Reports> {
             'Address Low Uptime Devices',
             '$lowUptimeDevices device(s) have uptime below 80%. Schedule maintenance checks.',
             Icons.build,
-            Colors.red,
+            Tone.auto(Colors.red),
             zoomLevel,
           ),
         if (highPowerDevices > 0)
@@ -7358,21 +6790,21 @@ class _ReportsState extends State<Reports> {
             'Review Power Consumption',
             '$highPowerDevices device(s) show high power consumption. Review for efficiency improvements.',
             Icons.bolt,
-            Colors.amber,
+            Tone.auto(Colors.amber),
             zoomLevel,
           ),
         _buildRecommendationCard(
           'Regular Maintenance',
           'Schedule regular maintenance checks for all devices to maintain optimal performance.',
           Icons.schedule,
-          Colors.blue,
+          Tone.auto(Colors.blue),
           zoomLevel,
         ),
         _buildRecommendationCard(
           'Monitor Temperature',
           'Continue monitoring temperature trends to prevent equipment failure.',
           Icons.thermostat,
-          Colors.cyan,
+          Tone.auto(Colors.cyan),
           zoomLevel,
         ),
       ],
@@ -7407,7 +6839,7 @@ class _ReportsState extends State<Reports> {
                 Text(description,
                     style: GoogleFonts.inter(
                         fontSize: 9 * zoomLevel,
-                        color: Colors.black54,
+                        color: Tone.fg(Colors.black54),
                         height: 1.4)),
               ],
             ),
@@ -7423,7 +6855,7 @@ class _ReportsState extends State<Reports> {
       children: [
         Text(label,
             style: GoogleFonts.inter(
-                fontSize: 8 * zoomLevel, color: Colors.black54)),
+                fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black54))),
         SizedBox(height: 2 * zoomLevel),
         Text(value,
             style: GoogleFonts.inter(
@@ -7439,9 +6871,9 @@ class _ReportsState extends State<Reports> {
         Container(
           padding: EdgeInsets.all(20 * zoomLevel),
           decoration: BoxDecoration(
-            color: Colors.orange.withValues(alpha: 0.1),
+            color: Tone.bg(Colors.orange).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+            border: Border.all(color: Tone.bg(Colors.orange).withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -7449,7 +6881,7 @@ class _ReportsState extends State<Reports> {
               Row(
                 children: [
                   Icon(Icons.info_outline,
-                      color: Colors.orange, size: 24 * zoomLevel),
+                      color: Tone.fg(Colors.orange), size: 24 * zoomLevel),
                   SizedBox(width: 12 * zoomLevel),
                   Expanded(
                     child: Text(
@@ -7457,7 +6889,7 @@ class _ReportsState extends State<Reports> {
                       style: GoogleFonts.inter(
                         fontSize: 14 * zoomLevel,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Tone.fg(Colors.black87),
                       ),
                     ),
                   ),
@@ -7468,7 +6900,7 @@ class _ReportsState extends State<Reports> {
                 'This page does not have data to display. This could be because:',
                 style: GoogleFonts.inter(
                   fontSize: 10 * zoomLevel,
-                  color: Colors.black87,
+                  color: Tone.fg(Colors.black87),
                 ),
               ),
               SizedBox(height: 8 * zoomLevel),
@@ -7486,7 +6918,7 @@ class _ReportsState extends State<Reports> {
                 style: GoogleFonts.inter(
                   fontSize: 10 * zoomLevel,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: Tone.fg(Colors.black87),
                 ),
               ),
               SizedBox(height: 6 * zoomLevel),
@@ -7508,12 +6940,12 @@ class _ReportsState extends State<Reports> {
         children: [
           Text('• ',
               style: GoogleFonts.inter(
-                  fontSize: 10 * zoomLevel, color: Colors.black54)),
+                  fontSize: 10 * zoomLevel, color: Tone.fg(Colors.black54))),
           Expanded(
             child: Text(
               text,
               style: GoogleFonts.inter(
-                  fontSize: 9 * zoomLevel, color: Colors.black54),
+                  fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)),
             ),
           ),
         ],
@@ -7524,38 +6956,38 @@ class _ReportsState extends State<Reports> {
   Color _getHealthColor(String grade) {
     switch (grade) {
       case 'A':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'B':
-        return Colors.lightGreen;
+        return Tone.auto(Colors.lightGreen);
       case 'C':
-        return Colors.orange;
+        return Tone.auto(Colors.orange);
       case 'D':
-        return Colors.deepOrange;
+        return Tone.auto(Colors.deepOrange);
       case 'F':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       default:
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
     }
   }
 
   Color _getTemperatureColor(double temp) {
-    if (temp < -20) return Colors.blue;
-    if (temp < -10) return Colors.lightBlue;
-    if (temp < 0) return Colors.cyan;
-    if (temp < 10) return Colors.orange;
-    return Colors.red;
+    if (temp < -20) return Tone.auto(Colors.blue);
+    if (temp < -10) return Tone.auto(Colors.lightBlue);
+    if (temp < 0) return Tone.auto(Colors.cyan);
+    if (temp < 10) return Tone.auto(Colors.orange);
+    return Tone.auto(Colors.red);
   }
 
   Color _getPowerColor(int index) {
     final colors = [
-      Colors.orange,
-      Colors.deepOrange,
-      Colors.amber,
-      Colors.orangeAccent,
-      Colors.deepOrangeAccent,
-      Colors.yellow.shade700,
-      Colors.orange.shade300,
-      Colors.deepOrange.shade300,
+      Tone.auto(Colors.orange),
+      Tone.auto(Colors.deepOrange),
+      Tone.auto(Colors.amber),
+      Tone.auto(Colors.orangeAccent),
+      Tone.auto(Colors.deepOrangeAccent),
+      Tone.auto(Colors.yellow.shade700),
+      Tone.auto(Colors.orange.shade300),
+      Tone.auto(Colors.deepOrange.shade300),
     ];
     return colors[index % colors.length];
   }
@@ -7577,7 +7009,7 @@ class _ReportsState extends State<Reports> {
           label,
           style: GoogleFonts.inter(
             fontSize: 8 * zoomLevel,
-            color: Colors.black54,
+            color: Tone.fg(Colors.black54),
           ),
         ),
       ],
@@ -7594,7 +7026,7 @@ class _ReportsState extends State<Reports> {
             label,
             style: GoogleFonts.inter(
               fontSize: 10 * zoomLevel,
-              color: Colors.black54,
+              color: Tone.fg(Colors.black54),
             ),
           ),
           Text(
@@ -7602,7 +7034,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 10 * zoomLevel,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Tone.fg(Colors.black87),
             ),
           ),
         ],
@@ -7612,7 +7044,8 @@ class _ReportsState extends State<Reports> {
 
   Future<String> _generateAndSavePDF(String reportType) async {
     final now = DateTime.now();
-    String filename = '${reportType}_${DateFormat('yyyyMMdd_HHmmss').format(now)}.pdf';
+    String filename =
+        '${reportType}_${DateFormat('yyyyMMdd_HHmmss').format(now)}.pdf';
 
     // Build the full PDF document
     final pdf = _buildPDFDocumentForType(reportType);
@@ -7681,17 +7114,25 @@ class _ReportsState extends State<Reports> {
     final pdf = pw.Document();
     final now = DateTime.now();
     final dateFormat = DateFormat('MMMM dd, yyyy');
-    final headerStyle = pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800);
-    final sectionStyle = pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900);
+    final headerStyle = pw.TextStyle(
+        fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800);
+    final sectionStyle = pw.TextStyle(
+        fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900);
     final subStyle = pw.TextStyle(fontSize: 10, color: PdfColors.grey700);
 
     // Use device performance data if available, else temperature data
-    final hasDevicePerf = lastGeneratedReportData != null && lastGeneratedReportData!.isNotEmpty;
-    final hasTempData = lastGeneratedTempReportData != null && lastGeneratedTempReportData!.isNotEmpty;
+    final hasDevicePerf =
+        lastGeneratedReportData != null && lastGeneratedReportData!.isNotEmpty;
+    final hasTempData = lastGeneratedTempReportData != null &&
+        lastGeneratedTempReportData!.isNotEmpty;
 
-    final startDate = lastGeneratedReportStartDate ?? lastGeneratedTempReportStartDate ?? 'N/A';
-    final endDate = lastGeneratedReportEndDate ?? lastGeneratedTempReportEndDate ?? 'N/A';
-    final period = lastGeneratedReportPeriod ?? lastGeneratedTempReportPeriod ?? 'N/A';
+    final startDate = lastGeneratedReportStartDate ??
+        lastGeneratedTempReportStartDate ??
+        'N/A';
+    final endDate =
+        lastGeneratedReportEndDate ?? lastGeneratedTempReportEndDate ?? 'N/A';
+    final period =
+        lastGeneratedReportPeriod ?? lastGeneratedTempReportPeriod ?? 'N/A';
 
     pdf.addPage(
       pw.MultiPage(
@@ -7700,7 +7141,8 @@ class _ReportsState extends State<Reports> {
         header: (context) => pw.Container(
           padding: pw.EdgeInsets.only(bottom: 12),
           decoration: pw.BoxDecoration(
-            border: pw.Border(bottom: pw.BorderSide(width: 2, color: PdfColors.blue800)),
+            border: pw.Border(
+                bottom: pw.BorderSide(width: 2, color: PdfColors.blue800)),
           ),
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -7716,9 +7158,13 @@ class _ReportsState extends State<Reports> {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
-                  pw.Text('Generated: ${dateFormat.format(now)}', style: pw.TextStyle(fontSize: 9)),
-                  pw.Text('Period: $startDate to $endDate', style: pw.TextStyle(fontSize: 9)),
-                  pw.Text('Range: $period', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                  pw.Text('Generated: ${dateFormat.format(now)}',
+                      style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Period: $startDate to $endDate',
+                      style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Range: $period',
+                      style:
+                          pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
                 ],
               ),
             ],
@@ -7728,7 +7174,7 @@ class _ReportsState extends State<Reports> {
           alignment: pw.Alignment.centerRight,
           margin: pw.EdgeInsets.only(top: 8),
           child: pw.Text('Page ${context.pageNumber} of ${context.pagesCount}',
-            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+              style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
         ),
         build: (context) {
           List<pw.Widget> content = [];
@@ -7743,8 +7189,12 @@ class _ReportsState extends State<Reports> {
                   color: PdfColors.blue50,
                   borderRadius: pw.BorderRadius.circular(4),
                 ),
-                child: pw.Text('Device: ${device.deviceName} (${device.deviceId})',
-                  style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                child: pw.Text(
+                    'Device: ${device.deviceName} (${device.deviceId})',
+                    style: pw.TextStyle(
+                        fontSize: 13,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue900)),
               ));
 
               // Temperature Section
@@ -7757,15 +7207,19 @@ class _ReportsState extends State<Reports> {
                   1: pw.FlexColumnWidth(1.5),
                 },
                 children: [
-                  _pdfMetricRow('Average Temperature', '${device.avgTemperature.toStringAsFixed(1)}°C'),
-                  _pdfMetricRow('Minimum Temperature', '${device.minTemperature.toStringAsFixed(1)}°C'),
-                  _pdfMetricRow('Maximum Temperature', '${device.maxTemperature.toStringAsFixed(1)}°C'),
+                  _pdfMetricRow('Average Temperature',
+                      '${device.avgTemperature.toStringAsFixed(1)}°C'),
+                  _pdfMetricRow('Minimum Temperature',
+                      '${device.minTemperature.toStringAsFixed(1)}°C'),
+                  _pdfMetricRow('Maximum Temperature',
+                      '${device.maxTemperature.toStringAsFixed(1)}°C'),
                 ],
               ));
               content.add(pw.SizedBox(height: 6));
 
               // Daily temperature table
-              if (device.dailyTemperatureData != null && device.dailyTemperatureData!.isNotEmpty) {
+              if (device.dailyTemperatureData != null &&
+                  device.dailyTemperatureData!.isNotEmpty) {
                 content.add(pw.Table(
                   border: pw.TableBorder.all(color: PdfColors.grey300),
                   children: [
@@ -7778,14 +7232,19 @@ class _ReportsState extends State<Reports> {
                         _buildPdfTableHeader('Max (°C)'),
                       ],
                     ),
-                    ...device.dailyTemperatureData!.take(31).map((d) => pw.TableRow(
-                      children: [
-                        _buildPdfTableCell('${d['date'] ?? ''}'),
-                        _buildPdfTableCell('${(d['avg_temperature'] ?? 0).toStringAsFixed(1)}'),
-                        _buildPdfTableCell('${(d['min_temperature'] ?? 0).toStringAsFixed(1)}'),
-                        _buildPdfTableCell('${(d['max_temperature'] ?? 0).toStringAsFixed(1)}'),
-                      ],
-                    )),
+                    ...device.dailyTemperatureData!
+                        .take(31)
+                        .map((d) => pw.TableRow(
+                              children: [
+                                _buildPdfTableCell('${d['date'] ?? ''}'),
+                                _buildPdfTableCell(
+                                    '${(d['avg_temperature'] ?? 0).toStringAsFixed(1)}'),
+                                _buildPdfTableCell(
+                                    '${(d['min_temperature'] ?? 0).toStringAsFixed(1)}'),
+                                _buildPdfTableCell(
+                                    '${(d['max_temperature'] ?? 0).toStringAsFixed(1)}'),
+                              ],
+                            )),
                   ],
                 ));
               }
@@ -7801,10 +7260,12 @@ class _ReportsState extends State<Reports> {
                   1: pw.FlexColumnWidth(1.5),
                 },
                 children: [
-                  _pdfMetricRow('Average Pressure', '${device.avgPressure.toStringAsFixed(1)} PSI'),
+                  _pdfMetricRow('Average Pressure',
+                      '${device.avgPressure.toStringAsFixed(1)} PSI'),
                 ],
               ));
-              if (device.dailyPressureData != null && device.dailyPressureData!.isNotEmpty) {
+              if (device.dailyPressureData != null &&
+                  device.dailyPressureData!.isNotEmpty) {
                 content.add(pw.SizedBox(height: 6));
                 content.add(pw.Table(
                   border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -7818,14 +7279,19 @@ class _ReportsState extends State<Reports> {
                         _buildPdfTableHeader('Max (PSI)'),
                       ],
                     ),
-                    ...device.dailyPressureData!.take(31).map((d) => pw.TableRow(
-                      children: [
-                        _buildPdfTableCell('${d['date'] ?? ''}'),
-                        _buildPdfTableCell('${(d['avg_pressure'] ?? 0).toStringAsFixed(1)}'),
-                        _buildPdfTableCell('${(d['min_pressure'] ?? 0).toStringAsFixed(1)}'),
-                        _buildPdfTableCell('${(d['max_pressure'] ?? 0).toStringAsFixed(1)}'),
-                      ],
-                    )),
+                    ...device.dailyPressureData!
+                        .take(31)
+                        .map((d) => pw.TableRow(
+                              children: [
+                                _buildPdfTableCell('${d['date'] ?? ''}'),
+                                _buildPdfTableCell(
+                                    '${(d['avg_pressure'] ?? 0).toStringAsFixed(1)}'),
+                                _buildPdfTableCell(
+                                    '${(d['min_pressure'] ?? 0).toStringAsFixed(1)}'),
+                                _buildPdfTableCell(
+                                    '${(d['max_pressure'] ?? 0).toStringAsFixed(1)}'),
+                              ],
+                            )),
                   ],
                 ));
               }
@@ -7836,12 +7302,16 @@ class _ReportsState extends State<Reports> {
               content.add(pw.SizedBox(height: 6));
               content.add(pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey300),
-                columnWidths: { 0: pw.FlexColumnWidth(2), 1: pw.FlexColumnWidth(1.5) },
+                columnWidths: {
+                  0: pw.FlexColumnWidth(2),
+                  1: pw.FlexColumnWidth(1.5)
+                },
                 children: [
                   _pdfMetricRow('Total Door Opens', '${device.doorOpenCount}'),
                 ],
               ));
-              if (device.dailyDoorData != null && device.dailyDoorData!.isNotEmpty) {
+              if (device.dailyDoorData != null &&
+                  device.dailyDoorData!.isNotEmpty) {
                 content.add(pw.SizedBox(height: 6));
                 content.add(pw.Table(
                   border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -7854,11 +7324,11 @@ class _ReportsState extends State<Reports> {
                       ],
                     ),
                     ...device.dailyDoorData!.take(31).map((d) => pw.TableRow(
-                      children: [
-                        _buildPdfTableCell('${d['date'] ?? ''}'),
-                        _buildPdfTableCell('${d['open_count'] ?? 0}'),
-                      ],
-                    )),
+                          children: [
+                            _buildPdfTableCell('${d['date'] ?? ''}'),
+                            _buildPdfTableCell('${d['open_count'] ?? 0}'),
+                          ],
+                        )),
                   ],
                 ));
               }
@@ -7869,12 +7339,17 @@ class _ReportsState extends State<Reports> {
               content.add(pw.SizedBox(height: 6));
               content.add(pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey300),
-                columnWidths: { 0: pw.FlexColumnWidth(2), 1: pw.FlexColumnWidth(1.5) },
+                columnWidths: {
+                  0: pw.FlexColumnWidth(2),
+                  1: pw.FlexColumnWidth(1.5)
+                },
                 children: [
-                  _pdfMetricRow('Avg Total Power', '${device.powerConsumption.toStringAsFixed(2)} kW'),
+                  _pdfMetricRow('Avg Total Power',
+                      '${device.powerConsumption.toStringAsFixed(2)} kW'),
                 ],
               ));
-              if (device.dailyPowerData != null && device.dailyPowerData!.isNotEmpty) {
+              if (device.dailyPowerData != null &&
+                  device.dailyPowerData!.isNotEmpty) {
                 content.add(pw.SizedBox(height: 6));
                 content.add(pw.Table(
                   border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -7890,14 +7365,18 @@ class _ReportsState extends State<Reports> {
                       ],
                     ),
                     ...device.dailyPowerData!.take(31).map((d) => pw.TableRow(
-                      children: [
-                        _buildPdfTableCell('${d['date'] ?? ''}'),
-                        _buildPdfTableCell('${(d['phase1_power'] ?? 0).toStringAsFixed(1)}'),
-                        _buildPdfTableCell('${(d['phase2_power'] ?? 0).toStringAsFixed(1)}'),
-                        _buildPdfTableCell('${(d['phase3_power'] ?? 0).toStringAsFixed(1)}'),
-                        _buildPdfTableCell('${(d['total_power'] ?? 0).toStringAsFixed(1)}'),
-                      ],
-                    )),
+                          children: [
+                            _buildPdfTableCell('${d['date'] ?? ''}'),
+                            _buildPdfTableCell(
+                                '${(d['phase1_power'] ?? 0).toStringAsFixed(1)}'),
+                            _buildPdfTableCell(
+                                '${(d['phase2_power'] ?? 0).toStringAsFixed(1)}'),
+                            _buildPdfTableCell(
+                                '${(d['phase3_power'] ?? 0).toStringAsFixed(1)}'),
+                            _buildPdfTableCell(
+                                '${(d['total_power'] ?? 0).toStringAsFixed(1)}'),
+                          ],
+                        )),
                   ],
                 ));
               }
@@ -7908,13 +7387,18 @@ class _ReportsState extends State<Reports> {
               content.add(pw.SizedBox(height: 6));
               content.add(pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey300),
-                columnWidths: { 0: pw.FlexColumnWidth(2), 1: pw.FlexColumnWidth(1.5) },
+                columnWidths: {
+                  0: pw.FlexColumnWidth(2),
+                  1: pw.FlexColumnWidth(1.5)
+                },
                 children: [
-                  _pdfMetricRow('Overall Uptime', '${device.uptime.toStringAsFixed(1)}%'),
+                  _pdfMetricRow(
+                      'Overall Uptime', '${device.uptime.toStringAsFixed(1)}%'),
                   _pdfMetricRow('Health Grade', device.healthGrade),
                 ],
               ));
-              if (device.dailyUptimeData != null && device.dailyUptimeData!.isNotEmpty) {
+              if (device.dailyUptimeData != null &&
+                  device.dailyUptimeData!.isNotEmpty) {
                 content.add(pw.SizedBox(height: 6));
                 content.add(pw.Table(
                   border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -7929,13 +7413,15 @@ class _ReportsState extends State<Reports> {
                       ],
                     ),
                     ...device.dailyUptimeData!.take(31).map((d) => pw.TableRow(
-                      children: [
-                        _buildPdfTableCell('${d['date'] ?? ''}'),
-                        _buildPdfTableCell('${(d['uptime_percentage'] ?? 0).toStringAsFixed(1)}%'),
-                        _buildPdfTableCell('${d['compressor_on_count'] ?? 0}'),
-                        _buildPdfTableCell('${d['total_readings'] ?? 0}'),
-                      ],
-                    )),
+                          children: [
+                            _buildPdfTableCell('${d['date'] ?? ''}'),
+                            _buildPdfTableCell(
+                                '${(d['uptime_percentage'] ?? 0).toStringAsFixed(1)}%'),
+                            _buildPdfTableCell(
+                                '${d['compressor_on_count'] ?? 0}'),
+                            _buildPdfTableCell('${d['total_readings'] ?? 0}'),
+                          ],
+                        )),
                   ],
                 ));
               }
@@ -7947,7 +7433,9 @@ class _ReportsState extends State<Reports> {
             // Fallback to temperature-only report
             content.add(pw.Text('Temperature Analysis', style: sectionStyle));
             content.add(pw.SizedBox(height: 8));
-            content.add(pw.Text('Devices Analyzed: ${lastGeneratedTempReportData!.length}', style: subStyle));
+            content.add(pw.Text(
+                'Devices Analyzed: ${lastGeneratedTempReportData!.length}',
+                style: subStyle));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -7963,20 +7451,24 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...lastGeneratedTempReportData!.take(30).map((d) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell(d.deviceName),
-                    _buildPdfTableCell('${d.avgTemperature.toStringAsFixed(1)}'),
-                    _buildPdfTableCell('${d.minTemperature.toStringAsFixed(1)}'),
-                    _buildPdfTableCell('${d.maxTemperature.toStringAsFixed(1)}'),
-                    _buildPdfTableCell('${d.totalReadings}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell(d.deviceName),
+                        _buildPdfTableCell(
+                            '${d.avgTemperature.toStringAsFixed(1)}'),
+                        _buildPdfTableCell(
+                            '${d.minTemperature.toStringAsFixed(1)}'),
+                        _buildPdfTableCell(
+                            '${d.maxTemperature.toStringAsFixed(1)}'),
+                        _buildPdfTableCell('${d.totalReadings}'),
+                      ],
+                    )),
               ],
             ));
           } else {
             content.add(pw.Center(
-              child: pw.Text('No report data available. Please generate a report first.',
-                style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600)),
+              child: pw.Text(
+                  'No report data available. Please generate a report first.',
+                  style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600)),
             ));
           }
 
@@ -7992,7 +7484,8 @@ class _ReportsState extends State<Reports> {
       children: [
         pw.Container(
           padding: pw.EdgeInsets.all(6),
-          child: pw.Text(label, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+          child: pw.Text(label,
+              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
         ),
         pw.Container(
           padding: pw.EdgeInsets.all(6),
@@ -8023,7 +7516,8 @@ class _ReportsState extends State<Reports> {
         header: (context) => pw.Container(
           padding: pw.EdgeInsets.only(bottom: 12),
           decoration: pw.BoxDecoration(
-            border: pw.Border(bottom: pw.BorderSide(width: 2, color: PdfColors.orange800)),
+            border: pw.Border(
+                bottom: pw.BorderSide(width: 2, color: PdfColors.orange800)),
           ),
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -8031,17 +7525,27 @@ class _ReportsState extends State<Reports> {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('Artic Sentinel', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.orange800)),
+                  pw.Text('Artic Sentinel',
+                      style: pw.TextStyle(
+                          fontSize: 20,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.orange800)),
                   pw.SizedBox(height: 4),
-                  pw.Text('Alerts Summary Report', style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                  pw.Text('Alerts Summary Report',
+                      style:
+                          pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                 ],
               ),
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
-                  pw.Text('Generated: ${dateFormat.format(now)}', style: pw.TextStyle(fontSize: 9)),
-                  pw.Text('Period: $startDate to $endDate', style: pw.TextStyle(fontSize: 9)),
-                  pw.Text('Range: $period', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                  pw.Text('Generated: ${dateFormat.format(now)}',
+                      style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Period: $startDate to $endDate',
+                      style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Range: $period',
+                      style:
+                          pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
                 ],
               ),
             ],
@@ -8051,15 +7555,16 @@ class _ReportsState extends State<Reports> {
           alignment: pw.Alignment.centerRight,
           margin: pw.EdgeInsets.only(top: 8),
           child: pw.Text('Page ${context.pageNumber} of ${context.pagesCount}',
-            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+              style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
         ),
         build: (context) {
           List<pw.Widget> content = [];
 
           if (data == null) {
             content.add(pw.Center(
-              child: pw.Text('No alerts data available. Please generate the report first.',
-                style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600)),
+              child: pw.Text(
+                  'No alerts data available. Please generate the report first.',
+                  style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600)),
             ));
             return content;
           }
@@ -8068,11 +7573,17 @@ class _ReportsState extends State<Reports> {
 
           // Summary Statistics
           content.add(pw.Text('Summary Statistics',
-            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.orange900)));
+              style: pw.TextStyle(
+                  fontSize: 14,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.orange900)));
           content.add(pw.SizedBox(height: 8));
           content.add(pw.Table(
             border: pw.TableBorder.all(color: PdfColors.grey300),
-            columnWidths: { 0: pw.FlexColumnWidth(2.5), 1: pw.FlexColumnWidth(1.5) },
+            columnWidths: {
+              0: pw.FlexColumnWidth(2.5),
+              1: pw.FlexColumnWidth(1.5)
+            },
             children: [
               pw.TableRow(
                 decoration: pw.BoxDecoration(color: PdfColors.orange50),
@@ -8083,12 +7594,17 @@ class _ReportsState extends State<Reports> {
               ),
               _pdfMetricRow('Total Alerts', '${stats['total_alerts'] ?? 0}'),
               _pdfMetricRow('Active Alerts', '${stats['active_alerts'] ?? 0}'),
-              _pdfMetricRow('Resolved Alerts', '${stats['resolved_alerts'] ?? 0}'),
-              _pdfMetricRow('Acknowledged Alerts', '${stats['acknowledged_alerts'] ?? 0}'),
-              _pdfMetricRow('Critical Count', '${stats['critical_count'] ?? 0}'),
+              _pdfMetricRow(
+                  'Resolved Alerts', '${stats['resolved_alerts'] ?? 0}'),
+              _pdfMetricRow('Acknowledged Alerts',
+                  '${stats['acknowledged_alerts'] ?? 0}'),
+              _pdfMetricRow(
+                  'Critical Count', '${stats['critical_count'] ?? 0}'),
               _pdfMetricRow('High Count', '${stats['high_count'] ?? 0}'),
-              _pdfMetricRow('Avg Resolution Time', '${(stats['avg_resolution_time_minutes'] ?? 0).toStringAsFixed(1)} min'),
-              _pdfMetricRow('Affected Devices', '${stats['affected_devices'] ?? 0}'),
+              _pdfMetricRow('Avg Resolution Time',
+                  '${(stats['avg_resolution_time_minutes'] ?? 0).toStringAsFixed(1)} min'),
+              _pdfMetricRow(
+                  'Affected Devices', '${stats['affected_devices'] ?? 0}'),
             ],
           ));
           content.add(pw.SizedBox(height: 16));
@@ -8096,7 +7612,10 @@ class _ReportsState extends State<Reports> {
           // Alerts by Severity
           if (data.alertsBySeverity.isNotEmpty) {
             content.add(pw.Text('Alerts by Severity',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.orange900)));
+                style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.orange900)));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -8112,14 +7631,15 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...data.alertsBySeverity.map((s) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell('${s['severity'] ?? ''}'),
-                    _buildPdfTableCell('${s['count'] ?? 0}'),
-                    _buildPdfTableCell('${s['resolved_count'] ?? 0}'),
-                    _buildPdfTableCell('${s['active_count'] ?? 0}'),
-                    _buildPdfTableCell('${(s['avg_resolution_time_minutes'] ?? 0).toStringAsFixed(1)}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell('${s['severity'] ?? ''}'),
+                        _buildPdfTableCell('${s['count'] ?? 0}'),
+                        _buildPdfTableCell('${s['resolved_count'] ?? 0}'),
+                        _buildPdfTableCell('${s['active_count'] ?? 0}'),
+                        _buildPdfTableCell(
+                            '${(s['avg_resolution_time_minutes'] ?? 0).toStringAsFixed(1)}'),
+                      ],
+                    )),
               ],
             ));
             content.add(pw.SizedBox(height: 16));
@@ -8128,7 +7648,10 @@ class _ReportsState extends State<Reports> {
           // Alerts by Device
           if (data.alertsByDevice.isNotEmpty) {
             content.add(pw.Text('Alerts by Device',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.orange900)));
+                style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.orange900)));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -8144,14 +7667,15 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...data.alertsByDevice.take(20).map((d) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell('${d['device_name'] ?? d['device_id'] ?? ''}'),
-                    _buildPdfTableCell('${d['total_alerts'] ?? 0}'),
-                    _buildPdfTableCell('${d['critical_alerts'] ?? 0}'),
-                    _buildPdfTableCell('${d['high_alerts'] ?? 0}'),
-                    _buildPdfTableCell('${d['active_alerts'] ?? 0}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell(
+                            '${d['device_name'] ?? d['device_id'] ?? ''}'),
+                        _buildPdfTableCell('${d['total_alerts'] ?? 0}'),
+                        _buildPdfTableCell('${d['critical_alerts'] ?? 0}'),
+                        _buildPdfTableCell('${d['high_alerts'] ?? 0}'),
+                        _buildPdfTableCell('${d['active_alerts'] ?? 0}'),
+                      ],
+                    )),
               ],
             ));
             content.add(pw.SizedBox(height: 16));
@@ -8160,7 +7684,10 @@ class _ReportsState extends State<Reports> {
           // Daily Trend
           if (data.dailyTrend.isNotEmpty) {
             content.add(pw.Text('Daily Alert Trend',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.orange900)));
+                style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.orange900)));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -8176,14 +7703,14 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...data.dailyTrend.take(31).map((d) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell('${d['date'] ?? ''}'),
-                    _buildPdfTableCell('${d['total_alerts'] ?? 0}'),
-                    _buildPdfTableCell('${d['critical_alerts'] ?? 0}'),
-                    _buildPdfTableCell('${d['high_alerts'] ?? 0}'),
-                    _buildPdfTableCell('${d['resolved_alerts'] ?? 0}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell('${d['date'] ?? ''}'),
+                        _buildPdfTableCell('${d['total_alerts'] ?? 0}'),
+                        _buildPdfTableCell('${d['critical_alerts'] ?? 0}'),
+                        _buildPdfTableCell('${d['high_alerts'] ?? 0}'),
+                        _buildPdfTableCell('${d['resolved_alerts'] ?? 0}'),
+                      ],
+                    )),
               ],
             ));
             content.add(pw.SizedBox(height: 16));
@@ -8192,7 +7719,10 @@ class _ReportsState extends State<Reports> {
           // Recent Active Alerts
           if (data.recentActiveAlerts.isNotEmpty) {
             content.add(pw.Text('Recent Active Alerts',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.orange900)));
+                style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.orange900)));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -8207,13 +7737,14 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...data.recentActiveAlerts.take(10).map((a) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell('${a['alert_type'] ?? ''}'),
-                    _buildPdfTableCell('${a['severity'] ?? ''}'),
-                    _buildPdfTableCell('${a['triggered_at'] ?? a['created_at'] ?? ''}'),
-                    _buildPdfTableCell('${a['status'] ?? ''}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell('${a['alert_type'] ?? ''}'),
+                        _buildPdfTableCell('${a['severity'] ?? ''}'),
+                        _buildPdfTableCell(
+                            '${a['triggered_at'] ?? a['created_at'] ?? ''}'),
+                        _buildPdfTableCell('${a['status'] ?? ''}'),
+                      ],
+                    )),
               ],
             ));
           }
@@ -8246,7 +7777,8 @@ class _ReportsState extends State<Reports> {
         header: (context) => pw.Container(
           padding: pw.EdgeInsets.only(bottom: 12),
           decoration: pw.BoxDecoration(
-            border: pw.Border(bottom: pw.BorderSide(width: 2, color: PdfColors.purple800)),
+            border: pw.Border(
+                bottom: pw.BorderSide(width: 2, color: PdfColors.purple800)),
           ),
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -8254,17 +7786,27 @@ class _ReportsState extends State<Reports> {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('Artic Sentinel', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.purple800)),
+                  pw.Text('Artic Sentinel',
+                      style: pw.TextStyle(
+                          fontSize: 20,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.purple800)),
                   pw.SizedBox(height: 4),
-                  pw.Text('Maintenance Report', style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                  pw.Text('Maintenance Report',
+                      style:
+                          pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                 ],
               ),
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
-                  pw.Text('Generated: ${dateFormat.format(now)}', style: pw.TextStyle(fontSize: 9)),
-                  pw.Text('Period: $startDate to $endDate', style: pw.TextStyle(fontSize: 9)),
-                  pw.Text('Range: $period', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                  pw.Text('Generated: ${dateFormat.format(now)}',
+                      style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Period: $startDate to $endDate',
+                      style: pw.TextStyle(fontSize: 9)),
+                  pw.Text('Range: $period',
+                      style:
+                          pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
                 ],
               ),
             ],
@@ -8274,15 +7816,16 @@ class _ReportsState extends State<Reports> {
           alignment: pw.Alignment.centerRight,
           margin: pw.EdgeInsets.only(top: 8),
           child: pw.Text('Page ${context.pageNumber} of ${context.pagesCount}',
-            style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+              style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
         ),
         build: (context) {
           List<pw.Widget> content = [];
 
           if (data == null) {
             content.add(pw.Center(
-              child: pw.Text('No maintenance data available. Please generate the report first.',
-                style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600)),
+              child: pw.Text(
+                  'No maintenance data available. Please generate the report first.',
+                  style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600)),
             ));
             return content;
           }
@@ -8291,11 +7834,17 @@ class _ReportsState extends State<Reports> {
 
           // Summary Statistics
           content.add(pw.Text('Summary Statistics',
-            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+              style: pw.TextStyle(
+                  fontSize: 14,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.purple900)));
           content.add(pw.SizedBox(height: 8));
           content.add(pw.Table(
             border: pw.TableBorder.all(color: PdfColors.grey300),
-            columnWidths: { 0: pw.FlexColumnWidth(2.5), 1: pw.FlexColumnWidth(1.5) },
+            columnWidths: {
+              0: pw.FlexColumnWidth(2.5),
+              1: pw.FlexColumnWidth(1.5)
+            },
             children: [
               pw.TableRow(
                 decoration: pw.BoxDecoration(color: PdfColors.purple50),
@@ -8304,16 +7853,21 @@ class _ReportsState extends State<Reports> {
                   _buildPdfTableHeader('Value'),
                 ],
               ),
-              _pdfMetricRow('Total Maintenance', '${stats['total_maintenance'] ?? 0}'),
+              _pdfMetricRow(
+                  'Total Maintenance', '${stats['total_maintenance'] ?? 0}'),
               _pdfMetricRow('Completed', '${stats['completed_count'] ?? 0}'),
-              _pdfMetricRow('In Progress', '${stats['in_progress_count'] ?? 0}'),
+              _pdfMetricRow(
+                  'In Progress', '${stats['in_progress_count'] ?? 0}'),
               _pdfMetricRow('Scheduled', '${stats['scheduled_count'] ?? 0}'),
               _pdfMetricRow('Overdue', '${stats['overdue_count'] ?? 0}'),
               _pdfMetricRow('Cancelled', '${stats['cancelled_count'] ?? 0}'),
-              _pdfMetricRow('Completion Rate', '${stats['completion_rate'] ?? 0}%'),
-              _pdfMetricRow('Avg Duration', '${stats['avg_duration_hours'] ?? 0} hrs'),
+              _pdfMetricRow(
+                  'Completion Rate', '${stats['completion_rate'] ?? 0}%'),
+              _pdfMetricRow(
+                  'Avg Duration', '${stats['avg_duration_hours'] ?? 0} hrs'),
               _pdfMetricRow('Total Cost', '\$${stats['total_cost'] ?? 0}'),
-              _pdfMetricRow('Devices Serviced', '${stats['devices_serviced'] ?? 0}'),
+              _pdfMetricRow(
+                  'Devices Serviced', '${stats['devices_serviced'] ?? 0}'),
             ],
           ));
           content.add(pw.SizedBox(height: 16));
@@ -8321,7 +7875,10 @@ class _ReportsState extends State<Reports> {
           // Maintenance by Type
           if (data.maintenanceByType.isNotEmpty) {
             content.add(pw.Text('Maintenance by Type',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+                style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.purple900)));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -8337,14 +7894,14 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...data.maintenanceByType.map((t) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell('${t['maintenance_type'] ?? ''}'),
-                    _buildPdfTableCell('${t['category'] ?? ''}'),
-                    _buildPdfTableCell('${t['count'] ?? 0}'),
-                    _buildPdfTableCell('${t['completed'] ?? 0}'),
-                    _buildPdfTableCell('${t['overdue'] ?? 0}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell('${t['maintenance_type'] ?? ''}'),
+                        _buildPdfTableCell('${t['category'] ?? ''}'),
+                        _buildPdfTableCell('${t['count'] ?? 0}'),
+                        _buildPdfTableCell('${t['completed'] ?? 0}'),
+                        _buildPdfTableCell('${t['overdue'] ?? 0}'),
+                      ],
+                    )),
               ],
             ));
             content.add(pw.SizedBox(height: 16));
@@ -8353,7 +7910,10 @@ class _ReportsState extends State<Reports> {
           // Maintenance by Device
           if (data.maintenanceByDevice.isNotEmpty) {
             content.add(pw.Text('Maintenance by Device',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+                style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.purple900)));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -8369,14 +7929,14 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...data.maintenanceByDevice.take(20).map((d) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell('${d['device_name'] ?? ''}'),
-                    _buildPdfTableCell('${d['maintenance_count'] ?? 0}'),
-                    _buildPdfTableCell('${d['completed_count'] ?? 0}'),
-                    _buildPdfTableCell('${d['overdue_count'] ?? 0}'),
-                    _buildPdfTableCell('\$${d['avg_cost'] ?? 0}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell('${d['device_name'] ?? ''}'),
+                        _buildPdfTableCell('${d['maintenance_count'] ?? 0}'),
+                        _buildPdfTableCell('${d['completed_count'] ?? 0}'),
+                        _buildPdfTableCell('${d['overdue_count'] ?? 0}'),
+                        _buildPdfTableCell('\$${d['avg_cost'] ?? 0}'),
+                      ],
+                    )),
               ],
             ));
             content.add(pw.SizedBox(height: 16));
@@ -8385,7 +7945,10 @@ class _ReportsState extends State<Reports> {
           // Maintenance by Priority
           if (data.maintenanceByPriority.isNotEmpty) {
             content.add(pw.Text('Maintenance by Priority',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+                style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.purple900)));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -8400,13 +7963,13 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...data.maintenanceByPriority.map((p) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell('${p['priority'] ?? ''}'),
-                    _buildPdfTableCell('${p['count'] ?? 0}'),
-                    _buildPdfTableCell('${p['completed'] ?? 0}'),
-                    _buildPdfTableCell('${p['avg_duration'] ?? 0}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell('${p['priority'] ?? ''}'),
+                        _buildPdfTableCell('${p['count'] ?? 0}'),
+                        _buildPdfTableCell('${p['completed'] ?? 0}'),
+                        _buildPdfTableCell('${p['avg_duration'] ?? 0}'),
+                      ],
+                    )),
               ],
             ));
             content.add(pw.SizedBox(height: 16));
@@ -8415,7 +7978,10 @@ class _ReportsState extends State<Reports> {
           // Upcoming Maintenance
           if (data.upcomingMaintenance.isNotEmpty) {
             content.add(pw.Text('Upcoming Scheduled Maintenance',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+                style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.purple900)));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -8430,13 +7996,13 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...data.upcomingMaintenance.take(10).map((m) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell('${m['device_name'] ?? ''}'),
-                    _buildPdfTableCell('${m['maintenance_type'] ?? ''}'),
-                    _buildPdfTableCell('${m['scheduled_date'] ?? ''}'),
-                    _buildPdfTableCell('${m['priority'] ?? ''}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell('${m['device_name'] ?? ''}'),
+                        _buildPdfTableCell('${m['maintenance_type'] ?? ''}'),
+                        _buildPdfTableCell('${m['scheduled_date'] ?? ''}'),
+                        _buildPdfTableCell('${m['priority'] ?? ''}'),
+                      ],
+                    )),
               ],
             ));
             content.add(pw.SizedBox(height: 16));
@@ -8445,7 +8011,10 @@ class _ReportsState extends State<Reports> {
           // Overdue Maintenance
           if (data.overdueMaintenance.isNotEmpty) {
             content.add(pw.Text('Overdue Maintenance',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.red900)));
+                style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.red900)));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -8461,14 +8030,14 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...data.overdueMaintenance.take(10).map((m) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell('${m['device_name'] ?? ''}'),
-                    _buildPdfTableCell('${m['maintenance_type'] ?? ''}'),
-                    _buildPdfTableCell('${m['scheduled_date'] ?? ''}'),
-                    _buildPdfTableCell('${m['priority'] ?? ''}'),
-                    _buildPdfTableCell('${m['days_overdue'] ?? ''}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell('${m['device_name'] ?? ''}'),
+                        _buildPdfTableCell('${m['maintenance_type'] ?? ''}'),
+                        _buildPdfTableCell('${m['scheduled_date'] ?? ''}'),
+                        _buildPdfTableCell('${m['priority'] ?? ''}'),
+                        _buildPdfTableCell('${m['days_overdue'] ?? ''}'),
+                      ],
+                    )),
               ],
             ));
             content.add(pw.SizedBox(height: 16));
@@ -8477,7 +8046,10 @@ class _ReportsState extends State<Reports> {
           // Recent Completed
           if (data.recentCompleted.isNotEmpty) {
             content.add(pw.Text('Recently Completed Maintenance',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.purple900)));
+                style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.purple900)));
             content.add(pw.SizedBox(height: 8));
             content.add(pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
@@ -8493,14 +8065,14 @@ class _ReportsState extends State<Reports> {
                   ],
                 ),
                 ...data.recentCompleted.take(10).map((m) => pw.TableRow(
-                  children: [
-                    _buildPdfTableCell('${m['device_name'] ?? ''}'),
-                    _buildPdfTableCell('${m['maintenance_type'] ?? ''}'),
-                    _buildPdfTableCell('${m['priority'] ?? ''}'),
-                    _buildPdfTableCell('${m['outcome'] ?? ''}'),
-                    _buildPdfTableCell('\$${m['actual_cost'] ?? 'N/A'}'),
-                  ],
-                )),
+                      children: [
+                        _buildPdfTableCell('${m['device_name'] ?? ''}'),
+                        _buildPdfTableCell('${m['maintenance_type'] ?? ''}'),
+                        _buildPdfTableCell('${m['priority'] ?? ''}'),
+                        _buildPdfTableCell('${m['outcome'] ?? ''}'),
+                        _buildPdfTableCell('\$${m['actual_cost'] ?? 'N/A'}'),
+                      ],
+                    )),
               ],
             ));
           }
@@ -8512,7 +8084,8 @@ class _ReportsState extends State<Reports> {
     return pdf;
   }
 
-  void _showDownloadDialog(String reportName, {String? filePath, Future<String>? Function()? onGenerate}) {
+  void _showDownloadDialog(String reportName,
+      {String? filePath, Future<String>? Function()? onGenerate}) {
     double progress = 0.0;
     String status = 'Preparing download...';
     bool isCompleted = false;
@@ -8559,7 +8132,6 @@ class _ReportsState extends State<Reports> {
                     isCompleted = true;
                   });
                 } catch (e) {
-                  print('Error in download: $e');
                   if (context.mounted) {
                     setDialogState(() {
                       status = 'Error: $e';
@@ -8602,12 +8174,12 @@ class _ReportsState extends State<Reports> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            backgroundColor: Colors.white,
+            backgroundColor: Tone.bg(Colors.white),
             child: Container(
               padding: EdgeInsets.all(24),
               constraints: BoxConstraints(maxWidth: 500),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -8620,7 +8192,7 @@ class _ReportsState extends State<Reports> {
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: isCompleted
-                              ? Colors.green.withValues(alpha: 0.1)
+                              ? Tone.bg(Colors.green).withValues(alpha: 0.1)
                               : Constants.ctaColorLight.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -8629,7 +8201,7 @@ class _ReportsState extends State<Reports> {
                               ? CupertinoIcons.check_mark_circled
                               : CupertinoIcons.cloud_download,
                           color: isCompleted
-                              ? Colors.green
+                              ? Tone.fg(Colors.green)
                               : Constants.ctaColorLight,
                           size: 24,
                         ),
@@ -8646,14 +8218,14 @@ class _ReportsState extends State<Reports> {
                               style: GoogleFonts.inter(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                color: Tone.fg(Colors.black87),
                               ),
                             ),
                             Text(
                               reportName,
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: Colors.black54,
+                                color: Tone.fg(Colors.black54),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -8676,7 +8248,7 @@ class _ReportsState extends State<Reports> {
                             status,
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Colors.black87,
+                              color: Tone.fg(Colors.black87),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -8696,10 +8268,10 @@ class _ReportsState extends State<Reports> {
                         child: LinearProgressIndicator(
                           value: progress,
                           minHeight: 10,
-                          backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                          backgroundColor: Tone.bg(Colors.grey).withValues(alpha: 0.2),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             isCompleted
-                                ? Colors.green
+                                ? Tone.fg(Colors.green)
                                 : Constants.ctaColorLight,
                           ),
                         ),
@@ -8712,7 +8284,7 @@ class _ReportsState extends State<Reports> {
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.05),
+                      color: Tone.bg(Colors.grey).withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -8720,7 +8292,7 @@ class _ReportsState extends State<Reports> {
                         Icon(
                           CupertinoIcons.doc_text,
                           size: 20,
-                          color: Colors.black54,
+                          color: Tone.fg(Colors.black54),
                         ),
                         SizedBox(width: 12),
                         Expanded(
@@ -8732,7 +8304,7 @@ class _ReportsState extends State<Reports> {
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
+                                  color: Tone.fg(Colors.black87),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -8742,7 +8314,7 @@ class _ReportsState extends State<Reports> {
                                 '2.4 MB • PDF Document',
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
-                                  color: Colors.black54,
+                                  color: Tone.fg(Colors.black54),
                                 ),
                               ),
                             ],
@@ -8757,10 +8329,10 @@ class _ReportsState extends State<Reports> {
                     Container(
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
+                        color: Tone.bg(Colors.green).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Colors.green.withValues(alpha: 0.3),
+                          color: Tone.bg(Colors.green).withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -8768,7 +8340,7 @@ class _ReportsState extends State<Reports> {
                           Icon(
                             CupertinoIcons.checkmark_alt_circle,
                             size: 20,
-                            color: Colors.green,
+                            color: Tone.fg(Colors.green),
                           ),
                           SizedBox(width: 12),
                           Expanded(
@@ -8776,7 +8348,7 @@ class _ReportsState extends State<Reports> {
                               'File saved to Downloads folder',
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: Colors.green.shade700,
+                                color: Tone.fg(Colors.green.shade700),
                               ),
                             ),
                           ),
@@ -8794,10 +8366,11 @@ class _ReportsState extends State<Reports> {
                           child: TextButton(
                             style: TextButton.styleFrom(
                               backgroundColor:
-                                  Colors.grey.withValues(alpha: 0.1),
+                                  Tone.bg(Colors.grey).withValues(alpha: 0.1),
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             onPressed: () {
@@ -8807,7 +8380,7 @@ class _ReportsState extends State<Reports> {
                               'Cancel',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: Colors.black87,
+                                color: Tone.fg(Colors.black87),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -8818,10 +8391,11 @@ class _ReportsState extends State<Reports> {
                           child: TextButton(
                             style: TextButton.styleFrom(
                               backgroundColor:
-                                  Colors.grey.withValues(alpha: 0.1),
+                                  Tone.bg(Colors.grey).withValues(alpha: 0.1),
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             onPressed: () => Navigator.pop(context),
@@ -8829,7 +8403,7 @@ class _ReportsState extends State<Reports> {
                               'Close',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: Colors.black87,
+                                color: Tone.fg(Colors.black87),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -8842,7 +8416,8 @@ class _ReportsState extends State<Reports> {
                               backgroundColor: Constants.ctaColorLight,
                               padding: EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(isPhoneLayout(context) ? 32 : 8),
+                                borderRadius: BorderRadius.circular(
+                                    isPhoneLayout(context) ? 32 : 8),
                               ),
                             ),
                             onPressed: () async {
@@ -8852,31 +8427,34 @@ class _ReportsState extends State<Reports> {
                                     // For web, download the file again or show in new tab
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('File has been downloaded to your Downloads folder'),
-                                        backgroundColor: Colors.blue,
+                                        content: Text(
+                                            'File has been downloaded to your Downloads folder'),
+                                        backgroundColor: Tone.bg(Colors.blue),
                                       ),
                                     );
                                   } else {
                                     // For desktop/mobile, open the file
-                                    final result = await OpenFile.open(savedFilePath);
+                                    final result =
+                                        await OpenFile.open(savedFilePath);
                                     if (result.type != ResultType.done) {
                                       if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
                                           SnackBar(
-                                            content: Text('Could not open file: ${result.message}'),
-                                            backgroundColor: Colors.orange,
+                                            content: Text(
+                                                'Could not open file: ${result.message}'),
+                                            backgroundColor: Tone.bg(Colors.orange),
                                           ),
                                         );
                                       }
                                     }
                                   }
                                 } catch (e) {
-                                  print('Error opening file: $e');
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text('Error opening file: $e'),
-                                        backgroundColor: Colors.red,
+                                        backgroundColor: Tone.bg(Colors.red),
                                       ),
                                     );
                                   }
@@ -8885,7 +8463,7 @@ class _ReportsState extends State<Reports> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text('File path not available'),
-                                    backgroundColor: Colors.orange,
+                                    backgroundColor: Tone.bg(Colors.orange),
                                   ),
                                 );
                               }
@@ -8894,7 +8472,7 @@ class _ReportsState extends State<Reports> {
                               'Open File',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -8919,17 +8497,19 @@ class _ReportsState extends State<Reports> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Container(
-      decoration: mobileFlatDecoration(context, BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFF8FAFC),
-            Color(0xFFEEF2FF),
-            Color(0xFFF8FAFC),
-          ],
-        ),
-      )),
+      decoration: mobileFlatDecoration(
+          context,
+          BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Tone.auto(Color(0xFFF8FAFC)),
+                Tone.auto(Color(0xFFEEF2FF)),
+                Tone.auto(Color(0xFFF8FAFC)),
+              ],
+            ),
+          )),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -8937,17 +8517,19 @@ class _ReportsState extends State<Reports> {
             // Modern Header with Gradient
             Container(
               width: double.infinity,
-              decoration: mobileFlatDecoration(context, BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF1E3A5F),
-                    Color(0xFF2563EB),
-                    Color(0xFF3B82F6),
-                  ],
-                ),
-              )),
+              decoration: mobileFlatDecoration(
+                  context,
+                  BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Tone.auto(Color(0xFF1E3A5F)),
+                        Tone.auto(Color(0xFF2563EB)),
+                        Tone.auto(Color(0xFF3B82F6)),
+                      ],
+                    ),
+                  )),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   isMobile ? 20 : 32,
@@ -8970,7 +8552,7 @@ class _ReportsState extends State<Reports> {
                                 "Reports Center",
                                 style: GoogleFonts.inter(
                                   fontSize: isMobile ? 28 : 36,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: -1,
                                 ),
@@ -8980,7 +8562,7 @@ class _ReportsState extends State<Reports> {
                                 "Generate, analyze, and export comprehensive system reports",
                                 style: GoogleFonts.inter(
                                   fontSize: isMobile ? 14 : 16,
-                                  color: Colors.white.withValues(alpha: 0.85),
+                                  color: Tone.fg(Colors.white).withValues(alpha: 0.85),
                                   fontWeight: FontWeight.w400,
                                   height: 1.5,
                                 ),
@@ -8991,12 +8573,13 @@ class _ReportsState extends State<Reports> {
                         if (!isMobile) ...[
                           SizedBox(width: 24),
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 10),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.15),
+                              color: Tone.bg(Colors.white).withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2),
+                                color: Tone.bg(Colors.white).withValues(alpha: 0.2),
                               ),
                             ),
                             child: Row(
@@ -9005,7 +8588,7 @@ class _ReportsState extends State<Reports> {
                                 Icon(
                                   CupertinoIcons.calendar,
                                   size: 18,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                 ),
                                 SizedBox(width: 10),
                                 DropdownButtonHideUnderline(
@@ -9013,13 +8596,13 @@ class _ReportsState extends State<Reports> {
                                     value: selectedPeriod,
                                     icon: Icon(
                                       Icons.keyboard_arrow_down_rounded,
-                                      color: Colors.white,
+                                      color: Tone.fg(Colors.white),
                                       size: 20,
                                     ),
-                                    dropdownColor: Color(0xFF1E3A5F),
+                                    dropdownColor: Tone.bg(Color(0xFF1E3A5F)),
                                     style: GoogleFonts.inter(
                                       fontSize: 14,
-                                      color: Colors.white,
+                                      color: Tone.fg(Colors.white),
                                       fontWeight: FontWeight.w500,
                                     ),
                                     items: periods.map((String period) {
@@ -9046,12 +8629,13 @@ class _ReportsState extends State<Reports> {
                     if (isMobile) ...[
                       SizedBox(height: 16),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: Tone.bg(Colors.white).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: Tone.bg(Colors.white).withValues(alpha: 0.2),
                           ),
                         ),
                         child: Row(
@@ -9060,7 +8644,7 @@ class _ReportsState extends State<Reports> {
                             Icon(
                               CupertinoIcons.calendar,
                               size: 16,
-                              color: Colors.white,
+                              color: Tone.fg(Colors.white),
                             ),
                             SizedBox(width: 8),
                             DropdownButtonHideUnderline(
@@ -9068,13 +8652,13 @@ class _ReportsState extends State<Reports> {
                                 value: selectedPeriod,
                                 icon: Icon(
                                   Icons.keyboard_arrow_down_rounded,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   size: 18,
                                 ),
-                                dropdownColor: Color(0xFF1E3A5F),
+                                dropdownColor: Tone.bg(Color(0xFF1E3A5F)),
                                 style: GoogleFonts.inter(
                                   fontSize: 13,
-                                  color: Colors.white,
+                                  color: Tone.fg(Colors.white),
                                   fontWeight: FontWeight.w500,
                                 ),
                                 items: periods.map((String period) {
@@ -9111,8 +8695,8 @@ class _ReportsState extends State<Reports> {
                         children: [
                           _buildModernStatCard(
                             icon: CupertinoIcons.doc_text_fill,
-                            iconColor: Color(0xFF3B82F6),
-                            bgGradient: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                            iconColor: Tone.fg(Color(0xFF3B82F6)),
+                            bgGradient: [Tone.auto(Color(0xFF3B82F6)), Tone.auto(Color(0xFF2563EB))],
                             value: '${generatedReports.length}',
                             label: 'Reports Generated',
                             onTap: _showGeneratedReportsDialog,
@@ -9120,8 +8704,8 @@ class _ReportsState extends State<Reports> {
                           SizedBox(height: 12),
                           _buildModernStatCard(
                             icon: CupertinoIcons.arrow_down_circle_fill,
-                            iconColor: Color(0xFF10B981),
-                            bgGradient: [Color(0xFF10B981), Color(0xFF059669)],
+                            iconColor: Tone.fg(Color(0xFF10B981)),
+                            bgGradient: [Tone.auto(Color(0xFF10B981)), Tone.auto(Color(0xFF059669))],
                             value: '${downloadedReports.length}',
                             label: 'Total Downloads',
                             onTap: _showDownloadsDialog,
@@ -9129,8 +8713,8 @@ class _ReportsState extends State<Reports> {
                           SizedBox(height: 12),
                           _buildModernStatCard(
                             icon: CupertinoIcons.clock_fill,
-                            iconColor: Color(0xFF8B5CF6),
-                            bgGradient: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                            iconColor: Tone.fg(Color(0xFF8B5CF6)),
+                            bgGradient: [Tone.auto(Color(0xFF8B5CF6)), Tone.auto(Color(0xFF7C3AED))],
                             value: '${scheduledReports.length}',
                             label: 'Scheduled',
                             onTap: _showScheduledReportsDialog,
@@ -9142,8 +8726,11 @@ class _ReportsState extends State<Reports> {
                           Expanded(
                             child: _buildModernStatCard(
                               icon: CupertinoIcons.doc_text_fill,
-                              iconColor: Color(0xFF3B82F6),
-                              bgGradient: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                              iconColor: Tone.fg(Color(0xFF3B82F6)),
+                              bgGradient: [
+                                Tone.auto(Color(0xFF3B82F6)),
+                                Tone.auto(Color(0xFF2563EB))
+                              ],
                               value: '${generatedReports.length}',
                               label: 'Reports Generated',
                               onTap: _showGeneratedReportsDialog,
@@ -9153,8 +8740,11 @@ class _ReportsState extends State<Reports> {
                           Expanded(
                             child: _buildModernStatCard(
                               icon: CupertinoIcons.arrow_down_circle_fill,
-                              iconColor: Color(0xFF10B981),
-                              bgGradient: [Color(0xFF10B981), Color(0xFF059669)],
+                              iconColor: Tone.fg(Color(0xFF10B981)),
+                              bgGradient: [
+                                Tone.auto(Color(0xFF10B981)),
+                                Tone.auto(Color(0xFF059669))
+                              ],
                               value: '${downloadedReports.length}',
                               label: 'Total Downloads',
                               onTap: _showDownloadsDialog,
@@ -9164,8 +8754,11 @@ class _ReportsState extends State<Reports> {
                           Expanded(
                             child: _buildModernStatCard(
                               icon: CupertinoIcons.clock_fill,
-                              iconColor: Color(0xFF8B5CF6),
-                              bgGradient: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                              iconColor: Tone.fg(Color(0xFF8B5CF6)),
+                              bgGradient: [
+                                Tone.auto(Color(0xFF8B5CF6)),
+                                Tone.auto(Color(0xFF7C3AED))
+                              ],
                               value: '${scheduledReports.length}',
                               label: 'Scheduled',
                               onTap: _showScheduledReportsDialog,
@@ -9199,7 +8792,7 @@ class _ReportsState extends State<Reports> {
                             style: GoogleFonts.inter(
                               fontSize: isMobile ? 20 : 24,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E293B),
+                              color: Tone.fg(Color(0xFF1E293B)),
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -9208,7 +8801,7 @@ class _ReportsState extends State<Reports> {
                             "Select a report type to get started",
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Color(0xFF64748B),
+                              color: Tone.fg(Color(0xFF64748B)),
                             ),
                           ),
                         ],
@@ -9222,7 +8815,8 @@ class _ReportsState extends State<Reports> {
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: isMobile ? 1 : (screenWidth > 1200 ? 3 : 2),
+                      crossAxisCount:
+                          isMobile ? 1 : (screenWidth > 1200 ? 3 : 2),
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                       childAspectRatio: isMobile ? 2.8 : 2.2,
@@ -9236,7 +8830,9 @@ class _ReportsState extends State<Reports> {
                       return _buildModernReportTypeCard(
                         reportType: reportType,
                         isGenerating: isGeneratingThis,
-                        onTap: isGenerating ? null : () => _generateReport(reportType),
+                        onTap: isGenerating
+                            ? null
+                            : () => _generateReport(reportType),
                       );
                     },
                   ),
@@ -9254,7 +8850,7 @@ class _ReportsState extends State<Reports> {
                             style: GoogleFonts.inter(
                               fontSize: isMobile ? 20 : 24,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E293B),
+                              color: Tone.fg(Color(0xFF1E293B)),
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -9263,7 +8859,7 @@ class _ReportsState extends State<Reports> {
                             "Your recently generated reports",
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: Color(0xFF64748B),
+                              color: Tone.fg(Color(0xFF64748B)),
                             ),
                           ),
                         ],
@@ -9276,13 +8872,13 @@ class _ReportsState extends State<Reports> {
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF3B82F6),
+                              color: Tone.fg(Color(0xFF3B82F6)),
                             ),
                           ),
                           label: Icon(
                             Icons.arrow_forward_rounded,
                             size: 18,
-                            color: Color(0xFF3B82F6),
+                            color: Tone.fg(Color(0xFF3B82F6)),
                           ),
                         ),
                     ],
@@ -9292,11 +8888,11 @@ class _ReportsState extends State<Reports> {
                   // Modern Recent Reports Card
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Tone.bg(Colors.white),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Color(0xFF1E293B).withValues(alpha: 0.08),
+                          color: Tone.bg(Color(0xFF1E293B)).withValues(alpha: 0.08),
                           blurRadius: 24,
                           offset: Offset(0, 8),
                         ),
@@ -9315,7 +8911,7 @@ class _ReportsState extends State<Reports> {
                                       height: 40,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 3,
-                                        color: Color(0xFF3B82F6),
+                                        color: Tone.fg(Color(0xFF3B82F6)),
                                       ),
                                     ),
                                     SizedBox(height: 16),
@@ -9323,7 +8919,7 @@ class _ReportsState extends State<Reports> {
                                       'Loading reports...',
                                       style: GoogleFonts.inter(
                                         fontSize: 14,
-                                        color: Color(0xFF64748B),
+                                        color: Tone.fg(Color(0xFF64748B)),
                                       ),
                                     ),
                                   ],
@@ -9333,131 +8929,165 @@ class _ReportsState extends State<Reports> {
                           : _reportHistoryFailed
                               ? _buildReportHistoryError()
                               : downloadedReports.isEmpty
-                              ? Container(
-                                  padding: EdgeInsets.all(48),
-                                  child: Center(
-                                    child: Column(
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.all(20),
-                                          decoration: BoxDecoration(
-                                            color: Color(0xFFF1F5F9),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            FontAwesomeIcons.folderOpen,
-                                            size: 32,
-                                            color: Color(0xFF94A3B8),
-                                          ),
-                                        ),
-                                        SizedBox(height: 16),
-                                        Text(
-                                          'No reports yet',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF475569),
-                                          ),
-                                        ),
-                                        SizedBox(height: 8),
-                                        Text(
-                                          'Generate your first report using the options above',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            color: Color(0xFF94A3B8),
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                              : Column(
-                                  children: [
-                                    // Report items
-                                    ...() {
-                                      final startIndex = currentReportPage * reportsPerPage;
-                                      final endIndex = (startIndex + reportsPerPage).clamp(0, downloadedReports.length);
-                                      final paginatedReports = downloadedReports.sublist(startIndex, endIndex);
-
-                                      return paginatedReports.asMap().entries.map((entry) {
-                                        final index = entry.key;
-                                        final report = entry.value;
-                                        return Column(
+                                  ? Container(
+                                      padding: EdgeInsets.all(48),
+                                      child: Center(
+                                        child: Column(
                                           children: [
-                                            _buildModernReportItem(report),
-                                            if (index < paginatedReports.length - 1)
-                                              Divider(height: 1, color: Color(0xFFE2E8F0)),
-                                          ],
-                                        );
-                                      }).toList();
-                                    }(),
-
-                                    // Pagination controls
-                                    if (downloadedReports.length > reportsPerPage) ...[
-                                      Container(
-                                        padding: EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: Color(0xFFF8FAFC),
-                                          border: Border(
-                                            top: BorderSide(color: Color(0xFFE2E8F0)),
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              'Showing ${currentReportPage * reportsPerPage + 1}-${((currentReportPage + 1) * reportsPerPage).clamp(0, downloadedReports.length)} of ${downloadedReports.length}',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 13,
-                                                color: Color(0xFF64748B),
+                                            Container(
+                                              padding: EdgeInsets.all(20),
+                                              decoration: BoxDecoration(
+                                                color: Tone.bg(Color(0xFFF1F5F9)),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                FontAwesomeIcons.folderOpen,
+                                                size: 32,
+                                                color: Tone.fg(Color(0xFF94A3B8)),
                                               ),
                                             ),
-                                            Row(
-                                              children: [
-                                                _buildPaginationButton(
-                                                  icon: Icons.chevron_left_rounded,
-                                                  enabled: currentReportPage > 0,
-                                                  onTap: () {
-                                                    setState(() {
-                                                      currentReportPage--;
-                                                    });
-                                                  },
-                                                ),
-                                                SizedBox(width: 8),
-                                                Container(
-                                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                  decoration: BoxDecoration(
-                                                    color: Color(0xFF3B82F6).withValues(alpha: 0.1),
-                                                    borderRadius: BorderRadius.circular(6),
-                                                  ),
-                                                  child: Text(
-                                                    '${currentReportPage + 1} / ${(downloadedReports.length / reportsPerPage).ceil()}',
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 13,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Color(0xFF3B82F6),
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(width: 8),
-                                                _buildPaginationButton(
-                                                  icon: Icons.chevron_right_rounded,
-                                                  enabled: (currentReportPage + 1) * reportsPerPage < downloadedReports.length,
-                                                  onTap: () {
-                                                    setState(() {
-                                                      currentReportPage++;
-                                                    });
-                                                  },
-                                                ),
-                                              ],
+                                            SizedBox(height: 16),
+                                            Text(
+                                              'No reports yet',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                color: Tone.fg(Color(0xFF475569)),
+                                              ),
+                                            ),
+                                            SizedBox(height: 8),
+                                            Text(
+                                              'Generate your first report using the options above',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 14,
+                                                color: Tone.fg(Color(0xFF94A3B8)),
+                                              ),
+                                              textAlign: TextAlign.center,
                                             ),
                                           ],
                                         ),
                                       ),
-                                    ],
-                                  ],
-                                ),
+                                    )
+                                  : Column(
+                                      children: [
+                                        // Report items
+                                        ...() {
+                                          final startIndex = currentReportPage *
+                                              reportsPerPage;
+                                          final endIndex = (startIndex +
+                                                  reportsPerPage)
+                                              .clamp(
+                                                  0, downloadedReports.length);
+                                          final paginatedReports =
+                                              downloadedReports.sublist(
+                                                  startIndex, endIndex);
+
+                                          return paginatedReports
+                                              .asMap()
+                                              .entries
+                                              .map((entry) {
+                                            final index = entry.key;
+                                            final report = entry.value;
+                                            return Column(
+                                              children: [
+                                                _buildModernReportItem(report),
+                                                if (index <
+                                                    paginatedReports.length - 1)
+                                                  Divider(
+                                                      height: 1,
+                                                      color: Tone.bg(Color(0xFFE2E8F0))),
+                                              ],
+                                            );
+                                          }).toList();
+                                        }(),
+
+                                        // Pagination controls
+                                        if (downloadedReports.length >
+                                            reportsPerPage) ...[
+                                          Container(
+                                            padding: EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: Tone.bg(Color(0xFFF8FAFC)),
+                                              border: Border(
+                                                top: BorderSide(
+                                                    color: Tone.bg(Color(0xFFE2E8F0))),
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Showing ${currentReportPage * reportsPerPage + 1}-${((currentReportPage + 1) * reportsPerPage).clamp(0, downloadedReports.length)} of ${downloadedReports.length}',
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 13,
+                                                    color: Tone.fg(Color(0xFF64748B)),
+                                                  ),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    _buildPaginationButton(
+                                                      icon: Icons
+                                                          .chevron_left_rounded,
+                                                      enabled:
+                                                          currentReportPage > 0,
+                                                      onTap: () {
+                                                        setState(() {
+                                                          currentReportPage--;
+                                                        });
+                                                      },
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 12,
+                                                              vertical: 6),
+                                                      decoration: BoxDecoration(
+                                                        color: Tone.bg(Color(0xFF3B82F6))
+                                                            .withValues(
+                                                                alpha: 0.1),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        '${currentReportPage + 1} / ${(downloadedReports.length / reportsPerPage).ceil()}',
+                                                        style:
+                                                            GoogleFonts.inter(
+                                                          fontSize: 13,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color:
+                                                              Tone.fg(Color(0xFF3B82F6)),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    _buildPaginationButton(
+                                                      icon: Icons
+                                                          .chevron_right_rounded,
+                                                      enabled:
+                                                          (currentReportPage +
+                                                                      1) *
+                                                                  reportsPerPage <
+                                                              downloadedReports
+                                                                  .length,
+                                                      onTap: () {
+                                                        setState(() {
+                                                          currentReportPage++;
+                                                        });
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                     ),
                   ),
                   SizedBox(height: 24),
@@ -9480,7 +9110,8 @@ class _ReportsState extends State<Reports> {
         padding: const EdgeInsets.all(16),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const MobileScreenHeader(title: 'Reports', padding: EdgeInsets.fromLTRB(0, 0, 0, 16)),
+          const MobileScreenHeader(
+              title: 'Reports', padding: EdgeInsets.fromLTRB(0, 0, 0, 16)),
           DropdownButtonFormField<String>(
             initialValue: selectedPeriod,
             isExpanded: true,
@@ -9498,74 +9129,128 @@ class _ReportsState extends State<Reports> {
           GPanel(
             padding: const EdgeInsets.all(8),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(child: _phoneReportLibraryRow(context, 'Generated', '${generatedReports.length}', _showGeneratedReportsDialog)),
-              Expanded(child: _phoneReportLibraryRow(context, 'Downloads', _reportHistoryFailed || isLoadingReports ? '—' : '${downloadedReports.length}', _showDownloadsDialog)),
-              Expanded(child: _phoneReportLibraryRow(context, 'Scheduled', '${scheduledReports.length}', _showScheduledReportsDialog)),
+              Expanded(
+                  child: _phoneReportLibraryRow(
+                      context,
+                      'Generated',
+                      '${generatedReports.length}',
+                      _showGeneratedReportsDialog)),
+              Expanded(
+                  child: _phoneReportLibraryRow(
+                      context,
+                      'Downloads',
+                      _reportHistoryFailed || isLoadingReports
+                          ? '—'
+                          : '${downloadedReports.length}',
+                      _showDownloadsDialog)),
+              Expanded(
+                  child: _phoneReportLibraryRow(
+                      context,
+                      'Scheduled',
+                      '${scheduledReports.length}',
+                      _showScheduledReportsDialog)),
             ]),
           ),
           const SizedBox(height: 20),
-          Text('New report', style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
+          Text('New report',
+              style: gasTitle(context)
+                  .copyWith(fontSize: 14, fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
-          GPanel(padding: EdgeInsets.zero, child: Material(
-            type: MaterialType.transparency,
-            child: Column(children: [
-              for (final entry in reportTypes.asMap().entries) ...[
-                if (entry.key > 0) const Divider(height: 1, color: GasPalette.border),
-                InkWell(
-                  key: ValueKey('configure-report-${entry.value.id}'),
-                  onTap: isGenerating ? null : () => _generateReport(entry.value),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Icon(entry.value.icon, size: 18, color: GasPalette.ink2),
+          GPanel(
+              padding: EdgeInsets.zero,
+              child: Material(
+                type: MaterialType.transparency,
+                child: Column(children: [
+                  for (final entry in reportTypes.asMap().entries) ...[
+                    if (entry.key > 0)
+                      Divider(height: 1, color: GasPalette.border),
+                    InkWell(
+                      key: ValueKey('configure-report-${entry.value.id}'),
+                      onTap: isGenerating
+                          ? null
+                          : () => _generateReport(entry.value),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Icon(entry.value.icon,
+                                    size: 18, color: GasPalette.ink2),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                    Text(entry.value.name,
+                                        style: gasTitle(context).copyWith(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600)),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                        isGenerating &&
+                                                selectedReportType ==
+                                                    entry.value.id
+                                            ? 'Generating…'
+                                            : entry.value.description,
+                                        style: gasSmall(context).copyWith(
+                                            height: 1.4, fontSize: 11.5)),
+                                  ])),
+                              const SizedBox(width: 8),
+                              Icon(Icons.chevron_right_rounded,
+                                  size: 20, color: GasPalette.ink2),
+                            ]),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(entry.value.name, style: gasTitle(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 3),
-                        Text(isGenerating && selectedReportType == entry.value.id ? 'Generating…' : entry.value.description, style: gasSmall(context).copyWith(height: 1.4, fontSize: 11.5)),
-                      ])),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.chevron_right_rounded, size: 20, color: GasPalette.ink2),
-                    ]),
-                  ),
-                ),
-              ],
-            ]),
-          )),
+                    ),
+                  ],
+                ]),
+              )),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: Text('Recent reports', style: gasTitle(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600))),
+            Expanded(
+                child: Text('Recent reports',
+                    style: gasTitle(context)
+                        .copyWith(fontSize: 14, fontWeight: FontWeight.w600))),
             TextButton(
-              onPressed: _showDownloadsDialog,
-                child: const Text('View all')),
+                onPressed: _showDownloadsDialog, child: const Text('View all')),
           ]),
           const SizedBox(height: 8),
           if (isLoadingReports)
             GPanel(
                 child: Column(children: [
-              const CircularProgressIndicator(color: GasPalette.primary),
+              CircularProgressIndicator(color: GasPalette.primary),
               const SizedBox(height: 16),
               Text('Loading reports…', style: gasBody(context)),
             ]))
           else if (_reportHistoryFailed)
             GPanel(child: _buildReportHistoryError())
           else if (downloadedReports.isEmpty)
-            const GPanel(child: AppEmptyState(
-              kind: AppEmptyStateKind.records, compact: true,
+            const GPanel(
+                child: AppEmptyState(
+              kind: AppEmptyStateKind.records,
+              compact: true,
               title: 'No reports yet',
-              message: 'Create a report above to explore your device readings and activity.',
+              message:
+                  'Create a report above to explore your device readings and activity.',
             ))
           else ...[
-            GPanel(padding: EdgeInsets.zero, child: Column(children: [
-              for (final entry in downloadedReports.sublist(start, end).asMap().entries) ...[
-                if (entry.key > 0) const Divider(height: 1, color: GasPalette.border),
-                _phoneRecentReportRow(context, entry.value),
-              ],
-            ])),
+            GPanel(
+                padding: EdgeInsets.zero,
+                child: Column(children: [
+                  for (final entry in downloadedReports
+                      .sublist(start, end)
+                      .asMap()
+                      .entries) ...[
+                    if (entry.key > 0)
+                      Divider(height: 1, color: GasPalette.border),
+                    _phoneRecentReportRow(context, entry.value),
+                  ],
+                ])),
             if (downloadedReports.length > reportsPerPage) ...[
               Text('Showing ${start + 1}–$end of ${downloadedReports.length}',
                   style: gasSmall(context), textAlign: TextAlign.center),
@@ -9595,44 +9280,54 @@ class _ReportsState extends State<Reports> {
     );
   }
 
-  Widget _phoneReportLibraryRow(BuildContext context, String title,
-      String value, VoidCallback onTap) {
-    return Material(type: MaterialType.transparency, child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(32),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 7),
-        child: Column(children: [
-          Text(value, style: gasData(context, size: 20)),
-          const SizedBox(height: 4),
-          Text(title, style: gasSmall(context).copyWith(fontSize: 10.5), textAlign: TextAlign.center),
-        ]),
-      ),
-    ));
+  Widget _phoneReportLibraryRow(
+      BuildContext context, String title, String value, VoidCallback onTap) {
+    return Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(32),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 7),
+            child: Column(children: [
+              Text(value, style: gasData(context, size: 20)),
+              const SizedBox(height: 4),
+              Text(title,
+                  style: gasSmall(context).copyWith(fontSize: 10.5),
+                  textAlign: TextAlign.center),
+            ]),
+          ),
+        ));
   }
 
   Widget _phoneRecentReportRow(BuildContext context, dynamic report) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
-    child: Row(children: [
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(report['report_name'] ?? 'Untitled report', style: gasTitle(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 4),
-        Text(_formatDateTime(report['generated_at']), style: gasSmall(context)),
-      ])),
-      PopupMenuButton<String>(
-        tooltip: 'Report actions',
-        icon: const Icon(Icons.more_horiz, color: GasPalette.ink2),
-        onSelected: (action) {
-          if (action == 'view') _viewReport(report);
-          if (action == 'download') _downloadReport(report);
-        },
-        itemBuilder: (_) => const [
-          PopupMenuItem(value: 'view', child: Text('View report')),
-          PopupMenuItem(value: 'download', child: Text('Download report')),
-        ],
-      ),
-    ]),
-  );
+        padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
+        child: Row(children: [
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(report['report_name'] ?? 'Untitled report',
+                    style: gasTitle(context)
+                        .copyWith(fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text(_formatDateTime(report['generated_at']),
+                    style: gasSmall(context)),
+              ])),
+          PopupMenuButton<String>(
+            tooltip: 'Report actions',
+            icon: Icon(Icons.more_horiz, color: GasPalette.ink2),
+            onSelected: (action) {
+              if (action == 'view') _viewReport(report);
+              if (action == 'download') _downloadReport(report);
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'view', child: Text('View report')),
+              PopupMenuItem(value: 'download', child: Text('Download report')),
+            ],
+          ),
+        ]),
+      );
 
   Widget _buildModernStatCard({
     required IconData icon,
@@ -9650,11 +9345,11 @@ class _ReportsState extends State<Reports> {
         child: Container(
           padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Color(0xFF1E293B).withValues(alpha: 0.1),
+                color: Tone.bg(Color(0xFF1E293B)).withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: Offset(0, 8),
               ),
@@ -9664,17 +9359,19 @@ class _ReportsState extends State<Reports> {
             children: [
               Container(
                 padding: EdgeInsets.all(12),
-                decoration: mobileFlatDecoration(context, BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: bgGradient,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                )),
+                decoration: mobileFlatDecoration(
+                    context,
+                    BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: bgGradient,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    )),
                 child: Icon(
                   icon,
-                  color: Colors.white,
+                  color: Tone.fg(Colors.white),
                   size: 24,
                 ),
               ),
@@ -9689,7 +9386,7 @@ class _ReportsState extends State<Reports> {
                       style: GoogleFonts.inter(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E293B),
+                        color: Tone.fg(Color(0xFF1E293B)),
                         letterSpacing: -1,
                       ),
                     ),
@@ -9698,7 +9395,7 @@ class _ReportsState extends State<Reports> {
                       label,
                       style: GoogleFonts.inter(
                         fontSize: 13,
-                        color: Color(0xFF64748B),
+                        color: Tone.fg(Color(0xFF64748B)),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -9707,7 +9404,7 @@ class _ReportsState extends State<Reports> {
               ),
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: Color(0xFFCBD5E1),
+                color: Tone.fg(Color(0xFFCBD5E1)),
                 size: 16,
               ),
             ],
@@ -9730,15 +9427,15 @@ class _ReportsState extends State<Reports> {
         child: Container(
           padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Tone.bg(Colors.white),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Color(0xFFE2E8F0),
+              color: Tone.bg(Color(0xFFE2E8F0)),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Color(0xFF1E293B).withValues(alpha: 0.04),
+                color: Tone.bg(Color(0xFF1E293B)).withValues(alpha: 0.04),
                 blurRadius: 12,
                 offset: Offset(0, 4),
               ),
@@ -9776,12 +9473,12 @@ class _ReportsState extends State<Reports> {
                     Container(
                       padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Color(0xFFF1F5F9),
+                        color: Tone.bg(Color(0xFFF1F5F9)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         Icons.arrow_forward_rounded,
-                        color: Color(0xFF64748B),
+                        color: Tone.fg(Color(0xFF64748B)),
                         size: 16,
                       ),
                     ),
@@ -9795,7 +9492,7 @@ class _ReportsState extends State<Reports> {
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E293B),
+                      color: Tone.fg(Color(0xFF1E293B)),
                     ),
                   ),
                   SizedBox(height: 4),
@@ -9803,7 +9500,7 @@ class _ReportsState extends State<Reports> {
                     reportType.description,
                     style: GoogleFonts.inter(
                       fontSize: 13,
-                      color: Color(0xFF64748B),
+                      color: Tone.fg(Color(0xFF64748B)),
                       height: 1.4,
                     ),
                     maxLines: 2,
@@ -9822,41 +9519,42 @@ class _ReportsState extends State<Reports> {
     final reportTypeConfig = {
       'device_performance': {
         'icon': FontAwesomeIcons.chartLine,
-        'color': Color(0xFF3B82F6),
-        'bgColor': Color(0xFFEFF6FF),
+        'color': Tone.auto(Color(0xFF3B82F6)),
+        'bgColor': Tone.auto(Color(0xFFEFF6FF)),
       },
       'temperature_analysis': {
         'icon': FontAwesomeIcons.temperatureHalf,
-        'color': Color(0xFFEF4444),
-        'bgColor': Color(0xFFFEF2F2),
+        'color': Tone.auto(Color(0xFFEF4444)),
+        'bgColor': Tone.auto(Color(0xFFFEF2F2)),
       },
       'alerts_summary': {
         'icon': FontAwesomeIcons.bellConcierge,
-        'color': Color(0xFFF59E0B),
-        'bgColor': Color(0xFFFFFBEB),
+        'color': Tone.auto(Color(0xFFF59E0B)),
+        'bgColor': Tone.auto(Color(0xFFFFFBEB)),
       },
       'maintenance_report': {
         'icon': FontAwesomeIcons.wrench,
-        'color': Color(0xFF8B5CF6),
-        'bgColor': Color(0xFFF5F3FF),
+        'color': Tone.auto(Color(0xFF8B5CF6)),
+        'bgColor': Tone.auto(Color(0xFFF5F3FF)),
       },
       'energy_consumption': {
         'icon': FontAwesomeIcons.bolt,
-        'color': Color(0xFF10B981),
-        'bgColor': Color(0xFFECFDF5),
+        'color': Tone.auto(Color(0xFF10B981)),
+        'bgColor': Tone.auto(Color(0xFFECFDF5)),
       },
       'compliance_report': {
         'icon': FontAwesomeIcons.clipboardCheck,
-        'color': Color(0xFF06B6D4),
-        'bgColor': Color(0xFFECFEFF),
+        'color': Tone.auto(Color(0xFF06B6D4)),
+        'bgColor': Tone.auto(Color(0xFFECFEFF)),
       },
     };
 
-    final config = reportTypeConfig[report['report_type']] ?? {
-      'icon': FontAwesomeIcons.chartLine,
-      'color': Color(0xFF3B82F6),
-      'bgColor': Color(0xFFEFF6FF),
-    };
+    final config = reportTypeConfig[report['report_type']] ??
+        {
+          'icon': FontAwesomeIcons.chartLine,
+          'color': Tone.auto(Color(0xFF3B82F6)),
+          'bgColor': Tone.auto(Color(0xFFEFF6FF)),
+        };
 
     String formattedDate = 'Unknown date';
     String timeAgo = '';
@@ -9871,9 +9569,7 @@ class _ReportsState extends State<Reports> {
       } else {
         timeAgo = '${difference.inMinutes}m ago';
       }
-    } catch (e) {
-      print('Error parsing date: $e');
-    }
+    } catch (e) {}
 
     return Container(
       padding: EdgeInsets.all(16),
@@ -9901,7 +9597,7 @@ class _ReportsState extends State<Reports> {
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B),
+                    color: Tone.fg(Color(0xFF1E293B)),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -9913,7 +9609,7 @@ class _ReportsState extends State<Reports> {
                       formattedDate,
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: Color(0xFF94A3B8),
+                        color: Tone.fg(Color(0xFF94A3B8)),
                       ),
                     ),
                     if (timeAgo.isNotEmpty) ...[
@@ -9922,7 +9618,7 @@ class _ReportsState extends State<Reports> {
                         width: 4,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Color(0xFFCBD5E1),
+                          color: Tone.bg(Color(0xFFCBD5E1)),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -9930,7 +9626,7 @@ class _ReportsState extends State<Reports> {
                         timeAgo,
                         style: GoogleFonts.inter(
                           fontSize: 12,
-                          color: Color(0xFF94A3B8),
+                          color: Tone.fg(Color(0xFF94A3B8)),
                         ),
                       ),
                     ],
@@ -9951,7 +9647,7 @@ class _ReportsState extends State<Reports> {
               _buildActionButton(
                 icon: CupertinoIcons.cloud_download,
                 tooltip: 'Download',
-                color: Color(0xFF3B82F6),
+                color: Tone.auto(Color(0xFF3B82F6)),
                 onTap: () => _downloadReport(report),
               ),
             ],
@@ -9977,12 +9673,12 @@ class _ReportsState extends State<Reports> {
           child: Container(
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (color ?? Color(0xFF64748B)).withValues(alpha: 0.1),
+              color: (color ?? Tone.auto(Color(0xFF64748B))).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               icon,
-              color: color ?? Color(0xFF64748B),
+              color: color ?? Tone.fg(Color(0xFF64748B)),
               size: 18,
             ),
           ),
@@ -10004,15 +9700,15 @@ class _ReportsState extends State<Reports> {
         child: Container(
           padding: EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: enabled ? Color(0xFFF1F5F9) : Color(0xFFF8FAFC),
+            color: enabled ? Tone.bg(Color(0xFFF1F5F9)) : Tone.bg(Color(0xFFF8FAFC)),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: enabled ? Color(0xFFE2E8F0) : Color(0xFFF1F5F9),
+              color: enabled ? Tone.bg(Color(0xFFE2E8F0)) : Tone.bg(Color(0xFFF1F5F9)),
             ),
           ),
           child: Icon(
             icon,
-            color: enabled ? Color(0xFF475569) : Color(0xFFCBD5E1),
+            color: enabled ? Tone.fg(Color(0xFF475569)) : Tone.fg(Color(0xFFCBD5E1)),
             size: 20,
           ),
         ),
@@ -10050,7 +9746,7 @@ class _ReportsState extends State<Reports> {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  color: Tone.fg(Colors.black87),
                 ),
               ),
               SizedBox(height: 4),
@@ -10058,7 +9754,7 @@ class _ReportsState extends State<Reports> {
                 date,
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.black54,
+                  color: Tone.fg(Colors.black54),
                 ),
               ),
             ],
@@ -10069,7 +9765,7 @@ class _ReportsState extends State<Reports> {
             IconButton(
               icon: Icon(
                 CupertinoIcons.eye,
-                color: Colors.black54,
+                color: Tone.fg(Colors.black54),
                 size: 20,
               ),
               onPressed: () {},
@@ -10095,39 +9791,39 @@ class _ReportsState extends State<Reports> {
     final reportTypeConfig = {
       'temperature_analysis': {
         'icon': FontAwesomeIcons.temperatureHalf,
-        'color': Color(0xFFE94B3C),
+        'color': Tone.auto(Color(0xFFE94B3C)),
       },
       'alerts_summary': {
         'icon': FontAwesomeIcons.bellConcierge,
-        'color': Color(0xFFF5A623),
+        'color': Tone.auto(Color(0xFFF5A623)),
       },
       'maintenance_report': {
         'icon': FontAwesomeIcons.wrench,
-        'color': Color(0xFF9B59B6),
+        'color': Tone.auto(Color(0xFF9B59B6)),
       },
       'energy_consumption': {
         'icon': FontAwesomeIcons.bolt,
-        'color': Color(0xFF27AE60),
+        'color': Tone.auto(Color(0xFF27AE60)),
       },
       'compliance_report': {
         'icon': FontAwesomeIcons.clipboardCheck,
-        'color': Color(0xFF3498DB),
+        'color': Tone.auto(Color(0xFF3498DB)),
       },
     };
 
-    final config = reportTypeConfig[report['report_type']] ?? {
-      'icon': FontAwesomeIcons.chartLine,
-      'color': Color(0xFF4A90E2),
-    };
+    final config = reportTypeConfig[report['report_type']] ??
+        {
+          'icon': FontAwesomeIcons.chartLine,
+          'color': Tone.auto(Color(0xFF4A90E2)),
+        };
 
     // Format date
     String formattedDate = 'Unknown date';
     try {
       final generatedAt = DateTime.parse(report['generated_at']);
-      formattedDate = 'Generated on ${DateFormat('MMM dd, yyyy').format(generatedAt)}';
-    } catch (e) {
-      print('Error parsing date: $e');
-    }
+      formattedDate =
+          'Generated on ${DateFormat('MMM dd, yyyy').format(generatedAt)}';
+    } catch (e) {}
 
     return Row(
       children: [
@@ -10153,7 +9849,7 @@ class _ReportsState extends State<Reports> {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  color: Tone.fg(Colors.black87),
                 ),
               ),
               SizedBox(height: 4),
@@ -10161,7 +9857,7 @@ class _ReportsState extends State<Reports> {
                 formattedDate,
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.black54,
+                  color: Tone.fg(Colors.black54),
                 ),
               ),
             ],
@@ -10172,7 +9868,7 @@ class _ReportsState extends State<Reports> {
             IconButton(
               icon: Icon(
                 CupertinoIcons.eye,
-                color: Colors.black54,
+                color: Tone.fg(Colors.black54),
                 size: 20,
               ),
               onPressed: () => _viewReport(report),
@@ -10201,8 +9897,6 @@ class _ReportsState extends State<Reports> {
     bool loadingDialogShown = false;
 
     try {
-      print('Viewing report: ${report['report_id']}');
-
       // Show loading indicator
       showDialog(
         context: context,
@@ -10226,7 +9920,8 @@ class _ReportsState extends State<Reports> {
       loadingDialogShown = true;
 
       // Fetch full report data from backend
-      final reportData = await ReportApiService.getReportDetail(report['report_id']);
+      final reportData =
+          await ReportApiService.getReportDetail(report['report_id']);
 
       if (!mounted) return;
 
@@ -10254,21 +9949,18 @@ class _ReportsState extends State<Reports> {
           await _showBasicReportDetails(reportData);
       }
     } catch (e) {
-      print('Error viewing report: $e');
       if (mounted) {
         // Close loading dialog if it's still open
         if (loadingDialogShown) {
           try {
             Navigator.pop(context);
-          } catch (navError) {
-            print('Error popping navigator: $navError');
-          }
+          } catch (navError) {}
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading report: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Tone.bg(Colors.red),
           ),
         );
       }
@@ -10278,7 +9970,9 @@ class _ReportsState extends State<Reports> {
   Future<void> _showBasicReportDetails(dynamic report) async {
     if (report == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Report data not available'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('Report data not available'),
+            backgroundColor: Tone.bg(Colors.red)),
       );
       return;
     }
@@ -10303,12 +9997,14 @@ class _ReportsState extends State<Reports> {
         return MobileAlertDialog(
           title: Row(
             children: [
-              Icon(FontAwesomeIcons.fileLines, size: 20, color: Constants.ctaColorLight),
+              Icon(FontAwesomeIcons.fileLines,
+                  size: 20, color: Constants.ctaColorLight),
               SizedBox(width: 12),
               Expanded(
                 child: Text(
                   reportName,
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -10318,9 +10014,11 @@ class _ReportsState extends State<Reports> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildReportDetailRow('Report Type', _formatReportType(reportType)),
+                _buildReportDetailRow(
+                    'Report Type', _formatReportType(reportType)),
                 _buildReportDetailRow('Generated By', generatedBy),
-                _buildReportDetailRow('Generated At', _formatDateTime(generatedAt)),
+                _buildReportDetailRow(
+                    'Generated At', _formatDateTime(generatedAt)),
                 _buildReportDetailRow('Period', period),
                 _buildReportDetailRow('Start Date', _formatDate(startDate)),
                 _buildReportDetailRow('End Date', _formatDate(endDate)),
@@ -10335,7 +10033,8 @@ class _ReportsState extends State<Reports> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: Text('Close', style: GoogleFonts.inter(color: Colors.grey[600])),
+              child: Text('Close',
+                  style: GoogleFonts.inter(color: Tone.fg(Colors.grey[600]))),
             ),
             ElevatedButton.icon(
               onPressed: () {
@@ -10345,8 +10044,10 @@ class _ReportsState extends State<Reports> {
               icon: Icon(Icons.download, size: 16),
               label: Text('Download', style: GoogleFonts.inter(fontSize: 14)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isPhoneLayout(context) ? GasPalette.primary : Constants.ctaColorLight,
-                foregroundColor: Colors.white,
+                backgroundColor: isPhoneLayout(context)
+                    ? GasPalette.primary
+                    : Constants.ctaColorLight,
+                foregroundColor: Tone.fg(Colors.white),
               ),
             ),
           ],
@@ -10368,7 +10069,7 @@ class _ReportsState extends State<Reports> {
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: Tone.fg(Colors.black87),
               ),
             ),
           ),
@@ -10377,7 +10078,7 @@ class _ReportsState extends State<Reports> {
               value,
               style: GoogleFonts.inter(
                 fontSize: 13,
-                color: Colors.black54,
+                color: Tone.fg(Colors.black54),
               ),
             ),
           ),
@@ -10389,7 +10090,11 @@ class _ReportsState extends State<Reports> {
   String _formatReportType(String? type) {
     if (type == null || type.isEmpty) return 'Unknown';
     try {
-      return type.split('_').where((word) => word.isNotEmpty).map((word) => word[0].toUpperCase() + word.substring(1)).join(' ');
+      return type
+          .split('_')
+          .where((word) => word.isNotEmpty)
+          .map((word) => word[0].toUpperCase() + word.substring(1))
+          .join(' ');
     } catch (e) {
       return type;
     }
@@ -10417,8 +10122,6 @@ class _ReportsState extends State<Reports> {
 
   Future<void> _downloadReport(dynamic report) async {
     try {
-      print('Downloading report: ${report['report_id']}');
-
       // Show loading indicator
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -10430,7 +10133,7 @@ class _ReportsState extends State<Reports> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(Tone.fg(Colors.white)),
                   ),
                 ),
                 SizedBox(width: 16),
@@ -10443,7 +10146,8 @@ class _ReportsState extends State<Reports> {
       }
 
       // Fetch full report data if not already available
-      final reportData = await ReportApiService.getReportDetail(report['report_id']);
+      final reportData =
+          await ReportApiService.getReportDetail(report['report_id']);
 
       if (!mounted) return;
 
@@ -10464,19 +10168,19 @@ class _ReportsState extends State<Reports> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Download not yet implemented for this report type'),
-                backgroundColor: Colors.orange,
+                content:
+                    Text('Download not yet implemented for this report type'),
+                backgroundColor: Tone.bg(Colors.orange),
               ),
             );
           }
       }
     } catch (e) {
-      print('Error downloading report: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error downloading report: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Tone.bg(Colors.red),
           ),
         );
       }
@@ -10488,7 +10192,8 @@ class _ReportsState extends State<Reports> {
   // ============================================================================
 
   Future<void> _viewTemperatureReport(dynamic reportData) async {
-    _showPDFPreviewDialog('Temperature Analysis Report', 'temperature_analysis');
+    _showPDFPreviewDialog(
+        'Temperature Analysis Report', 'temperature_analysis');
   }
 
   Future<void> _viewAlertsReport(dynamic reportData) async {
@@ -10509,9 +10214,7 @@ class _ReportsState extends State<Reports> {
         'Temperature Analysis Report',
         onGenerate: () => _generateAndSavePDF('temperature_analysis'),
       );
-    } catch (e) {
-      print('Error in _downloadTemperatureReportPDF: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> _downloadAlertsReportPDF(dynamic reportData) async {
@@ -10520,9 +10223,7 @@ class _ReportsState extends State<Reports> {
         'Alerts Summary Report',
         onGenerate: () => _generateAndSavePDF('alerts_summary'),
       );
-    } catch (e) {
-      print('Error in _downloadAlertsReportPDF: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> _downloadMaintenanceReportPDF(dynamic reportData) async {
@@ -10531,9 +10232,7 @@ class _ReportsState extends State<Reports> {
         'Maintenance Report',
         onGenerate: () => _generateAndSavePDF('maintenance_report'),
       );
-    } catch (e) {
-      print('Error in _downloadMaintenanceReportPDF: $e');
-    }
+    } catch (e) {}
   }
 
   // ============================================================================
@@ -10548,7 +10247,7 @@ class _ReportsState extends State<Reports> {
         style: GoogleFonts.inter(
           fontSize: 8 * zoomLevel,
           fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          color: Tone.fg(Colors.black87),
         ),
       ),
     );
@@ -10561,7 +10260,7 @@ class _ReportsState extends State<Reports> {
         text,
         style: GoogleFonts.inter(
           fontSize: 7 * zoomLevel,
-          color: Colors.black87,
+          color: Tone.fg(Colors.black87),
         ),
       ),
     );
@@ -10577,7 +10276,7 @@ class _ReportsState extends State<Reports> {
             label,
             style: GoogleFonts.inter(
               fontSize: 7 * zoomLevel,
-              color: Colors.black54,
+              color: Tone.fg(Colors.black54),
             ),
           ),
           Text(
@@ -10585,7 +10284,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 7 * zoomLevel,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Tone.fg(Colors.black87),
             ),
           ),
         ],
@@ -10609,7 +10308,7 @@ class _ReportsState extends State<Reports> {
           label,
           style: GoogleFonts.inter(
             fontSize: 7 * zoomLevel,
-            color: Colors.black87,
+            color: Tone.fg(Colors.black87),
           ),
         ),
       ],
@@ -10664,12 +10363,12 @@ class _ReportsState extends State<Reports> {
           Text(
             'Period: ${lastGeneratedTempReportPeriod ?? "N/A"}',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)),
           ),
           Text(
             'Generated: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)),
           ),
           SizedBox(height: 16 * zoomLevel),
 
@@ -10735,7 +10434,7 @@ class _ReportsState extends State<Reports> {
           SizedBox(height: 8 * zoomLevel),
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+              border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Table(
@@ -10747,12 +10446,12 @@ class _ReportsState extends State<Reports> {
                 4: FlexColumnWidth(1),
               },
               border: TableBorder.symmetric(
-                inside: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                inside: BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2)),
               ),
               children: [
                 TableRow(
                   decoration:
-                      BoxDecoration(color: Colors.grey.withValues(alpha: 0.1)),
+                      BoxDecoration(color: Tone.bg(Colors.grey).withValues(alpha: 0.1)),
                   children: [
                     _buildTableHeader('Device Name', zoomLevel),
                     _buildTableHeader('Avg (°C)', zoomLevel),
@@ -10765,8 +10464,8 @@ class _ReportsState extends State<Reports> {
                   String status =
                       device.avgTemperature > -18 ? 'Warning' : 'Normal';
                   Color statusColor = device.avgTemperature > -18
-                      ? Colors.orange
-                      : Colors.green;
+                      ? Tone.auto(Colors.orange)
+                      : Tone.auto(Colors.green);
 
                   return TableRow(
                     children: [
@@ -10816,9 +10515,9 @@ class _ReportsState extends State<Reports> {
           Container(
             padding: EdgeInsets.all(10 * zoomLevel),
             decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.05),
+              color: Tone.bg(Colors.blue).withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+              border: Border.all(color: Tone.bg(Colors.blue).withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -10826,22 +10525,22 @@ class _ReportsState extends State<Reports> {
                 _buildFindingItem(
                     'Overall temperature performance is ${totalAvg > -18 ? "above" : "within"} the recommended range (-18°C)',
                     Icons.thermostat,
-                    Colors.blue,
+                    Tone.auto(Colors.blue),
                     zoomLevel),
                 _buildFindingItem(
                     '${lastGeneratedTempReportData!.where((d) => d.avgTemperature > -18).length} device(s) showing temperature warnings',
                     Icons.warning,
-                    Colors.orange,
+                    Tone.auto(Colors.orange),
                     zoomLevel),
                 _buildFindingItem(
                     'Temperature range spans ${(overallMax - overallMin).toStringAsFixed(1)}°C across all devices',
                     Icons.trending_up,
-                    Colors.blue,
+                    Tone.auto(Colors.blue),
                     zoomLevel),
                 _buildFindingItem(
                     'Total of $totalReadings temperature readings analyzed in this period',
                     Icons.analytics,
-                    Colors.blue,
+                    Tone.auto(Colors.blue),
                     zoomLevel),
               ],
             ),
@@ -10873,15 +10572,14 @@ class _ReportsState extends State<Reports> {
           Text(
             'Air, Coil, and Drain Temperature Sensors',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)),
           ),
           SizedBox(height: 16 * zoomLevel),
 
           // Sensor comparison for each device
           ...lastGeneratedTempReportData!.map((device) {
             final sensorStats = device.sensorStats;
-            final airTemp =
-                (sensorStats['air']?['average'] ?? 0.0).toDouble();
+            final airTemp = (sensorStats['air']?['average'] ?? 0.0).toDouble();
             final coilTemp =
                 (sensorStats['coil']?['average'] ?? 0.0).toDouble();
             final drainTemp =
@@ -10891,7 +10589,7 @@ class _ReportsState extends State<Reports> {
               margin: EdgeInsets.only(bottom: 16 * zoomLevel),
               padding: EdgeInsets.all(12 * zoomLevel),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -10959,19 +10657,19 @@ class _ReportsState extends State<Reports> {
                           BarChartGroupData(x: 0, barRods: [
                             BarChartRodData(
                                 toY: airTemp,
-                                color: Colors.blue,
+                                color: Tone.auto(Colors.blue),
                                 width: 20 * zoomLevel)
                           ]),
                           BarChartGroupData(x: 1, barRods: [
                             BarChartRodData(
                                 toY: coilTemp,
-                                color: Colors.orange,
+                                color: Tone.auto(Colors.orange),
                                 width: 20 * zoomLevel)
                           ]),
                           BarChartGroupData(x: 2, barRods: [
                             BarChartRodData(
                                 toY: drainTemp,
-                                color: Colors.teal,
+                                color: Tone.auto(Colors.teal),
                                 width: 20 * zoomLevel)
                           ]),
                         ],
@@ -10990,11 +10688,11 @@ class _ReportsState extends State<Reports> {
                       3: FlexColumnWidth(1),
                     },
                     border: TableBorder.all(
-                        color: Colors.grey.withValues(alpha: 0.2)),
+                        color: Tone.bg(Colors.grey).withValues(alpha: 0.2)),
                     children: [
                       TableRow(
                         decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.1)),
+                            color: Tone.bg(Colors.grey).withValues(alpha: 0.1)),
                         children: [
                           _buildTableHeader('Sensor', zoomLevel),
                           _buildTableHeader('Avg (°C)', zoomLevel),
@@ -11002,12 +10700,9 @@ class _ReportsState extends State<Reports> {
                           _buildTableHeader('Max (°C)', zoomLevel),
                         ],
                       ),
-                      _buildSensorRow(
-                          'Air', sensorStats['air'], zoomLevel),
-                      _buildSensorRow(
-                          'Coil', sensorStats['coil'], zoomLevel),
-                      _buildSensorRow(
-                          'Drain', sensorStats['drain'], zoomLevel),
+                      _buildSensorRow('Air', sensorStats['air'], zoomLevel),
+                      _buildSensorRow('Coil', sensorStats['coil'], zoomLevel),
+                      _buildSensorRow('Drain', sensorStats['drain'], zoomLevel),
                     ],
                   ),
                 ],
@@ -11058,7 +10753,7 @@ class _ReportsState extends State<Reports> {
                     padding: EdgeInsets.all(12 * zoomLevel),
                     decoration: BoxDecoration(
                       border:
-                          Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                          Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: LineChart(
@@ -11131,7 +10826,7 @@ class _ReportsState extends State<Reports> {
                   Container(
                     decoration: BoxDecoration(
                       border:
-                          Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                          Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Table(
@@ -11143,11 +10838,11 @@ class _ReportsState extends State<Reports> {
                       },
                       border: TableBorder.symmetric(
                           inside: BorderSide(
-                              color: Colors.grey.withValues(alpha: 0.2))),
+                              color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
                       children: [
                         TableRow(
                           decoration: BoxDecoration(
-                              color: Colors.grey.withValues(alpha: 0.1)),
+                              color: Tone.bg(Colors.grey).withValues(alpha: 0.1)),
                           children: [
                             _buildTableHeader('Date', zoomLevel),
                             _buildTableHeader('Avg (°C)', zoomLevel),
@@ -11227,10 +10922,10 @@ class _ReportsState extends State<Reports> {
                         child: Container(
                           padding: EdgeInsets.all(12 * zoomLevel),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.05),
+                            color: Tone.bg(Colors.blue).withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                                color: Colors.blue.withValues(alpha: 0.2)),
+                                color: Tone.bg(Colors.blue).withValues(alpha: 0.2)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -11279,7 +10974,7 @@ class _ReportsState extends State<Reports> {
                           padding: EdgeInsets.all(12 * zoomLevel),
                           decoration: BoxDecoration(
                             border: Border.all(
-                                color: Colors.grey.withValues(alpha: 0.3)),
+                                color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Column(
@@ -11299,15 +10994,15 @@ class _ReportsState extends State<Reports> {
                                       MainAxisAlignment.spaceEvenly,
                                   children: [
                                     _buildDistributionBar('< -25°C', 0.1,
-                                        Colors.blue[900]!, zoomLevel),
+                                        Tone.auto(Colors.blue[900]), zoomLevel),
                                     _buildDistributionBar('-25 to -20°C', 0.3,
-                                        Colors.blue[700]!, zoomLevel),
+                                        Tone.auto(Colors.blue[700]), zoomLevel),
                                     _buildDistributionBar('-20 to -18°C', 0.6,
-                                        Colors.blue, zoomLevel),
+                                        Tone.auto(Colors.blue), zoomLevel),
                                     _buildDistributionBar('-18 to -15°C', 0.8,
-                                        Colors.orange, zoomLevel),
+                                        Tone.auto(Colors.orange), zoomLevel),
                                     _buildDistributionBar(
-                                        '> -15°C', 0.4, Colors.red, zoomLevel),
+                                        '> -15°C', 0.4, Tone.auto(Colors.red), zoomLevel),
                                   ],
                                 ),
                               ),
@@ -11348,7 +11043,7 @@ class _ReportsState extends State<Reports> {
           Text(
             'Threshold: -18°C (recommended cold storage temperature)',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)),
           ),
           SizedBox(height: 16 * zoomLevel),
 
@@ -11360,12 +11055,11 @@ class _ReportsState extends State<Reports> {
                 (violations['percentage'] ?? 0.0).toDouble();
             final avgViolationTemp =
                 (violations['average_temp'] ?? 0.0).toDouble();
-            final maxViolationTemp =
-                (violations['max_temp'] ?? 0.0).toDouble();
+            final maxViolationTemp = (violations['max_temp'] ?? 0.0).toDouble();
 
             Color severityColor = violationPercentage > 20
-                ? Colors.red
-                : (violationPercentage > 10 ? Colors.orange : Colors.green);
+                ? Tone.auto(Colors.red)
+                : (violationPercentage > 10 ? Tone.auto(Colors.orange) : Tone.auto(Colors.green));
 
             return Container(
               margin: EdgeInsets.only(bottom: 16 * zoomLevel),
@@ -11403,7 +11097,7 @@ class _ReportsState extends State<Reports> {
                                   : 'Normal'),
                           style: GoogleFonts.inter(
                               fontSize: 8 * zoomLevel,
-                              color: Colors.white,
+                              color: Tone.fg(Colors.white),
                               fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -11451,20 +11145,20 @@ class _ReportsState extends State<Reports> {
                     Container(
                       padding: EdgeInsets.all(8 * zoomLevel),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.1),
+                        color: Tone.bg(Colors.orange).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
                         children: [
                           Icon(Icons.info_outline,
-                              size: 12 * zoomLevel, color: Colors.orange[700]),
+                              size: 12 * zoomLevel, color: Tone.fg(Colors.orange[700])),
                           SizedBox(width: 6 * zoomLevel),
                           Expanded(
                             child: Text(
                               'This device has exceeded the -18°C threshold ${violationCount} times (${violationPercentage.toStringAsFixed(1)}% of readings)',
                               style: GoogleFonts.inter(
                                   fontSize: 7 * zoomLevel,
-                                  color: Colors.orange[900]),
+                                  color: Tone.fg(Colors.orange[900])),
                             ),
                           ),
                         ],
@@ -11502,7 +11196,7 @@ class _ReportsState extends State<Reports> {
           Text(
             'Time spent in different temperature ranges',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)),
           ),
           SizedBox(height: 16 * zoomLevel),
 
@@ -11510,21 +11204,21 @@ class _ReportsState extends State<Reports> {
           Container(
             padding: EdgeInsets.all(10 * zoomLevel),
             decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.1),
+              color: Tone.bg(Colors.grey).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildRangeLegend(
-                    'Ultra Cold', '< -25°C', Colors.blue[900]!, zoomLevel),
+                    'Ultra Cold', '< -25°C', Tone.auto(Colors.blue[900]), zoomLevel),
                 _buildRangeLegend(
-                    'Optimal', '-25 to -18°C', Colors.green, zoomLevel),
+                    'Optimal', '-25 to -18°C', Tone.auto(Colors.green), zoomLevel),
                 _buildRangeLegend(
-                    'Acceptable', '-18 to -15°C', Colors.blue, zoomLevel),
+                    'Acceptable', '-18 to -15°C', Tone.auto(Colors.blue), zoomLevel),
                 _buildRangeLegend(
-                    'Warning', '-15 to -10°C', Colors.orange, zoomLevel),
-                _buildRangeLegend('Critical', '> -10°C', Colors.red, zoomLevel),
+                    'Warning', '-15 to -10°C', Tone.auto(Colors.orange), zoomLevel),
+                _buildRangeLegend('Critical', '> -10°C', Tone.auto(Colors.red), zoomLevel),
               ],
             ),
           ),
@@ -11533,11 +11227,26 @@ class _ReportsState extends State<Reports> {
 
           ...lastGeneratedTempReportData!.map((device) {
             final timeInRanges = device.timeInRanges;
-            final ultraCold = (timeInRanges['ultra_cold'] is Map) ? ((timeInRanges['ultra_cold'] as Map)['percentage'] ?? 0.0).toDouble() : 0.0;
-            final optimal = (timeInRanges['optimal'] is Map) ? ((timeInRanges['optimal'] as Map)['percentage'] ?? 0.0).toDouble() : 0.0;
-            final acceptable = (timeInRanges['acceptable'] is Map) ? ((timeInRanges['acceptable'] as Map)['percentage'] ?? 0.0).toDouble() : 0.0;
-            final warning = (timeInRanges['warning'] is Map) ? ((timeInRanges['warning'] as Map)['percentage'] ?? 0.0).toDouble() : 0.0;
-            final critical = (timeInRanges['critical'] is Map) ? ((timeInRanges['critical'] as Map)['percentage'] ?? 0.0).toDouble() : 0.0;
+            final ultraCold = (timeInRanges['ultra_cold'] is Map)
+                ? ((timeInRanges['ultra_cold'] as Map)['percentage'] ?? 0.0)
+                    .toDouble()
+                : 0.0;
+            final optimal = (timeInRanges['optimal'] is Map)
+                ? ((timeInRanges['optimal'] as Map)['percentage'] ?? 0.0)
+                    .toDouble()
+                : 0.0;
+            final acceptable = (timeInRanges['acceptable'] is Map)
+                ? ((timeInRanges['acceptable'] as Map)['percentage'] ?? 0.0)
+                    .toDouble()
+                : 0.0;
+            final warning = (timeInRanges['warning'] is Map)
+                ? ((timeInRanges['warning'] as Map)['percentage'] ?? 0.0)
+                    .toDouble()
+                : 0.0;
+            final critical = (timeInRanges['critical'] is Map)
+                ? ((timeInRanges['critical'] as Map)['percentage'] ?? 0.0)
+                    .toDouble()
+                : 0.0;
 
             return Container(
               margin: EdgeInsets.only(bottom: 16 * zoomLevel),
@@ -11557,20 +11266,20 @@ class _ReportsState extends State<Reports> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(4),
                       border:
-                          Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                          Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
                         if (ultraCold > 0)
-                          _buildRangeSegment(ultraCold, Colors.blue[900]!),
+                          _buildRangeSegment(ultraCold, Tone.auto(Colors.blue[900])),
                         if (optimal > 0)
-                          _buildRangeSegment(optimal, Colors.green),
+                          _buildRangeSegment(optimal, Tone.auto(Colors.green)),
                         if (acceptable > 0)
-                          _buildRangeSegment(acceptable, Colors.blue),
+                          _buildRangeSegment(acceptable, Tone.auto(Colors.blue)),
                         if (warning > 0)
-                          _buildRangeSegment(warning, Colors.orange),
+                          _buildRangeSegment(warning, Tone.auto(Colors.orange)),
                         if (critical > 0)
-                          _buildRangeSegment(critical, Colors.red),
+                          _buildRangeSegment(critical, Tone.auto(Colors.red)),
                       ],
                     ),
                   ),
@@ -11581,7 +11290,7 @@ class _ReportsState extends State<Reports> {
                   Container(
                     decoration: BoxDecoration(
                       border:
-                          Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                          Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Table(
@@ -11592,11 +11301,11 @@ class _ReportsState extends State<Reports> {
                       },
                       border: TableBorder.symmetric(
                           inside: BorderSide(
-                              color: Colors.grey.withValues(alpha: 0.2))),
+                              color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
                       children: [
                         TableRow(
                           decoration: BoxDecoration(
-                              color: Colors.grey.withValues(alpha: 0.1)),
+                              color: Tone.bg(Colors.grey).withValues(alpha: 0.1)),
                           children: [
                             _buildTableHeader('Range', zoomLevel),
                             _buildTableHeader('Percentage', zoomLevel),
@@ -11604,15 +11313,15 @@ class _ReportsState extends State<Reports> {
                           ],
                         ),
                         _buildRangeRow('Ultra Cold (< -25°C)', ultraCold,
-                            Colors.blue[900]!, zoomLevel),
+                            Tone.auto(Colors.blue[900]), zoomLevel),
                         _buildRangeRow('Optimal (-25 to -18°C)', optimal,
-                            Colors.green, zoomLevel),
+                            Tone.auto(Colors.green), zoomLevel),
                         _buildRangeRow('Acceptable (-18 to -15°C)', acceptable,
-                            Colors.blue, zoomLevel),
+                            Tone.auto(Colors.blue), zoomLevel),
                         _buildRangeRow('Warning (-15 to -10°C)', warning,
-                            Colors.orange, zoomLevel),
+                            Tone.auto(Colors.orange), zoomLevel),
                         _buildRangeRow('Critical (> -10°C)', critical,
-                            Colors.red, zoomLevel),
+                            Tone.auto(Colors.red), zoomLevel),
                       ],
                     ),
                   ),
@@ -11648,7 +11357,7 @@ class _ReportsState extends State<Reports> {
           // Comprehensive statistics table for all devices
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+              border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Table(
@@ -11662,7 +11371,7 @@ class _ReportsState extends State<Reports> {
               },
               border: TableBorder.symmetric(
                   inside:
-                      BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
+                      BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
               children: [
                 TableRow(
                   decoration: BoxDecoration(
@@ -11719,9 +11428,9 @@ class _ReportsState extends State<Reports> {
               margin: EdgeInsets.only(bottom: 12 * zoomLevel),
               padding: EdgeInsets.all(10 * zoomLevel),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.05),
+                color: Tone.bg(Colors.blue).withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                border: Border.all(color: Tone.bg(Colors.blue).withValues(alpha: 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -11822,20 +11531,20 @@ class _ReportsState extends State<Reports> {
             Container(
               padding: EdgeInsets.all(16 * zoomLevel),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
+                color: Tone.bg(Colors.green).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                border: Border.all(color: Tone.bg(Colors.green).withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
                   Icon(Icons.check_circle,
-                      color: Colors.green, size: 24 * zoomLevel),
+                      color: Tone.fg(Colors.green), size: 24 * zoomLevel),
                   SizedBox(width: 12 * zoomLevel),
                   Expanded(
                     child: Text(
                       'All devices are operating within normal parameters. No immediate action required.',
                       style: GoogleFonts.inter(
-                          fontSize: 10 * zoomLevel, color: Colors.green[900]),
+                          fontSize: 10 * zoomLevel, color: Tone.fg(Colors.green[900])),
                     ),
                   ),
                 ],
@@ -11877,7 +11586,7 @@ class _ReportsState extends State<Reports> {
                             severity,
                             style: GoogleFonts.inter(
                                 fontSize: 7 * zoomLevel,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                                 fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -11904,7 +11613,7 @@ class _ReportsState extends State<Reports> {
                     Text(
                       'Recommendation: ${rec['recommendation']}',
                       style: GoogleFonts.inter(
-                          fontSize: 8 * zoomLevel, color: Colors.black87),
+                          fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black87)),
                     ),
                   ],
                 ),
@@ -11925,9 +11634,9 @@ class _ReportsState extends State<Reports> {
           Container(
             padding: EdgeInsets.all(12 * zoomLevel),
             decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.05),
+              color: Tone.bg(Colors.blue).withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+              border: Border.all(color: Tone.bg(Colors.blue).withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -11969,7 +11678,7 @@ class _ReportsState extends State<Reports> {
                   child: Text(
                     'For additional support or questions about this report, please contact your system administrator.',
                     style: GoogleFonts.inter(
-                        fontSize: 8 * zoomLevel, color: Colors.black87),
+                        fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black87)),
                   ),
                 ),
               ],
@@ -11987,7 +11696,7 @@ class _ReportsState extends State<Reports> {
     return Container(
       padding: EdgeInsets.all(8 * zoomLevel),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
@@ -12004,7 +11713,7 @@ class _ReportsState extends State<Reports> {
           Text(
             label,
             style: GoogleFonts.inter(
-                fontSize: 7 * zoomLevel, color: Colors.black54),
+                fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -12057,9 +11766,9 @@ class _ReportsState extends State<Reports> {
     return Container(
       padding: EdgeInsets.all(8 * zoomLevel),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -12077,7 +11786,7 @@ class _ReportsState extends State<Reports> {
                 Text(
                   label,
                   style: GoogleFonts.inter(
-                      fontSize: 7 * zoomLevel, color: Colors.black54),
+                      fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
                 ),
               ],
             ),
@@ -12108,7 +11817,7 @@ class _ReportsState extends State<Reports> {
         Text(
           range,
           style:
-              GoogleFonts.inter(fontSize: 6 * zoomLevel, color: Colors.black54),
+              GoogleFonts.inter(fontSize: 6 * zoomLevel, color: Tone.fg(Colors.black54)),
         ),
       ],
     );
@@ -12123,7 +11832,7 @@ class _ReportsState extends State<Reports> {
           child: Text(
             '${percentage.toStringAsFixed(1)}%',
             style: GoogleFonts.inter(
-                fontSize: 6, color: Colors.white, fontWeight: FontWeight.bold),
+                fontSize: 6, color: Tone.fg(Colors.white), fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -12159,7 +11868,7 @@ class _ReportsState extends State<Reports> {
             height: 6 * zoomLevel,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(3),
-              color: Colors.grey.withValues(alpha: 0.2),
+              color: Tone.bg(Colors.grey).withValues(alpha: 0.2),
             ),
             child: FractionallySizedBox(
               widthFactor: percentage / 100,
@@ -12184,13 +11893,13 @@ class _ReportsState extends State<Reports> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.check_circle_outline,
-              size: 12 * zoomLevel, color: Colors.blue[700]),
+              size: 12 * zoomLevel, color: Tone.fg(Colors.blue[700])),
           SizedBox(width: 6 * zoomLevel),
           Expanded(
             child: Text(
               text,
               style: GoogleFonts.inter(
-                  fontSize: 8 * zoomLevel, color: Colors.black87),
+                  fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black87)),
             ),
           ),
         ],
@@ -12227,7 +11936,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
                 fontSize: 18 * zoomLevel,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFF5A623)),
+                color: Tone.fg(Color(0xFFF5A623))),
           ),
           SizedBox(height: 4 * zoomLevel),
           Text(
@@ -12239,12 +11948,12 @@ class _ReportsState extends State<Reports> {
           Text(
             'Period: ${lastGeneratedAlertsReportPeriod ?? "N/A"}',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)),
           ),
           Text(
             'Generated: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)),
           ),
           SizedBox(height: 16 * zoomLevel),
 
@@ -12252,10 +11961,10 @@ class _ReportsState extends State<Reports> {
           Container(
             padding: EdgeInsets.all(12 * zoomLevel),
             decoration: BoxDecoration(
-              color: Color(0xFFF5A623).withValues(alpha: 0.05),
+              color: Tone.bg(Color(0xFFF5A623)).withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8),
               border:
-                  Border.all(color: Color(0xFFF5A623).withValues(alpha: 0.2)),
+                  Border.all(color: Tone.bg(Color(0xFFF5A623)).withValues(alpha: 0.2)),
             ),
             child: Column(
               children: [
@@ -12263,12 +11972,12 @@ class _ReportsState extends State<Reports> {
                   children: [
                     Expanded(
                       child: _buildAlertMetric('Total Alerts', '$totalAlerts',
-                          Icons.notifications, Color(0xFFF5A623), zoomLevel),
+                          Icons.notifications, Tone.auto(Color(0xFFF5A623)), zoomLevel),
                     ),
                     SizedBox(width: 8 * zoomLevel),
                     Expanded(
                       child: _buildAlertMetric('Active', '$activeAlerts',
-                          Icons.warning, Colors.red, zoomLevel),
+                          Icons.warning, Tone.auto(Colors.red), zoomLevel),
                     ),
                   ],
                 ),
@@ -12277,7 +11986,7 @@ class _ReportsState extends State<Reports> {
                   children: [
                     Expanded(
                       child: _buildAlertMetric('Resolved', '$resolvedAlerts',
-                          Icons.check_circle, Colors.green, zoomLevel),
+                          Icons.check_circle, Tone.auto(Colors.green), zoomLevel),
                     ),
                     SizedBox(width: 8 * zoomLevel),
                     Expanded(
@@ -12285,7 +11994,7 @@ class _ReportsState extends State<Reports> {
                           'Affected Devices',
                           '$affectedDevices',
                           Icons.devices,
-                          Colors.blue,
+                          Tone.auto(Colors.blue),
                           zoomLevel),
                     ),
                   ],
@@ -12303,27 +12012,27 @@ class _ReportsState extends State<Reports> {
                 child: Container(
                   padding: EdgeInsets.all(12 * zoomLevel),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.05),
+                    color: Tone.bg(Colors.red).withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border:
-                        Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                        Border.all(color: Tone.bg(Colors.red).withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     children: [
                       Icon(Icons.crisis_alert,
-                          color: Colors.red, size: 24 * zoomLevel),
+                          color: Tone.fg(Colors.red), size: 24 * zoomLevel),
                       SizedBox(height: 6 * zoomLevel),
                       Text(
                         '$criticalCount',
                         style: GoogleFonts.inter(
                             fontSize: 18 * zoomLevel,
                             fontWeight: FontWeight.bold,
-                            color: Colors.red),
+                            color: Tone.fg(Colors.red)),
                       ),
                       Text(
                         'Critical Alerts',
                         style: GoogleFonts.inter(
-                            fontSize: 8 * zoomLevel, color: Colors.black54),
+                            fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black54)),
                       ),
                     ],
                   ),
@@ -12334,27 +12043,27 @@ class _ReportsState extends State<Reports> {
                 child: Container(
                   padding: EdgeInsets.all(12 * zoomLevel),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.05),
+                    color: Tone.bg(Colors.orange).withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border:
-                        Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                        Border.all(color: Tone.bg(Colors.orange).withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     children: [
                       Icon(Icons.report_problem,
-                          color: Colors.orange, size: 24 * zoomLevel),
+                          color: Tone.fg(Colors.orange), size: 24 * zoomLevel),
                       SizedBox(height: 6 * zoomLevel),
                       Text(
                         '$highCount',
                         style: GoogleFonts.inter(
                             fontSize: 18 * zoomLevel,
                             fontWeight: FontWeight.bold,
-                            color: Colors.orange),
+                            color: Tone.fg(Colors.orange)),
                       ),
                       Text(
                         'High Priority',
                         style: GoogleFonts.inter(
-                            fontSize: 8 * zoomLevel, color: Colors.black54),
+                            fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black54)),
                       ),
                     ],
                   ),
@@ -12365,27 +12074,27 @@ class _ReportsState extends State<Reports> {
                 child: Container(
                   padding: EdgeInsets.all(12 * zoomLevel),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.05),
+                    color: Tone.bg(Colors.blue).withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border:
-                        Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                        Border.all(color: Tone.bg(Colors.blue).withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     children: [
                       Icon(Icons.timer,
-                          color: Colors.blue, size: 24 * zoomLevel),
+                          color: Tone.fg(Colors.blue), size: 24 * zoomLevel),
                       SizedBox(height: 6 * zoomLevel),
                       Text(
                         '${avgResolutionTime.toStringAsFixed(0)} min',
                         style: GoogleFonts.inter(
                             fontSize: 14 * zoomLevel,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue),
+                            color: Tone.fg(Colors.blue)),
                       ),
                       Text(
                         'Avg Response Time',
                         style: GoogleFonts.inter(
-                            fontSize: 7 * zoomLevel, color: Colors.black54),
+                            fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -12416,7 +12125,7 @@ class _ReportsState extends State<Reports> {
                     padding: EdgeInsets.all(12 * zoomLevel),
                     decoration: BoxDecoration(
                       border:
-                          Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                          Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -12426,9 +12135,9 @@ class _ReportsState extends State<Reports> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             _buildStatusIndicator('Active', activeAlerts,
-                                totalAlerts, Colors.red, zoomLevel),
+                                totalAlerts, Tone.auto(Colors.red), zoomLevel),
                             _buildStatusIndicator('Resolved', resolvedAlerts,
-                                totalAlerts, Colors.green, zoomLevel),
+                                totalAlerts, Tone.auto(Colors.green), zoomLevel),
                           ],
                         ),
                       ],
@@ -12442,10 +12151,10 @@ class _ReportsState extends State<Reports> {
                   child: Container(
                     padding: EdgeInsets.all(10 * zoomLevel),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.05),
+                      color: Tone.bg(Colors.blue).withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
                       border:
-                          Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                          Border.all(color: Tone.bg(Colors.blue).withValues(alpha: 0.2)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -12495,7 +12204,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
                 fontSize: 14 * zoomLevel,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFF5A623)),
+                color: Tone.fg(Color(0xFFF5A623))),
           ),
           SizedBox(height: 16 * zoomLevel),
           ...severityData.map((severity) {
@@ -12510,19 +12219,19 @@ class _ReportsState extends State<Reports> {
             IconData severityIcon;
             switch (severityName.toLowerCase()) {
               case 'critical':
-                severityColor = Colors.red;
+                severityColor = Tone.auto(Colors.red);
                 severityIcon = Icons.crisis_alert;
                 break;
               case 'high':
-                severityColor = Colors.orange;
+                severityColor = Tone.auto(Colors.orange);
                 severityIcon = Icons.report_problem;
                 break;
               case 'medium':
-                severityColor = Colors.amber;
+                severityColor = Tone.auto(Colors.amber);
                 severityIcon = Icons.warning;
                 break;
               default:
-                severityColor = Colors.blue;
+                severityColor = Tone.auto(Colors.blue);
                 severityIcon = Icons.info;
             }
 
@@ -12562,7 +12271,7 @@ class _ReportsState extends State<Reports> {
                             Text('Total',
                                 style: GoogleFonts.inter(
                                     fontSize: 7 * zoomLevel,
-                                    color: Colors.black54)),
+                                    color: Tone.fg(Colors.black54))),
                             Text('$count',
                                 style: GoogleFonts.inter(
                                     fontSize: 16 * zoomLevel,
@@ -12577,12 +12286,12 @@ class _ReportsState extends State<Reports> {
                             Text('Active',
                                 style: GoogleFonts.inter(
                                     fontSize: 7 * zoomLevel,
-                                    color: Colors.black54)),
+                                    color: Tone.fg(Colors.black54))),
                             Text('$activeCount',
                                 style: GoogleFonts.inter(
                                     fontSize: 16 * zoomLevel,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.red)),
+                                    color: Tone.fg(Colors.red))),
                           ],
                         ),
                       ),
@@ -12593,12 +12302,12 @@ class _ReportsState extends State<Reports> {
                             Text('Resolved',
                                 style: GoogleFonts.inter(
                                     fontSize: 7 * zoomLevel,
-                                    color: Colors.black54)),
+                                    color: Tone.fg(Colors.black54))),
                             Text('$resolvedCount',
                                 style: GoogleFonts.inter(
                                     fontSize: 16 * zoomLevel,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.green)),
+                                    color: Tone.fg(Colors.green))),
                           ],
                         ),
                       ),
@@ -12609,7 +12318,7 @@ class _ReportsState extends State<Reports> {
                             Text('Avg Time',
                                 style: GoogleFonts.inter(
                                     fontSize: 7 * zoomLevel,
-                                    color: Colors.black54)),
+                                    color: Tone.fg(Colors.black54))),
                             Text('${avgResTime.toStringAsFixed(0)}m',
                                 style: GoogleFonts.inter(
                                     fontSize: 14 * zoomLevel,
@@ -12627,7 +12336,7 @@ class _ReportsState extends State<Reports> {
                     height: 8 * zoomLevel,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(4),
-                      color: Colors.grey.withValues(alpha: 0.2),
+                      color: Tone.bg(Colors.grey).withValues(alpha: 0.2),
                     ),
                     child: FractionallySizedBox(
                       widthFactor: count > 0 ? (resolvedCount / count) : 0,
@@ -12635,7 +12344,7 @@ class _ReportsState extends State<Reports> {
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(4),
-                          color: Colors.green,
+                          color: Tone.bg(Colors.green),
                         ),
                       ),
                     ),
@@ -12644,7 +12353,7 @@ class _ReportsState extends State<Reports> {
                   Text(
                     '${count > 0 ? ((resolvedCount / count) * 100).toStringAsFixed(1) : "0"}% Resolved',
                     style: GoogleFonts.inter(
-                        fontSize: 7 * zoomLevel, color: Colors.black54),
+                        fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
                   ),
                 ],
               ),
@@ -12672,18 +12381,18 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
                 fontSize: 14 * zoomLevel,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFF5A623)),
+                color: Tone.fg(Color(0xFFF5A623))),
           ),
           SizedBox(height: 4 * zoomLevel),
           Text(
             'Top ${deviceData.length} devices with most alerts',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)),
           ),
           SizedBox(height: 16 * zoomLevel),
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+              border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Table(
@@ -12696,11 +12405,11 @@ class _ReportsState extends State<Reports> {
               },
               border: TableBorder.symmetric(
                   inside:
-                      BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
+                      BorderSide(color: Tone.bg(Colors.grey).withValues(alpha: 0.2))),
               children: [
                 TableRow(
                   decoration: BoxDecoration(
-                      color: Color(0xFFF5A623).withValues(alpha: 0.1)),
+                      color: Tone.bg(Color(0xFFF5A623)).withValues(alpha: 0.1)),
                   children: [
                     Padding(
                         padding: EdgeInsets.all(8 * zoomLevel),
@@ -12758,12 +12467,12 @@ class _ReportsState extends State<Reports> {
                               horizontal: 4 * zoomLevel,
                               vertical: 2 * zoomLevel),
                           decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
+                            color: Tone.bg(Colors.red).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text('${device['critical_alerts'] ?? 0}',
                               style: GoogleFonts.inter(
-                                  fontSize: 7 * zoomLevel, color: Colors.red),
+                                  fontSize: 7 * zoomLevel, color: Tone.fg(Colors.red)),
                               textAlign: TextAlign.center),
                         ),
                       ),
@@ -12774,13 +12483,13 @@ class _ReportsState extends State<Reports> {
                               horizontal: 4 * zoomLevel,
                               vertical: 2 * zoomLevel),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: 0.1),
+                            color: Tone.bg(Colors.orange).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text('${device['high_alerts'] ?? 0}',
                               style: GoogleFonts.inter(
                                   fontSize: 7 * zoomLevel,
-                                  color: Colors.orange),
+                                  color: Tone.fg(Colors.orange)),
                               textAlign: TextAlign.center),
                         ),
                       ),
@@ -12791,12 +12500,12 @@ class _ReportsState extends State<Reports> {
                               horizontal: 4 * zoomLevel,
                               vertical: 2 * zoomLevel),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.1),
+                            color: Tone.bg(Colors.blue).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text('${device['active_alerts'] ?? 0}',
                               style: GoogleFonts.inter(
-                                  fontSize: 7 * zoomLevel, color: Colors.blue),
+                                  fontSize: 7 * zoomLevel, color: Tone.fg(Colors.blue)),
                               textAlign: TextAlign.center),
                         ),
                       ),
@@ -12829,7 +12538,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
                 fontSize: 14 * zoomLevel,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFF5A623)),
+                color: Tone.fg(Color(0xFFF5A623))),
           ),
           SizedBox(height: 16 * zoomLevel),
 
@@ -12846,7 +12555,7 @@ class _ReportsState extends State<Reports> {
               height: 180 * zoomLevel,
               padding: EdgeInsets.all(12 * zoomLevel),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: LineChart(
@@ -12895,12 +12604,12 @@ class _ReportsState extends State<Reports> {
                             (e.value['total_alerts'] ?? 0).toDouble());
                       }).toList(),
                       isCurved: true,
-                      color: Color(0xFFF5A623),
+                      color: Tone.auto(Color(0xFFF5A623)),
                       barWidth: 2,
                       dotData: FlDotData(show: true),
                       belowBarData: BarAreaData(
                           show: true,
-                          color: Color(0xFFF5A623).withValues(alpha: 0.1)),
+                          color: Tone.auto(Color(0xFFF5A623)).withValues(alpha: 0.1)),
                     ),
                   ],
                 ),
@@ -12923,7 +12632,7 @@ class _ReportsState extends State<Reports> {
               height: 150 * zoomLevel,
               padding: EdgeInsets.all(12 * zoomLevel),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                border: Border.all(color: Tone.bg(Colors.grey).withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: BarChart(
@@ -12968,7 +12677,7 @@ class _ReportsState extends State<Reports> {
                       barRods: [
                         BarChartRodData(
                             toY: count,
-                            color: Color(0xFFF5A623),
+                            color: Tone.auto(Color(0xFFF5A623)),
                             width: 6 * zoomLevel)
                       ],
                     );
@@ -12999,33 +12708,33 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
                 fontSize: 14 * zoomLevel,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFF5A623)),
+                color: Tone.fg(Color(0xFFF5A623))),
           ),
           SizedBox(height: 4 * zoomLevel),
           Text(
             'Most recent unresolved alerts requiring attention',
             style: GoogleFonts.inter(
-                fontSize: 9 * zoomLevel, color: Colors.black54),
+                fontSize: 9 * zoomLevel, color: Tone.fg(Colors.black54)),
           ),
           SizedBox(height: 16 * zoomLevel),
           if (activeAlerts.isEmpty) ...[
             Container(
               padding: EdgeInsets.all(20 * zoomLevel),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
+                color: Tone.bg(Colors.green).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                border: Border.all(color: Tone.bg(Colors.green).withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
                   Icon(Icons.check_circle,
-                      color: Colors.green, size: 32 * zoomLevel),
+                      color: Tone.fg(Colors.green), size: 32 * zoomLevel),
                   SizedBox(width: 12 * zoomLevel),
                   Expanded(
                     child: Text(
                       'No active alerts! All alerts have been resolved.',
                       style: GoogleFonts.inter(
-                          fontSize: 11 * zoomLevel, color: Colors.green[900]),
+                          fontSize: 11 * zoomLevel, color: Tone.fg(Colors.green[900])),
                     ),
                   ),
                 ],
@@ -13042,16 +12751,16 @@ class _ReportsState extends State<Reports> {
               Color severityColor;
               switch (severity.toLowerCase()) {
                 case 'critical':
-                  severityColor = Colors.red;
+                  severityColor = Tone.auto(Colors.red);
                   break;
                 case 'high':
-                  severityColor = Colors.orange;
+                  severityColor = Tone.auto(Colors.orange);
                   break;
                 case 'medium':
-                  severityColor = Colors.amber;
+                  severityColor = Tone.auto(Colors.amber);
                   break;
                 default:
-                  severityColor = Colors.blue;
+                  severityColor = Tone.auto(Colors.blue);
               }
 
               return Container(
@@ -13080,7 +12789,7 @@ class _ReportsState extends State<Reports> {
                             severity.toUpperCase(),
                             style: GoogleFonts.inter(
                                 fontSize: 7 * zoomLevel,
-                                color: Colors.white,
+                                color: Tone.fg(Colors.white),
                                 fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -13096,7 +12805,7 @@ class _ReportsState extends State<Reports> {
                         Text(
                           createdAt.split('T')[0],
                           style: GoogleFonts.inter(
-                              fontSize: 7 * zoomLevel, color: Colors.black54),
+                              fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
                         ),
                       ],
                     ),
@@ -13104,18 +12813,18 @@ class _ReportsState extends State<Reports> {
                     Text(
                       message,
                       style: GoogleFonts.inter(
-                          fontSize: 8 * zoomLevel, color: Colors.black87),
+                          fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black87)),
                     ),
                     SizedBox(height: 6 * zoomLevel),
                     Row(
                       children: [
                         Icon(Icons.devices,
-                            size: 10 * zoomLevel, color: Colors.black54),
+                            size: 10 * zoomLevel, color: Tone.fg(Colors.black54)),
                         SizedBox(width: 4 * zoomLevel),
                         Text(
                           'Device: $deviceId',
                           style: GoogleFonts.inter(
-                              fontSize: 7 * zoomLevel, color: Colors.black54),
+                              fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
                         ),
                       ],
                     ),
@@ -13136,7 +12845,7 @@ class _ReportsState extends State<Reports> {
     return Container(
       padding: EdgeInsets.all(8 * zoomLevel),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
@@ -13153,7 +12862,7 @@ class _ReportsState extends State<Reports> {
           Text(
             label,
             style: GoogleFonts.inter(
-                fontSize: 7 * zoomLevel, color: Colors.black54),
+                fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black54)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -13177,7 +12886,7 @@ class _ReportsState extends State<Reports> {
         Text(
           label,
           style:
-              GoogleFonts.inter(fontSize: 8 * zoomLevel, color: Colors.black54),
+              GoogleFonts.inter(fontSize: 8 * zoomLevel, color: Tone.fg(Colors.black54)),
         ),
         Text(
           '$percentage%',
@@ -13198,7 +12907,7 @@ class _ReportsState extends State<Reports> {
             child: Text(
               text,
               style: GoogleFonts.inter(
-                  fontSize: 7 * zoomLevel, color: Colors.black87),
+                  fontSize: 7 * zoomLevel, color: Tone.fg(Colors.black87)),
             ),
           ),
         ],
@@ -13212,13 +12921,8 @@ class _ReportsState extends State<Reports> {
 
   // Page 1: Maintenance Summary Page
   Widget _buildMaintenanceSummaryPage(double zoomLevel) {
-    print('Building Maintenance Summary Page');
-    print('Data is null: ${lastGeneratedMaintenanceReportData == null}');
-
     final data = lastGeneratedMaintenanceReportData!;
     final stats = data.overallStats;
-
-    print('Overall stats: $stats');
 
     final totalMaintenance = stats['total_maintenance'] ?? 0;
     final completedCount = stats['completed_count'] ?? 0;
@@ -13229,7 +12933,7 @@ class _ReportsState extends State<Reports> {
     final devicesServiced = stats['devices_serviced'] ?? 0;
 
     return Container(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       padding: EdgeInsets.all(16 * zoomLevel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -13240,7 +12944,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 18 * zoomLevel,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2C3E50),
+              color: Tone.fg(Color(0xFF2C3E50)),
             ),
           ),
           SizedBox(height: 4 * zoomLevel),
@@ -13248,7 +12952,7 @@ class _ReportsState extends State<Reports> {
             'Period: ${lastGeneratedMaintenanceReportStartDate} to ${lastGeneratedMaintenanceReportEndDate}',
             style: GoogleFonts.inter(
               fontSize: 10 * zoomLevel,
-              color: Colors.grey[600],
+              color: Tone.fg(Colors.grey[600]),
             ),
           ),
           SizedBox(height: 16 * zoomLevel),
@@ -13266,28 +12970,28 @@ class _ReportsState extends State<Reports> {
                 'Total Maintenance',
                 totalMaintenance.toString(),
                 Icons.build,
-                Color(0xFF3498DB),
+                Tone.auto(Color(0xFF3498DB)),
                 zoomLevel,
               ),
               _buildMaintenanceMetricCard(
                 'Completed',
                 completedCount.toString(),
                 Icons.check_circle,
-                Color(0xFF27AE60),
+                Tone.auto(Color(0xFF27AE60)),
                 zoomLevel,
               ),
               _buildMaintenanceMetricCard(
                 'Overdue',
                 overdueCount.toString(),
                 Icons.warning,
-                Color(0xFFE74C3C),
+                Tone.auto(Color(0xFFE74C3C)),
                 zoomLevel,
               ),
               _buildMaintenanceMetricCard(
                 'Completion Rate',
                 '${completionRate.toStringAsFixed(1)}%',
                 Icons.trending_up,
-                Color(0xFF9B59B6),
+                Tone.auto(Color(0xFF9B59B6)),
                 zoomLevel,
               ),
             ],
@@ -13298,7 +13002,7 @@ class _ReportsState extends State<Reports> {
           Container(
             padding: EdgeInsets.all(12 * zoomLevel),
             decoration: BoxDecoration(
-              color: Color(0xFFF5F5F5),
+              color: Tone.bg(Color(0xFFF5F5F5)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -13309,7 +13013,7 @@ class _ReportsState extends State<Reports> {
                   style: GoogleFonts.inter(
                     fontSize: 12 * zoomLevel,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2C3E50),
+                    color: Tone.fg(Color(0xFF2C3E50)),
                   ),
                 ),
                 SizedBox(height: 8 * zoomLevel),
@@ -13319,19 +13023,19 @@ class _ReportsState extends State<Reports> {
                     _buildCostMetric(
                       'Total Cost',
                       'R ${totalCost.toStringAsFixed(2)}',
-                      Colors.blue,
+                      Tone.auto(Colors.blue),
                       zoomLevel,
                     ),
                     _buildCostMetric(
                       'Average Cost',
                       'R ${avgCost.toStringAsFixed(2)}',
-                      Colors.green,
+                      Tone.auto(Colors.green),
                       zoomLevel,
                     ),
                     _buildCostMetric(
                       'Devices Serviced',
                       devicesServiced.toString(),
-                      Colors.orange,
+                      Tone.auto(Colors.orange),
                       zoomLevel,
                     ),
                   ],
@@ -13347,7 +13051,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 12 * zoomLevel,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF2C3E50),
+              color: Tone.fg(Color(0xFF2C3E50)),
             ),
           ),
           SizedBox(height: 8 * zoomLevel),
@@ -13358,7 +13062,7 @@ class _ReportsState extends State<Reports> {
                   'Completed',
                   completedCount,
                   totalMaintenance,
-                  Color(0xFF27AE60),
+                  Tone.auto(Color(0xFF27AE60)),
                   zoomLevel,
                 ),
               ),
@@ -13368,7 +13072,7 @@ class _ReportsState extends State<Reports> {
                   'In Progress',
                   stats['in_progress_count'] ?? 0,
                   totalMaintenance,
-                  Color(0xFF3498DB),
+                  Tone.auto(Color(0xFF3498DB)),
                   zoomLevel,
                 ),
               ),
@@ -13378,7 +13082,7 @@ class _ReportsState extends State<Reports> {
                   'Scheduled',
                   stats['scheduled_count'] ?? 0,
                   totalMaintenance,
-                  Color(0xFFF39C12),
+                  Tone.auto(Color(0xFFF39C12)),
                   zoomLevel,
                 ),
               ),
@@ -13388,7 +13092,7 @@ class _ReportsState extends State<Reports> {
                   'Overdue',
                   overdueCount,
                   totalMaintenance,
-                  Color(0xFFE74C3C),
+                  Tone.auto(Color(0xFFE74C3C)),
                   zoomLevel,
                 ),
               ),
@@ -13405,7 +13109,7 @@ class _ReportsState extends State<Reports> {
     final maintenanceByType = data.maintenanceByType;
 
     return Container(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       padding: EdgeInsets.all(16 * zoomLevel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -13415,18 +13119,18 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 18 * zoomLevel,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2C3E50),
+              color: Tone.fg(Color(0xFF2C3E50)),
             ),
           ),
           SizedBox(height: 16 * zoomLevel),
 
           // Table
           Table(
-            border: TableBorder.all(color: Colors.grey[300]!, width: 1),
+            border: TableBorder.all(color: Tone.bg(Colors.grey[300]), width: 1),
             children: [
               // Header
               TableRow(
-                decoration: BoxDecoration(color: Color(0xFF3498DB)),
+                decoration: BoxDecoration(color: Tone.bg(Color(0xFF3498DB))),
                 children: [
                   _buildTableHeader('Type', zoomLevel),
                   _buildTableHeader('Category', zoomLevel),
@@ -13440,10 +13144,13 @@ class _ReportsState extends State<Reports> {
               ...maintenanceByType.take(15).map((item) {
                 return TableRow(
                   children: [
-                    _buildTableCell(item['maintenance_type'] ?? 'N/A', zoomLevel),
-                    _buildTableCell(_formatCategory(item['category']), zoomLevel),
+                    _buildTableCell(
+                        item['maintenance_type'] ?? 'N/A', zoomLevel),
+                    _buildTableCell(
+                        _formatCategory(item['category']), zoomLevel),
                     _buildTableCell((item['count'] ?? 0).toString(), zoomLevel),
-                    _buildTableCell((item['completed'] ?? 0).toString(), zoomLevel),
+                    _buildTableCell(
+                        (item['completed'] ?? 0).toString(), zoomLevel),
                     _buildTableCell(
                       item['avg_duration'] != null
                           ? '${item['avg_duration'].toStringAsFixed(1)}h'
@@ -13472,7 +13179,7 @@ class _ReportsState extends State<Reports> {
     final maintenanceByDevice = data.maintenanceByDevice;
 
     return Container(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       padding: EdgeInsets.all(16 * zoomLevel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -13482,18 +13189,18 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 18 * zoomLevel,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2C3E50),
+              color: Tone.fg(Color(0xFF2C3E50)),
             ),
           ),
           SizedBox(height: 16 * zoomLevel),
 
           // Table
           Table(
-            border: TableBorder.all(color: Colors.grey[300]!, width: 1),
+            border: TableBorder.all(color: Tone.bg(Colors.grey[300]), width: 1),
             children: [
               // Header
               TableRow(
-                decoration: BoxDecoration(color: Color(0xFF3498DB)),
+                decoration: BoxDecoration(color: Tone.bg(Color(0xFF3498DB))),
                 children: [
                   _buildTableHeader('Device Name', zoomLevel),
                   _buildTableHeader('Device ID', zoomLevel),
@@ -13509,8 +13216,10 @@ class _ReportsState extends State<Reports> {
                   children: [
                     _buildTableCell(item['device_name'] ?? 'N/A', zoomLevel),
                     _buildTableCell(item['device_id'] ?? 'N/A', zoomLevel),
-                    _buildTableCell((item['maintenance_count'] ?? 0).toString(), zoomLevel),
-                    _buildTableCell((item['completed_count'] ?? 0).toString(), zoomLevel),
+                    _buildTableCell(
+                        (item['maintenance_count'] ?? 0).toString(), zoomLevel),
+                    _buildTableCell(
+                        (item['completed_count'] ?? 0).toString(), zoomLevel),
                     _buildTableCell(
                       (item['overdue_count'] ?? 0).toString(),
                       zoomLevel,
@@ -13537,13 +13246,14 @@ class _ReportsState extends State<Reports> {
     final costAnalysis = data.costAnalysis;
     final durationAnalysis = data.durationAnalysis;
 
-    final totalEstimated = (costAnalysis['total_estimated_cost'] ?? 0.0).toDouble();
+    final totalEstimated =
+        (costAnalysis['total_estimated_cost'] ?? 0.0).toDouble();
     final totalActual = (costAnalysis['total_actual_cost'] ?? 0.0).toDouble();
     final variance = (costAnalysis['total_cost_variance'] ?? 0.0).toDouble();
     final overBudget = costAnalysis['over_budget_count'] ?? 0;
 
     return Container(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       padding: EdgeInsets.all(16 * zoomLevel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -13553,7 +13263,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 18 * zoomLevel,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2C3E50),
+              color: Tone.fg(Color(0xFF2C3E50)),
             ),
           ),
           SizedBox(height: 16 * zoomLevel),
@@ -13562,9 +13272,9 @@ class _ReportsState extends State<Reports> {
           Container(
             padding: EdgeInsets.all(12 * zoomLevel),
             decoration: BoxDecoration(
-              color: Color(0xFFF8F9FA),
+              color: Tone.bg(Color(0xFFF8F9FA)),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: Tone.bg(Colors.grey[300])),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -13574,7 +13284,7 @@ class _ReportsState extends State<Reports> {
                   style: GoogleFonts.inter(
                     fontSize: 14 * zoomLevel,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2C3E50),
+                    color: Tone.fg(Color(0xFF2C3E50)),
                   ),
                 ),
                 SizedBox(height: 12 * zoomLevel),
@@ -13584,7 +13294,7 @@ class _ReportsState extends State<Reports> {
                       child: _buildAnalysisMetric(
                         'Estimated Cost',
                         'R ${totalEstimated.toStringAsFixed(2)}',
-                        Colors.blue,
+                        Tone.auto(Colors.blue),
                         zoomLevel,
                       ),
                     ),
@@ -13593,7 +13303,7 @@ class _ReportsState extends State<Reports> {
                       child: _buildAnalysisMetric(
                         'Actual Cost',
                         'R ${totalActual.toStringAsFixed(2)}',
-                        Colors.green,
+                        Tone.auto(Colors.green),
                         zoomLevel,
                       ),
                     ),
@@ -13602,7 +13312,7 @@ class _ReportsState extends State<Reports> {
                       child: _buildAnalysisMetric(
                         'Variance',
                         'R ${variance.toStringAsFixed(2)}',
-                        variance > 0 ? Colors.red : Colors.green,
+                        variance > 0 ? Tone.auto(Colors.red) : Tone.auto(Colors.green),
                         zoomLevel,
                       ),
                     ),
@@ -13611,7 +13321,7 @@ class _ReportsState extends State<Reports> {
                       child: _buildAnalysisMetric(
                         'Over Budget',
                         overBudget.toString(),
-                        Colors.orange,
+                        Tone.auto(Colors.orange),
                         zoomLevel,
                       ),
                     ),
@@ -13626,9 +13336,9 @@ class _ReportsState extends State<Reports> {
           Container(
             padding: EdgeInsets.all(12 * zoomLevel),
             decoration: BoxDecoration(
-              color: Color(0xFFF8F9FA),
+              color: Tone.bg(Color(0xFFF8F9FA)),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: Tone.bg(Colors.grey[300])),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -13638,7 +13348,7 @@ class _ReportsState extends State<Reports> {
                   style: GoogleFonts.inter(
                     fontSize: 14 * zoomLevel,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF2C3E50),
+                    color: Tone.fg(Color(0xFF2C3E50)),
                   ),
                 ),
                 SizedBox(height: 12 * zoomLevel),
@@ -13648,7 +13358,7 @@ class _ReportsState extends State<Reports> {
                       child: _buildAnalysisMetric(
                         'Avg Estimated',
                         '${(durationAnalysis['avg_estimated_duration'] ?? 0.0).toStringAsFixed(1)}h',
-                        Colors.blue,
+                        Tone.auto(Colors.blue),
                         zoomLevel,
                       ),
                     ),
@@ -13657,7 +13367,7 @@ class _ReportsState extends State<Reports> {
                       child: _buildAnalysisMetric(
                         'Avg Actual',
                         '${(durationAnalysis['avg_actual_duration'] ?? 0.0).toStringAsFixed(1)}h',
-                        Colors.green,
+                        Tone.auto(Colors.green),
                         zoomLevel,
                       ),
                     ),
@@ -13666,7 +13376,7 @@ class _ReportsState extends State<Reports> {
                       child: _buildAnalysisMetric(
                         'Total Hours',
                         '${(durationAnalysis['total_hours_spent'] ?? 0.0).toStringAsFixed(1)}h',
-                        Colors.purple,
+                        Tone.auto(Colors.purple),
                         zoomLevel,
                       ),
                     ),
@@ -13675,7 +13385,7 @@ class _ReportsState extends State<Reports> {
                       child: _buildAnalysisMetric(
                         'Over Time',
                         (durationAnalysis['over_time_count'] ?? 0).toString(),
-                        Colors.orange,
+                        Tone.auto(Colors.orange),
                         zoomLevel,
                       ),
                     ),
@@ -13696,7 +13406,7 @@ class _ReportsState extends State<Reports> {
     final maintenanceByPriority = data.maintenanceByPriority;
 
     return Container(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       padding: EdgeInsets.all(16 * zoomLevel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -13706,7 +13416,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 18 * zoomLevel,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2C3E50),
+              color: Tone.fg(Color(0xFF2C3E50)),
             ),
           ),
           SizedBox(height: 16 * zoomLevel),
@@ -13717,15 +13427,15 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 12 * zoomLevel,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF2C3E50),
+              color: Tone.fg(Color(0xFF2C3E50)),
             ),
           ),
           SizedBox(height: 8 * zoomLevel),
           Table(
-            border: TableBorder.all(color: Colors.grey[300]!, width: 1),
+            border: TableBorder.all(color: Tone.bg(Colors.grey[300]), width: 1),
             children: [
               TableRow(
-                decoration: BoxDecoration(color: Color(0xFF3498DB)),
+                decoration: BoxDecoration(color: Tone.bg(Color(0xFF3498DB))),
                 children: [
                   _buildTableHeader('Month', zoomLevel),
                   _buildTableHeader('Total', zoomLevel),
@@ -13739,7 +13449,8 @@ class _ReportsState extends State<Reports> {
                   children: [
                     _buildTableCell(item['month'] ?? 'N/A', zoomLevel),
                     _buildTableCell((item['count'] ?? 0).toString(), zoomLevel),
-                    _buildTableCell((item['completed'] ?? 0).toString(), zoomLevel),
+                    _buildTableCell(
+                        (item['completed'] ?? 0).toString(), zoomLevel),
                     _buildTableCell(
                       item['avg_cost'] != null
                           ? 'R${item['avg_cost'].toStringAsFixed(0)}'
@@ -13765,7 +13476,7 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 12 * zoomLevel,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF2C3E50),
+              color: Tone.fg(Color(0xFF2C3E50)),
             ),
           ),
           SizedBox(height: 8 * zoomLevel),
@@ -13792,7 +13503,7 @@ class _ReportsState extends State<Reports> {
     final recentCompleted = data.recentCompleted;
 
     return Container(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       padding: EdgeInsets.all(16 * zoomLevel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -13802,17 +13513,17 @@ class _ReportsState extends State<Reports> {
             style: GoogleFonts.inter(
               fontSize: 18 * zoomLevel,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF2C3E50),
+              color: Tone.fg(Color(0xFF2C3E50)),
             ),
           ),
           SizedBox(height: 16 * zoomLevel),
 
           // Table
           Table(
-            border: TableBorder.all(color: Colors.grey[300]!, width: 1),
+            border: TableBorder.all(color: Tone.bg(Colors.grey[300]), width: 1),
             children: [
               TableRow(
-                decoration: BoxDecoration(color: Color(0xFF27AE60)),
+                decoration: BoxDecoration(color: Tone.bg(Color(0xFF27AE60))),
                 children: [
                   _buildTableHeader('Device', zoomLevel),
                   _buildTableHeader('Type', zoomLevel),
@@ -13823,11 +13534,13 @@ class _ReportsState extends State<Reports> {
                 ],
               ),
               ...recentCompleted.take(20).map((item) {
-                final completedAt = item['actual_end_date'] ?? item['scheduled_date'];
+                final completedAt =
+                    item['actual_end_date'] ?? item['scheduled_date'];
                 return TableRow(
                   children: [
                     _buildTableCell(item['device_name'] ?? 'N/A', zoomLevel),
-                    _buildTableCell(item['maintenance_type'] ?? 'N/A', zoomLevel),
+                    _buildTableCell(
+                        item['maintenance_type'] ?? 'N/A', zoomLevel),
                     _buildTableCell(
                       completedAt != null
                           ? completedAt.toString().substring(0, 10)
@@ -13863,21 +13576,22 @@ class _ReportsState extends State<Reports> {
     final upcomingMaintenance = data.upcomingMaintenance;
 
     return Container(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       padding: EdgeInsets.all(16 * zoomLevel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.schedule, color: Color(0xFF3498DB), size: 20 * zoomLevel),
+              Icon(Icons.schedule,
+                  color: Tone.fg(Color(0xFF3498DB)), size: 20 * zoomLevel),
               SizedBox(width: 8 * zoomLevel),
               Text(
                 'Upcoming Maintenance (Next 30 Days)',
                 style: GoogleFonts.inter(
                   fontSize: 18 * zoomLevel,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2C3E50),
+                  color: Tone.fg(Color(0xFF2C3E50)),
                 ),
               ),
             ],
@@ -13893,16 +13607,16 @@ class _ReportsState extends State<Reports> {
                 'No upcoming maintenance scheduled',
                 style: GoogleFonts.inter(
                   fontSize: 12 * zoomLevel,
-                  color: Colors.grey[600],
+                  color: Tone.fg(Colors.grey[600]),
                 ),
               ),
             )
           else
             Table(
-              border: TableBorder.all(color: Colors.grey[300]!, width: 1),
+              border: TableBorder.all(color: Tone.bg(Colors.grey[300]), width: 1),
               children: [
                 TableRow(
-                  decoration: BoxDecoration(color: Color(0xFF3498DB)),
+                  decoration: BoxDecoration(color: Tone.bg(Color(0xFF3498DB))),
                   children: [
                     _buildTableHeader('Device', zoomLevel),
                     _buildTableHeader('Type', zoomLevel),
@@ -13916,14 +13630,16 @@ class _ReportsState extends State<Reports> {
                   return TableRow(
                     children: [
                       _buildTableCell(item['device_name'] ?? 'N/A', zoomLevel),
-                      _buildTableCell(item['maintenance_type'] ?? 'N/A', zoomLevel),
+                      _buildTableCell(
+                          item['maintenance_type'] ?? 'N/A', zoomLevel),
                       _buildTableCell(
                         item['scheduled_date'] != null
                             ? item['scheduled_date'].toString().substring(0, 10)
                             : 'N/A',
                         zoomLevel,
                       ),
-                      _buildTableCell(_formatPriority(item['priority']), zoomLevel),
+                      _buildTableCell(
+                          _formatPriority(item['priority']), zoomLevel),
                       _buildTableCell(
                         item['estimated_cost'] != null
                             ? 'R${item['estimated_cost'].toStringAsFixed(0)}'
@@ -13952,21 +13668,22 @@ class _ReportsState extends State<Reports> {
     final overdueMaintenance = data.overdueMaintenance;
 
     return Container(
-      color: Colors.white,
+      color: Tone.bg(Colors.white),
       padding: EdgeInsets.all(16 * zoomLevel),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.warning, color: Color(0xFFE74C3C), size: 20 * zoomLevel),
+              Icon(Icons.warning,
+                  color: Tone.fg(Color(0xFFE74C3C)), size: 20 * zoomLevel),
               SizedBox(width: 8 * zoomLevel),
               Text(
                 'Overdue Maintenance - Requires Immediate Attention',
                 style: GoogleFonts.inter(
                   fontSize: 18 * zoomLevel,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFE74C3C),
+                  color: Tone.fg(Color(0xFFE74C3C)),
                 ),
               ),
             ],
@@ -13980,13 +13697,14 @@ class _ReportsState extends State<Reports> {
               alignment: Alignment.center,
               child: Column(
                 children: [
-                  Icon(Icons.check_circle, color: Color(0xFF27AE60), size: 40 * zoomLevel),
+                  Icon(Icons.check_circle,
+                      color: Tone.fg(Color(0xFF27AE60)), size: 40 * zoomLevel),
                   SizedBox(height: 8 * zoomLevel),
                   Text(
                     'No overdue maintenance - All on track!',
                     style: GoogleFonts.inter(
                       fontSize: 14 * zoomLevel,
-                      color: Color(0xFF27AE60),
+                      color: Tone.fg(Color(0xFF27AE60)),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -13995,10 +13713,10 @@ class _ReportsState extends State<Reports> {
             )
           else
             Table(
-              border: TableBorder.all(color: Colors.grey[300]!, width: 1),
+              border: TableBorder.all(color: Tone.bg(Colors.grey[300]), width: 1),
               children: [
                 TableRow(
-                  decoration: BoxDecoration(color: Color(0xFFE74C3C)),
+                  decoration: BoxDecoration(color: Tone.bg(Color(0xFFE74C3C))),
                   children: [
                     _buildTableHeader('Device', zoomLevel),
                     _buildTableHeader('Type', zoomLevel),
@@ -14012,12 +13730,13 @@ class _ReportsState extends State<Reports> {
                   return TableRow(
                     decoration: BoxDecoration(
                       color: daysOverdue > 7
-                          ? Colors.red.withValues(alpha: 0.1)
-                          : Colors.orange.withValues(alpha: 0.1),
+                          ? Tone.bg(Colors.red).withValues(alpha: 0.1)
+                          : Tone.bg(Colors.orange).withValues(alpha: 0.1),
                     ),
                     children: [
                       _buildTableCell(item['device_name'] ?? 'N/A', zoomLevel),
-                      _buildTableCell(item['maintenance_type'] ?? 'N/A', zoomLevel),
+                      _buildTableCell(
+                          item['maintenance_type'] ?? 'N/A', zoomLevel),
                       _buildTableCell(
                         item['scheduled_date'] != null
                             ? item['scheduled_date'].toString().substring(0, 10)
@@ -14028,7 +13747,8 @@ class _ReportsState extends State<Reports> {
                         '$daysOverdue days',
                         zoomLevel,
                       ),
-                      _buildTableCell(_formatPriority(item['priority']), zoomLevel),
+                      _buildTableCell(
+                          _formatPriority(item['priority']), zoomLevel),
                     ],
                   );
                 }).toList(),
@@ -14040,12 +13760,12 @@ class _ReportsState extends State<Reports> {
   }
 
   // Helper widgets for Maintenance Report pages
-  Widget _buildMaintenanceMetricCard(
-      String label, String value, IconData icon, Color color, double zoomLevel) {
+  Widget _buildMaintenanceMetricCard(String label, String value, IconData icon,
+      Color color, double zoomLevel) {
     return Container(
       padding: EdgeInsets.all(10 * zoomLevel),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Tone.bg(Colors.white),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
@@ -14067,7 +13787,7 @@ class _ReportsState extends State<Reports> {
             label,
             style: GoogleFonts.inter(
               fontSize: 8 * zoomLevel,
-              color: Colors.grey[600],
+              color: Tone.fg(Colors.grey[600]),
             ),
             textAlign: TextAlign.center,
           ),
@@ -14076,7 +13796,8 @@ class _ReportsState extends State<Reports> {
     );
   }
 
-  Widget _buildCostMetric(String label, String value, Color color, double zoomLevel) {
+  Widget _buildCostMetric(
+      String label, String value, Color color, double zoomLevel) {
     return Column(
       children: [
         Text(
@@ -14092,7 +13813,7 @@ class _ReportsState extends State<Reports> {
           label,
           style: GoogleFonts.inter(
             fontSize: 9 * zoomLevel,
-            color: Colors.grey[600],
+            color: Tone.fg(Colors.grey[600]),
           ),
         ),
       ],
@@ -14110,14 +13831,14 @@ class _ReportsState extends State<Reports> {
           style: GoogleFonts.inter(
             fontSize: 8 * zoomLevel,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Tone.fg(Colors.black87),
           ),
         ),
         SizedBox(height: 4 * zoomLevel),
         Container(
           height: 20 * zoomLevel,
           decoration: BoxDecoration(
-            color: Colors.grey[200],
+            color: Tone.bg(Colors.grey[200]),
             borderRadius: BorderRadius.circular(4),
           ),
           child: FractionallySizedBox(
@@ -14134,7 +13855,7 @@ class _ReportsState extends State<Reports> {
                 style: GoogleFonts.inter(
                   fontSize: 8 * zoomLevel,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Tone.fg(Colors.white),
                 ),
               ),
             ),
@@ -14153,7 +13874,7 @@ class _ReportsState extends State<Reports> {
           label,
           style: GoogleFonts.inter(
             fontSize: 8 * zoomLevel,
-            color: Colors.grey[600],
+            color: Tone.fg(Colors.grey[600]),
           ),
         ),
         SizedBox(height: 4 * zoomLevel),
@@ -14207,7 +13928,7 @@ class _ReportsState extends State<Reports> {
               style: GoogleFonts.inter(
                 fontSize: 8 * zoomLevel,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Tone.fg(Colors.white),
               ),
             ),
           ),
@@ -14234,17 +13955,17 @@ class _ReportsState extends State<Reports> {
   Color _getPriorityColor(dynamic priority) {
     switch (priority?.toString().toLowerCase()) {
       case 'emergency':
-        return Color(0xFF8B0000);
+        return Tone.auto(Color(0xFF8B0000));
       case 'critical':
-        return Color(0xFFE74C3C);
+        return Tone.auto(Color(0xFFE74C3C));
       case 'high':
-        return Color(0xFFF39C12);
+        return Tone.auto(Color(0xFFF39C12));
       case 'normal':
-        return Color(0xFF3498DB);
+        return Tone.auto(Color(0xFF3498DB));
       case 'low':
-        return Color(0xFF95A5A6);
+        return Tone.auto(Color(0xFF95A5A6));
       default:
-        return Color(0xFF3498DB);
+        return Tone.auto(Color(0xFF3498DB));
     }
   }
 }
@@ -14258,7 +13979,8 @@ extension StringExtension on String {
 
 /// Applies the shared phone field treatment to existing non-FormField controls.
 class _ReportFormSurface extends StatelessWidget {
-  const _ReportFormSurface({required this.child, this.padding, this.decoration});
+  const _ReportFormSurface(
+      {required this.child, this.padding, this.decoration});
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final Decoration? decoration;
@@ -14269,7 +13991,8 @@ class _ReportFormSurface extends StatelessWidget {
       return Container(padding: padding, decoration: decoration, child: child);
     }
     return InputDecorator(
-      decoration: mobileInputDecoration(context, const InputDecoration(isDense: true)),
+      decoration:
+          mobileInputDecoration(context, const InputDecoration(isDense: true)),
       child: child,
     );
   }

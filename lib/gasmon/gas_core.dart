@@ -165,23 +165,47 @@ class UsageSummary {
 
 DateTime _dayOf(DateTime t) => DateTime(t.year, t.month, t.day);
 
-/// Consumption as consecutive-reading differences, bucketed by day. Gaps over
-/// 48 h (monitor offline) contribute nothing rather than reporting a whole
-/// outage as one day's burn.
+/// Existing refill-detection threshold, shared with the alert history.
+/// Treat smaller rises as scale fluctuations in the usage estimate.
+const kGasRefillRiseKg = 1.5;
+
+/// Net weight change per local day, split at detected refills and offline gaps.
+/// Sum signed changes before clamping so a small fall followed by a recovery
+/// does not create consumption. Gaps over 48 hours remain unmeasured.
 List<DayPoint> dailySeries(
   List<GasReading> readings, {
   required double pricePerKg,
 }) {
   final sorted = [...readings]..sort((a, b) => a.at.compareTo(b.at));
   final kgByDay = <DateTime, double>{};
+  DateTime? segmentDay;
+  double segmentDrop = 0;
+  void flush() {
+    final day = segmentDay;
+    if (day != null) {
+      kgByDay[day] = (kgByDay[day] ?? 0) + math.max(0, segmentDrop);
+    }
+    segmentDay = null;
+    segmentDrop = 0;
+  }
+
   for (var i = 1; i < sorted.length; i++) {
     final prev = sorted[i - 1], cur = sorted[i];
-    if (cur.at.difference(prev.at) > const Duration(hours: 48)) continue;
-    final kg =
-        consumptionKg(previousKg: prev.weightKg, currentKg: cur.weightKg);
     final day = _dayOf(cur.at);
-    kgByDay[day] = (kgByDay[day] ?? 0) + kg;
+    if (day != segmentDay) flush();
+    if (cur.at.difference(prev.at) > const Duration(hours: 48)) {
+      flush();
+      continue;
+    }
+    segmentDay = day;
+    final drop = prev.weightKg - cur.weightKg;
+    if (drop < -kGasRefillRiseKg) {
+      flush(); // Preserve usage before a refill and restart at its new weight.
+    } else {
+      segmentDrop += drop;
+    }
   }
+  flush();
   final days = kgByDay.keys.toList()..sort();
   return [
     for (final d in days)
@@ -216,26 +240,24 @@ List<DayPoint> weeklySeries(
   ];
 }
 
-/// Usage since local midnight: last reading before today vs the latest.
-/// Returns 0 when there is no baseline yet.
+/// Today's bucket from the same consumption series used by charts and reports.
+/// Small fluctuations cancel within each day; drops after a detected refill
+/// still count. Keep the shared 48-hour gap rule and exclude future readings.
 ({double kg, double cost}) todayUsage(
   List<GasReading> readings, {
   required double pricePerKg,
   DateTime? now,
 }) {
   final at = now ?? DateTime.now();
-  final sorted = [...readings]..sort((a, b) => a.at.compareTo(b.at));
-  if (sorted.length < 2) return (kg: 0, cost: 0);
   final today = _dayOf(at);
-  GasReading baseline = sorted.first;
-  for (final r in sorted) {
-    if (_dayOf(r.at).isBefore(today)) baseline = r;
+  final series = dailySeries(
+    readings.where((r) => !r.at.isAfter(at)).toList(),
+    pricePerKg: pricePerKg,
+  );
+  for (final point in series) {
+    if (point.day == today) return (kg: point.kg, cost: point.cost);
   }
-  final latest = sorted.last;
-  if (identical(baseline, latest)) return (kg: 0, cost: 0);
-  final kg =
-      consumptionKg(previousKg: baseline.weightKg, currentKg: latest.weightKg);
-  return (kg: kg, cost: costOf(consumptionKg: kg, pricePerKg: pricePerKg));
+  return (kg: 0, cost: 0);
 }
 
 UsageSummary summarize(List<DayPoint> series, {required int rangeDays}) {
@@ -315,7 +337,7 @@ List<GasAlert> deriveGasAlerts(
         ));
       }
       final delta = r.weightKg - sorted[i - 1].weightKg;
-      if (delta > 1.5) {
+      if (delta > kGasRefillRiseKg) {
         alerts.add(GasAlert(
           at: r.at,
           severity: GasSeverity.info,

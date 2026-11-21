@@ -1,3 +1,4 @@
+import 'app_tone.dart';
 import 'package:flutter/material.dart';
 import '../gasmon/gas_theme.dart';
 import '../gasmon/gas_widgets.dart';
@@ -16,9 +17,9 @@ class DeviceAlertCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-          color: const Color(0xFFF7F8FA),
+          color: Tone.bg(const Color(0xFFF7F8FA)),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE2E5EA))),
+          border: Border.all(color: Tone.bg(const Color(0xFFE2E5EA)))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Text('My phone alerts',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
@@ -66,7 +67,7 @@ class DeviceAlertCard extends StatelessWidget {
               final configure = OutlinedButton(
                 style: OutlinedButton.styleFrom(
                     foregroundColor: GasPalette.primary,
-                    side: const BorderSide(color: GasPalette.border),
+                    side: BorderSide(color: GasPalette.border),
                     minimumSize: const Size(0, 44),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600),
@@ -80,7 +81,7 @@ class DeviceAlertCard extends StatelessWidget {
               final enable = FilledButton(
                 style: FilledButton.styleFrom(
                     backgroundColor: GasPalette.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Tone.fg(Colors.white),
                     minimumSize: const Size(0, 44),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600),

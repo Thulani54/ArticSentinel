@@ -1,3 +1,6 @@
+import '../../widgets/app_tone.dart';
+import '../notification_settings.dart';
+import '../../widgets/biometric_session_gate.dart';
 import 'mobile_account_widgets.dart';
 import '../../gasmon/gas_theme.dart';
 import '../../widgets/mobile_forms.dart';
@@ -8,6 +11,7 @@ import 'package:artic_sentinel/screens/settings/security.dart';
 import 'package:artic_sentinel/screens/settings/terms.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/appearance_settings_tile.dart';
 import 'package:http/http.dart' as http;
 
 import '../../constants/Constants.dart';
@@ -30,6 +34,7 @@ class _SettingsPageState extends State<SettingsPage>
   String itemIdIndex = "my_profile";
   List<SettingSideBar> sideBarList = [
     SettingSideBar(1, "my_profile", "Profile", Icons.person_outline_rounded),
+    SettingSideBar(6, "notifications", "Notifications", Icons.notifications_outlined),
     SettingSideBar(2, "security", "Security", Icons.security_rounded),
     SettingSideBar(3, "terms", "Terms Of Use", Icons.description_outlined),
     SettingSideBar(5, "billing", "Billing", Icons.credit_card_rounded),
@@ -85,11 +90,11 @@ class _SettingsPageState extends State<SettingsPage>
                             decoration: accountSurface(
                                 context,
                                 BoxDecoration(
-                                  color: Colors.white,
+                                  color: Tone.bg(Colors.white),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: Tone.bg(Colors.black).withOpacity(0.05),
                                       blurRadius: 10,
                                       offset: const Offset(0, 2),
                                     ),
@@ -99,15 +104,15 @@ class _SettingsPageState extends State<SettingsPage>
                               value: itemIdIndex,
                               isExpanded: true,
                               underline: const SizedBox(),
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.keyboard_arrow_down_rounded,
-                                color: Color(0xFF64748B),
+                                color: Tone.fg(Color(0xFF64748B)),
                               ),
                               style: accountInter(
                                 context,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF1E293B),
+                                color: Tone.auto(const Color(0xFF1E293B)),
                               ),
                               items: sideBarList.map((item) {
                                 return DropdownMenuItem<String>(
@@ -119,7 +124,7 @@ class _SettingsPageState extends State<SettingsPage>
                                         size: 20,
                                         color: itemIdIndex == item.item_id
                                             ? Constants.ctaColorGreen
-                                            : const Color(0xFF64748B),
+                                            : Tone.fg(const Color(0xFF64748B)),
                                       ),
                                       const SizedBox(width: 12),
                                       Text(item.itemName),
@@ -143,11 +148,11 @@ class _SettingsPageState extends State<SettingsPage>
                               decoration: accountSurface(
                                   context,
                                   BoxDecoration(
-                                    color: Colors.white,
+                                    color: Tone.bg(Colors.white),
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
+                                        color: Tone.bg(Colors.black).withOpacity(0.05),
                                         blurRadius: 10,
                                         offset: const Offset(0, 2),
                                       ),
@@ -167,11 +172,11 @@ class _SettingsPageState extends State<SettingsPage>
                             decoration: accountSurface(
                                 context,
                                 BoxDecoration(
-                                  color: Colors.white,
+                                  color: Tone.bg(Colors.white),
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: Tone.bg(Colors.black).withOpacity(0.05),
                                       blurRadius: 10,
                                       offset: const Offset(0, 2),
                                     ),
@@ -183,7 +188,7 @@ class _SettingsPageState extends State<SettingsPage>
                                 Container(
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF8FAFC),
+                                    color: Tone.bg(const Color(0xFFF8FAFC)),
                                     borderRadius: const BorderRadius.only(
                                       topLeft: Radius.circular(16),
                                       topRight: Radius.circular(16),
@@ -193,7 +198,7 @@ class _SettingsPageState extends State<SettingsPage>
                                     children: [
                                       Icon(
                                         Icons.menu_rounded,
-                                        color: const Color(0xFF64748B),
+                                        color: Tone.fg(const Color(0xFF64748B)),
                                         size: 20,
                                       ),
                                       const SizedBox(width: 12),
@@ -203,7 +208,7 @@ class _SettingsPageState extends State<SettingsPage>
                                           context,
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF64748B),
+                                          color: Tone.auto(const Color(0xFF64748B)),
                                         ),
                                       ),
                                     ],
@@ -314,11 +319,11 @@ class _SettingsPageState extends State<SettingsPage>
                                               const EdgeInsets.only(top: 20),
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFFEF2F2),
+                                            color: Tone.bg(const Color(0xFFFEF2F2)),
                                             borderRadius:
                                                 BorderRadius.circular(12),
                                             border: Border.all(
-                                              color: const Color(0xFFFECACA),
+                                              color: Tone.bg(const Color(0xFFFECACA)),
                                             ),
                                           ),
                                           child: GestureDetector(
@@ -327,9 +332,9 @@ class _SettingsPageState extends State<SettingsPage>
                                             },
                                             child: Row(
                                               children: [
-                                                const Icon(
+                                                Icon(
                                                   Icons.delete_outline_rounded,
-                                                  color: Color(0xFFEF4444),
+                                                  color: Tone.fg(Color(0xFFEF4444)),
                                                   size: 18,
                                                 ),
                                                 const SizedBox(width: 8),
@@ -340,7 +345,7 @@ class _SettingsPageState extends State<SettingsPage>
                                                     fontSize: 13,
                                                     fontWeight: FontWeight.w600,
                                                     color:
-                                                        const Color(0xFFEF4444),
+                                                        Tone.auto(const Color(0xFFEF4444)),
                                                   ),
                                                 ),
                                               ],
@@ -363,11 +368,11 @@ class _SettingsPageState extends State<SettingsPage>
                               decoration: accountSurface(
                                   context,
                                   BoxDecoration(
-                                    color: Colors.white,
+                                    color: Tone.bg(Colors.white),
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
+                                        color: Tone.bg(Colors.black).withOpacity(0.05),
                                         blurRadius: 10,
                                         offset: const Offset(0, 2),
                                       ),
@@ -387,7 +392,8 @@ class _SettingsPageState extends State<SettingsPage>
   }
 
   Widget _buildMobileSettings() {
-    return ColoredBox(
+    // Material, not ColoredBox, so list tiles below can paint their ink.
+    return Material(
       color: GasPalette.page,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         MobileScreenHeader(
@@ -404,7 +410,7 @@ class _SettingsPageState extends State<SettingsPage>
                           ? GasPalette.primary
                           : Colors.transparent,
                       foregroundColor: itemIdIndex == item.item_id
-                          ? Colors.white
+                          ? Tone.fg(Colors.white)
                           : GasPalette.ink2,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                     ),
@@ -440,7 +446,7 @@ class _SettingsPageState extends State<SettingsPage>
             dividerColor: Colors.transparent,
             indicatorSize: TabBarIndicatorSize.tab,
             indicator: BoxDecoration(
-                color: Colors.white,
+                color: Tone.bg(Colors.white),
                 border: Border.all(color: GasPalette.border),
                 borderRadius: BorderRadius.circular(32)),
             labelColor: GasPalette.ink,
@@ -495,6 +501,10 @@ class _SettingsPageState extends State<SettingsPage>
             ),
           ]),
         ),
+        if (!business) ...[
+          const AppearanceSettingsTile(),
+          const SizedBox(height: 12),
+        ],
         AccountDetailSection(
           title: business ? 'Contact details' : 'Personal details',
           values: business
@@ -543,8 +553,13 @@ class _SettingsPageState extends State<SettingsPage>
     switch (itemIdIndex) {
       case "my_profile":
         return _buildProfileContent();
+      case "notifications":
+        return const NotificationSettingsPage();
       case "security":
-        return SecurityPage();
+        return const Column(children: [
+          Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: BiometricSettingsTile()),
+          Expanded(child: SecurityPage()),
+        ]);
       case "terms":
         return TermsOfUse();
       case "billing":
@@ -563,7 +578,7 @@ class _SettingsPageState extends State<SettingsPage>
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: Tone.bg(const Color(0xFFF8FAFC)),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(16),
               topRight: Radius.circular(16),
@@ -596,7 +611,7 @@ class _SettingsPageState extends State<SettingsPage>
                           context,
                           fontSize: isMobile ? 18 : 20,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E293B),
+                          color: Tone.auto(const Color(0xFF1E293B)),
                         ),
                       ),
                       Text(
@@ -604,7 +619,7 @@ class _SettingsPageState extends State<SettingsPage>
                         style: accountInter(
                           context,
                           fontSize: isMobile ? 12 : 14,
-                          color: const Color(0xFF64748B),
+                          color: Tone.auto(const Color(0xFF64748B)),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -619,14 +634,14 @@ class _SettingsPageState extends State<SettingsPage>
                 decoration: accountSurface(
                     context,
                     BoxDecoration(
-                      color: Colors.white,
+                      color: Tone.bg(Colors.white),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
                     )),
                 child: TabBar(
                   controller: _tabController,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: const Color(0xFF64748B),
+                  labelColor: Tone.fg(Colors.white),
+                  unselectedLabelColor: Tone.fg(const Color(0xFF64748B)),
                   labelStyle: accountInter(
                     context,
                     fontSize: 14,
@@ -690,7 +705,7 @@ class _SettingsPageState extends State<SettingsPage>
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
                 )),
             child: isMobile
                 ? Column(
@@ -709,10 +724,10 @@ class _SettingsPageState extends State<SettingsPage>
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           CupertinoIcons.person,
                           size: 28,
-                          color: Colors.white,
+                          color: Tone.fg(Colors.white),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -725,7 +740,7 @@ class _SettingsPageState extends State<SettingsPage>
                               context,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1E293B),
+                              color: Tone.auto(const Color(0xFF1E293B)),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -765,10 +780,10 @@ class _SettingsPageState extends State<SettingsPage>
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           CupertinoIcons.person,
                           size: 32,
-                          color: Colors.white,
+                          color: Tone.fg(Colors.white),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -781,7 +796,7 @@ class _SettingsPageState extends State<SettingsPage>
                               context,
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1E293B),
+                              color: Tone.auto(const Color(0xFF1E293B)),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -862,12 +877,12 @@ class _SettingsPageState extends State<SettingsPage>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFF10B981).withOpacity(0.1),
-                      const Color(0xFF10B981).withOpacity(0.05),
+                      Tone.auto(const Color(0xFF10B981)).withOpacity(0.1),
+                      Tone.auto(const Color(0xFF10B981)).withOpacity(0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
                 )),
             child: isMobile
                 ? Column(
@@ -876,20 +891,20 @@ class _SettingsPageState extends State<SettingsPage>
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981),
+                          color: Tone.bg(const Color(0xFF10B981)),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF10B981).withOpacity(0.3),
+                              color: Tone.bg(const Color(0xFF10B981)).withOpacity(0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.business_rounded,
                           size: 28,
-                          color: Colors.white,
+                          color: Tone.fg(Colors.white),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -902,7 +917,7 @@ class _SettingsPageState extends State<SettingsPage>
                               context,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1E293B),
+                              color: Tone.auto(const Color(0xFF1E293B)),
                             ),
                           ),
                         ],
@@ -914,20 +929,20 @@ class _SettingsPageState extends State<SettingsPage>
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981),
+                          color: Tone.bg(const Color(0xFF10B981)),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF10B981).withOpacity(0.3),
+                              color: Tone.bg(const Color(0xFF10B981)).withOpacity(0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.business_rounded,
                           size: 32,
-                          color: Colors.white,
+                          color: Tone.fg(Colors.white),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -937,7 +952,7 @@ class _SettingsPageState extends State<SettingsPage>
                           context,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E293B),
+                          color: Tone.auto(const Color(0xFF1E293B)),
                         ),
                       ),
                     ],
@@ -993,7 +1008,7 @@ class _SettingsPageState extends State<SettingsPage>
   Widget _buildInfoSection(String title, IconData icon, List<Widget> fields) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -1002,7 +1017,7 @@ class _SettingsPageState extends State<SettingsPage>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: Tone.bg(const Color(0xFFF8FAFC)),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -1029,7 +1044,7 @@ class _SettingsPageState extends State<SettingsPage>
                     context,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E293B),
+                    color: Tone.auto(const Color(0xFF1E293B)),
                   ),
                 ),
               ],
@@ -1058,7 +1073,7 @@ class _SettingsPageState extends State<SettingsPage>
               context,
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF64748B),
+              color: Tone.auto(const Color(0xFF64748B)),
             ),
           ),
           const SizedBox(height: 8),
@@ -1066,9 +1081,9 @@ class _SettingsPageState extends State<SettingsPage>
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: Tone.bg(const Color(0xFFF8FAFC)),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
             ),
             child: Text(
               value,
@@ -1076,7 +1091,7 @@ class _SettingsPageState extends State<SettingsPage>
                 context,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF1E293B),
+                color: Tone.auto(const Color(0xFF1E293B)),
               ),
             ),
           ),
@@ -1091,9 +1106,9 @@ class _SettingsPageState extends State<SettingsPage>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Tone.bg(const Color(0xFFF8FAFC)),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Tone.bg(const Color(0xFFE2E8F0))),
       ),
       child: isMobile
           ? Column(
@@ -1114,8 +1129,8 @@ class _SettingsPageState extends State<SettingsPage>
                     style: accountButtonStyle(
                         context,
                         OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF64748B),
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          foregroundColor: Tone.fg(const Color(0xFF64748B)),
+                          side: BorderSide(color: Tone.bg(Color(0xFFE2E8F0))),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1142,7 +1157,7 @@ class _SettingsPageState extends State<SettingsPage>
                         context,
                         ElevatedButton.styleFrom(
                           backgroundColor: Constants.ctaColorGreen,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Tone.fg(Colors.white),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1171,8 +1186,8 @@ class _SettingsPageState extends State<SettingsPage>
                     style: accountButtonStyle(
                         context,
                         OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF64748B),
-                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                          foregroundColor: Tone.fg(const Color(0xFF64748B)),
+                          side: BorderSide(color: Tone.bg(Color(0xFFE2E8F0))),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1198,7 +1213,7 @@ class _SettingsPageState extends State<SettingsPage>
                         context,
                         ElevatedButton.styleFrom(
                           backgroundColor: Constants.ctaColorGreen,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Tone.fg(Colors.white),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1286,11 +1301,11 @@ class _EditMyProfileState extends State<EditMyProfile> {
         decoration: accountSurface(
             context,
             BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Tone.bg(Colors.black).withOpacity(0.15),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -1333,9 +1348,9 @@ class _EditMyProfileState extends State<EditMyProfile> {
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.edit_rounded,
-                      color: Colors.white,
+                      color: Tone.fg(Colors.white),
                       size: 24,
                     ),
                   ),
@@ -1350,7 +1365,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                             context,
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1E293B),
+                            color: Tone.auto(const Color(0xFF1E293B)),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -1360,7 +1375,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                             context,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF64748B),
+                            color: Tone.auto(const Color(0xFF64748B)),
                           ),
                         ),
                       ],
@@ -1370,8 +1385,8 @@ class _EditMyProfileState extends State<EditMyProfile> {
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close_rounded),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.8),
-                      foregroundColor: const Color(0xFF64748B),
+                      backgroundColor: Tone.bg(Colors.white).withOpacity(0.8),
+                      foregroundColor: Tone.fg(const Color(0xFF64748B)),
                     ),
                   ),
                 ],
@@ -1587,7 +1602,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: Tone.bg(const Color(0xFFF8FAFC)),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -1611,8 +1626,8 @@ class _EditMyProfileState extends State<EditMyProfile> {
                       style: accountButtonStyle(
                           context,
                           OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF64748B),
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            foregroundColor: Tone.fg(const Color(0xFF64748B)),
+                            side: BorderSide(color: Tone.bg(Color(0xFFE2E8F0))),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1626,13 +1641,13 @@ class _EditMyProfileState extends State<EditMyProfile> {
                     child: ElevatedButton.icon(
                       onPressed: _isSaving ? null : _saveProfile,
                       icon: _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                    AlwaysStoppedAnimation<Color>(Tone.fg(Colors.white)),
                               ),
                             )
                           : const Icon(Icons.save_rounded, size: 18),
@@ -1648,7 +1663,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                           context,
                           ElevatedButton.styleFrom(
                             backgroundColor: Constants.ctaColorGreen,
-                            foregroundColor: Colors.white,
+                            foregroundColor: Tone.fg(Colors.white),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1690,7 +1705,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
             context,
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E293B),
+            color: Tone.auto(const Color(0xFF1E293B)),
           ),
         )),
       ],
@@ -1715,7 +1730,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
             context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF374151),
+            color: Tone.auto(const Color(0xFF374151)),
           ),
         ),
         const SizedBox(height: 8),
@@ -1728,7 +1743,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
             context,
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF1F2937),
+            color: Tone.auto(const Color(0xFF1F2937)),
           ),
           decoration: mobileInputDecoration(
               context,
@@ -1737,22 +1752,22 @@ class _EditMyProfileState extends State<EditMyProfile> {
                 hintStyle: accountInter(
                   context,
                   fontSize: 14,
-                  color: const Color(0xFF9CA3AF),
+                  color: Tone.auto(const Color(0xFF9CA3AF)),
                 ),
                 prefixIcon: Icon(
                   icon,
                   size: 20,
-                  color: const Color(0xFF6B7280),
+                  color: Tone.fg(const Color(0xFF6B7280)),
                 ),
                 filled: true,
-                fillColor: const Color(0xFFF9FAFB),
+                fillColor: Tone.bg(const Color(0xFFF9FAFB)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1761,12 +1776,12 @@ class _EditMyProfileState extends State<EditMyProfile> {
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFEF4444)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFEF4444))),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      const BorderSide(color: Color(0xFFEF4444), width: 2),
+                      BorderSide(color: Tone.bg(Color(0xFFEF4444)), width: 2),
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -1786,15 +1801,15 @@ class _EditMyProfileState extends State<EditMyProfile> {
             context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF374151),
+            color: Tone.auto(const Color(0xFF374151)),
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
+            color: Tone.bg(const Color(0xFFF9FAFB)),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: Tone.bg(const Color(0xFFE5E7EB))),
           ),
           child: DropdownButtonFormField<Province>(
             value: selectedProvince,
@@ -1805,12 +1820,12 @@ class _EditMyProfileState extends State<EditMyProfile> {
                   hintStyle: accountInter(
                     context,
                     fontSize: 14,
-                    color: const Color(0xFF9CA3AF),
+                    color: Tone.auto(const Color(0xFF9CA3AF)),
                   ),
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.location_on_outlined,
                     size: 20,
-                    color: Color(0xFF6B7280),
+                    color: Tone.fg(Color(0xFF6B7280)),
                   ),
                   border: InputBorder.none,
                   contentPadding:
@@ -1820,12 +1835,12 @@ class _EditMyProfileState extends State<EditMyProfile> {
               context,
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF1F2937),
+              color: Tone.auto(const Color(0xFF1F2937)),
             ),
-            dropdownColor: Colors.white,
-            icon: const Icon(
+            dropdownColor: Tone.bg(Colors.white),
+            icon: Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: Color(0xFF6B7280),
+              color: Tone.fg(Color(0xFF6B7280)),
             ),
             isExpanded: true,
             validator: (value) {
@@ -1848,7 +1863,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
                   style: accountInter(
                     context,
                     fontSize: 14,
-                    color: const Color(0xFF1F2937),
+                    color: Tone.auto(const Color(0xFF1F2937)),
                   ),
                 ),
               );
@@ -1868,7 +1883,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please select a province'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -1899,12 +1914,12 @@ class _EditMyProfileState extends State<EditMyProfile> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white),
+                Icon(Icons.check_circle_rounded, color: Tone.fg(Colors.white)),
                 const SizedBox(width: 8),
                 const Text('Profile updated successfully!'),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Tone.bg(Colors.green),
             behavior: SnackBarBehavior.floating,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -1918,7 +1933,7 @@ class _EditMyProfileState extends State<EditMyProfile> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving profile: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Tone.bg(Colors.red),
             behavior: SnackBarBehavior.floating,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -2106,11 +2121,11 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
         decoration: accountSurface(
             context,
             BoxDecoration(
-              color: Colors.white,
+              color: Tone.bg(Colors.white),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Tone.bg(Colors.black).withOpacity(0.15),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -2129,8 +2144,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        const Color(0xFF10B981).withOpacity(0.1),
-                        const Color(0xFF10B981).withOpacity(0.05),
+                        Tone.auto(const Color(0xFF10B981)).withOpacity(0.1),
+                        Tone.auto(const Color(0xFF10B981)).withOpacity(0.05),
                       ],
                     ),
                     borderRadius: const BorderRadius.only(
@@ -2143,19 +2158,19 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981),
+                      color: Tone.bg(const Color(0xFF10B981)),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF10B981).withOpacity(0.3),
+                          color: Tone.bg(const Color(0xFF10B981)).withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.business_rounded,
-                      color: Colors.white,
+                      color: Tone.fg(Colors.white),
                       size: 24,
                     ),
                   ),
@@ -2170,7 +2185,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                             context,
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF1E293B),
+                            color: Tone.auto(const Color(0xFF1E293B)),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -2180,7 +2195,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                             context,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: const Color(0xFF64748B),
+                            color: Tone.auto(const Color(0xFF64748B)),
                           ),
                         ),
                       ],
@@ -2190,8 +2205,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close_rounded),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.8),
-                      foregroundColor: const Color(0xFF64748B),
+                      backgroundColor: Tone.bg(Colors.white).withOpacity(0.8),
+                      foregroundColor: Tone.fg(const Color(0xFF64748B)),
                     ),
                   ),
                 ],
@@ -2488,7 +2503,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: Tone.bg(const Color(0xFFF8FAFC)),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -2512,8 +2527,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                       style: accountButtonStyle(
                           context,
                           OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF64748B),
-                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            foregroundColor: Tone.fg(const Color(0xFF64748B)),
+                            side: BorderSide(color: Tone.bg(Color(0xFFE2E8F0))),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -2527,13 +2542,13 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                     child: ElevatedButton.icon(
                       onPressed: _isSaving ? null : _saveBusinessInfo,
                       icon: _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                    AlwaysStoppedAnimation<Color>(Tone.fg(Colors.white)),
                               ),
                             )
                           : const Icon(Icons.save_rounded, size: 18),
@@ -2548,8 +2563,8 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                       style: accountButtonStyle(
                           context,
                           ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF10B981),
-                            foregroundColor: Colors.white,
+                            backgroundColor: Tone.bg(const Color(0xFF10B981)),
+                            foregroundColor: Tone.fg(Colors.white),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -2591,7 +2606,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
             context,
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E293B),
+            color: Tone.auto(const Color(0xFF1E293B)),
           ),
         )),
       ],
@@ -2616,7 +2631,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
             context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF374151),
+            color: Tone.auto(const Color(0xFF374151)),
           ),
         ),
         const SizedBox(height: 8),
@@ -2629,7 +2644,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
             context,
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF1F2937),
+            color: Tone.auto(const Color(0xFF1F2937)),
           ),
           decoration: mobileInputDecoration(
               context,
@@ -2638,36 +2653,36 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                 hintStyle: accountInter(
                   context,
                   fontSize: 14,
-                  color: const Color(0xFF9CA3AF),
+                  color: Tone.auto(const Color(0xFF9CA3AF)),
                 ),
                 prefixIcon: Icon(
                   icon,
                   size: 20,
-                  color: const Color(0xFF6B7280),
+                  color: Tone.fg(const Color(0xFF6B7280)),
                 ),
                 filled: true,
-                fillColor: const Color(0xFFF9FAFB),
+                fillColor: Tone.bg(const Color(0xFFF9FAFB)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFE5E7EB))),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      const BorderSide(color: Color(0xFF10B981), width: 2),
+                      BorderSide(color: Tone.bg(Color(0xFF10B981)), width: 2),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFEF4444)),
+                  borderSide: BorderSide(color: Tone.bg(Color(0xFFEF4444))),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      const BorderSide(color: Color(0xFFEF4444), width: 2),
+                      BorderSide(color: Tone.bg(Color(0xFFEF4444)), width: 2),
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -2687,15 +2702,15 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
             context,
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF374151),
+            color: Tone.auto(const Color(0xFF374151)),
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
+            color: Tone.bg(const Color(0xFFF9FAFB)),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            border: Border.all(color: Tone.bg(const Color(0xFFE5E7EB))),
           ),
           child: DropdownButtonFormField<Province>(
             value: selectedProvince,
@@ -2706,12 +2721,12 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                   hintStyle: accountInter(
                     context,
                     fontSize: 14,
-                    color: const Color(0xFF9CA3AF),
+                    color: Tone.auto(const Color(0xFF9CA3AF)),
                   ),
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.location_on_outlined,
                     size: 20,
-                    color: Color(0xFF6B7280),
+                    color: Tone.fg(Color(0xFF6B7280)),
                   ),
                   border: InputBorder.none,
                   contentPadding:
@@ -2721,12 +2736,12 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
               context,
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF1F2937),
+              color: Tone.auto(const Color(0xFF1F2937)),
             ),
-            dropdownColor: Colors.white,
-            icon: const Icon(
+            dropdownColor: Tone.bg(Colors.white),
+            icon: Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: Color(0xFF6B7280),
+              color: Tone.fg(Color(0xFF6B7280)),
             ),
             isExpanded: true,
             validator: (value) {
@@ -2749,7 +2764,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
                   style: accountInter(
                     context,
                     fontSize: 14,
-                    color: const Color(0xFF1F2937),
+                    color: Tone.auto(const Color(0xFF1F2937)),
                   ),
                 ),
               );
@@ -2769,7 +2784,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please select a province'),
-          backgroundColor: Colors.red,
+          backgroundColor: Tone.bg(Colors.red),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -2807,12 +2822,12 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white),
+                Icon(Icons.check_circle_rounded, color: Tone.fg(Colors.white)),
                 const SizedBox(width: 8),
                 const Text('Business information updated successfully!'),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Tone.bg(Colors.green),
             behavior: SnackBarBehavior.floating,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -2826,7 +2841,7 @@ class _EditBusinessInfoState extends State<EditBusinessInfo> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error saving business information: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Tone.bg(Colors.red),
             behavior: SnackBarBehavior.floating,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

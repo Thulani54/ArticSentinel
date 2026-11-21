@@ -1,0 +1,13 @@
+SECRET_KEY='isolated-platform-admin-tests'
+INSTALLED_APPS=['django.contrib.auth','django.contrib.contenttypes','rest_framework','rest_framework.authtoken','platform_admin','platform_admin.testapp']
+DATABASES={'default':{'ENGINE':'django.db.backends.sqlite3','NAME':':memory:'}}
+ROOT_URLCONF='platform_admin.urls'
+DEFAULT_AUTO_FIELD='django.db.models.BigAutoField'
+USE_TZ=True
+TIME_ZONE='Africa/Johannesburg'
+MIGRATION_MODULES={'testapp':None}
+PLATFORM_ADMIN_MODELS={'companies':'testapp.Company','devices':'testapp.Device','reports':'testapp.Report'}
+REST_FRAMEWORK={'UNAUTHENTICATED_USER':'django.contrib.auth.models.AnonymousUser'}
+PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher']
+AUTH_PASSWORD_VALIDATORS=[{'NAME':'django.contrib.auth.password_validation.MinimumLengthValidator','OPTIONS':{'min_length':12}}]
+PLATFORM_ADMIN_MODELS.update({'alerts':'testapp.Alert','maintenance':'testapp.Maintenance'})

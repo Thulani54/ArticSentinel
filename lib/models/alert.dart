@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -145,30 +146,30 @@ class Alert {
   Color get severityColor {
     switch (severity.toLowerCase()) {
       case 'critical':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       case 'high':
-        return Colors.orange;
+        return Tone.auto(Colors.orange);
       case 'medium':
-        return Colors.yellow[700]!;
+        return Tone.auto(Colors.yellow[700]);
       case 'low':
-        return Colors.blue;
+        return Tone.auto(Colors.blue);
       default:
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
     }
   }
 
   Color get statusColor {
     switch (status.toLowerCase()) {
       case 'active':
-        return Colors.red;
+        return Tone.auto(Colors.red);
       case 'acknowledged':
-        return Colors.orange;
+        return Tone.auto(Colors.orange);
       case 'resolved':
-        return Colors.green;
+        return Tone.auto(Colors.green);
       case 'false_positive':
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
       default:
-        return Colors.grey;
+        return Tone.auto(Colors.grey);
     }
   }
 

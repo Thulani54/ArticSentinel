@@ -1,3 +1,4 @@
+import '../widgets/app_tone.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -48,7 +49,7 @@ class ProductsPage extends StatelessWidget {
                   onPressed: onBack,
                   icon: const Icon(Iconsax.arrow_left),
                 ),
-          backgroundColor: Colors.white,
+          backgroundColor: Tone.bg(Colors.white),
           foregroundColor: GasPalette.ink,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
@@ -63,7 +64,7 @@ class ProductsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
+                    Text(
                       'Choose what you want to monitor',
                       style: TextStyle(
                         fontFamily: 'Inter',
@@ -74,7 +75,7 @@ class ProductsPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'Explore the equipment supported by ArticSentinel. '
                       'Tell us what you need and our team will help you choose.',
                       style: TextStyle(
@@ -85,7 +86,7 @@ class ProductsPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'Available readings depend on the sensors connected to your device.',
                       style: TextStyle(
                         fontFamily: 'Inter',
@@ -131,7 +132,7 @@ class _ProductCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         key: ValueKey('product-${product.type}'),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Tone.bg(Colors.white),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: GasPalette.border),
         ),
@@ -153,7 +154,7 @@ class _ProductCard extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(product.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 20,
                         height: 1.3,
@@ -165,7 +166,7 @@ class _ProductCard extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             Text(product.summary,
-                style: const TextStyle(
+                style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 14,
                     height: 1.5,
@@ -177,7 +178,7 @@ class _ProductCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(top: 2),
                       child: Icon(Iconsax.tick_circle,
                           size: 17, color: GasPalette.good),
@@ -185,7 +186,7 @@ class _ProductCard extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(feature,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 13,
                               height: 1.5,
@@ -200,7 +201,7 @@ class _ProductCard extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: GasPalette.primary,
                 minimumSize: const Size.fromHeight(48),
-                side: const BorderSide(color: GasPalette.border),
+                side: BorderSide(color: GasPalette.border),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
@@ -267,8 +268,13 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
     final signedIn =
         preferences.getBool(Sharedprefs.sharedPreferenceUserLoggedInKey) ??
             false;
-    final token =
-        preferences.getString(Sharedprefs.sharedPreferenceAuthTokenKey) ?? '';
+    if (!signedIn) return;
+    String token;
+    try {
+      token = await Sharedprefs.getAuthTokenPreference() ?? '';
+    } catch (_) {
+      return; // Secure storage unavailable: leave the public form unfilled.
+    }
     if (!mounted || !signedIn || token.isEmpty) return;
     // A slow session read must not replace anything the visitor has typed.
     final fields = <TextEditingController, String>{
@@ -343,13 +349,13 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
             const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(32),
-            borderSide: const BorderSide(color: GasPalette.border)),
+            borderSide: BorderSide(color: GasPalette.border)),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(32),
-            borderSide: const BorderSide(color: GasPalette.border)),
+            borderSide: BorderSide(color: GasPalette.border)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(32),
-            borderSide: const BorderSide(color: GasPalette.primary)),
+            borderSide: BorderSide(color: GasPalette.primary)),
         errorMaxLines: 3,
       );
 
@@ -386,7 +392,7 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
     return PopScope(
       canPop: !_submitting,
       child: MobileDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: Tone.bg(Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         clipBehavior: Clip.antiAlias,
         child: SizedBox(
@@ -397,7 +403,7 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
             data: Theme.of(context).copyWith(
               colorScheme: Theme.of(context).colorScheme.copyWith(
                     primary: GasPalette.primary,
-                    surface: Colors.white,
+                    surface: Tone.bg(Colors.white),
                   ),
             ),
             child: Column(
@@ -406,7 +412,7 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(22, 12, 8, 12),
                   child: Row(children: [
-                    const Expanded(
+                    Expanded(
                       child: Text('Request information',
                           style: TextStyle(
                               fontFamily: 'Inter',
@@ -423,21 +429,21 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
                     ),
                   ]),
                 ),
-                const Divider(height: 1, color: GasPalette.border),
+                Divider(height: 1, color: GasPalette.border),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(22),
                     child: _receipt == null ? _buildForm() : _buildReceipt(),
                   ),
                 ),
-                const Divider(height: 1, color: GasPalette.border),
+                Divider(height: 1, color: GasPalette.border),
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: FilledButton(
                     key: const ValueKey('enquiry-submit'),
                     style: FilledButton.styleFrom(
                       backgroundColor: GasPalette.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Tone.fg(Colors.white),
                       minimumSize: const Size.fromHeight(52),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 16),
@@ -482,7 +488,7 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
+              Text(
                 'Tell us a little about what you need. The ArticSentinel team '
                 'will contact you using the details below.',
                 style: TextStyle(
@@ -584,7 +590,7 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
                       Padding(
                         padding: const EdgeInsets.only(left: 12, bottom: 12),
                         child: Text(field.errorText!,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 color: GasPalette.critInk, fontSize: 12)),
                       ),
                   ],
@@ -601,7 +607,7 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(_error!,
-                        style: const TextStyle(
+                        style: TextStyle(
                             color: GasPalette.critInk, height: 1.5)),
                   ),
                 ),
@@ -617,7 +623,7 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 28),
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
               child: CircleAvatar(
                 radius: 32,
@@ -627,14 +633,14 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text('Request received',
+            Text('Request received',
                 style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
                     color: GasPalette.ink)),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Your request is with ArticSentinel. Our team will contact you '
               'about the product you selected.',
               style: TextStyle(
@@ -642,17 +648,17 @@ class _ProductEnquiryDialogState extends State<ProductEnquiryDialog> {
             ),
             const SizedBox(height: 24),
             Text(ProductCatalog.byType(_productType)!.title,
-                style: const TextStyle(
+                style: TextStyle(
                     color: GasPalette.ink, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             Text(_email.text.trim(),
-                style: const TextStyle(color: GasPalette.ink2)),
+                style: TextStyle(color: GasPalette.ink2)),
             const SizedBox(height: 24),
-            const Text('Request reference',
+            Text('Request reference',
                 style: TextStyle(color: GasPalette.ink2, fontSize: 12)),
             const SizedBox(height: 6),
             SelectableText(_receipt!.reference,
-                style: const TextStyle(color: GasPalette.ink, fontSize: 12)),
+                style: TextStyle(color: GasPalette.ink, fontSize: 12)),
           ],
         ),
       );

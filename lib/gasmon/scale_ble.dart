@@ -20,6 +20,7 @@ import 'dart:convert';
 import 'package:esp_provisioning_ble/esp_provisioning_ble.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'scale_connection_identity.dart';
 
 /// Default service UUID used by ESP-IDF / Arduino WiFiProv examples.
 const String kProvServiceUuid = '021a9004-0382-4aea-bff4-6b3f1c5adfb4';
@@ -429,18 +430,20 @@ class ScaleProvisioning extends ChangeNotifier {
       await Future<void>.delayed(const Duration(seconds: 1));
       final last =
           directReplies.isEmpty ? '' : directReplies.last.toLowerCase();
-      if (last.contains('fail') ||
-          last.contains('error') ||
-          last.contains('wrong')) {
+      if (scaleSetupReplyRejected(last)) {
         _set(ScaleSetupStage.failed,
-            err: 'The scale replied: ${directReplies.last}');
+            err:
+                'The scale could not apply the connection settings. Check Wi-Fi details and retry.');
         return;
       }
       if (last.contains('connected') ||
           last.contains('success') ||
-          last == 'ok') break;
-      if (!(await _transport?.checkConnect() ?? false))
+          last == 'ok') {
+        break;
+      }
+      if (!(await _transport?.checkConnect() ?? false)) {
         break; // scale rebooted onto Wi-Fi
+      }
     }
     _set(ScaleSetupStage.connected);
   }
@@ -455,8 +458,7 @@ class ScaleProvisioning extends ChangeNotifier {
         b.writeln('Service $service');
       }
       b.writeln(
-          '  Char ${e.uuid}${e.name != null ? ' "${e.name}"' : ''} [${e.propsText}]'
-          '${e.value != null ? ' value="${e.value}"' : ''}');
+          '  Char ${e.uuid}${e.name != null ? ' "${e.name}"' : ''} [${e.propsText}]');
     }
     return b.toString();
   }
@@ -515,10 +517,18 @@ class ScaleProvisioning extends ChangeNotifier {
     if (_prov == null) return;
     _set(ScaleSetupStage.sending);
     try {
+      if (scaleSettings != null && !hasCustomData) {
+        throw StateError(
+            'This scale does not support automatic connection setup.');
+      }
       if (scaleSettings != null && hasCustomData) {
         final reply = await _prov!.sendReceiveCustomData(
             Uint8List.fromList(utf8.encode(jsonEncode(scaleSettings))));
-        customDataReply = utf8.decode(reply, allowMalformed: true);
+        final response = utf8.decode(reply, allowMalformed: true).toLowerCase();
+        if (scaleSetupReplyRejected(response)) {
+          throw StateError('The scale rejected its connection settings.');
+        }
+        customDataReply = 'Connection settings sent';
       }
       final accepted = await _prov!
           .sendWifiConfig(ssid: ssid, password: password, bssid: bssid);
@@ -623,7 +633,8 @@ String scaleConnectionError(Object error) {
       text.toLowerCase().contains('disconnected')) {
     return 'The Bluetooth connection closed while sending Wi-Fi settings. The scale may have restarted to join Wi-Fi. Check for a live reading first. If none arrives, keep the phone nearby, close other Bluetooth apps, restart the scale in setup mode, and reconnect.';
   }
-  if (text.toLowerCase().contains('timeout'))
+  if (text.toLowerCase().contains('timeout')) {
     return 'The scale did not respond in time. Move closer, keep the scale powered on, and reconnect.';
+  }
   return 'The scale could not confirm the Wi-Fi settings. Check the setup code and Wi-Fi details, then reconnect.';
 }

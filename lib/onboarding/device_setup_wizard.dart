@@ -1,5 +1,7 @@
+import '../widgets/app_tone.dart';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
@@ -11,7 +13,11 @@ import '../models/device.dart';
 import '../products/product_catalog.dart';
 import '../widgets/device_illustration.dart';
 import '../widgets/mobile_forms.dart';
+import 'device_setup_guide.dart';
 import 'device_setup_service.dart';
+import 'setup_flow_frame.dart';
+import 'device_pairing_code.dart';
+import 'device_qr_scanner.dart';
 
 export 'device_setup_service.dart';
 
@@ -24,12 +30,19 @@ class DeviceSetupWizard extends StatefulWidget {
       this.onBrowseProducts,
       this.initialDeviceType,
       this.service,
+      this.scanCode,
+      this.fromEquipment = false,
       this.scaleSetupBuilder});
   final VoidCallback? onDone;
   final VoidCallback? onBrowseProducts;
   final String? initialDeviceType;
   final DeviceSetupService? service;
   final Widget Function(Device device)? scaleSetupBuilder;
+  final Future<DevicePairingCode?> Function(BuildContext context)? scanCode;
+
+  /// Opened from Equipment: skip the onboarding welcome and offer Cancel
+  /// instead of "Set up later".
+  final bool fromEquipment;
 
   @override
   State<DeviceSetupWizard> createState() => _DeviceSetupWizardState();
@@ -45,6 +58,9 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
   final _location = TextEditingController();
   final _capacity = TextEditingController();
   final _tare = TextEditingController();
+  final _min = TextEditingController();
+  final _max = TextEditingController();
+  String _phase = 'single';
   // -2: welcome; -1: product choice; 0..2: the three setup steps.
   int _step = -2;
   String? _type;
@@ -56,8 +72,33 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
   DeviceSetupResult? _result;
   bool get _isGas => _type == 'gas_cylinder';
   bool get _isBottle => _type == 'device7';
+  DeviceSetupGuide get _guide => DeviceSetupGuide.forType(_type);
+  static const _stepNames = ['Identify', 'Fit and set up', 'Connect and link'];
   ProductDefinition? get _product =>
       _type == null ? null : ProductCatalog.byType(_type!);
+  bool get _canScan =>
+      widget.scanCode != null ||
+      (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS));
+
+  Future<void> _scan() async {
+    if (_busy || _draftLocked) return;
+    final code = await (widget.scanCode?.call(context) ??
+        Navigator.of(context).push<DevicePairingCode>(
+          MaterialPageRoute(builder: (_) => const DeviceQrScanner()),
+        ));
+    if (!mounted || code == null) return;
+    setState(() {
+      if (_type != code.deviceType) {
+        _capacity.clear();
+        _tare.clear();
+      }
+      _type = code.deviceType;
+      _id.text = code.deviceId;
+    });
+    _go(0);
+  }
 
   @override
   void initState() {
@@ -66,12 +107,22 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
         ProductCatalog.byType(widget.initialDeviceType!) != null) {
       _type = widget.initialDeviceType;
       _step = 0;
+    } else if (widget.fromEquipment) {
+      _step = -1;
     }
   }
 
   @override
   void dispose() {
-    for (final controller in [_id, _name, _location, _capacity, _tare]) {
+    for (final controller in [
+      _id,
+      _name,
+      _location,
+      _capacity,
+      _tare,
+      _min,
+      _max
+    ]) {
       controller.dispose();
     }
     _scroll.dispose();
@@ -109,7 +160,11 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
             name: _name.text.trim(),
             deviceId: _id.text.trim(),
             deviceType: _type,
-            location: _location.text.trim()),
+            location: _location.text.trim(),
+            targetTempMin: _hasRange ? _number(_min.text) : null,
+            targetTempMax: _hasRange ? _number(_max.text) : null,
+            phaseType:
+                _guide.settings.contains(SetupSetting.phase) ? _phase : null),
         gasConfig: _isGas
             ? GasConfig(
                 gasCapacityKg: _number(_capacity.text)!,
@@ -175,9 +230,18 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
   }
 
   void _another() {
-    for (final controller in [_id, _name, _location, _capacity, _tare]) {
+    for (final controller in [
+      _id,
+      _name,
+      _location,
+      _capacity,
+      _tare,
+      _min,
+      _max
+    ]) {
       controller.clear();
     }
+    _phase = 'single';
     setState(() {
       _result = null;
       _type = null;
@@ -188,57 +252,51 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
     _go(-1);
   }
 
+  bool get _hasRange => _guide.settings.contains(SetupSetting.temperatureRange);
+
+  void _back() {
+    if (_step == -2 || (widget.fromEquipment && _step == -1)) {
+      _done();
+      return;
+    }
+    _go(_step - 1);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final phone = isPhoneLayout(context);
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
-    final content =
-        Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 16, 4),
-          child: Row(children: [
-            IconButton(
-                tooltip: 'Back',
-                onPressed: _busy || _draftLocked || _step == -2
-                    ? null
-                    : () => _go(_step - 1),
-                icon: const Icon(Iconsax.arrow_left)),
-            Expanded(
-                child: Text(
-                    _step < 0 ? 'Set up your workspace' : _product!.title,
-                    style: _text(15, weight: FontWeight.w600),
-                    maxLines: 2)),
-            TextButton(
-                onPressed: _busy ? null : _done,
-                child: Text(_result == null ? 'Set up later' : 'Done')),
-          ])),
-      if (_step >= 0)
-        Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Step ${_step + 1} of 3',
-                  style: _text(12, color: GasPalette.ink2)),
-              const SizedBox(height: 8),
-              Row(
-                  children: List.generate(
-                      3,
-                      (i) => Expanded(
-                              child: Container(
-                            height: 4,
-                            margin: EdgeInsets.only(right: i == 2 ? 0 : 6),
-                            decoration: BoxDecoration(
-                                color: i <= _step
-                                    ? GasPalette.primary
-                                    : GasPalette.border,
-                                borderRadius: BorderRadius.circular(4)),
-                          )))),
-            ])),
-      Expanded(
-          child: SingleChildScrollView(
-        controller: _scroll,
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-        child: Form(
+    final inSteps = _step >= 0;
+    return PopScope(
+      canPop: !_busy,
+      child: SetupFlowFrame(
+        title: _step < 0
+            ? (widget.fromEquipment ? 'Add a device' : 'Set up your workspace')
+            : _product!.title,
+        steps:
+            _stepNames, // the side panel previews them before a type is chosen
+        step: inSteps ? (_result != null ? 2 : _step) : null,
+        complete: _hasReading,
+        deviceType: _type,
+        deviceLabel:
+            _type == null ? 'Choose what you’re connecting' : _product!.summary,
+        busy: _busy,
+        onBack: _draftLocked || _step == -2 ? null : _back,
+        closeLabel: _result != null
+            ? 'Done'
+            : widget.fromEquipment
+                ? 'Cancel'
+                : 'Set up later',
+        onClose: _done,
+        scrollController: _scroll,
+        sideNote: inSteps && _guide.safety != null && _result == null
+            ? SetupNote(
+                icon: Iconsax.danger,
+                title: 'Safety first',
+                text: _guide.safety!,
+                tone: SetupNoteTone.safety)
+            : null,
+        footer: inSteps ? _footer() : null,
+        body: Form(
             key: _form,
             child: AnimatedSwitcher(
               duration: Duration(milliseconds: reducedMotion ? 0 : 260),
@@ -252,32 +310,15 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
                           ? _choose()
                           : _setupStep()),
             )),
-      )),
-      if (_step >= 0) _footer(),
-    ]);
-    return PopScope(
-        canPop: !_busy,
-        child: Scaffold(
-          backgroundColor: phone ? Colors.white : GasPalette.page,
-          body: SafeArea(
-              child: Center(
-                  child: Container(
-            constraints: const BoxConstraints(maxWidth: 620),
-            margin: phone ? EdgeInsets.zero : const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: phone ? null : BorderRadius.circular(20),
-                border: phone ? null : Border.all(color: GasPalette.border)),
-            child: content,
-          ))),
-        ));
+      ),
+    );
   }
 
   TextStyle _text(double size,
           {FontWeight weight = FontWeight.w500,
-          Color color = GasPalette.ink}) =>
+          Color? color}) =>
       GoogleFonts.inter(
-          fontSize: size, height: 1.45, fontWeight: weight, color: color);
+          fontSize: size, height: 1.45, fontWeight: weight, color: color ?? GasPalette.ink);
 
   Widget _heading(String title, String explanation) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -341,47 +382,63 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
       Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         _heading('What are you connecting?',
             'Choose the type shown on your equipment. Each guide takes three short steps.'),
-        for (final product in ProductCatalog.products)
+        if (_canScan)
           Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Material(
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: const BorderSide(color: GasPalette.border)),
-                child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      setState(() => _type = product.type);
-                      _go(0);
-                    },
-                    child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Row(children: [
-                          DeviceIllustration(type: product.type, size: 60),
-                          const SizedBox(width: 16),
-                          Expanded(
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                Text(product.title,
-                                    style: _text(15, weight: FontWeight.w700)),
-                                const SizedBox(height: 4),
-                                Text(product.summary,
-                                    style: _text(12, color: GasPalette.ink2)),
-                              ])),
-                          const SizedBox(width: 8),
-                          const Icon(Iconsax.arrow_right_3,
-                              size: 18, color: GasPalette.ink2),
-                        ]))),
-              )),
+              padding: const EdgeInsets.only(bottom: 16),
+              child: OutlinedButton.icon(
+                  onPressed: _scan,
+                  icon: const Icon(Iconsax.scan_barcode),
+                  label: const Text('Scan device QR code'))),
+        _productGrid(),
       ]);
+
+  Widget _productGrid() => LayoutBuilder(builder: (context, box) {
+        final columns = box.maxWidth >= 560 ? 2 : 1;
+        final width = (box.maxWidth - (columns - 1) * 10) / columns;
+        return Wrap(spacing: 10, runSpacing: 10, children: [
+          for (final product in ProductCatalog.products)
+            SizedBox(width: width, child: _productCard(product)),
+        ]);
+      });
+
+  Widget _productCard(ProductDefinition product) => Material(
+        color: Tone.bg(Colors.white),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: GasPalette.border)),
+        child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              setState(() => _type = product.type);
+              _go(0);
+            },
+            child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(children: [
+                  DeviceIllustration(type: product.type, size: 60),
+                  const SizedBox(width: 16),
+                  Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Text(product.title,
+                            style: _text(15, weight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text(product.summary,
+                            style: _text(12, color: GasPalette.ink2)),
+                      ])),
+                  const SizedBox(width: 8),
+                  Icon(Iconsax.arrow_right_3,
+                      size: 18, color: GasPalette.ink2),
+                ]))),
+      );
 
   Widget _setupStep() {
     final registered = _result != null;
+    final guide = _guide;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _SetupIllustration(type: _type!, step: _step, complete: _hasReading),
       if (_step == 0) ...[
+        SetupScene(asset: DeviceSetupGuide.scene('find-id'), deviceType: _type),
         _heading(
             _isGas
                 ? 'Meet your gas scale'
@@ -389,6 +446,16 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
                     ? 'Meet your bottle vetting machine'
                     : 'Identify your device',
             'Find the device ID on its label or setup screen. Use that exact ID so readings arrive in the right place.'),
+        if (_canScan)
+          Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: const StadiumBorder()),
+                  onPressed: _draftLocked ? null : _scan,
+                  icon: const Icon(Iconsax.scan_barcode),
+                  label: const Text('Scan device QR code'))),
         _field(_id, 'Device ID',
             helper: 'Use the hardware ID, not a name you make up.',
             required: true),
@@ -397,64 +464,117 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
                 ? 'For example: Kitchen gas'
                 : 'For example: Front counter',
             required: true),
-        _field(_location, 'Location (optional)'),
-      ] else if (_step == 1 && _isGas) ...[
-        _heading('Set your cylinder size',
-            'Your scale weighs the cylinder and the gas together. These two values let us show how much gas is left.'),
-        Text('Gas capacity', style: _text(14, weight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          for (final kg in [9, 14, 19, 48])
-            ChoiceChip(
-                label: Text('$kg kg'),
-                selected: _number(_capacity.text) == kg,
-                onSelected: (_) => setState(() => _capacity.text = '$kg')),
-        ]),
-        const SizedBox(height: 16),
-        _field(_capacity, 'Gas capacity (kg)',
-            helper: 'Choose a size above, or enter your own.',
-            numeric: true,
-            required: true),
-        _field(_tare, 'Empty cylinder weight (kg)',
-            helper:
-                'Copy the TARE or TW weight stamped on this cylinder. Do not include gas.',
-            numeric: true,
-            required: true),
-        _note(Iconsax.info_circle, 'Use the stamped weight',
-            'Empty weights vary, even for cylinders of the same size. We never guess this value.'),
+        _field(_location, 'Location (optional)',
+            helper: 'Where your team will find it, e.g. Back store room.'),
       ] else if (_step == 1) ...[
-        _heading(
-            'Give it power and a connection',
-            _isBottle
-                ? 'Power on the bottle vetting machine and use its own setup controls to connect it to your site’s network.'
-                : 'Power on the device and follow its installation guide to connect it to your site’s network.'),
-        _instruction(
-            Iconsax.flash_1,
-            'Power on',
-            _isBottle
-                ? 'Wait for the machine to finish starting. Keep the scanning area clear.'
-                : 'Check the power indicator and make sure any sensors are connected.'),
-        _instruction(Iconsax.wifi, 'Connect to your network',
-            'Use the device’s network settings or your installer’s instructions. Keep this phone connected to the internet too.'),
-        _instruction(
-            Iconsax.scan,
-            _isBottle ? 'Try a bottle scan' : 'Allow it to report',
-            _isBottle
-                ? 'Once the machine is ready, follow its usual bottle scanning process. Its scan and tray readings will appear after it reports.'
-                : 'The dashboard will display readings once the device sends them.'),
-        _note(Iconsax.info_circle, 'The device controls its connection',
-            'This guide registers the device in your account. It does not change the machine’s network settings.'),
+        SetupScene(
+            asset: DeviceSetupGuide.scene(guide.fitScene), deviceType: _type),
+        _heading(guide.fitTitle, guide.fitIntro),
+        for (var i = 0; i < guide.fitSteps.length; i++)
+          SetupInstructionTile(
+              number: i + 1,
+              icon: guide.fitSteps[i].icon,
+              title: guide.fitSteps[i].title,
+              text: guide.fitSteps[i].text),
+        if (_isGas) ...[
+          const SizedBox(height: 4),
+          Text('Gas capacity', style: _text(14, weight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final kg in [9, 14, 19, 48])
+              ChoiceChip(
+                  label: Text('$kg kg'),
+                  selected: _number(_capacity.text) == kg,
+                  onSelected: (_) => setState(() => _capacity.text = '$kg')),
+          ]),
+          const SizedBox(height: 16),
+          _field(_capacity, 'Gas capacity (kg)',
+              helper: 'Choose a size above, or enter your own.',
+              numeric: true,
+              required: true),
+          _field(_tare, 'Empty cylinder weight (kg)',
+              helper:
+                  'Copy the TARE or TW weight stamped on this cylinder. Do not include gas.',
+              numeric: true,
+              required: true),
+          _note(Iconsax.info_circle, 'Use the stamped weight',
+              'Empty weights vary, even for cylinders of the same size. We never guess this value.'),
+        ],
+        if (_hasRange) ...[
+          const SizedBox(height: 4),
+          Text('Safe temperature range (optional)',
+              style: _text(15, weight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text(
+              'Readings outside this range are flagged, and the AI assistant uses it to judge the unit.',
+              style: _text(13, color: GasPalette.ink2)),
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final preset in guide.presets)
+              ChoiceChip(
+                  label: Text(
+                      '${preset.label} ${_fmt(preset.min)} to ${_fmt(preset.max)} °C'),
+                  selected: _number(_min.text) == preset.min &&
+                      _number(_max.text) == preset.max,
+                  onSelected: (_) => setState(() {
+                        _min.text = _fmt(preset.min);
+                        _max.text = _fmt(preset.max);
+                      })),
+          ]),
+          const SizedBox(height: 16),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(child: _tempField(_min, 'Lowest (°C)')),
+            const SizedBox(width: 12),
+            Expanded(child: _tempField(_max, 'Highest (°C)')),
+          ]),
+        ],
+        if (guide.settings.contains(SetupSetting.phase)) ...[
+          const SizedBox(height: 4),
+          Text('Supply', style: _text(15, weight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final option in const [
+              ('single', 'Single phase'),
+              ('three', 'Three phase')
+            ])
+              ChoiceChip(
+                  label: Text(option.$2),
+                  selected: _phase == option.$1,
+                  onSelected: _draftLocked
+                      ? null
+                      : (_) => setState(() => _phase = option.$1)),
+          ]),
+          const SizedBox(height: 20),
+        ],
+        if (guide.safety != null && !_wide(context))
+          Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: SetupNote(
+                  icon: Iconsax.danger,
+                  title: 'Safety first',
+                  text: guide.safety!,
+                  tone: SetupNoteTone.safety)),
       ] else if (!registered) ...[
+        SetupScene(
+            asset: DeviceSetupGuide.scene('power-network'), deviceType: _type),
         _heading(
-            'Ready to link',
+            _isGas ? 'Ready to link' : 'Give it power and a connection',
             _isGas
                 ? 'Save your cylinder, then we’ll help connect the scale to Wi-Fi using Bluetooth on your phone.'
                 : 'Link this hardware ID to your workspace, then check for its first reading.'),
+        for (var i = 0; i < guide.connectSteps.length; i++)
+          SetupInstructionTile(
+              number: i + 1,
+              icon: guide.connectSteps[i].icon,
+              title: guide.connectSteps[i].title,
+              text: guide.connectSteps[i].text),
+        const SizedBox(height: 4),
         _review(),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         _note(Iconsax.shield_tick, 'Your device, your readings',
             'Only this device’s measurements will appear in its dashboard. You can set your own alert levels after setup.'),
       ] else ...[
+        _SetupIllustration(type: _type!, step: _step, complete: _hasReading),
         _heading(
             _hasReading
                 ? 'Your device is reporting'
@@ -523,6 +643,22 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(_location.text.trim(),
                     style: _text(13, color: GasPalette.ink2))),
+          if (_hasRange &&
+              _number(_min.text) != null &&
+              _number(_max.text) != null)
+            Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                    'Safe range ${_min.text.trim()} to ${_max.text.trim()} °C',
+                    style: _text(13, color: GasPalette.ink2))),
+          if (_guide.settings.contains(SetupSetting.phase))
+            Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                    _phase == 'three'
+                        ? 'Three-phase supply'
+                        : 'Single-phase supply',
+                    style: _text(13, color: GasPalette.ink2))),
           if (_isGas && _result?.alreadyRegistered != true) ...[
             const Divider(height: 28),
             Text(
@@ -537,6 +673,49 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
 
   double? _number(String value) =>
       double.tryParse(value.trim().replaceAll(',', '.'));
+
+  String _fmt(double v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : '$v';
+
+  bool _wide(BuildContext context) =>
+      MediaQuery.sizeOf(context).width >= SetupFlowFrame.wideBreakpoint;
+
+  Widget _tempField(TextEditingController controller, String label) =>
+      TextFormField(
+        controller: controller,
+        enabled: !_busy && !_draftLocked,
+        keyboardType:
+            const TextInputType.numberWithOptions(decimal: true, signed: true),
+        textInputAction: TextInputAction.next,
+        onChanged: (_) => setState(() {}),
+        decoration: mobileInputDecoration(
+            context,
+            InputDecoration(
+              labelText: label,
+              filled: true,
+              fillColor: GasPalette.panelAlt,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(32)),
+            )),
+        validator: (value) {
+          final text = value?.trim() ?? '';
+          final other =
+              controller == _min ? _max.text.trim() : _min.text.trim();
+          if (text.isEmpty) {
+            return other.isEmpty ? null : 'Enter both values.';
+          }
+          final number = _number(text);
+          if (number == null || number < -60 || number > 60) {
+            return 'Enter −60 to 60 °C.';
+          }
+          final lo = _number(_min.text), hi = _number(_max.text);
+          if (controller == _max && lo != null && hi != null && hi <= lo) {
+            return 'Must be above the lowest.';
+          }
+          return null;
+        },
+      );
 
   Widget _field(TextEditingController controller, String label,
           {String? helper, bool numeric = false, bool required = false}) =>
@@ -584,31 +763,15 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
         ),
       );
 
-  Widget _instruction(IconData icon, String title, String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 22),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(icon, size: 24, color: GasPalette.series),
-          const SizedBox(width: 16),
-          Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(title, style: _text(16, weight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(text, style: _text(14, color: GasPalette.ink2)),
-              ])),
-        ]),
-      );
-
   Widget _note(IconData icon, String title, String text,
           {bool error = false}) =>
       Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-            color: error ? const Color(0xFFFFF1EE) : GasPalette.panelAlt,
+            color: error ? Tone.bg(const Color(0xFFFFF1EE)) : GasPalette.panelAlt,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-                color: error ? const Color(0xFFF4CCC4) : GasPalette.border)),
+                color: error ? Tone.bg(const Color(0xFFF4CCC4)) : GasPalette.border)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Icon(icon,
@@ -644,10 +807,7 @@ class _DeviceSetupWizardState extends State<DeviceSetupWizard> {
     _go(_step + 1);
   }
 
-  Widget _footer() => Container(
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-        decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: GasPalette.border))),
+  Widget _footer() => SizedBox(
         child: FilledButton(
           style: FilledButton.styleFrom(
               backgroundColor: GasPalette.primary,
